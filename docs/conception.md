@@ -102,9 +102,16 @@ Capacités à couvrir : base de données, auth, autorisation, multi-tenant, fich
 - [ADR-0007](decisions/ADR-0007-modules-verticaux.md) — boilerplates maison en modules verticaux avec couches internes.
 - [ADR-0008](decisions/ADR-0008-catalogue-de-profils-gratuits-dabord.md) — catalogue de boilerplates décrits par profils, open source d'abord, maison au fil des projets.
 - [ADR-0009](decisions/ADR-0009-briques-optimales-interchangeables.md) — techno optimale par capacité, briques interchangeables selon l'hébergeur.
+- [ADR-0010](decisions/ADR-0010-next-forge-premier-profil.md) — next-forge comme premier boilerplate profilé.
+- [ADR-0011](decisions/ADR-0011-usage-cible-et-distribution.md) — B2C d'abord, auto-hébergé en avant, offre gérée par abonnement et à l'usage.
+
+## Qualité
+
+La [matrice de parité](parite-killer-saas.md) liste chaque mécanisme de Killer SaaS et son traitement dans Polype. Chaque ligne devient un critère d'acceptation des stories de Polype.
 
 ## Questions ouvertes
 
-1. **Premier boilerplate à profiler** parmi les candidats gratuits.
-2. **Catalogue de capacités** : définir « notre usage » et choisir la brique par défaut de chaque capacité.
-3. **Noms** : au fil de l'eau.
+1. **Tensions T1 à T4** de la matrice de parité.
+2. **Catalogue de capacités** : brique par défaut de chaque capacité, à la lumière d'ADR-0011.
+3. **Stories et milestones de Polype** avant de construire.
+4. **Noms** : au fil de l'eau.
