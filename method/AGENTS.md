@@ -86,9 +86,13 @@ Everything the pipeline produces is markdown under `docs/`, versioned by git.
 
 Technical conventions live in `AGENTS.local.md` under "Project conventions".
 
+## Installed files
+
+Commands, agents and skills live under `.claude/`. The method's templates live in `.polype/templates/`: `templates/<name>.md` anywhere in these rules or in a command means `.polype/templates/<name>.md`. `po-gate` means `.polype/hooks/po-gate.sh`, run from the repository root or a story worktree.
+
 ## Never edit an installed file
 
-Commands, agents and skills under `.claude/` are replaced on the next install, silently. What is specific to this project becomes a setting in `AGENTS.local.md`; what is a real improvement goes back into Polype's own sources.
+Commands, agents and skills under `.claude/`, and everything under `.polype/`, are replaced on the next install, silently. What is specific to this project becomes a setting in `AGENTS.local.md`; what is a real improvement goes back into Polype's own sources.
 
 ## Definition of done (per story)
 

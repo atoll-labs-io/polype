@@ -1,0 +1,53 @@
+#!/usr/bin/env bash
+# Installs the working copy of Polype into a project, for trying it before the real distribution (M5).
+#
+#   polype-dev-install <project-dir> [--hooks]
+#
+# Commands, agents and skills go to .claude/, templates and the gate to .polype/. AGENTS.md is
+# rebuilt from the method's rules plus the project's AGENTS.local.md, which is never touched.
+# Files recorded by the previous install and no longer shipped are removed.
+set -euo pipefail
+
+src="$(cd "$(dirname "$0")/../method" && pwd)"
+dest="${1:?usage: polype-dev-install <project-dir> [--hooks]}"
+dest="$(cd "$dest" && pwd)"
+manifest="$dest/.polype/manifest"
+
+if [ -f "$manifest" ]; then
+  while IFS= read -r f; do rm -f "$dest/$f"; done < "$manifest"
+fi
+mkdir -p "$dest/.polype"
+: > "$manifest.new"
+
+place() {
+  mkdir -p "$(dirname "$dest/$2")"
+  cp "$1" "$dest/$2"
+  echo "$2" >> "$manifest.new"
+}
+
+for f in "$src"/commands/*.md; do place "$f" ".claude/commands/${f##*/}"; done
+for f in "$src"/agents/*.md; do place "$f" ".claude/agents/${f##*/}"; done
+for d in "$src"/skills/*/; do
+  name="$(basename "$d")"
+  for f in "$d"*; do place "$f" ".claude/skills/$name/${f##*/}"; done
+done
+for f in "$src"/templates/*.md; do place "$f" ".polype/templates/${f##*/}"; done
+for f in "$src"/hooks/*; do place "$f" ".polype/hooks/${f##*/}"; chmod +x "$dest/.polype/hooks/${f##*/}"; done
+mv "$manifest.new" "$manifest"
+
+{
+  cat "$src/AGENTS.md"
+  if [ -f "$dest/AGENTS.local.md" ]; then
+    printf '\n---\n\n'
+    cat "$dest/AGENTS.local.md"
+  fi
+} > "$dest/AGENTS.md"
+
+touch "$dest/CLAUDE.md"
+grep -qx '@AGENTS.md' "$dest/CLAUDE.md" || printf '@AGENTS.md\n' >> "$dest/CLAUDE.md"
+
+if [ "${2:-}" = "--hooks" ]; then
+  git -C "$dest" config core.hooksPath .polype/hooks
+fi
+
+echo "Polype installed in $dest ($(wc -l < "$manifest") files)."
