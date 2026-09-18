@@ -1,5 +1,5 @@
 ---
-description: Run one story's whole cycle — research, plan, execute, review, ship — stopping at the two human checkpoints the settings ask for
+description: Walks one story through research, plan, execute, review and ship, pausing only where the settings ask for a human
 argument-hint: <story id or name>
 allowed-tools:
   - Read
@@ -10,36 +10,34 @@ allowed-tools:
   - AskUserQuestion
   - Agent
 ---
-# /po-orchestrator — One story, the whole cycle
+# /po-orchestrator
 
 Reads settings: `Target branch`, `Worktree root`, `Plan validation`, `Ship confirmation`, `Merge mode`, `Test budget`
 
-Target story: $ARGUMENTS
+Story: $ARGUMENTS
 
-You conduct; you never do a stage's work inline when a subagent owns it, and you never write code. Each stage follows **the exact contract of its own command file** — read `/po-research`, `/po-plan`, `/po-execute`, `/po-review` and `/po-ship` and apply them; this file only chains them. A checkpoint is a real AskUserQuestion call, never a sentence in your output.
+You sequence the stages; each one keeps the contract written in its own command file (`/po-research`, `/po-plan`, `/po-execute`, `/po-review`, `/po-ship`) — read those files and follow them. You write no code and do not take over work that belongs to a subagent. Where a human must decide, you call AskUserQuestion; a question in your text output is not a checkpoint.
 
-## 0. Prerequisites (fail-closed)
-- `AGENTS.local.md` missing → STOP: "No project settings. Run /po-setup."
-- `docs/stories.md` missing → STOP: "No stories yet."
-- Resolve the id; no unambiguous match → list the stories and stop. Never invent a story to keep going.
+## Stage 0 — Can this start?
+`AGENTS.local.md` and `docs/stories.md` exist, and $ARGUMENTS matches one id. Otherwise stop and name what is missing; never create a story to keep going.
 
-## 1. Research
-Bootstrap or verify the worktree exactly as `/po-research` says. No `docs/research/<id>.md` → produce it under that contract; otherwise reuse it.
+## Stage 1 — Research
+Create or confirm the worktree as `/po-research` describes. Write `docs/research/<id>.md` under that contract if it does not exist yet; reuse it if it does.
 
-## 2. Plan — checkpoint
-No `docs/plans/<id>.md` → produce it under the `/po-plan` contract. Then, unless its frontmatter already says `validated: yes`:
-- `Plan validation: human` → AskUserQuestion "Validate this plan?" with its summary (tasks, files touched, test strategy): Validate / Change / Stop. Only Validate writes `validated: yes`; anything else stops here.
-- `autonomous` → re-read it against every acceptance criterion, write `validated: yes`, and say that nobody else read it.
+## Stage 2 — Plan — checkpoint
+Write `docs/plans/<id>.md` under the `/po-plan` contract if it does not exist. If its frontmatter already has `validated: yes`, move on. Otherwise:
+- `Plan validation: human` → AskUserQuestion "Approve the plan for <id>?" with tasks, files and test strategy; Approve / Change / Stop. Only Approve writes `validated: yes`; the other answers end the run.
+- `autonomous` → check the plan against every acceptance criterion, write `validated: yes`, and state that no human reviewed it.
 
-## 3. Execute
-Delegate to the `implementer` **exactly as `/po-execute` does**, fix mode first if a blocking review exists. Never implement yourself.
+## Stage 3 — Execute
+Delegate to `implementer` the way `/po-execute` does — as a fix run when the latest review blocks the story. Never implement in this context.
 
-## 4. Review
-Delegate to the `reviewer` **exactly as `/po-review` does** and write `docs/reviews/<id>.md`. A missing or malformed verdict is a blocked review: `Max severity: critical`, `Ship allowed: no`.
+## Stage 4 — Review
+Delegate to `reviewer` the way `/po-review` does and record `docs/reviews/<id>.md` with its `Fix loop:`. A missing or incomplete verdict is recorded as blocked: `Max severity: critical`, `Ship allowed: no`.
 
-`Ship allowed: no` → back to step 3 in fix mode with the complete latest report. Two loops at most; still blocked → stop and list every open finding. Never soften a verdict to move on.
+Blocked → back to stage 3 as a fix run, with the full latest report. After two fix runs still blocked → stop and list the open findings for a human. A verdict is never softened to reach the next stage.
 
-## 5. Ship — checkpoint
-Follow `/po-ship`: its gate, its exit checks, its confirmation per `Ship confirmation` (a real AskUserQuestion when `human`), its merge per `Merge mode`, its cleanup only on a proven merge.
+## Stage 5 — Ship — checkpoint
+Apply `/po-ship`: verdict gate, expensive checks, then the merge. The human checkpoint of this stage is the one `/po-ship` defines for `Ship confirmation` and `Merge mode` — an AskUserQuestion before a local merge, or the pull request itself in pr mode. Cleanup only after proof of the merge.
 
-End with: "Story <id> shipped." — "PR opened: <url>. Merging is yours." — or the exact blocking state: which stage, what is missing, the next command.
+Finish with "<id> shipped.", "Pull request ready: <url>.", or the stage that stopped, what is missing, and the next command.

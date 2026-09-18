@@ -1,28 +1,28 @@
-# Research — Story <id>
+# Research — <id>
 
 ## Structuring facts
-<The five facts that change what gets built, one line each with `path:line`. A broken premise comes first. A reader who stops here still knows what the story really is.>
+<At most five lines, each with `path:line`. Wrong assumptions of the story first. Someone who reads only this section must still understand what the story really involves.>
 
 ## Story
-<recap and acceptance criteria>
+<short restatement and acceptance criteria>
 
-## Code as it is
-<the files involved and what they do today>
+## Current code
+<files involved and their present behaviour>
 
-## Anchor points
-<where the story plugs in: files, functions, routes>
+## Attachment points
+<where the change plugs in: files, functions, routes, registries>
 
-## Verified APIs
-<what actually exists: exact name, signature, location>
+## Verified interfaces
+<what exists, opened and checked: exact name, signature, location>
 
 ## Traps
-<tests that will run, coupling between modules, code changed by previous stories, migration yes/no>
+<tests that will run, coupling, recent changes by other stories, migration needed or not>
 
 ## Open questions
-<what the research could not settle — for the plan to resolve>
+<what research could not settle — the plan decides>
 
 ## Complexity
-<Scored N in docs/stories.md before anyone opened a file. After reading: N, and why it differs if it does.>
+<story's score → score after reading the code, and the reason for any difference>
 
-## Split proposal
-<Required at 5, optional otherwise: two or three stories, where the cut goes, what each closes on its own.>
+## Split
+<mandatory at 5: two or three smaller stories, where to cut, what each one delivers alone>

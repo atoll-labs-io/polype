@@ -1,19 +1,18 @@
-# User stories — <product>
+# Stories — <product>
 
-> One story = one slice a user can use, written so an agent can build it without guessing.
-> Id `s<number>-<short-slug>`, reused verbatim in every pipeline file and in the branch `story/<id>`.
+Each story is a slice a user can actually use, described precisely enough that an agent builds it without asking. Its id, `s<number>-<short-slug>`, names every file the pipeline writes for it and its branch `story/<id>`.
 
-Complexity scale: **1** trivial CRUD · **2** form, persistence and list · **3** business logic or several states · **4** integrations, payments, roles · **5** real time, migrations, external systems. A 4 states its risk; a 5 is split before planning.
+**Complexity scale** — 1: simple create/read/update/delete · 2: a form, storage and a list · 3: business logic or several states · 4: third-party integration, payments or roles · 5: real time, migrations or external systems. A 4 names its main risk. A 5 is split before anyone plans it.
 
 ## <id> — <title>
-**As a** <user> **I want** <action> **so that** <benefit>.
+**As** <who> **I want** <what> **so that** <why>.
 
 - **Complexity**: <1–5>
-- **Depends on**: <story ids, or none>
-- **Owns**: <paths this story may change; two stories that share a path never run in parallel>
+- **Depends on**: <ids, or none>
+- **Owns**: <paths this story is allowed to change; stories sharing a path never run at the same time>
 
 ### Acceptance criteria
-- [ ] <observable behaviour, specific enough to become a test>
+- [ ] <an observable result, precise enough to turn into a test>
 
-### Agentic notes
-<what a human would infer and an agent must read: files involved, constraints, traps, the reference screen or flow when one exists>
+### Notes for the agent
+<context a person would infer and an agent has to be told: files concerned, constraints, pitfalls, the screen or flow to imitate if there is one>

@@ -1,102 +1,98 @@
-# Polype — Rules
+<!-- Assembled by Polype. Edit AGENTS.local.md, then rerun the installer; changes made here are lost. -->
+# Polype — Rules of this repository
 
-**The method owns this file. The installer rebuilds it every time, so anything you write here disappears.** Everything specific to this project — settings, project commands, conventions — lives in `AGENTS.local.md`, which the installer never touches and appends below these rules. `/po-setup` creates it. After editing it by hand, rerun the installer: settings are read from it directly, but conventions only reach an agent through this assembled file.
+Polype writes this section and rewrites it on every install. Your project speaks in `AGENTS.local.md` (settings, project commands, conventions), which the installer leaves alone and appends at the end of this file.
 
-**Rules are the same for every project. Values differ per project and are read from `AGENTS.local.md`** — never chosen by an agent, never filled in when missing. Format: one setting per line, `Name: value`, the value being everything after the first colon, trimmed. A value of `—` means the project does not have that thing: say so, never substitute something else.
+## Reading settings
 
-## The one rule
+A setting is a line `Name: value` in `AGENTS.local.md`; its value is the text after the first colon, trimmed. An agent reads settings, it never decides them, and it never fills a missing one with a guess. `—` is a real value: "this project has none". When a command needs something set to `—`, it reports that the project lacks it and carries on without it or stops, as its own file says — it never swaps in an alternative.
 
-No code is written outside the pipeline. Every change that is not an announced quick fix is a story, and a story goes through every stage, in order:
+## Law 1 — Nothing reaches the code except through a story
 
-    Setup (once) → Research → Plan → Execute → Review → Ship
+Every change is a story unless the user explicitly calls it a quick fix. A story walks these stages, none skipped, none reordered:
 
-No code before the story has a validated plan. Nothing ships without a passed review. The context that writes code never judges it: implementation and review each run in their own subagent.
-
-Until the framing commands exist, stories are written by hand in `docs/stories.md`, shaped by `templates/stories.md`.
-
-### Quick fix — the only exception
-
-Only when the user explicitly asks for it, and only for a change that is small, local, well understood and trivially reversible: a color, a spacing, a radius, a font size, a button style, short UI copy, a translation, a responsive nudge, restoring an existing affordance. The main agent edits directly; it may delegate investigation or review, never implementation.
-
-It never covers: a feature, a redesign of a shared component, a data model or migration, an API or contract change, authorization, security, business rules, persistence, a cross-cutting refactor, a dependency change, or anything whose impact is unclear. If the change turns out to be one of these, stop, say so, recommend the pipeline, and write nothing more until the story has gone through the right stages.
-
-Announce the mode and the exact scope before the first edit, keep the diff minimal, keep existing abstractions, and verify in proportion: a focused lint, typecheck or test, or a look at the screen. A quick fix happens in the repository base directory on `Target branch`, never in a story worktree, and never on files a running story owns.
-
-## Commands
-
-Per story: `/po-research` → `/po-plan` → `/po-execute` → `/po-review` → `/po-ship`. `/po-orchestrator` chains them with the human checkpoints; `/po-status` shows where every story stands; `/po-help` prints the map. Each command's own file is its contract.
-
-**Always run the command; never write the agent call yourself.** A command carries what the pipeline has learned — fix mode, the subagent definitions, the gates. A hand-written briefing replaces all of that with an opinion.
-
-## Where work happens
-
-| Mode | Directory | Branch |
+| Stage | Command | Produces |
 | --- | --- | --- |
-| Announced quick fix | Repository base directory | `Target branch`; anything else checked out → stop and ask |
-| Story | `<Worktree root><id>/` | exactly `story/<id>` |
+| Research | `/po-research` | the story worktree, `docs/research/<id>.md` |
+| Plan | `/po-plan` | `docs/plans/<id>.md`, validated |
+| Execute | `/po-execute` | code, tests, `docs/verif/<id>.md`, one commit |
+| Review | `/po-review` | `docs/reviews/<id>.md` with a verdict |
+| Ship | `/po-ship` | one squash commit on `Target branch` |
 
-A story lives in its own worktree from its first stage to its last, whatever its size. Never create or check out a story branch in the repository base directory.
+`/po-setup` runs once before any story. `/po-orchestrator` walks one story through every stage; `/po-status` reports where each story is; `/po-help` shows this map. Launch these commands rather than briefing an agent by hand: the command files hold the fix mode, the subagent contracts and the gates, and a hand-written brief silently drops them.
 
-`/po-research` creates the worktree or verifies it: `git worktree add` from `Target branch`, the untracked `.env*` files copied in, dependencies installed with the project's `Install` command. It never runs a baseline test suite — the state of `Target branch` is not this story's problem. Every later stage resolves the absolute path and checks the branch. A missing worktree, a wrong branch, a detached HEAD or two candidate branches is a hard stop: never `git switch`, `checkout`, `stash`, or an improvised variant of the path.
+Stories are written in `docs/stories.md`, following `templates/stories.md`.
 
-One directory, one agent. While an agent works in a worktree, nobody else edits, checks out or stashes there.
+## Law 2 — Whoever writes the code does not judge it
 
-## Stories and defects
+Code is written by the `implementer` subagent, reviews are made by the `reviewer` subagent, each in its own context. The main context of a session plans, delegates and reports; it has no business editing source files during a story.
 
-`docs/stories.md` is the product's perimeter: a story is a capability the product gains. **A defect is not a story** — a bug, a stale assertion, a screen that renders wrong goes to the issue tracker (`Issue tracker`), or it inflates the perimeter with work nobody scoped. **A review finding stays in its review report** unless a human decides otherwise: it is already traced there, with its `file:line`.
+## Law 3 — Every gate is closed until a file opens it
+
+| Gate | Opens when | Guards |
+| --- | --- | --- |
+| Plan validated | the frontmatter of `docs/plans/<id>.md` holds `validated: yes` | `/po-execute`; code commits on `story/<id>` (pre-commit hook) |
+| Record current | `docs/verif/<id>.md` is marked complete and its `Tree:` matches the committed code outside `docs/` | whether the review may reuse the recorded run |
+| Ship allowed | the last `Ship allowed:` line of `docs/reviews/<id>.md` says `yes` | `/po-ship` |
+
+A plan file that exists is not a validated plan. No record means nothing is proven. A review without its two verdict lines counts as blocked. `po-gate` (see "Installed files") checks all three.
+
+Severity decides what a review blocks. **Critical** stops the ship. **Major** is logged in the report and handled in a later cycle; **minor** is style. After a blocked review, `/po-execute` runs again in fix mode, findings first; a story gets two fix loops, then a human decides.
+
+## Law 4 — A story lives in its own worktree
+
+| Work | Directory | Branch |
+| --- | --- | --- |
+| Quick fix (user-announced) | repository root | `Target branch` only; any other branch there → stop and ask |
+| Story | `<Worktree root><id>/` | `story/<id>`, nothing else |
+
+`/po-research` creates the worktree from the freshest `Target branch` (after a fetch when a remote exists), copies the ignored `.env*` files into it, and runs `Install`. It does not run the tests: the health of `Target branch` is not the story's concern. Every later stage confirms the path and the branch before doing anything; any mismatch ends the stage — no `git switch`, `checkout` or `stash` to make things fit, no alternative path.
+
+A worktree has one occupant at a time. Every shell command a subagent runs inside it starts with `cd <absolute worktree path> &&` or uses `git -C <absolute worktree path>`, because a subagent's shell does not stay where it was.
+
+While a story is running, its worktree legitimately holds uncommitted work under `docs/`: the research, the plan and, during a fix run, the review. Anything else uncommitted that the current agent did not create is a reason to stop.
+
+## Law 5 — Quick fixes stay small
+
+A quick fix exists only when the user names it. It covers cosmetic, local, easily undone edits: colours, spacing, radii, font sizes, button styles, short interface text, translations, responsive tweaks, putting back an affordance that disappeared. It never covers features, data, migrations, contracts, permissions, security, business rules, persistence, dependencies, refactors across modules, shared component redesigns, or any change whose reach is unclear — the moment the work turns out to be one of these, stop editing and propose a story.
+
+State the scope before touching anything, change as little as possible, respect the existing abstractions, and check the result in proportion: one focused lint, type check or test run, or a look at the screen. The main agent does the edit itself; it may ask a subagent to investigate or to review, never to write. Quick fixes never touch files a running story owns.
+
+## Law 6 — Evidence lives next to the code
+
+All pipeline output is markdown under `docs/`, in git.
+- `docs/stories.md` and `docs/architecture.md` are committed on `Target branch`. Research, plan, record and review travel on `story/<id>`, so the story's commit and its pull request carry their own evidence.
+- Keep research under ~200 lines, plans under ~250, reviews under ~150: every stage after yours reads them. Trim sentences, never tables that record decisions.
+- The plan's checkboxes are the progress bar; ticking one never triggers a commit.
+- A story is committed once by the implementer. A fix run adds one commit of its own; a migration may get its own commit so it can be reverted alone. Ship squashes everything into one commit on `Target branch`.
+- Structural decisions are ADRs in `docs/decisions/NNNN-<slug>.md`, from `templates/adr.md`, listing the options turned down and why. An accepted ADR is never edited; a new ADR supersedes it.
+- **Secrets never enter git.** `.env*` files must be ignored; before any commit, check that `git status --porcelain` lists no environment file, and stop if it does.
+
+## Law 7 — Defects are not stories
+
+`docs/stories.md` describes what the product does. A bug, a flaky assertion or a broken screen goes to `Issue tracker`. Findings from reviews are already traced where they were found; only a person turns one into an issue or a story.
 
 ## Ids and branches
 
-- Every story has an id `s<number>-<short-slug>` (e.g. `s03-export-invoice`), given in `docs/stories.md` and reused verbatim: `docs/research/<id>.md`, `docs/plans/<id>.md`, `docs/verif/<id>.md`, `docs/reviews/<id>.md`, branch `story/<id>`.
-- A story's diff is `git diff <Target branch>...story/<id>`. That diff is what the review judges.
-- A command given a fuzzy story name resolves it against `docs/stories.md`; without an unambiguous match it lists the stories and stops.
+A story id is `s<number>-<slug>` (for example `s04-refund-order`). It is chosen in `docs/stories.md` and reused unchanged in `docs/research/<id>.md`, `docs/plans/<id>.md`, `docs/verif/<id>.md`, `docs/reviews/<id>.md` and the branch `story/<id>`. The story's diff is `git diff <Target branch>...story/<id>`. A command given something that is not an exact id matches it against `docs/stories.md`; zero or several matches → it lists the stories and stops.
 
-## Gates
+## Merging
 
-All three are file checks — a grep or a tree comparison — so they hold whatever tool runs them. `hooks/po-gate.sh` implements them.
+`Merge mode: pr` goes through a pull request to `Target branch`; `local` merges on this machine. `Ship confirmation: human` means a person approves each merge; `automatic` means the gate is enough. Either way the merge is a squash titled `<id>: <story title>`, and cleanup waits for proof that it happened.
 
-| Gate | Passes when | Blocks |
-| --- | --- | --- |
-| Plan validated | `docs/plans/<id>.md` frontmatter has `validated: yes` | `/po-execute`, and any code commit on `story/<id>` (pre-commit hook) |
-| Verification current | `docs/verif/<id>.md` is complete and its `Tree:` equals the committed code outside `docs/` | nothing by itself — it decides whether the review trusts the recorded run or replays it |
-| Ship allowed | `docs/reviews/<id>.md` has the exact line `Ship allowed: yes` | `/po-ship`, entirely |
+## Tests
 
-- A plan file that merely exists is not validated. A missing verification record is never a pass. A missing or malformed verdict is a blocked review.
-- **Only a critical finding blocks.** A major is a real defect, traced in the report and fixed in a later cycle; a minor is style. Neither reopens a fix loop. After a blocked review, `/po-execute` runs in fix mode, findings first. Two loops at most.
-
-## Ship
-
-`Merge mode: pr` opens a pull request against `Target branch`; `local` merges locally with no review platform. `Ship confirmation: human` asks before any merge; `automatic` merges after the gate. Whatever the mode, **the merge is a squash**: one story, one commit on `Target branch`. Cleanup happens only after the merge is proven.
-
-## Documents
-
-Everything the pipeline produces is markdown under `docs/`, versioned by git.
-
-- **Framing documents** (`docs/stories.md`, `docs/architecture.md` when present) are committed on `Target branch`. **Story documents** (research, plan, verification record, review) travel on `story/<id>`: every pull request carries its own evidence.
-- **Size caps**: research ~200 lines, plan ~250, review ~150. Several agents read each file and pay for its length. Cut prose, never decision tables.
-- **Progress** is the checkboxes of `docs/plans/<id>.md`, ticked as tasks land. The plan tracks progress; it never triggers a commit.
-- **One commit per story**, not per task. A second commit only for something you would revert on its own, typically a migration.
-- **Decisions** are ADRs in `docs/decisions/NNNN-<slug>.md` (`templates/adr.md`): context, options rejected and why, consequences. Never edited once accepted — superseded by a new one. Framing decisions land on `Target branch`; a story's decisions travel with its branch.
-
-## Testing
-
-`Test budget` tests per story; more only when the plan says why. **A test that stays green when the rule it names is deleted is worse than no test.** Each deterministic check runs once in the cycle: the focused suite after each task, the full suite and the type check once after the last task, the end-to-end suite and the production build once at ship. Where tests go, the cuts, the shapes of a test that proves nothing, and when to run what: the `testing-doctrine` skill, preloaded in the implementer and the reviewer.
-
-## Conventions
-
-Technical conventions live in `AGENTS.local.md` under "Project conventions".
+At most `Test budget` tests per story unless the plan argues for more. A test that keeps passing after its rule is removed is a liability, not coverage. Each deterministic check runs at exactly one stage. The details — layers, cuts, false tests, stages — are in the `testing-doctrine` skill.
 
 ## Installed files
 
-Commands, agents and skills live under `.claude/`. The method's templates live in `.polype/templates/`: `templates/<name>.md` anywhere in these rules or in a command means `.polype/templates/<name>.md`. `po-gate` means `.polype/hooks/po-gate.sh`, run from the repository root or a story worktree.
+`.claude/commands/`, `.claude/agents/` and `.claude/skills/` hold the commands, subagents and skills. `.polype/templates/` holds the templates: a reference to `templates/<name>.md` means `.polype/templates/<name>.md`. `.polype/hooks/po-gate.sh`, called `po-gate` in these rules, runs from the repository root or from any story worktree. These files are committed on `Target branch` so every worktree has them and the pre-commit hook works there too.
 
-## Never edit an installed file
+Never edit an installed file: the next install overwrites it without asking. Project-specific needs become settings in `AGENTS.local.md`; general improvements go back to Polype itself.
 
-Commands, agents and skills under `.claude/`, and everything under `.polype/`, are replaced on the next install, silently. What is specific to this project becomes a setting in `AGENTS.local.md`; what is a real improvement goes back into Polype's own sources.
+## Done means
 
-## Definition of done (per story)
-
-- One pull request or one squash commit, with a structured description and a readable diff
-- Business-logic tests green, no regression
-- Review passed: no open critical finding
-- Deployed, when the project has a deployment
+- one squash commit (or one pull request) with a description that says what, why and how to check;
+- business tests green, nothing broken elsewhere;
+- a review with no open critical finding;
+- deployed, if the project deploys.

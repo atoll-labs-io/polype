@@ -1,5 +1,5 @@
 ---
-description: Have a story implemented by the implementer subagent in its worktree. This context never writes code.
+description: Hands an approved plan to the implementer subagent. This command cannot edit files or run a shell, by construction.
 argument-hint: <story id or name>
 allowed-tools:
   - Read
@@ -7,39 +7,36 @@ allowed-tools:
   - Grep
   - Agent
 ---
-# /po-execute — Delegated implementation
+# /po-execute
 
 Reads settings: `Worktree root`, `Test budget`, `Full suite`
 
-Target story: $ARGUMENTS
+Story: $ARGUMENTS
 
-## Contract
-You complete this command by delegating to the `implementer` subagent. You have no Write, Edit or Bash tool, on purpose: this context **cannot** write code. You never:
-- start without a validated plan;
-- run a story outside its worktree, whatever its size;
-- report work the implementer did not do.
+This command has no Write, Edit or Bash tool. That is deliberate: the context that coordinates a story is unable to write its code. The `implementer` subagent does it. Do not start without an approved plan, do not work outside the story's worktree, and never describe work the implementer did not report.
 
-If the Agent tool is unavailable, stop and say so. Never improvise.
+No Agent tool available → say so and stop.
 
-## 1. Prerequisites (fail-closed), all by reading files
-1. `AGENTS.local.md` missing → STOP: "No project settings. Run /po-setup."
-2. Resolve $ARGUMENTS to an id in `docs/stories.md`; no unambiguous match → list the stories and stop.
-3. The worktree `<repository root>/<Worktree root><id>` exists, and `<repository root>/.git/worktrees/<id>/HEAD` reads exactly `ref: refs/heads/story/<id>`. Otherwise → STOP: "Run /po-research <id> first."
-4. `docs/plans/<id>.md` in the worktree exists → otherwise STOP: "Run /po-plan <id> first."
-5. Its frontmatter contains `validated: yes` → otherwise STOP: "Plan not validated. Review it, then rerun /po-plan <id>."
-6. `docs/reviews/<id>.md` exists and says `Ship allowed: no` → this is a **fix run**: the findings come first.
+## Preconditions, checked by reading files
+1. `AGENTS.local.md` exists; if not, point to `/po-setup`.
+2. $ARGUMENTS matches exactly one id of `docs/stories.md`; otherwise list the ids and stop.
+3. The worktree is registered: `<repository root>/.git/worktrees/<id>/gitdir` contains `<repository root>/<Worktree root><id>/.git`, and `<repository root>/.git/worktrees/<id>/HEAD` contains `ref: refs/heads/story/<id>`. Any difference (missing files, another path, another branch) → point to `/po-research <id>` and stop.
+4. `docs/plans/<id>.md` exists in the worktree; otherwise point to `/po-plan <id>`.
+5. Its frontmatter holds `validated: yes`; otherwise stop with "The plan for <id> is not approved yet. Review it, then run /po-plan <id>."
+6. `docs/reviews/<id>.md` exists in the worktree with `Ship allowed: no` as its last verdict → this is a **fix run**; the review's findings come before anything else.
 
-## 2. Delegate
-Agent tool:
-- subagent_type: `implementer`
-- description: Implement story <id>
-- working directory: the absolute worktree path
-- prompt: "Implement story <id> from docs/plans/<id>.md in <absolute worktree path>. Your definition is your contract; this prompt only carries what is specific to this run. The worktree and branch are ready and verified: never create a worktree, switch branch, checkout or stash. Project commands, `Test budget` and the stages are in AGENTS.local.md — quote them verbatim; a command set to `—` does not exist in this project."
-- on a fix run, add: "The last review blocked this story. docs/reviews/<id>.md is your fix list; your definition says how to work through it."
+## Delegation
+Call the Agent tool with `subagent_type: implementer`, description "Implement <id>", and this prompt, filled in:
 
-Wait for it to finish.
+> Story <id>. Worktree: <absolute path>. Plan: docs/plans/<id>.md. How to work is settled by your agent file; below are the details of this story. Worktree and branch already exist — create no worktree or branch, never checkout or stash. Start every shell command with `cd <absolute path> &&` or use `git -C <absolute path>`. Settings and project commands are in AGENTS.local.md; run the commands exactly as written, and treat `—` as "this project has none".
 
-## 3. Report
-Tasks done, files touched, tests added and removed, what `docs/verif/<id>.md` records (commands, exit codes, tree), every deviation from the plan and every blocker the implementer reported. No line-by-line detail.
+For a fix run, append:
 
-End with: "Implementation done. Next: /po-review <id>"
+> The last review blocked this story. Work from docs/reviews/<id>.md as your agent file describes for fix runs.
+
+Wait for the subagent to finish.
+
+## Report
+From the subagent's answer: tasks completed, files changed, tests added or removed, the contents of `docs/verif/<id>.md` (commands, exit codes, tree), deviations from the plan and blockers. A summary, not a transcript.
+
+Finish with: "Implementation finished. Next: /po-review <id>"

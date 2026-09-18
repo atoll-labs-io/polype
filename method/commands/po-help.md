@@ -1,29 +1,29 @@
 ---
-description: Affiche le pipeline Polype — l'ordre des étapes et la règle unique
+description: Montre la carte de Polype — les étapes d'une story et la règle qui les tient
 disable-model-invocation: true
 ---
-# Polype — le pipeline
+# Polype en une page
 
 Reads settings: none
 
-**Règle unique : aucun code hors pipeline.** Chaque changement qui n'est pas un correctif rapide annoncé est une story, et une story passe par toutes les étapes.
+**Aucune modification du code en dehors d'une story**, sauf un correctif rapide que tu annonces toi-même.
 
-## Une fois par projet
-0. `/po-setup` — réglages du projet (`AGENTS.local.md`) : où atterrit une story, qui valide un plan, commandes du projet
-1. Les stories, dans `docs/stories.md` (gabarit `templates/stories.md`)
+## Mise en place (une fois)
+- `/po-setup` — écrit `AGENTS.local.md` : branche cible, mode de merge, qui approuve les plans, commandes du projet.
+- Les stories vont dans `docs/stories.md`, sur le modèle `templates/stories.md`.
 
-## Pour chaque story
-2. `/po-research <story>` — worktree dédié, code réel, prémisses vérifiées
-3. `/po-plan <story>` — tâches courtes et vérifiables, puis validation
-4. `/po-execute <story>` — l'implementer code, enregistre ses runs, un seul commit
-5. `/po-review <story>` — relecture en contexte frais, preuve de morsure, verdict
-6. `/po-ship <story>` — gate, contrôles coûteux une seule fois, squash, nettoyage sur merge prouvé
+## Le cycle d'une story
+1. `/po-research <story>` — ouvre le worktree, lit le code réel, vérifie les hypothèses de la story.
+2. `/po-plan <story>` — découpe en tâches testables, puis approbation.
+3. `/po-execute <story>` — l'implementer code, trace ses vérifications, commite.
+4. `/po-review <story>` — relecture par un autre contexte, tests mis à l'épreuve, verdict.
+5. `/po-ship <story>` — verdict vérifié, contrôles lourds une fois, squash, nettoyage.
 
-## Utilitaires
-- `/po-orchestrator <story>` — tout le cycle d'une story, avec les checkpoints humains
-- `/po-status` — où en est chaque story, et la prochaine commande
+## Outils
+- `/po-orchestrator <story>` — enchaîne les cinq étapes et ne s'arrête que pour tes décisions.
+- `/po-status` — l'état de chaque story et la commande suivante.
 
-## À retenir
-- Pas de plan validé → pas de code. Pas de `Ship allowed: yes` → pas de ship.
-- Seul un critique bloque ; un majeur est tracé et corrigé au cycle suivant.
-- Un défaut n'est pas une story : il va dans le tracker d'issues.
+## Repères
+- Plan non approuvé : pas de code. Verdict négatif : pas de ship.
+- Seul un critique bloque. Un majeur est noté et traité plus tard.
+- Un bug n'est pas une story : il part dans le tracker d'issues.

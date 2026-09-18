@@ -1,5 +1,5 @@
 ---
-description: Break a story into small, ordered, verifiable tasks and get the plan validated before any code
+description: Turns a researched story into an ordered list of small, testable tasks and gets it approved — no code
 argument-hint: <story id or name>
 allowed-tools:
   - Read
@@ -9,44 +9,43 @@ allowed-tools:
   - Bash
   - AskUserQuestion
 ---
-# /po-plan — A plan the implementer has nothing left to decide in
+# /po-plan
 
 Reads settings: `Target branch`, `Worktree root`, `Plan validation`, `Test budget`
 
-Target story: $ARGUMENTS
+Story: $ARGUMENTS
 
-You write a plan, never code.
+You produce `docs/plans/<id>.md` and its approval; source files are out of reach for this command.
 
-## 0. Settings, story, workspace (fail-closed)
-- `AGENTS.local.md` missing → STOP: "No project settings. Run /po-setup."
-- Resolve $ARGUMENTS to an id in `docs/stories.md`; no unambiguous match → list the stories and stop.
-- The worktree `<Worktree root><id>` must exist on exactly `story/<id>`. Missing, wrong branch, detached, or the repository root → STOP: "Run /po-research <id> first." Never create or switch branches here.
+## Checks first
+- No `AGENTS.local.md` → stop and point to `/po-setup`.
+- Match $ARGUMENTS to one id of `docs/stories.md`; none or several → list the ids and stop.
+- `<Worktree root><id>` must exist and `git -C <path> rev-parse --abbrev-ref HEAD` must print `story/<id>`. If not, stop and point to `/po-research <id>`. No branch creation or switching here.
 
-Every read and write happens in that worktree.
+Everything below reads and writes inside the worktree.
 
-## 1. Inputs
-Read the story in `docs/stories.md`, `docs/research/<id>.md`, `docs/architecture.md` if present, `AGENTS.md`, and the accepted ADRs in `docs/decisions/`. Apply the `testing-doctrine` skill to the test strategy.
+**A plan file already present?** Skip to "Approval" with a summary of it.
 
-No research file → say that planning without it rests on documents that may be stale, and continue only if the user confirms.
+## Inputs
+The story, `docs/research/<id>.md`, `AGENTS.md`, `docs/architecture.md` if present, and the accepted ADRs. The test strategy follows the `testing-doctrine` skill.
 
-**If `docs/plans/<id>.md` already exists, go straight to step 4**: show its summary and run the checkpoint.
+Without a research file, warn that the plan would rest on documents that may no longer match the code, and continue only on the user's go-ahead.
 
-## 2. Break it down
-- Ordered tasks, each small enough to verify on its own, built on the research's verified facts: real files, real signatures, known traps.
-- A behaviour, business rule, data contract or interaction **names the test that can fail**. A purely presentational task names its visual check plus lint and type check instead — never a component test manufactured so every task owns one.
-- **`Test budget`** tests at most; beyond it, the test strategy says why. The permission matrix is written once, in the policy test; the service test covers the business rule; no enum exhaustiveness; one rule at one layer; no adapter re-asserting a 403.
-- **Run interdicts**: what must not change and what must not be done, each checkable by the reviewer.
-- **The pivot**: the decision everything rests on and where it could be wrong.
-- Past roughly ten tasks, or a story scored 5, the story is too big: say so and propose a split rather than a bloated plan.
-- A structural choice with rejected alternatives (library, pattern, data model) becomes an ADR in `docs/decisions/` (`templates/adr.md`); it travels with the story branch.
+## Writing the plan
+- Tasks in execution order, each one checkable on its own and grounded in the research: real files, real signatures, the traps it found.
+- For behaviour, business rules, data contracts and interactions, each task names **the test that would fail if the task were wrong**. A purely visual task names the visual check plus lint and type check instead; do not invent a component test to fill the column.
+- Stay within `Test budget`, or explain the excess in the test strategy. Access rules go in the policy's tests only; services test business rules; no pair-by-pair enum tests; each rule at one layer; adapters do not retest a 403.
+- **Run interdicts**: what must stay untouched and what must not be done, each verifiable by the reviewer.
+- **The pivot**: the decision everything hinges on and how it could be wrong.
+- More than about ten tasks, or a story rated 5 → recommend splitting the story instead of writing a long plan.
+- A structural choice with alternatives (library, pattern, data model) gets an ADR in `docs/decisions/` from `templates/adr.md`; it stays on the story branch.
 
-## 3. Write
-`docs/plans/<id>.md`, shaped by `templates/plan.md`, frontmatter `validated: no`. **At most ~250 lines**: cut prose, keep the decision table whole.
+Fill `templates/plan.md` into `docs/plans/<id>.md`, frontmatter `validated: no`, **250 lines at most**. Shorten prose, keep decision tables whole.
 
-## 4. Validation — per `Plan validation`
-- `human` → checkpoint with AskUserQuestion, "Validate this plan?": Validate / Change / Stop. Only Validate writes `validated: yes` into the frontmatter.
-- `autonomous` → re-read the plan against every acceptance criterion, then write `validated: yes` yourself and say plainly that nobody else read it.
+## Approval — per `Plan validation`
+- `human`: AskUserQuestion "Approve the plan for <id>?" with the tasks, files and test strategy summarised; answers Approve / Change / Stop. Write `validated: yes` into the frontmatter on Approve and on nothing else.
+- `autonomous`: check the plan against each acceptance criterion yourself, write `validated: yes`, and state that no human reviewed it.
 
-`/po-execute` refuses any plan without `validated: yes` in its frontmatter.
+`/po-execute` will not start on a plan whose frontmatter lacks `validated: yes`.
 
-End with: "Plan validated. Next: /po-execute <id>" — or "Plan awaiting validation. Rerun /po-plan <id> to validate."
+Finish with: "Plan approved. Next: /po-execute <id>" — or "Plan written, not approved yet. Run /po-plan <id> again to approve it."

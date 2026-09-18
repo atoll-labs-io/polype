@@ -6,39 +6,48 @@ AGENT="$METHOD/agents/implementer.md"
 REC="$METHOD/templates/verification-record.md"
 
 test_execute_has_no_write_tools() {
-  require_file "$CMD" || return 1
+  require_file "$CMD"
   local t
-  for t in Write Edit Bash NotebookEdit; do
-    ! has_tool "$CMD" "$t" || fail "po-execute must not have $t" || return 1
-  done
-  has_tool "$CMD" Agent || fail "po-execute needs the Agent tool to delegate"
+  for t in Write Edit Bash NotebookEdit; do lacks_tool "$CMD" "$t"; done
+  needs_tool "$CMD" Agent
 }
 
 test_execute_fails_closed_on_unvalidated_plan() {
-  contains "$CMD" 'Its frontmatter contains `validated: yes`' \
-    && contains "$CMD" 'Plan not validated' \
-    && contains "$CMD" 'subagent_type: `implementer`'
+  contains "$CMD" 'Its frontmatter holds `validated: yes`'
+  contains "$CMD" 'is not approved yet'
+  contains "$CMD" '`subagent_type: implementer`'
 }
 
-test_execute_checks_branch_without_shell() {
-  contains "$CMD" '.git/worktrees/<id>/HEAD' && contains "$CMD" 'ref: refs/heads/story/<id>'
+test_execute_checks_worktree_registration_without_shell() {
+  contains "$CMD" '.git/worktrees/<id>/HEAD` contains `ref: refs/heads/story/<id>`'
+  contains "$CMD" '.git/worktrees/<id>/gitdir` contains `<repository root>/<Worktree root><id>/.git`'
 }
 
 test_implementer_preloads_testing_doctrine() {
-  require_file "$AGENT" || return 1
-  frontmatter "$AGENT" | grep -qx '  - testing-doctrine' || fail "implementer must preload testing-doctrine" || return 1
+  require_file "$AGENT"
+  frontmatter "$AGENT" | grep -qx '  - testing-doctrine' || fail "implementer must preload testing-doctrine"
   frontmatter "$AGENT" | grep -qx 'model: opus' || fail "implementer is pinned to opus"
 }
 
 test_implementer_makes_one_commit_after_record() {
-  contains "$AGENT" 'One commit for the whole story' \
-    && contains "$AGENT" 'Do not commit.' \
-    && contains "$AGENT" 'git write-tree'
+  contains "$AGENT" '**one commit**'
+  contains "$AGENT" 'No commit at this point.'
+  contains "$AGENT" 'git write-tree'
 }
 
-test_verification_record_has_tree_and_status() {
-  require_file "$REC" || return 1
-  grep -q '^Tree: ' "$REC" || fail "record template needs a Tree: line" || return 1
-  [ "$(grep -v '^[[:space:]]*$' "$REC" | tail -1)" = "Verification status: complete" ] \
-    || fail "record template must end with 'Verification status: complete'"
+test_implementer_accepts_pipeline_docs_but_nothing_else() {
+  contains "$AGENT" 'on a fix run, `docs/reviews/<id>.md`: those are expected'
+  contains "$AGENT" 'Any other change you did not make → stop and report.'
+}
+
+test_implementer_keeps_secrets_out_and_pins_its_directory() {
+  contains "$AGENT" 'no `.env*` or other secret may be staged'
+  contains "$AGENT" 'Start every shell command with `cd <that path> &&`'
+}
+
+test_verification_record_has_tree_and_unfilled_status() {
+  require_file "$REC"
+  grep -q '^Tree: ' "$REC" || fail "record template needs a Tree: line"
+  [ "$(grep -v '^[[:space:]]*$' "$REC" | tail -n 1)" = "Verification status: <complete | incomplete>" ] \
+    || fail "record template must end with an unfilled status line"
 }

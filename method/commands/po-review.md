@@ -1,5 +1,5 @@
 ---
-description: Have a story reviewed by a fresh-context subagent and write the verdict that gates the ship. Never reviews in the context that produced the code.
+description: Sends a finished story to the reviewer subagent in a fresh context and records the verdict that decides whether it may ship
 argument-hint: <story id or name>
 allowed-tools:
   - Read
@@ -8,38 +8,32 @@ allowed-tools:
   - Agent
   - Write
 ---
-# /po-review — Delegated review and ship gate
+# /po-review
 
 Reads settings: `Target branch`, `Worktree root`, `Verification mode`, `Test budget`
 
-Target story: $ARGUMENTS
+Story: $ARGUMENTS
 
-## Contract
-You complete this command by delegating to the `reviewer` subagent, in a fresh context. You never:
-- judge the code yourself — you may be the context that produced it, and would be blind to its hallucinations;
-- modify code: your only write is `docs/reviews/<id>.md`;
-- let a critical finding through.
+The verdict comes from the `reviewer` subagent, never from this context: whoever coordinated or wrote the story is the worst placed to see its mistakes. This command writes exactly one file, `docs/reviews/<id>.md`, and never touches code. A critical finding always blocks the ship.
 
-If the Agent tool is unavailable, stop and say so.
+No Agent tool available → say so and stop.
 
-## 1. Prerequisites (fail-closed)
-- `AGENTS.local.md` missing → STOP: "No project settings. Run /po-setup."
-- Resolve the id; locate `<Worktree root><id>`; `<repository root>/.git/worktrees/<id>/HEAD` must read `ref: refs/heads/story/<id>`. Otherwise STOP; never switch branches.
+## Preconditions
+- `AGENTS.local.md` exists; otherwise point to `/po-setup`.
+- $ARGUMENTS matches one id; otherwise list the ids and stop.
+- The worktree is registered for this story: `<repository root>/.git/worktrees/<id>/gitdir` contains `<repository root>/<Worktree root><id>/.git` and `<repository root>/.git/worktrees/<id>/HEAD` contains `ref: refs/heads/story/<id>`. Otherwise stop; do not switch branches.
+- Read the previous `docs/reviews/<id>.md` if there is one: its `Fix loop:` value plus one is this review's loop number (0 when there is none). A third blocked review in a row is not requested: stop and hand the open findings to a human.
 
-## 2. Delegate
-Agent tool:
-- subagent_type: `reviewer`
-- description: Review story <id>
-- working directory: the absolute worktree path
-- prompt: "Review story <id> in <absolute worktree path>. Your definition and the preloaded review-antihallu skill are your contract; this prompt only carries what is specific to this run. Judge `git diff <Target branch>...story/<id>` and nothing else. Structure your report with templates/review.md. Report every finding now; never keep one for a later pass. Project commands and settings are in AGENTS.local.md — quote them verbatim; one set to `—` is reported as not run, never replaced. End with the exact lines `Max severity:` and `Ship allowed:`."
+## Delegation
+Agent tool, `subagent_type: reviewer`, description "Review <id>", prompt filled in:
 
-Wait for the verdict.
+> Story <id>. Worktree: <absolute path>. How to review is settled by your agent file and the review-antihallu skill; below are the details of this story. The scope is `git diff <Target branch>...story/<id>`, no wider. Shape your answer like templates/review.md with `Fix loop: <n>`. Report every finding now — none kept for later. Settings and project commands come from AGENTS.local.md, used verbatim; when a command is `—`, your report says the project has none and you do not substitute your own. Start every shell command with `cd <absolute path> &&` or use `git -C <absolute path>`. End with the lines `Max severity:` and `Ship allowed:`.
 
-## 3. Write the report
-Write the reviewer's full report to `docs/reviews/<id>.md` in the worktree. It carries a `Review status:` line and ends with the exact lines `Max severity: …` and `Ship allowed: yes|no` — `/po-ship` greps the last one.
+## Recording
+Write the subagent's answer, whole, to `docs/reviews/<id>.md` in the worktree. It must contain `Review status:` and `Fix loop:`, and end with `Max severity: …` then `Ship allowed: yes|no` — `/po-ship` reads the last of these.
 
-**If the Agent call fails, times out, returns nothing, or returns a report without both verdict lines**, write the report yourself: `Review status: blocked`, the concrete failure cause, what is missing, the adaptation required, and end it with `Max severity: critical` and `Ship allowed: no`. Never replace a failure with a vague "review failed", and never infer a severity.
+If the subagent fails, times out, returns nothing, or returns a report without both verdict lines, write the file yourself: `Review status: blocked`, the concrete cause, what is missing, what must change, the loop number, then `Max severity: critical` and `Ship allowed: no`. Do not turn a failure into "review failed" and do not guess a severity.
 
-## 4. Gate
-- `Ship allowed: no` → End with: "Ship blocked. Fix with /po-execute <id> (fix mode), then rerun /po-review <id>." Two fix loops at most; still blocked after two → stop and list every open finding.
-- `Ship allowed: yes` → End with: "Review passed. Next: /po-ship <id>"
+## Outcome
+- `Ship allowed: no` → "Ship blocked for <id>. Run /po-execute <id> (fix run), then /po-review <id> again." At loop 2, instead: "Ship still blocked after two fix runs. Open findings: <list>. A human decides what happens next."
+- `Ship allowed: yes` → "Review passed. Next: /po-ship <id>"

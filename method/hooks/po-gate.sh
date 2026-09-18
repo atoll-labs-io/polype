@@ -1,63 +1,62 @@
 #!/usr/bin/env bash
-# po-gate — Polype's file-based gates, enforced by git so they hold whatever tool runs the pipeline.
+# po-gate — Polype's gates as plain file checks, so any tool (or CI) can enforce them.
 #
-#   po-gate plan-validated <id>   exit 0 if docs/plans/<id>.md has `validated: yes` in its frontmatter
-#   po-gate ship-allowed <id>     exit 0 if docs/reviews/<id>.md has the line `Ship allowed: yes`
-#   po-gate verif-current <id>    exit 0 if docs/verif/<id>.md is complete and describes the committed code
-#   po-gate pre-commit            refuse a code commit on story/<id> without a validated plan
+#   po-gate plan-validated <id>   0 when the plan's frontmatter says `validated: yes`
+#   po-gate ship-allowed <id>     0 when the review's last `Ship allowed:` line says yes
+#   po-gate verif-current <id>    0 when the verification record is complete and matches HEAD
+#   po-gate pre-commit            non-zero on a code commit to story/<id> whose plan is not approved
 #
-# No push-time gate: ship squashes, so nothing is left to detect client-side. Enforce
-# `po-gate ship-allowed <id>` in CI or branch protection instead.
+# Squash merges leave nothing for a push hook to inspect; put `po-gate ship-allowed <id>` in CI.
 set -euo pipefail
 
-root() { git rev-parse --show-toplevel 2>/dev/null || pwd; }
-say() { echo "po-gate: $*" >&2; }
+top() { git rev-parse --show-toplevel 2>/dev/null || pwd; }
+refuse() { echo "po-gate: $*" >&2; return 1; }
 
-# The frontmatter only: a `validated: yes` lost in the prose must not validate a plan.
+frontmatter() { awk 'NR==1 && $0=="---" {on=1; next} on && $0=="---" {exit} on' "$1"; }
+
 plan_validated() {
-  local id="$1" f; f="$(root)/docs/plans/$id.md"
-  [ -f "$f" ] || { say "no plan for '$id' (docs/plans/$id.md). Run /po-plan $id."; return 1; }
-  if awk 'NR==1 && $0=="---" {inside=1; next} inside && $0=="---" {exit} inside' "$f" \
-      | grep -qE '^validated:[[:space:]]*yes[[:space:]]*$'; then
-    return 0
-  fi
-  say "plan '$id' is not validated (frontmatter lacks 'validated: yes'). Validate it with /po-plan $id."
-  return 1
+  local plan; plan="$(top)/docs/plans/$1.md"
+  [ -f "$plan" ] || refuse "$1 has no plan yet (docs/plans/$1.md) — /po-plan $1" || return 1
+  frontmatter "$plan" | grep -qE '^validated:[[:space:]]*yes[[:space:]]*$' \
+    || refuse "the plan of $1 is not approved: its frontmatter lacks 'validated: yes' — /po-plan $1"
 }
 
+# Only the last verdict line counts: a report may quote an earlier verdict before giving its own.
 ship_allowed() {
-  local id="$1" f; f="$(root)/docs/reviews/$id.md"
-  [ -f "$f" ] || { say "no review for '$id' (docs/reviews/$id.md). Run /po-review $id."; return 1; }
-  grep -qE '^Ship allowed:[[:space:]]*yes[[:space:]]*$' "$f" && return 0
-  say "ship blocked for '$id': the review does not say 'Ship allowed: yes'."
-  return 1
+  local review verdict; review="$(top)/docs/reviews/$1.md"
+  [ -f "$review" ] || refuse "$1 has not been reviewed (docs/reviews/$1.md) — /po-review $1" || return 1
+  verdict="$(grep -E '^Ship allowed:' "$review" | tail -n 1 || true)"
+  [[ "$verdict" =~ ^Ship\ allowed:[[:space:]]*yes[[:space:]]*$ ]] \
+    || refuse "the review of $1 does not allow shipping (last verdict: ${verdict:-none})"
 }
 
-# docs/ is excluded from the comparison: the record itself and the ticked plan are written after the run.
+# docs/ is left out of the comparison: the record and the ticked plan are written after the checks ran.
 verif_current() {
-  local id="$1" f tree; f="$(root)/docs/verif/$id.md"
-  [ -f "$f" ] || { say "no verification record for '$id' (docs/verif/$id.md)."; return 1; }
-  grep -qE '^Verification status:[[:space:]]*complete[[:space:]]*$' "$f" \
-    || { say "verification record for '$id' is not complete."; return 1; }
-  tree="$(sed -n 's/^Tree:[[:space:]]*\([0-9a-f]\{40\}\)[[:space:]]*$/\1/p' "$f" | head -1)"
-  [ -n "$tree" ] || { say "verification record for '$id' has no valid 'Tree:' line."; return 1; }
-  git cat-file -e "${tree}^{tree}" 2>/dev/null || { say "tree $tree is not in this repository."; return 1; }
-  git diff --quiet "$tree" HEAD -- . ':(exclude)docs' 2>/dev/null && return 0
-  say "code changed after the verification of '$id': the record no longer describes HEAD."
-  return 1
+  local root record tree; root="$(top)"; record="$root/docs/verif/$1.md"
+  [ -f "$record" ] || refuse "$1 has no verification record (docs/verif/$1.md)" || return 1
+  grep -qE '^Verification status:[[:space:]]*complete[[:space:]]*$' "$record" \
+    || refuse "the verification record of $1 is not marked complete" || return 1
+  tree="$(sed -n 's/^Tree:[[:space:]]*\([0-9a-f]\{40\}\)[[:space:]]*$/\1/p' "$record" | head -n 1)"
+  [ -n "$tree" ] || refuse "the verification record of $1 has no usable 'Tree:' hash" || return 1
+  git -C "$root" cat-file -e "${tree}^{tree}" 2>/dev/null \
+    || refuse "tree $tree from the record of $1 does not exist in this repository" || return 1
+  git -C "$root" diff --quiet "$tree" HEAD -- . ':(exclude)docs' \
+    || refuse "the code of $1 changed after its checks ran; the record no longer matches HEAD"
 }
 
 pre_commit() {
-  local branch id path code=0
+  local branch staged path code=no
   branch="$(git rev-parse --abbrev-ref HEAD 2>/dev/null || true)"
-  case "$branch" in story/*) id="${branch#story/}" ;; *) return 0 ;; esac
+  [[ "$branch" == story/* ]] || return 0
+  # --no-renames: moving code into docs/ must count as touching code.
+  staged="$(git diff --cached --name-only --no-renames)" \
+    || refuse "could not list the staged files; refusing the commit" || return 1
   while IFS= read -r path; do
-    case "$path" in docs/*|"") ;; *) code=1 ;; esac
-  done < <(git diff --cached --name-only)
-  [ "$code" = 1 ] || return 0
-  plan_validated "$id" && return 0
-  say "refusing a code commit on $branch without a validated plan (docs-only commits are allowed)."
-  return 1
+    case "$path" in ''|docs/*) ;; *) code=yes ;; esac
+  done <<< "$staged"
+  [ "$code" = yes ] || return 0
+  plan_validated "${branch#story/}" \
+    || refuse "no code commit on $branch before its plan is approved (commits touching only docs/ are fine)"
 }
 
 case "${1:-}" in
@@ -65,5 +64,5 @@ case "${1:-}" in
   ship-allowed)   ship_allowed "${2:?story id required}" ;;
   verif-current)  verif_current "${2:?story id required}" ;;
   pre-commit)     pre_commit ;;
-  *) echo "usage: po-gate {plan-validated <id>|ship-allowed <id>|verif-current <id>|pre-commit}" >&2; exit 2 ;;
+  *) echo "po-gate: unknown subcommand '${1:-}' (see the header of this script)" >&2; exit 2 ;;
 esac

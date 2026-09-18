@@ -1,0 +1,51 @@
+#!/usr/bin/env python3
+"""Lists lines of method/ sharing a long run of consecutive words with Killer SaaS sources.
+
+    bin/ks-overlap <killer-saas src dir> [min words, default 8]
+
+ADR-0006: Polype adapts Killer SaaS without copying its text. Every reported line is either
+rewritten or listed as a technical exception in docs/references/killer-saas.md.
+"""
+import pathlib
+import re
+import sys
+
+if len(sys.argv) < 2:
+    sys.exit(__doc__)
+KS = pathlib.Path(sys.argv[1])
+MIN = int(sys.argv[2]) if len(sys.argv) > 2 else 8
+PO = pathlib.Path(__file__).resolve().parent.parent / "method"
+
+
+def words(text):
+    text = text.replace("ks-", "po-").replace("/ks", "/po")
+    return re.findall(r"[a-z0-9àâçéèêëîïôûùüÿœ'`<>/_.-]+", text.lower())
+
+
+sources = {str(p.relative_to(KS)): words(p.read_text(errors="ignore"))
+           for p in KS.rglob("*") if p.is_file() and p.suffix in (".md", ".sh", ".mjs")}
+index = {}
+for name, ws in sources.items():
+    for i in range(len(ws) - 4):
+        index.setdefault(tuple(ws[i:i + 5]), []).append((name, i))
+
+hits = []
+for path in sorted(PO.rglob("*")):
+    if not path.is_file():
+        continue
+    for number, line in enumerate(path.read_text(errors="ignore").splitlines(), 1):
+        ws = words(line)
+        best = (0, "", "")
+        for i in range(len(ws) - 4):
+            for name, j in index.get(tuple(ws[i:i + 5]), []):
+                k = 0
+                while i + k < len(ws) and j + k < len(sources[name]) and ws[i + k] == sources[name][j + k]:
+                    k += 1
+                if k > best[0]:
+                    best = (k, name, " ".join(ws[i:i + k]))
+        if best[0] >= MIN:
+            hits.append((best[0], f"{path.relative_to(PO)}:{number}", best[1], best[2]))
+
+for length, where, source, run in sorted(hits, reverse=True):
+    print(f"{length:3d} {where} <- {source}: \"{run}\"")
+sys.exit(1 if hits else 0)

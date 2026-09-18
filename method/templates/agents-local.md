@@ -1,10 +1,10 @@
-# <project> — Polype settings and conventions
+# <project> — Polype settings
 
-**This file belongs to the project.** The installer never overwrites it and `/po-setup` is the only command that creates it. `AGENTS.md` belongs to the method and is rebuilt on every install: write nothing there.
+This file is the project's. Polype's installer never rewrites it; `/po-setup` writes it once and you edit it afterwards. Rules live in `AGENTS.md`, which the installer regenerates — do not edit that one.
 
-Every value below is read by the pipeline. One setting per line, `Name: value`, nothing else on the line: the value is everything after the first colon, trimmed. Change any of them at any time; rerun the installer afterwards so the conventions reach `AGENTS.md`.
+Format: one `Name: value` per line inside the blocks below, with no comment after the value (anything after the colon is the value). After a change, rerun the installer so the conventions at the bottom reach `AGENTS.md`.
 
-## Pipeline settings
+## Pipeline
 
 ```
 Merge mode:        pr
@@ -22,23 +22,23 @@ Issue tracker:     github
 Worktree root:     .worktrees/
 ```
 
-| Setting | Accepted values |
+| Setting | Values |
 | --- | --- |
-| Merge mode | `pr` (pull request against the target branch) · `local` (squash merged locally, no review platform) |
-| Target branch | the branch stories land on |
-| Plan validation | `human` (a checkpoint waits for you) · `autonomous` (the agent validates its own plan and says so) |
-| Ship confirmation | `human` (asked before every merge) · `automatic` |
-| Test budget | tests per story; a plan asking for more says why |
-| Verification mode | `record` (the review trusts a current verification record) · `rerun` (the review runs everything again) |
-| Full suite | when the whole unit suite runs: `execute-end` · `ship` · `both` |
-| E2E stage | when the end-to-end suite runs: `ship` · `ci` · `—` |
-| E2E scope | how far it goes; `nominal` is one happy path |
-| E2E browsers | browsers during the cycle, e.g. `chromium`; `—` means the project default. Ship runs them all |
-| Build stage | when the production build runs: `ship-if-route` (only if a route or manifest moved) · `ship` · `ci` · `—` |
-| Issue tracker | where defects go: `github` · `taskwarrior` · `—` |
-| Worktree root | directory holding the story worktrees, with a trailing slash |
+| Merge mode | `pr` — a pull request to the target branch · `local` — squash merge on this machine |
+| Target branch | where finished stories land |
+| Plan validation | `human` — you approve each plan · `autonomous` — the planner approves its own and says so |
+| Ship confirmation | `human` — you approve each merge · `automatic` — the review gate is enough |
+| Test budget | maximum tests per story before the plan must justify more |
+| Verification mode | `record` — a review reuses a current verification record · `rerun` — a review repeats the checks |
+| Full suite | where the complete unit suite runs: `execute-end` · `ship` · `both` |
+| E2E stage | where end-to-end tests run: `ship` · `ci` · `—` |
+| E2E scope | how much end-to-end runs; `nominal` means one happy path |
+| E2E browsers | browsers used before ship, e.g. `chromium`; `—` leaves the project default. Ship always uses all of them |
+| Build stage | where the production build runs: `ship-if-route` (only when routing or a manifest changed) · `ship` · `ci` · `—` |
+| Issue tracker | where defects are filed: `github` · `taskwarrior` · `—` |
+| Worktree root | folder that holds story worktrees, ending with `/`; kept out of git by `.gitignore` |
 
-## Project commands
+## Commands
 
 ```
 Package manager:   —
@@ -49,8 +49,8 @@ E2E:               —
 Build:             —
 ```
 
-A command left at `—` does not exist in this project: agents say so and never invent one. `Test` must accept test file paths as arguments so a focused run is possible.
+Agents run these exactly as written. `—` means the project has no such command, and no agent will make one up. `Test` has to accept paths to test files, so a single task's tests can run alone.
 
-## Project conventions
+## Conventions
 
-<< structure, stack, patterns, naming, commit rules >>
+<< layout, stack, patterns, naming, commit style >>

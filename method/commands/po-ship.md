@@ -1,46 +1,50 @@
 ---
-description: Ship a reviewed story — mechanical gate, the cycle's only expensive checks, squash merge per the project's settings, cleanup only on a proven merge
+description: Takes a story with a passing review to Target branch — verdict gate, the one run of the expensive checks, squash merge, then cleanup once the merge is proven
 argument-hint: <story id or name>
 allowed-tools:
   - Read
   - Bash
   - AskUserQuestion
 ---
-# /po-ship — The exit gate
+# /po-ship
 
-Reads settings: `Merge mode`, `Target branch`, `Ship confirmation`, `Worktree root`, `Full suite`, `E2E stage`, `E2E scope`, `Build stage`
+Reads settings: `Merge mode`, `Target branch`, `Ship confirmation`, `Worktree root`, `Full suite`, `E2E stage`, `E2E scope`, `E2E browsers`, `Build stage`
 
-Target story: $ARGUMENTS
+Story: $ARGUMENTS
 
-Resolve the id against `docs/stories.md`. Locate `<Worktree root><id>`, check it is on exactly `story/<id>`, and run every step from that absolute path unless a step says otherwise. Missing worktree, wrong branch or detached HEAD → STOP; never check the story branch out in the repository root.
+Match the id in `docs/stories.md`. The worktree `<Worktree root><id>` must exist on `story/<id>` (`git -C <path> rev-parse --abbrev-ref HEAD`); otherwise stop without touching any branch. Run commands with `cd <path> &&` or `git -C <path>` unless a step says to use the repository root.
 
-## 0. Gate — mechanical, before anything
-Run `po-gate ship-allowed <id>` (or `grep -qE '^Ship allowed:[[:space:]]*yes[[:space:]]*$' docs/reviews/<id>.md` where the hook is not installed). Missing file or failure → STOP: "Ship blocked: review missing or negative. Run /po-review <id>." Nothing below runs otherwise.
+## Step 0 — The verdict, before anything else
+`po-gate ship-allowed <id>` from the worktree. Without the hook: the **last** line starting with `Ship allowed:` in `docs/reviews/<id>.md` must be `Ship allowed: yes`. No review, or any other answer → stop with "Cannot ship <id>: the review is missing or blocks it. Run /po-review <id>."
 
-Read the settings listed above and the project commands from `AGENTS.local.md`. A missing file or setting → STOP: "No project settings. Run /po-setup." Never assume a mode: every step below branches on them.
+Then read the settings above and the project commands from `AGENTS.local.md`; stop if the file or a setting is missing. Every branch below depends on them.
 
-## 1. Exit checks — the only place the expensive ones run
-Commit `docs/reviews/<id>.md` on `story/<id>` if it is not committed yet: the story carries its review. Then, with the project's own commands quoted verbatim:
-- **Unit suite.** `Full suite: execute-end` → it already ran; confirm with `po-gate verif-current <id>` and run `<Test>` only if that fails. `ship` or `both` → run `<Test>` here.
-- **End to end.** `E2E stage: ship` → run `<E2E>` once, at `E2E scope`, on every browser the project configures. This is the cycle's only end-to-end run.
-- **Build.** `Build stage: ship` → run `<Build>`. `ship-if-route` → only when the story's diff moved a route, a manifest or file-based routing; otherwise skip it and say so.
-- **`ci`** for any of them → do not run it here: read the branch's checks (`gh pr checks`) and stop unless they are green.
+**Coming back after a pull request was merged by hand?** With `Merge mode: pr`, if `gh pr view story/<id> --json state --jq .state` already prints `MERGED`, go straight to cleanup.
 
-A command set to `—` does not exist here: say so, never substitute one. **Any red → stop and go back to `/po-execute <id>` in fix mode.** Nothing merges on red.
+## Step 1 — The expensive checks, once
+Commit `docs/reviews/<id>.md` on `story/<id>` if it is not committed yet, so the story carries its review. Then, using the project commands verbatim:
+- **Unit suite** — with `Full suite: execute-end` the implementer already ran it, and a passing `po-gate verif-current <id>` is the proof; a failing proof means `<Test>` runs now. With `ship` or `both`, `<Test>` always runs now.
+- **End to end** — when `E2E stage` is `ship`, this is the single end-to-end run of the whole cycle: `<E2E>`, limited to `E2E scope`, across every browser the project configures.
+- **Build** — when `Build stage` is `ship`, `<Build>` runs. When it is `ship-if-route`, `<Build>` runs only for a diff that touches routing, a manifest or file-based routes; for any other diff, write that the build was skipped and why.
+- **`ci`** (only meaningful with `Merge mode: pr`) — do not run the check here; wait for `gh pr checks` to be green on the pull request.
 
-## 2. Confirmation
-`Ship confirmation: human` → ask with AskUserQuestion, "Merge <id> into <Target branch>?": Merge / Not now. Only an explicit Merge continues. The gate allows the ship; the human decides it.
+A command set to `—` is reported as absent, never replaced. **One failure and the ship stops**: the story goes back to `/po-execute <id>` as a fix run.
 
-## 3. Merge — always a squash
-One story, one commit on `Target branch`, message `<id>: <story title>`.
-- **`Merge mode: pr`.** If a pull request for `story/<id>` already exists, do not open another: `MERGED` → go to cleanup; `OPEN` → continue with it. Otherwise push the branch and open a pull request to `Target branch` with a clear title, what / why / how to test, and the review verdict (max severity and findings summary).
-  - confirmation `human` → **do not merge.** End with: "PR opened: <url>. Squash-merge it when you decide, then rerun /po-ship <id> to clean up."
-  - confirmation `automatic` → `gh pr merge <url> --squash`, then cleanup.
-- **`Merge mode: local`.** In the repository root, which must be on `Target branch` with a clean tree (otherwise STOP and say what is checked out): `git merge --squash story/<id>`, commit with the story message, note the new commit's sha, push if the project has a remote. Then cleanup.
+## Step 2 — Merge, always as a squash
+Message and title: `<id>: <story title>`.
 
-## 4. Cleanup — only on a proven merge
-1. **Prove it.** `pr` → `gh pr view story/<id> --json state --jq .state` must print exactly `MERGED`; anything else — open, closed without merge, "about to merge" — skips cleanup entirely. `local` → the squash commit's sha is an ancestor of `Target branch` (`git merge-base --is-ancestor <sha> <Target branch>`). Never test the story branch's own commits for ancestry: a squash rewrites them, so that check fails on every correct merge.
-2. Check the worktree is clean, then `git worktree remove <absolute worktree path>` — a dirty worktree is a hard stop, never `--force`.
-3. Only then delete the branch, locally with `git branch -D story/<id>` (a squashed branch always looks unmerged to `-d`; the proof of step 1 is the safety) and on the remote if it was pushed.
+**`Merge mode: pr`**
+- A pull request for `story/<id>` already open → reuse it. None → push the branch and open one to `Target branch`, titled `<id>: <story title>`, with what changed, why, how to test, and the review verdict (max severity and a summary of the findings).
+- `Ship confirmation: human` → stop here. The pull request is the human's decision point: "Pull request ready: <url>. Squash-merge it when you are satisfied, then run /po-ship <id> again for cleanup."
+- `automatic` → `gh pr merge <url> --squash --subject "<id>: <story title>"`, then cleanup.
 
-End with: "Story <id> shipped. Next: /po-status" — or "PR opened: <url>. Merging is yours." — or the exact blocking state: which step, what is missing, which command comes next.
+**`Merge mode: local`**
+- `Ship confirmation: human` → AskUserQuestion "Squash-merge <id> into <Target branch>?", answers Merge / Not now. Continue on Merge only.
+- In the repository root: it must be on `Target branch` with no staged or modified tracked file (`git status --porcelain --untracked-files=no` prints nothing); otherwise stop and describe what you found. Then `git merge --squash story/<id>`, commit with the message above, keep the new commit's hash, and push if a remote exists.
+
+## Step 3 — Cleanup, only after proof
+1. Proof. `pr`: `gh pr view story/<id> --json state --jq .state` prints exactly `MERGED` — open, closed or "merging" is not proof, and cleanup does not happen. `local`: the squash commit's hash is an ancestor of `Target branch` (`git merge-base --is-ancestor <hash> <Target branch>`). Do not test the story branch's own commits: a squash replaces them, so they are never ancestors.
+2. The worktree has no uncommitted change → `git worktree remove <path>`. If it has changes, stop; `--force` is not an option.
+3. Delete `story/<id>` locally with `git branch -D` (git always considers a squashed branch unmerged; step 1 is what makes this safe) and on the remote if it was pushed.
+
+Finish with one of: "<id> shipped: <hash or url>. Next: /po-status" · "Pull request ready: <url>." · the exact step that stopped, what is missing, and the command to run next.

@@ -1,6 +1,6 @@
 ---
 adr: <NNNN>
-title: <short title of the decision>
+title: <decision in a few words>
 status: accepted          # proposed | accepted | superseded
 date: <YYYY-MM-DD>
 scope: <framing | story <id>>
@@ -8,19 +8,19 @@ supersedes: []
 superseded-by: []
 ---
 
-# ADR-<NNNN> — <short title>
+# ADR-<NNNN> — <decision in a few words>
 
 ## Context and Problem Statement
-<The forces at play and the problem to solve, in one to three sentences. Why now.>
+<What forces a choice now, in one to three sentences.>
 
 ## Considered Options
 - **<Option A>** — <one line>
 - **<Option B>** — <one line>
 
 ## Decision Outcome
-Chosen option: **<Option X>**, because <the decisive reason>.
+Chosen option: **<Option X>**, because <the reason that settled it>.
 
 ### Consequences
-- Good, because <benefit>.
-- Bad, because <cost we accept>.
-- Neutral: <follow-up or thing to revisit>.
+- Good, because <what gets easier>.
+- Bad, because <the cost accepted>.
+- Neutral: <what to watch or revisit>.

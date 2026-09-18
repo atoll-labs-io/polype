@@ -2,6 +2,8 @@
 # s01 — rules and settings.
 
 M1_SETTINGS="Merge mode|Target branch|Plan validation|Ship confirmation|Test budget|Verification mode|Full suite|E2E stage|E2E scope|E2E browsers|Build stage|Issue tracker|Worktree root|Package manager|Install|Test|Typecheck|E2E|Build"
+RULES="$METHOD/AGENTS.md"
+SETUP="$METHOD/commands/po-setup.md"
 
 test_settings_template_one_value_per_line() {
   local bad
@@ -22,7 +24,6 @@ test_settings_template_declares_all_m1_settings() {
 test_every_setting_read_by_a_command_exists_in_template() {
   local f name bad=""
   for f in "$METHOD"/commands/*.md "$METHOD"/agents/*.md; do
-    [ -f "$f" ] || continue
     grep -q '^Reads settings:' "$f" || { bad+="${f##*/} has no Reads settings line; "; continue; }
     while IFS= read -r name; do
       [ -n "$name" ] || continue
@@ -33,15 +34,31 @@ test_every_setting_read_by_a_command_exists_in_template() {
 }
 
 test_setup_never_overwrites_settings() {
-  local f="$METHOD/commands/po-setup.md"
-  require_file "$f" && contains "$f" "Never overwrite" && contains "$f" "already exist"
+  require_file "$SETUP"
+  contains "$SETUP" 'If `AGENTS.local.md` is already there, do not touch it.'
 }
 
-test_rules_state_absolute_rule_and_quick_fix_bounds() {
-  local f="$METHOD/AGENTS.md"
-  require_file "$f" \
-    && contains "$f" "No code is written outside the pipeline" \
-    && contains "$f" "### Quick fix" \
-    && contains "$f" "It never covers" \
-    && contains "$f" "A defect is not a story"
+test_setup_ignores_worktrees_and_commits_installed_method() {
+  contains "$SETUP" 'lists the `Worktree root` folder and `.env*`'
+  contains "$SETUP" '`.claude/` and `.polype/` together'
+}
+
+test_rules_state_the_story_law_and_quick_fix_bounds() {
+  require_file "$RULES"
+  contains "$RULES" '## Law 1 — Nothing reaches the code except through a story'
+  contains "$RULES" '## Law 5 — Quick fixes stay small'
+  contains "$RULES" 'It never covers'
+  contains "$RULES" '## Law 7 — Defects are not stories'
+}
+
+test_rules_keep_secrets_out_of_git() {
+  contains "$RULES" '**Secrets never enter git.**'
+}
+
+test_rules_expect_uncommitted_pipeline_docs() {
+  contains "$RULES" 'legitimately holds uncommitted work under `docs/`'
+}
+
+test_rules_start_with_generated_marker() {
+  head -n 1 "$RULES" | grep -qF '<!-- Assembled by Polype.' || fail "AGENTS.md must start with the Polype marker"
 }

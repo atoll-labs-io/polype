@@ -1,62 +1,62 @@
 ---
 name: testing-doctrine
-description: What to test, at which layer, how much, and when each check runs. Preloaded in the implementer and the reviewer; the planner reads it for the test strategy.
+description: Polype's testing rules — how many tests a story gets, which layer each belongs to, which tests prove nothing, and at which stage every check runs. Preloaded in the implementer and the reviewer, read by the planner.
 ---
 # Testing doctrine
 
-Only the agent that writes tests and the agent that judges them act on these rules, so they live here rather than in `AGENTS.md`, which every context pays to load.
+These rules matter to three roles only — planner, implementer, reviewer — so they live in a skill instead of the rules file every agent loads.
 
-## Budget
+## How many tests?
 
-`Test budget` tests per story (25 unless the project says otherwise). A plan that needs more explains why in its test strategy.
+A story gets up to `Test budget` tests. Going beyond requires a sentence in the plan's test strategy.
 
-Volume is not safety. Suites grow by dozens of tests per story while the one invariant the story turns on ships with nothing guarding it; that gap has been found by mutation in review, never by counting. A large suite also gets slow, and a slow suite stops being run.
+The number of tests says nothing about safety. The recurring failure is a story that adds many tests while the single rule it depends on is covered by none of them; counting never reveals that, neutralizing the rule does. A bloated suite also runs slowly, and then people stop running it.
 
-**The criterion that replaces the count: a test that stays green when the rule it names is deleted is worse than no test — it hides the hole it claims to cover.**
+**One question replaces the count: if the rule this test names were deleted, would the test fail? A test that would still pass is worse than no test, because it makes the gap look covered.**
 
-## Where each test belongs
+## Which layer?
 
-| Layer | Test here |
+| Layer | What belongs there |
 | --- | --- |
-| Service and its policy | What matters. **The permission matrix is tested once, in the policy test.** A service never invents access rules — it calls the policy — so its tests cover the business rule: one nominal case and one refusal per rule it owns. |
-| Persistence | Only what reading the code does not catch: the ordering that makes a retried mutation idempotent, and the tenant or ownership clause of each query. Call the repository **directly**: the service refuses upstream, so a call through it never reaches the clause. |
-| Adapter (route, server action, controller) | Only what the service does not do: parsing the payload, clearing fields, mapping errors to statuses. It checks once that a refusal becomes a 403 — never per role, never per rule. |
-| Component | Almost nothing: only conditional logic the component owns. Rendering a list is not a rule. |
-| End to end | One scenario, for what unit tests cannot see — typically a side effect written inside a transaction that mocked repositories hide. |
+| Service and policy | The heart of it. Access rules are checked once, in the tests of the policy that owns them. Services call the policy instead of re-implementing it, so their tests cover business rules: the normal case, and one refusal per rule the service owns. |
+| Persistence | What reading the code cannot establish: how a retried write stays idempotent, and the tenant or owner filter of each query. Call the repository itself — through the service, the refusal happens earlier and the filter is never exercised. |
+| Adapter (route, action, controller) | Its own job only: decoding input, dropping fields, turning errors into statuses. One test shows that a refusal becomes a 403; roles and rules are not replayed here. |
+| Component | Rarely anything: only branching logic that lives in the component. Displaying data is not a rule. |
+| End to end | One scenario for what isolated tests cannot see, typically a side effect inside a transaction that mocks would hide. |
 
-## Four cuts
+## Four things to cut
 
-1. **The matrix once, in the policy test.** Replayed per command, a single service test file passes fifty tests and proves nothing more.
-2. **No enum exhaustiveness.** The legal transitions plus one representative refusal say everything every ordered pair would.
-3. **One rule, one layer.** Test it where it lives, never again in a caller.
-4. **No adapter re-asserting a 403** the policy already owns.
+1. Access rules tested again per command, when the policy test already covers them.
+2. Every pair of an enum or a state machine: the allowed transitions and one representative refusal say it all.
+3. The same rule tested in two layers: keep the layer where it lives.
+4. Adapters checking a 403 the policy already guarantees.
 
-## No red-first during implementation
+## No red-first while implementing
 
-Do not write a test to watch it fail, and do not neutralize your own guard to see a test turn red. Write the code in whole blocks, write the tests that belong to it, run them. The author who just wrote a test knows it passes; repeating the ritual costs a suite run each time and has found nothing. **Neutralization belongs to the review**, run by a fresh context on someone else's net — that is where it finds untested invariants (ADR-0012).
+Writing a test first to watch it fail, or disabling your own guard to see a test go red, costs a run each time and has not caught anything: a test is never more convincing to anyone than to its own author, minutes after writing it. Implement in whole blocks, add the tests that go with them, run them. Disabling guards on purpose is the reviewer's job, done in a separate context on code it did not write — that is where untested rules actually get found (ADR-0012).
 
-## Six ways a test names a rule without exercising it
+## Tests that prove nothing
 
-Hard to see by reading assertions alone; check for each one:
+Each of these looks fine when you read the assertion; check for all six:
 
-1. The test writes its own query instead of calling the code under test — it tests the database, not the repository.
-2. The test sends a payload the real interface never produces.
-3. A `catch` swallows the failure, so the assertion passes when nothing throws.
-4. An end-to-end test stays green while rendering zero rows.
-5. A **fixture** whose identifiers let a later guard answer in place of the guard under test.
-6. A **mock** that replays the clause it should evaluate.
+1. The test runs its own query rather than calling the code under test, so it exercises the database, not the repository.
+2. The input is a payload the real caller can never send.
+3. A `catch` absorbs the error, so the assertion passes even when nothing was thrown.
+4. An end-to-end test passes while the page shows no rows at all.
+5. A **fixture** carries identifiers that make a later check answer on behalf of the check under test.
+6. A **mock** reproduces the condition it was supposed to evaluate.
 
-## When each check runs — once, and once only
+## When does each check run?
 
-A deterministic command run again on the same code gives the same answer at the same cost. Each check therefore has exactly one stage.
+Running a deterministic check twice on the same code buys nothing, so each has one stage.
 
-| Check | When | Setting |
+| Check | Stage | Setting |
 | --- | --- | --- |
-| Focused suite | After each task, on that task's own test files — never the whole project | — |
-| Full suite | Once, after the last task | `Full suite` |
-| Type check | Once, after the last edit, **always**: most test runners transpile without type checking and most linters do not type, so a type error in a test file passes everything but CI | — |
-| End to end | Once, at ship, right before the merge — it costs a cold start, migrations, a seed and a browser | `E2E stage` · `E2E scope` · `E2E browsers` |
-| Production build | At ship, only when a route or a manifest moved — the one break a type check cannot see | `Build stage` |
-| Formatting | Only on the staged files, at the commit | — |
+| Tests of the current task | after that task, with only its test files | — |
+| Full unit suite | a single time, when every task is done | `Full suite` |
+| Type check | once, after the very last edit, never skipped — test runners often strip types without checking them and linters often ignore types, so only this catches a type error in a test file before CI does | — |
+| End to end | once, at ship, just before merging — each run pays a cold start, migrations, seed data and a browser | `E2E stage` · `E2E scope` · `E2E browsers` |
+| Production build | at ship, only if routing or a manifest changed, the one breakage a type check misses | `Build stage` |
+| Formatting | on staged files, at commit time | — |
 
-The reviewer's neutralizations run only the test files that name the invariant, never the suite: a neutralized guard turns red where it is tested, and replaying the whole project to learn that is the most expensive habit a review can have.
+When the reviewer disables a guard, it reruns only the test files that mention that guard. Running the entire suite to find out which file turns red is the slowest possible way to learn it.
