@@ -4,7 +4,7 @@ Un milestone livre un incrément utilisable et se termine par un checkpoint huma
 
 | Milestone | Livre | Lignes de la [matrice](parite-killer-saas.md) | Statut |
 |---|---|---|---|
-| **M1 — Le cycle** | Règles, réglages, research → plan → execute → review → ship sur une story, gates, doctrines test et revue | A, B, D (hors design, voie courte et flotte), E, F, G | en cours |
+| **M1 — Le cycle** | Règles, réglages, research → plan → execute → review → ship sur une story, gates, doctrines test et revue | A, B, D (hors design, voie courte et flotte), E, F, G | livré sur `worktree-m1-cycle`, en attente de relecture humaine |
 | **M2 — Le cadrage** | Trois modes d'entrée, stories et leur revue, architecture, design system, design par story, voie courte | C, D03, D15 | à faire |
 | **M3 — La flotte** | Lanes parallèles, branche d'intégration, tracker GitHub/Taskwarrior, reprise après crash, checkpoints groupés | D05, D13, D16, D17, extensions | à faire |
 | **M4 — Le catalogue** | Profil next-forge, briques auto-hébergées pour mustelinet, tests de contrat | ADR-0008 à ADR-0011 | à faire |
