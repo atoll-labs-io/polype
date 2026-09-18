@@ -105,14 +105,14 @@ Garantie de qualité exigée par [ADR-0006](decisions/ADR-0006-adapter-killer-sa
 | H03 | Source unique, émission par outil (Claude Code, Codex) via un build sans dépendance ; tableau honnête de ce qui se dégrade | bin/ks-build.mjs, DOC | Codex vers mi-octobre (ADR-0005) ; règles en `AGENTS.md` dès maintenant | Adapter | à faire |
 | H04 | Modèles : implémenteur épinglé sur le modèle le plus fort (moins d'allers-retours), relecteurs héritant du modèle de session | agents | Identique par défaut, réglable par story | Étendre | à faire |
 
-## Tensions à trancher
+## Tensions tranchées
 
-| ID | Killer SaaS | `/spec` + `/drive` | Proposition |
+| ID | Killer SaaS | `/spec` + `/drive` | Décision |
 |---|---|---|---|
-| T1 | Pas de rouge-d'abord, mutation en revue seulement | Tests d'acceptation d'abord, les voir échouer | Killer SaaS : la règle est mesurée, l'autre non (E04) |
-| T2 | Squash d'une story dans la branche cible | Merge `--no-ff` de chaque packet dans la branche d'intégration | Squash de la story dans la branche d'intégration, PR humaine par milestone (D13) |
-| T3 | État dérivé des fichiers | État dans le tracker | Tracker pour l'état, fichiers pour les verdicts (ADR-0003, G06) |
-| T4 | Checkpoints humains par story (plan, ship) | Autonomie accordée une fois, pause humaine entre milestones | Réglage ; en flotte, validation des plans groupée par vague et ship au niveau du milestone |
+| T1 | Pas de rouge-d'abord, mutation en revue seulement | Tests d'acceptation d'abord, les voir échouer | Killer SaaS — [ADR-0012](decisions/ADR-0012-pas-de-rouge-dabord.md) |
+| T2 | Squash d'une story dans la branche cible | Merge `--no-ff` de chaque packet dans la branche d'intégration | Squash dans la branche d'intégration, PR humaine par milestone — [ADR-0013](decisions/ADR-0013-squash-dans-la-branche-dintegration.md) |
+| T3 | État dérivé des fichiers | État dans le tracker | Tracker pour l'état, fichiers pour les verdicts — [ADR-0003](decisions/ADR-0003-etat-dans-github-ou-taskwarrior.md) |
+| T4 | Checkpoints humains par story (plan, ship) | Autonomie accordée une fois, pause entre milestones | Réglage, regroupé par vague en flotte — [ADR-0014](decisions/ADR-0014-checkpoints-groupes.md) |
 
 ## Au-delà de Killer SaaS
 
