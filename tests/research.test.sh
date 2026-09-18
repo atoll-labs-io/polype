@@ -25,8 +25,7 @@ test_research_template_has_structuring_facts_and_complexity() {
 }
 
 test_research_writes_no_code() {
-  ! has_tool "$CMD" Edit || fail "po-research must not have Edit"
-  contains "$CMD" 'not a plan and not code'
+  { ! has_tool "$CMD" Edit || fail "po-research must not have Edit"; } && contains "$CMD" 'not a plan and not code'
 }
 
 test_stories_template_declares_owns_and_scale() {
