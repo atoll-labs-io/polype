@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+# Polype pre-commit hook, installed through core.hooksPath. Undo with: git config --unset core.hooksPath
+set -euo pipefail
+exec "$(dirname "$0")/po-gate.sh" pre-commit
