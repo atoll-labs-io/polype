@@ -1,8 +1,8 @@
-# agentic-saas
+# Polype
 
-> Nom de travail. L'usine d'Atoll : une méthode de dev agentique qui emmène un SaaS de l'intention à la production, portée par des agents Claude Code encadrés par des gates mécaniques.
+> Le polype, minuscule animal qui bâtit le récif. Une méthode de dev agentique qui emmène un SaaS de l'intention à la production, portée par des agents Claude Code encadrés par des gates mécaniques.
 
-**Statut** : conception. — `project:agentic-saas` sous `+atoll`.
+**Statut** : conception.
 
 ## Trois points d'entrée
 

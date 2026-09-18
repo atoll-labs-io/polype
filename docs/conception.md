@@ -1,4 +1,4 @@
-# Conception — agentic-saas
+# Conception — Polype
 
 Statut : brouillon (2026-09-18). Les décisions structurantes passeront par `/record-adr` une fois tranchées.
 
@@ -8,7 +8,7 @@ Remplacer `/spec` et `/drive` (skills globaux actuels) par une méthode complèt
 
 ## Ce que chaque source apporte
 
-| Brique | Killer SaaS | `/spec` + `/drive` actuels | agentic-saas |
+| Brique | Killer SaaS | `/spec` + `/drive` actuels | Polype |
 |---|---|---|---|
 | Choix du point d'entrée | kill uniquement (2 modes) | idée neuve uniquement | **remplacer / adapter / partir de zéro** |
 | Cadrage produit | PRD de kill : cible, boucle cœur, cimetière | interrogation sceptique, carte des manques, pre-mortem | les deux, selon le mode |
@@ -55,12 +55,18 @@ fin de milestone : revue transverse (/roast-me) ─ PR humaine vers main
 - Tests : Vitest (unitaires/intégration), Playwright (E2E), CI
 - `AGENTS.md` et conventions prêts pour les agents
 
+## Décisions prises
+
+- Nom de la méthode : **Polype**.
+- [ADR-0001](decisions/ADR-0001-un-seul-repo-methode-et-boilerplates.md) — un seul repo pour la méthode et les boilerplates.
+- [ADR-0002](decisions/ADR-0002-adr-projet-dans-le-repo.md) — les ADR d'un projet vivent dans son repo, pointeur Graphiti.
+- [ADR-0003](decisions/ADR-0003-etat-dans-github-ou-taskwarrior.md) — l'état du travail vit dans GitHub Issues ou Taskwarrior.
+- [ADR-0004](decisions/ADR-0004-installation-globale-toutes-machines.md) — installation globale synchronisée par chezmoi.
+- [ADR-0005](decisions/ADR-0005-codex-differe.md) — Codex vers mi-octobre 2026.
+
 ## Questions ouvertes
 
-1. **Noms** : méthode, trois modes, boilerplate, préfixe des commandes.
-2. **Un repo ou deux** : méthode et boilerplate ensemble (conventions et règles d'architecture versionnées d'un bloc) ou séparés (le boilerplate vit sa vie de template).
-3. **Stockage et jobs** : services managés (Supabase, Inngest) comme ShipSaaS, ou briques auto-hébergeables (S3 compatible, queue sur Postgres) cohérentes avec le reste d'Atoll.
-4. **Décisions** : ADR dans le repo du projet (`docs/decisions/`, lisibles par les workers) ou dans le vault + Graphiti (existant), ou les deux avec un pointeur.
-5. **Tracker** : garder GitHub Issues / Taskwarrior pour l'état, ou état dérivé des fichiers comme Killer SaaS.
-6. **Distribution** : installation globale (`~/.claude`) qui remplace `/spec` et `/drive`, par projet, ou les deux ; synchronisation via chezmoi.
-7. **Codex** : support dès le départ ou plus tard.
+1. **Noms** des trois modes, du boilerplate et du préfixe des commandes (propositions : Orque, Mue, Éclosion, Carapace, `/po-*`).
+2. **Stockage et jobs** : services managés ou briques auto-hébergeables ; dépend de la cible de déploiement.
+3. **Architecture du boilerplate** : couches horizontales, modules verticaux, ou modules verticaux avec couches internes.
+4. **Reprise de Killer SaaS** : réécriture, licence demandée à l'auteur, ou surcouche sur la méthode installée telle quelle. Contrainte : aucune perte de qualité par rapport à Killer SaaS.
