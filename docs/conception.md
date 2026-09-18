@@ -55,6 +55,31 @@ fin de milestone : revue transverse (/roast-me) ─ PR humaine vers main
 - Tests : Vitest (unitaires/intégration), Playwright (E2E), CI
 - `AGENTS.md` et conventions prêts pour les agents
 
+## Catalogue de boilerplates
+
+La méthode ne dépend pas d'un boilerplate précis. Elle dépend de ce qu'elle sait **du** boilerplate. Chaque entrée du catalogue est donc décrite par un **profil** que tous les agents lisent :
+
+- **Commandes** : install, test ciblé, suite complète, typecheck, E2E, build. Citées telles quelles, jamais inventées.
+- **Carte** : où vit chaque chose (routes, domaines, noyau partagé, migrations, policies, composants UI).
+- **Granularité d'ownership** : quel chemin une story peut posséder seule (`src/modules/<domaine>/` pour un boilerplate vertical, beaucoup plus grossier pour un horizontal).
+- **Règles** : où une règle métier est testée, ce qui ne doit jamais être contourné (tenant, autorisation).
+- **Inventaire UI** : composants et tokens disponibles pour le design system.
+- **Origine et licence** : maison (vendorisé dans `boilerplates/`), open source (référencé par URL et version), payant (l'utilisateur apporte sa copie, Polype ne fournit que le profil).
+
+Trois niveaux :
+
+| Niveau | Exemple | Profil | Efficacité de la flotte |
+|---|---|---|---|
+| **Maison** | Carapace (nom provisoire) | écrit et testé avec la méthode | maximale : modules verticaux, tests et E2E prêts |
+| **Tiers profilé** | MakerKit, next-forge, ShipSaaS | généré par l'analyse de code à l'étape architecture, puis validé par l'utilisateur | dépend de son architecture et de ses tests |
+| **Sans boilerplate** | repo vide | scaffold par défaut | la plus basse : les fondations (auth, tenant, billing) deviennent des stories séquentielles avant tout parallélisme |
+
+## Cible de déploiement
+
+- **Prototypes** : chez un ami (mustelinet). **Production** : un gros hébergeur, choisi plus tard, une fois le SaaS viable.
+- **Principe retenu en proposition** : ne s'appuyer que sur des standards qu'on retrouve partout. Postgres pour les données **et** les jobs (file dans Postgres type pg-boss ou Graphile Worker), l'API S3 pour les fichiers, une image conteneur comme artefact de déploiement (Next.js en sortie `standalone`). Aucune fonctionnalité propre à une plateforme serverless.
+- Conséquence : migrer du prototype à la production revient à changer des variables d'environnement (URL Postgres, endpoint S3), pas à réécrire du code.
+
 ## Décisions prises
 
 - Nom de la méthode : **Polype**.
@@ -63,10 +88,11 @@ fin de milestone : revue transverse (/roast-me) ─ PR humaine vers main
 - [ADR-0003](decisions/ADR-0003-etat-dans-github-ou-taskwarrior.md) — l'état du travail vit dans GitHub Issues ou Taskwarrior.
 - [ADR-0004](decisions/ADR-0004-installation-globale-toutes-machines.md) — installation globale synchronisée par chezmoi.
 - [ADR-0005](decisions/ADR-0005-codex-differe.md) — Codex vers mi-octobre 2026.
+- [ADR-0006](decisions/ADR-0006-adapter-killer-saas-sans-copie.md) — on adapte Killer SaaS en s'en inspirant fortement, sans copie ; qualité prouvée par une matrice de parité.
+- [ADR-0007](decisions/ADR-0007-modules-verticaux.md) — boilerplates maison en modules verticaux avec couches internes.
 
 ## Questions ouvertes
 
-1. **Noms** des trois modes, du boilerplate et du préfixe des commandes (propositions : Orque, Mue, Éclosion, Carapace, `/po-*`).
-2. **Stockage et jobs** : services managés ou briques auto-hébergeables ; dépend de la cible de déploiement.
-3. **Architecture du boilerplate** : couches horizontales, modules verticaux, ou modules verticaux avec couches internes.
-4. **Reprise de Killer SaaS** : réécriture, licence demandée à l'auteur, ou surcouche sur la méthode installée telle quelle. Contrainte : aucune perte de qualité par rapport à Killer SaaS.
+1. **Catalogue** : valider le principe des profils et des trois niveaux ci-dessus.
+2. **Déploiement** : valider le principe « standards uniquement » ; confirmer ce que mustelinet fournit (conteneurs ? Postgres managé ? stockage S3 ?).
+3. **Noms** des trois modes, du boilerplate maison et du préfixe des commandes, une fois les questions boilerplate closes.
