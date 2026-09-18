@@ -57,28 +57,38 @@ fin de milestone : revue transverse (/roast-me) ─ PR humaine vers main
 
 ## Catalogue de boilerplates
 
-La méthode ne dépend pas d'un boilerplate précis. Elle dépend de ce qu'elle sait **du** boilerplate. Chaque entrée du catalogue est donc décrite par un **profil** que tous les agents lisent :
+La méthode ne dépend pas d'un boilerplate précis. Elle dépend de ce qu'elle sait **du** boilerplate ([ADR-0008](decisions/ADR-0008-catalogue-de-profils-gratuits-dabord.md)). Chaque entrée du catalogue est décrite par un **profil** que tous les agents lisent :
 
 - **Commandes** : install, test ciblé, suite complète, typecheck, E2E, build. Citées telles quelles, jamais inventées.
 - **Carte** : où vit chaque chose (routes, domaines, noyau partagé, migrations, policies, composants UI).
-- **Granularité d'ownership** : quel chemin une story peut posséder seule (`src/modules/<domaine>/` pour un boilerplate vertical, beaucoup plus grossier pour un horizontal).
+- **Granularité d'ownership** : quel chemin une story peut posséder seule.
 - **Règles** : où une règle métier est testée, ce qui ne doit jamais être contourné (tenant, autorisation).
+- **Capacités** : quelles capacités il fournit, avec quelles briques ([ADR-0009](decisions/ADR-0009-briques-optimales-interchangeables.md)).
 - **Inventaire UI** : composants et tokens disponibles pour le design system.
-- **Origine et licence** : maison (vendorisé dans `boilerplates/`), open source (référencé par URL et version), payant (l'utilisateur apporte sa copie, Polype ne fournit que le profil).
+- **Origine et licence**.
 
-Trois niveaux :
+On commence par des boilerplates **open source**. Les boilerplates maison naîtront des projets, quand l'un d'eux aura un socle réutilisable (et suivront alors [ADR-0007](decisions/ADR-0007-modules-verticaux.md)). Sans boilerplate, la méthode marche encore, mais les fondations (auth, tenant, billing) deviennent des stories séquentielles avant tout parallélisme.
 
-| Niveau | Exemple | Profil | Efficacité de la flotte |
-|---|---|---|---|
-| **Maison** | Carapace (nom provisoire) | écrit et testé avec la méthode | maximale : modules verticaux, tests et E2E prêts |
-| **Tiers profilé** | MakerKit, next-forge, ShipSaaS | généré par l'analyse de code à l'étape architecture, puis validé par l'utilisateur | dépend de son architecture et de ses tests |
-| **Sans boilerplate** | repo vide | scaffold par défaut | la plus basse : les fondations (auth, tenant, billing) deviennent des stories séquentielles avant tout parallélisme |
+### Candidats gratuits (relevé du 2026-09-18, tous MIT)
+
+| Boilerplate | Framework | Auth | Données | Billing | Multi-tenant | Remarque |
+|---|---|---|---|---|---|---|
+| **next-forge** (Vercel) | Next.js, Turborepo | Clerk (hébergé) | Prisma + Neon | Stripe | via Clerk | **un package par capacité** (auth, database, payments, storage, email, observability…) |
+| **ixartz/SaaS-Boilerplate** | Next.js | Clerk (hébergé) | Drizzle + Postgres | Stripe | via Clerk | i18n, Sentry, Storybook, Vitest + Playwright |
+| **nextjs/saas-starter** | Next.js | maison (JWT) | Drizzle + Postgres | Stripe | équipes | minimal, moins actif (dernier push 2025-12) |
+| **Open SaaS** (Wasp) | Wasp (React + Node) | intégrée | Prisma + Postgres | Stripe, Lemon Squeezy ou Polar | non | S3, jobs pg-boss, paiement déjà interchangeable |
+| **Epic Stack** | React Router | maison (TOTP, passkeys) | Prisma + SQLite/LiteFS | non | non | culture de test de référence, orienté Fly.io |
+
+## Capacités et briques
+
+Chaque capacité a une interface, une brique par défaut choisie pour être optimale pour notre usage, et des briques alternatives activées par configuration quand un hébergeur l'impose ([ADR-0009](decisions/ADR-0009-briques-optimales-interchangeables.md)). Chaque interface a un jeu de tests de contrat que toutes ses briques passent.
+
+Capacités à couvrir : base de données, auth, autorisation, multi-tenant, fichiers, jobs, email, paiement, cache, observabilité, i18n, déploiement.
 
 ## Cible de déploiement
 
-- **Prototypes** : chez un ami (mustelinet). **Production** : un gros hébergeur, choisi plus tard, une fois le SaaS viable.
-- **Principe retenu en proposition** : ne s'appuyer que sur des standards qu'on retrouve partout. Postgres pour les données **et** les jobs (file dans Postgres type pg-boss ou Graphile Worker), l'API S3 pour les fichiers, une image conteneur comme artefact de déploiement (Next.js en sortie `standalone`). Aucune fonctionnalité propre à une plateforme serverless.
-- Conséquence : migrer du prototype à la production revient à changer des variables d'environnement (URL Postgres, endpoint S3), pas à réécrire du code.
+- **Prototypes** : mustelinet, cloud OpenStack d'un ami (voir [références](references/mustelinet.md)). VM, volumes et Kubernetes managé ; pas de base ni de stockage objet managés, donc hébergés par nous ; publication HTTP/HTTPS seulement.
+- **Production** : un gros hébergeur, choisi une fois le SaaS viable. Il se traduira par des briques de déploiement et, au besoin, des briques managées (base, fichiers) à la place des briques auto-hébergées.
 
 ## Décisions prises
 
@@ -90,9 +100,11 @@ Trois niveaux :
 - [ADR-0005](decisions/ADR-0005-codex-differe.md) — Codex vers mi-octobre 2026.
 - [ADR-0006](decisions/ADR-0006-adapter-killer-saas-sans-copie.md) — on adapte Killer SaaS en s'en inspirant fortement, sans copie ; qualité prouvée par une matrice de parité.
 - [ADR-0007](decisions/ADR-0007-modules-verticaux.md) — boilerplates maison en modules verticaux avec couches internes.
+- [ADR-0008](decisions/ADR-0008-catalogue-de-profils-gratuits-dabord.md) — catalogue de boilerplates décrits par profils, open source d'abord, maison au fil des projets.
+- [ADR-0009](decisions/ADR-0009-briques-optimales-interchangeables.md) — techno optimale par capacité, briques interchangeables selon l'hébergeur.
 
 ## Questions ouvertes
 
-1. **Catalogue** : valider le principe des profils et des trois niveaux ci-dessus.
-2. **Déploiement** : valider le principe « standards uniquement » ; confirmer ce que mustelinet fournit (conteneurs ? Postgres managé ? stockage S3 ?).
-3. **Noms** des trois modes, du boilerplate maison et du préfixe des commandes, une fois les questions boilerplate closes.
+1. **Premier boilerplate à profiler** parmi les candidats gratuits.
+2. **Catalogue de capacités** : définir « notre usage » et choisir la brique par défaut de chaque capacité.
+3. **Noms** : au fil de l'eau.
