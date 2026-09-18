@@ -12,7 +12,7 @@ Arborescence cible : `method/` (règles, commandes, subagents, skills, templates
 **En tant que** développeur **je veux** installer les règles communes et créer les réglages de mon projet **afin que** chaque commande lise les mêmes règles et les valeurs de mon projet, sans défaut silencieux.
 
 - **Complexité** : 2
-- **Owns** : `method/AGENTS.md`, `method/templates/agents-local.md`, `method/commands/po-setup.md`, `tests/structure.test.sh`
+- **Owns** : `method/AGENTS.md`, `method/templates/agents-local.md`, `method/commands/po-setup.md`, `tests/structure.test.sh`, `tests/lib.sh`, `tests/run.sh`
 - **Matrice** : A01–A10, B01–B03, C01 (sans mode ni boilerplate), D01, G01–G06
 - **Dépendances** : aucune
 
@@ -44,7 +44,7 @@ Arborescence cible : `method/` (règles, commandes, subagents, skills, templates
 **En tant que** développeur **je veux** qu'une story soit explorée dans son worktree avant d'être planifiée **afin que** le plan repose sur le code réel et que les prémisses fausses sortent tôt.
 
 - **Complexité** : 3
-- **Owns** : `method/commands/po-research.md`, `method/skills/codebase-analysis/`, `method/templates/research.md`, `method/templates/stories.md`
+- **Owns** : `method/commands/po-research.md`, `method/skills/codebase-analysis/`, `method/templates/research.md`, `method/templates/stories.md`, `tests/research.test.sh`
 - **Matrice** : D01, D02, C08, C03
 - **Dépendances** : s01
 
@@ -58,7 +58,7 @@ Arborescence cible : `method/` (règles, commandes, subagents, skills, templates
 **En tant que** développeur **je veux** un plan court, vérifiable et validé **afin que** l'implémentation n'ait rien à décider.
 
 - **Complexité** : 3
-- **Owns** : `method/commands/po-plan.md`, `method/templates/plan.md`, `method/skills/testing-doctrine/`
+- **Owns** : `method/commands/po-plan.md`, `method/templates/plan.md`, `method/skills/testing-doctrine/`, `tests/plan.test.sh`
 - **Matrice** : D04, E01–E06
 - **Dépendances** : s03
 
@@ -72,7 +72,7 @@ Arborescence cible : `method/` (règles, commandes, subagents, skills, templates
 **En tant que** développeur **je veux** que l'implémentation soit faite par un subagent dédié **afin que** le contexte principal ne code jamais et que chaque run soit prouvé.
 
 - **Complexité** : 3
-- **Owns** : `method/commands/po-execute.md`, `method/agents/implementer.md`, `method/templates/verification-record.md`
+- **Owns** : `method/commands/po-execute.md`, `method/agents/implementer.md`, `method/templates/verification-record.md`, `tests/execute.test.sh`
 - **Matrice** : A01, D05 (une story), D06, D07
 - **Dépendances** : s02, s04
 
@@ -86,7 +86,7 @@ Arborescence cible : `method/` (règles, commandes, subagents, skills, templates
 **En tant que** développeur **je veux** une revue en contexte frais qui prouve que les tests mordent **afin qu'**aucune story ne parte sur un filet décoratif.
 
 - **Complexité** : 4 — risque : la preuve de morsure mute du code ; la restauration doit être prouvée.
-- **Owns** : `method/commands/po-review.md`, `method/agents/reviewer.md`, `method/skills/review-antihallu/`, `method/templates/review.md`
+- **Owns** : `method/commands/po-review.md`, `method/agents/reviewer.md`, `method/skills/review-antihallu/`, `method/templates/review.md`, `tests/review.test.sh`
 - **Matrice** : A02, D08–D12
 - **Dépendances** : s05
 
@@ -100,7 +100,7 @@ Arborescence cible : `method/` (règles, commandes, subagents, skills, templates
 **En tant que** développeur **je veux** que seule une revue favorable ouvre le ship **afin que** les contrôles coûteux tournent une fois et que le nettoyage n'arrive que sur un merge prouvé.
 
 - **Complexité** : 3
-- **Owns** : `method/commands/po-ship.md`
+- **Owns** : `method/commands/po-ship.md`, `tests/ship.test.sh`
 - **Matrice** : D13 (sans flotte), D14
 - **Dépendances** : s06
 
@@ -113,7 +113,7 @@ Arborescence cible : `method/` (règles, commandes, subagents, skills, templates
 **En tant que** développeur **je veux** enchaîner le cycle d'une story, voir où en est chaque story et avoir un aide-mémoire **afin de** ne jamais deviner la prochaine commande.
 
 - **Complexité** : 2
-- **Owns** : `method/commands/po-orchestrator.md`, `method/commands/po-status.md`, `method/commands/po-help.md`, `method/templates/adr.md`
+- **Owns** : `method/commands/po-orchestrator.md`, `method/commands/po-status.md`, `method/commands/po-help.md`, `method/templates/adr.md`, `tests/pilot.test.sh`
 - **Matrice** : D16 (une story), D17 (depuis les fichiers en M1), D18, G04
 - **Dépendances** : s07
 
@@ -126,7 +126,7 @@ Arborescence cible : `method/` (règles, commandes, subagents, skills, templates
 **En tant que** développeur **je veux** installer la version de travail de Polype dans un projet **afin de** la tester avant la distribution de M5.
 
 - **Complexité** : 2
-- **Owns** : `bin/polype-dev-install`, `tests/install.test.sh`
+- **Owns** : `bin/polype-dev-install`, `tests/install.test.sh`, section « Installed files » de `method/AGENTS.md`
 - **Matrice** : H02 (partiel)
 - **Dépendances** : s08
 
