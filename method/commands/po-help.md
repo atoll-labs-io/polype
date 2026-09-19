@@ -29,6 +29,7 @@ Reads settings: none
 ## Outils
 - `/po-orchestrator <story>` — enchaîne les cinq étapes et ne s'arrête que pour tes décisions.
 - `/po-status` — l'état de chaque story et la commande suivante.
+- `/po-flow <story>` — voie courte pour une petite story : research et plan en une passe, puis le même cycle, sans rien alléger.
 
 ## Repères
 - Plan non approuvé : pas de code. Verdict négatif : pas de ship.
