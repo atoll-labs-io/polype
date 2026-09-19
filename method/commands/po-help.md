@@ -15,6 +15,7 @@ Reads settings: none
 - `/po-stories` — découpe le PRD ou le brief approuvé en stories livrables par un agent, dans `docs/stories.md`.
 - `/po-stories-review` — fait relire les stories par un subagent en contexte frais, périmètre en main ; verdict dans `docs/reviews/stories.md`.
 - `/po-architect` — part du boilerplate du projet, en tire les conventions (règles dans `AGENTS.local.md`) et une ADR par choix structurant ; écrit `docs/architecture.md`.
+- `/po-design-system` — recense tokens et composants du socle, mesure une fois les contrastes en clair et en sombre ; écrit `docs/design-system.md`.
 - Les stories vont dans `docs/stories.md`, sur le modèle `templates/stories.md`.
 
 ## Le cycle d'une story
