@@ -1,0 +1,18 @@
+# Stories — <product>
+
+Each story is a slice a user can actually use, described precisely enough that an agent builds it without asking. Its id, `s<number>-<short-slug>`, names every file the pipeline writes for it and its branch `story/<id>`.
+
+**Complexity scale** — 1: simple create/read/update/delete · 2: a form, storage and a list · 3: business logic or several states · 4: third-party integration, payments or roles · 5: real time, migrations or external systems. A 4 names its main risk. A 5 is split before anyone plans it.
+
+## <id> — <title>
+**As** <who> **I want** <what> **so that** <why>.
+
+- **Complexity**: <1–5>
+- **Depends on**: <ids, or none>
+- **Owns**: <paths this story is allowed to change; stories sharing a path never run at the same time>
+
+### Acceptance criteria
+- [ ] <an observable result, precise enough to turn into a test>
+
+### Notes for the agent
+<context a person would infer and an agent has to be told: files concerned, constraints, pitfalls, the screen or flow to imitate if there is one>
