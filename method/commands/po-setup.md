@@ -1,5 +1,5 @@
 ---
-description: First Polype command in a project — writes AGENTS.local.md from the repository and three answers, ignores the worktree folder, and commits the installed method
+description: First Polype command in a project — writes AGENTS.local.md from the repository and five answers, ignores the worktree folder, and commits the installed method
 allowed-tools:
   - Read
   - Glob
@@ -26,12 +26,16 @@ Collect what the repository states on its own:
 
 These become the suggested answers. A command you did not find in a file stays `—`.
 
-## Step 2 — Three questions, one AskUserQuestion call each
+## Step 2 — Five questions, one AskUserQuestion call each
 1. How stories land: `Merge mode` `pr` or `local`, and the `Target branch` (suggest the default branch).
 2. Who approves plans: `Plan validation` `human` or `autonomous`. Propose the same value for `Ship confirmation`; change it only if the user asks.
-3. The project commands, with your suggestions from step 1.
+3. Where the project starts, `Entry mode`: `replace` (an internal replacement for a paid SaaS), `adapt` (a competing product with an angle of its own) or `new` (an idea built from nothing).
+4. Who draws the screens, `Design source`: `internal` (an agent skill draws them in the repository), `external` (they come from a tool outside it) or not decided yet. In the same call, ask for the `Design skill` when the answer is `internal`, or the `Design tool` when it is `external`; the other one stays `—`.
+5. The project commands, with your suggestions from step 1.
 
-Nothing else is asked; every other setting keeps the template's value.
+Nothing else is asked; every other setting keeps the template's value, `Story track` and `Flow threshold` included.
+
+A `Design source` left at `—` is not a choice: every design command stops on it and asks for the source again. Setup never fills it on the user's behalf.
 
 ## Step 3 — Write and commit
 1. Copy `templates/agents-local.md` to `AGENTS.local.md` at the repository root and fill in the answers. Keep one setting per line and no trailing comment. Leave the conventions placeholder as it is.
