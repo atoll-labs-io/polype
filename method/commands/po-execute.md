@@ -20,7 +20,7 @@ No Agent tool available → say so and stop.
 ## Preconditions, checked by reading files
 1. `AGENTS.local.md` exists; if not, point to `/po-setup`.
 2. $ARGUMENTS matches exactly one id of `docs/stories.md`; otherwise list the ids and stop.
-3. The worktree is registered: `<repository root>/.git/worktrees/<id>/gitdir` contains `<repository root>/<Worktree root><id>/.git`, and `<repository root>/.git/worktrees/<id>/HEAD` contains `ref: refs/heads/story/<id>`. Any difference (missing files, another path, another branch) → point to `/po-research <id>` and stop.
+3. The worktree is registered. First find the shared git directory: if `<repository root>/.git` is a folder, that folder; if it is a file (the repository root is itself a linked worktree), it reads `gitdir: <common>/worktrees/<name>` and the shared directory is `<common>`. Then `<shared>/worktrees/<id>/gitdir` contains `<repository root>/<Worktree root><id>/.git`, and `<shared>/worktrees/<id>/HEAD` contains `ref: refs/heads/story/<id>`. Any difference (missing files, another path, another branch) → point to `/po-research <id>` and stop.
 4. `docs/plans/<id>.md` exists in the worktree; otherwise point to `/po-plan <id>`.
 5. Its frontmatter holds `validated: yes`; otherwise stop with "The plan for <id> is not approved yet. Review it, then run /po-plan <id>."
 6. `docs/reviews/<id>.md` exists in the worktree with `Ship allowed: no` as its last verdict → this is a **fix run**; the review's findings come before anything else.

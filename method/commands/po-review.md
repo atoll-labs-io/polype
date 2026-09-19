@@ -21,7 +21,7 @@ No Agent tool available → say so and stop.
 ## Preconditions
 - `AGENTS.local.md` exists; otherwise point to `/po-setup`.
 - $ARGUMENTS matches one id; otherwise list the ids and stop.
-- The worktree is registered for this story: `<repository root>/.git/worktrees/<id>/gitdir` contains `<repository root>/<Worktree root><id>/.git` and `<repository root>/.git/worktrees/<id>/HEAD` contains `ref: refs/heads/story/<id>`. Otherwise stop; do not switch branches.
+- The worktree is registered for this story, checked the way `/po-execute` does it (shared git directory found through `<repository root>/.git`, folder or file; then `<shared>/worktrees/<id>/gitdir` and `<shared>/worktrees/<id>/HEAD`). Otherwise stop; do not switch branches.
 - Read the previous `docs/reviews/<id>.md` if there is one: its `Fix loop:` value plus one is this review's loop number (0 when there is none). A third blocked review in a row is not requested: stop and hand the open findings to a human.
 
 ## Delegation
