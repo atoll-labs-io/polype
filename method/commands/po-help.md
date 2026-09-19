@@ -12,6 +12,7 @@ Reads settings: none
 - `/po-setup` — écrit `AGENTS.local.md` : branche cible, mode de merge, qui approuve les plans, commandes du projet.
 - `/po-prd <SaaS cible>` — cadre le remplacement (`replace`) ou l'adaptation (`adapt`) d'un SaaS existant, une question à la fois.
 - `/po-brief` — met une idée neuve (`new`) à l'épreuve, une question à la fois, jusqu'à un brief approuvé.
+- `/po-stories` — découpe le PRD ou le brief approuvé en stories livrables par un agent, dans `docs/stories.md`.
 - Les stories vont dans `docs/stories.md`, sur le modèle `templates/stories.md`.
 
 ## Le cycle d'une story
