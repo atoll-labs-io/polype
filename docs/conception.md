@@ -30,8 +30,8 @@ Setup ─ choix du mode ─┬─ Remplacer ─┐
                        ├─ Adapter ───┼─ Stories ─ Revue stories ─ Architecture (boilerplate) ─ Design system
                        └─ Zéro ──────┘
 puis, par story (en parallèle, une lane par ownership disjoint) :
-Research ─ Design ─ Plan ─ Execute ─ Review ─ Ship (merge dans la branche d'intégration)
-fin de milestone : revue transverse (/roast-me) ─ PR humaine vers main
+Research ─ Design ─ Plan ─ Execute ─ Review ─ Ship (squash dans la branche cible, ADR-0015)
+à la demande : revue transverse (/roast-me)
 ```
 
 - **Remplacer** : PRD de kill, mode remplacement interne. Parité fonctionnelle sur la boucle cœur, cimetière assumé.
@@ -104,14 +104,16 @@ Capacités à couvrir : base de données, auth, autorisation, multi-tenant, fich
 - [ADR-0009](decisions/ADR-0009-briques-optimales-interchangeables.md) — techno optimale par capacité, briques interchangeables selon l'hébergeur.
 - [ADR-0010](decisions/ADR-0010-next-forge-premier-profil.md) — next-forge comme premier boilerplate profilé.
 - [ADR-0011](decisions/ADR-0011-usage-cible-et-distribution.md) — B2C d'abord, auto-hébergé en avant, offre gérée par abonnement et à l'usage.
+- [ADR-0012](decisions/ADR-0012-pas-de-rouge-dabord.md) — pas de rouge-d'abord à l'implémentation, preuve de morsure en revue.
+- ~~ADR-0013~~ — remplacée par ADR-0015.
+- [ADR-0014](decisions/ADR-0014-checkpoints-groupes.md) — validation des plans groupée par vague en flotte (le volet « ship au milestone » tombe avec ADR-0015).
+- [ADR-0015](decisions/ADR-0015-squash-direct-et-corrections-au-fil-de-leau.md) — chaque story squashée dans la branche cible, corrections au fil de l'eau.
 
 ## Qualité
 
-La [matrice de parité](parite-killer-saas.md) liste chaque mécanisme de Killer SaaS et son traitement dans Polype. Chaque ligne devient un critère d'acceptation des stories de Polype.
+La [matrice de parité](parite-killer-saas.md) liste chaque mécanisme de Killer SaaS et son traitement dans Polype. Chaque ligne devient un critère d'acceptation des stories de Polype. `bin/ks-overlap` vérifie à chaque milestone qu'aucun texte n'est repris.
 
 ## Questions ouvertes
 
-1. **Tensions T1 à T4** de la matrice de parité.
-2. **Catalogue de capacités** : brique par défaut de chaque capacité, à la lumière d'ADR-0011.
-3. **Stories et milestones de Polype** avant de construire.
-4. **Noms** : au fil de l'eau.
+1. **Catalogue de capacités** : brique par défaut de chaque capacité, à la lumière d'ADR-0011.
+2. **Noms** : au fil de l'eau.

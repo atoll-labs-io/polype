@@ -1,12 +1,12 @@
 ---
 adr: 0013
 title: Squash de chaque story dans la branche d'intégration, PR humaine par milestone
-status: accepted
+status: superseded
 date: 2026-09-18
 deciders: [lecrabe]
 tags: [adr, polype, git]
 supersedes: []
-superseded-by: []
+superseded-by: [ADR-0015]
 ---
 
 # ADR-0013 — Squash de chaque story dans la branche d'intégration, PR humaine par milestone
