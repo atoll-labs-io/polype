@@ -18,6 +18,12 @@ E2E browsers:      —
 Build stage:       —
 Issue tracker:     —
 Worktree root:     .worktrees/
+Entry mode:        —
+Design source:     —
+Design skill:      —
+Design tool:       —
+Story track:       auto
+Flow threshold:    2
 ```
 
 ## Commands
