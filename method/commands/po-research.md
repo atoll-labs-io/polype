@@ -19,6 +19,7 @@ Output of this command: a worktree and one file, `docs/research/<id>.md`. Nothin
 ## Checks first
 - No `AGENTS.local.md` → stop and point to `/po-setup`.
 - Match $ARGUMENTS to one id of `docs/stories.md`. None or several → list the ids and stop.
+- `docs/reviews/stories.md` missing on `Target branch`, or its last `Stories ready:` line not `yes` → warn that the stories have not passed their review, suggest /po-stories-review, and carry on: this check never blocks.
 
 ## The worktree
 Path: `<repository root>/<Worktree root><id>`. Branch: `story/<id>`.
