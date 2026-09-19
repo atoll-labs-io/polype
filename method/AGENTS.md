@@ -9,17 +9,35 @@ A setting is a line `Name: value` in `AGENTS.local.md`; its value is the text af
 
 ## Law 1 — Nothing reaches the code except through a story
 
-Every change is a story unless the user explicitly calls it a quick fix. A story walks these stages, none skipped, none reordered:
+Every change is a story unless the user explicitly calls it a quick fix. Framing runs once, before the first story; then each story walks its own cycle.
+
+### Framing
+
+| Stage | Command | Produces |
+| --- | --- | --- |
+| Setup | `/po-setup` | `AGENTS.local.md` |
+| Scope | `/po-prd` (`replace`, `adapt`) or `/po-brief` (`new`), per `Entry mode` | an approved `docs/prd.md` or `docs/brief.md` |
+| Stories | `/po-stories` | `docs/stories.md` |
+| Stories review | `/po-stories-review` | `docs/reviews/stories.md` ending with `Stories ready:` |
+| Architecture | `/po-architect` | `docs/architecture.md` and its ADRs |
+| Design system | `/po-design-system` | `docs/design-system.md` |
+
+### Per story
+
+A story walks these stages, none skipped, none reordered:
 
 | Stage | Command | Produces |
 | --- | --- | --- |
 | Research | `/po-research` | the story worktree, `docs/research/<id>.md` |
+| Design (stories with a screen) | `/po-design` | `docs/designs/<id>/` |
 | Plan | `/po-plan` | `docs/plans/<id>.md`, validated |
 | Execute | `/po-execute` | code, tests, `docs/verif/<id>.md`, one commit |
 | Review | `/po-review` | `docs/reviews/<id>.md` with a verdict |
 | Ship | `/po-ship` | one squash commit on `Target branch` |
 
-`/po-setup` runs once before any story. `/po-orchestrator` walks one story through every stage; `/po-status` reports where each story is; `/po-help` shows this map. Launch these commands rather than briefing an agent by hand: the command files hold the fix mode, the subagent contracts and the gates, and a hand-written brief silently drops them.
+The short track, `/po-flow`, does research and plan in one context for a story that `Story track` and `Flow threshold` allow, then runs the same execute, review and ship; every gate stays in place.
+
+`/po-orchestrator` walks one story through its cycle, choosing the track and adding design when the story has a screen; `/po-status` reports the framing and where each story is; `/po-help` shows this map. Launch these commands rather than briefing an agent by hand: the command files hold the fix mode, the subagent contracts and the gates, and a hand-written brief silently drops them.
 
 Stories are written in `docs/stories.md`, following `templates/stories.md`.
 
@@ -50,7 +68,7 @@ Severity decides what a review blocks. **Critical** stops the ship. **Major** is
 
 A worktree has one occupant at a time. Every shell command a subagent runs inside it starts with `cd <absolute worktree path> &&` or uses `git -C <absolute worktree path>`, because a subagent's shell does not stay where it was.
 
-While a story is running, its worktree legitimately holds uncommitted work under `docs/`: the research, the plan and, during a fix run, the review. Anything else uncommitted that the current agent did not create is a reason to stop.
+While a story is running, its worktree legitimately holds uncommitted work under `docs/`: the research, the design of a story with a screen (`docs/designs/<id>/`), the plan and, during a fix run, the review. Anything else uncommitted that the current agent did not create is a reason to stop.
 
 ## Law 5 — Quick fixes stay small
 
@@ -61,7 +79,7 @@ State the scope before touching anything, change as little as possible, respect 
 ## Law 6 — Evidence lives next to the code
 
 All pipeline output is markdown under `docs/`, in git.
-- `docs/stories.md` and `docs/architecture.md` are committed on `Target branch`. Research, plan, record and review travel on `story/<id>`, so the story's commit and its pull request carry their own evidence.
+- The framing files — `docs/prd.md` or `docs/brief.md`, `docs/stories.md`, `docs/reviews/stories.md`, `docs/architecture.md`, `docs/design-system.md` — are committed on `Target branch`. Research, design (`docs/designs/<id>/`), plan, record and review travel on `story/<id>`, so the story's commit and its pull request carry their own evidence.
 - Keep research under ~200 lines, plans under ~250, reviews under ~150: every stage after yours reads them. Trim sentences, never tables that record decisions.
 - The plan's checkboxes are the progress bar; ticking one never triggers a commit.
 - A story is committed once by the implementer. A fix run adds one commit of its own; a migration may get its own commit so it can be reverted alone. Ship squashes everything into one commit on `Target branch`.

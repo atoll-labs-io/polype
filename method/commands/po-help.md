@@ -27,8 +27,8 @@ Reads settings: none
 5. `/po-ship <story>` — verdict vérifié, contrôles lourds une fois, squash, nettoyage.
 
 ## Outils
-- `/po-orchestrator <story>` — enchaîne les cinq étapes et ne s'arrête que pour tes décisions.
-- `/po-status` — l'état de chaque story et la commande suivante.
+- `/po-orchestrator <story>` — choisit la piste (complète ou courte), ajoute le design pour une story avec écran, enchaîne les étapes et ne s'arrête que pour tes décisions.
+- `/po-status` — l'état du cadrage, puis de chaque story (piste comprise) et la commande suivante.
 - `/po-flow <story>` — voie courte pour une petite story : research et plan en une passe, puis le même cycle, sans rien alléger.
 
 ## Repères
