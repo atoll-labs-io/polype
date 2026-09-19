@@ -14,6 +14,7 @@ Reads settings: none
 - `/po-brief` — met une idée neuve (`new`) à l'épreuve, une question à la fois, jusqu'à un brief approuvé.
 - `/po-stories` — découpe le PRD ou le brief approuvé en stories livrables par un agent, dans `docs/stories.md`.
 - `/po-stories-review` — fait relire les stories par un subagent en contexte frais, périmètre en main ; verdict dans `docs/reviews/stories.md`.
+- `/po-architect` — part du boilerplate du projet, en tire les conventions (règles dans `AGENTS.local.md`) et une ADR par choix structurant ; écrit `docs/architecture.md`.
 - Les stories vont dans `docs/stories.md`, sur le modèle `templates/stories.md`.
 
 ## Le cycle d'une story
