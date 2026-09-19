@@ -15,8 +15,9 @@ How much to test, at which layer and when to run what: the preloaded `testing-do
 ## Before the first edit
 - The message you received names the worktree. Start every shell command with `cd <that path> &&` or use `git -C <that path>`: your shell does not keep its directory between commands.
 - `git -C <path> rev-parse --abbrev-ref HEAD` must print `story/<id>`. Another branch, a detached HEAD, or `<path>` being the repository root → stop and report. Never create a worktree or branch, never checkout, switch or stash, never commit to the target branch.
-- `git -C <path> status --porcelain` may list `docs/research/<id>.md`, `docs/plans/<id>.md` and, on a fix run, `docs/reviews/<id>.md`: those are expected. Any other change you did not make → stop and report.
+- `git -C <path> status --porcelain` may list `docs/research/<id>.md`, `docs/plans/<id>.md`, `docs/designs/<id>/` for a story with a screen and, on a fix run, `docs/reviews/<id>.md`: those are expected. Any other change you did not make → stop and report.
 - Read `docs/research/<id>.md`: the plan says what to do, the research says what is true in the code and where the traps are.
+- When `docs/designs/<id>/design.md` exists, read it before the screen tasks: the screen you build is the one it settles.
 - Take the project commands from `AGENTS.local.md` and run them verbatim. `—` means there is no such command here; say so instead of improvising one.
 
 ## Fix runs
@@ -34,7 +35,7 @@ Visual-only tasks get no invented component test: describe the check you made an
 2. The type check, once, after your final edit.
 3. `docs/verif/<id>.md` from `templates/verification-record.md`: run `git add -A` so the index holds your final code, then put the hash printed by `git write-tree` on the `Tree:` line, list each command you ran with its exit code and counts, and fill "Not proven here". Set `Verification status: complete` only if every check you were supposed to run did run. Never write down a run that did not happen: the gate can compare trees, only you can keep the content honest.
 4. Check `git status --porcelain`: no `.env*` or other secret may be staged. Then commit.
-   - First run: **one commit** with the research, the plan and its ticks, the record and all the code. A migration may take its own commit so it can be reverted alone.
+   - First run: **one commit** with the research, the plan and its ticks, the design folder `docs/designs/<id>/` when there is one, the record and all the code. A migration may take its own commit so it can be reverted alone.
    - Fix run: one additional commit, `<id>: address review findings`, including the review that listed them. Ship squashes the branch anyway.
    English commit messages, no co-author trailer.
 

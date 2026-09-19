@@ -26,14 +26,16 @@ Collect what the repository states on its own:
 
 These become the suggested answers. A command you did not find in a file stays `—`.
 
-## Step 2 — Five questions, one AskUserQuestion call each
+## Step 2 — Five questions, one AskUserQuestion call each, plus one follow-up on design
 1. How stories land: `Merge mode` `pr` or `local`, and the `Target branch` (suggest the default branch).
 2. Who approves plans: `Plan validation` `human` or `autonomous`. Propose the same value for `Ship confirmation`; change it only if the user asks.
 3. Where the project starts, `Entry mode`: `replace` (an internal replacement for a paid SaaS), `adapt` (a competing product with an angle of its own) or `new` (an idea built from nothing).
-4. Who draws the screens, `Design source`: `internal` (an agent skill draws them in the repository), `external` (they come from a tool outside it) or not decided yet. In the same call, ask for the `Design skill` when the answer is `internal`, or the `Design tool` when it is `external`; the other one stays `—`.
+4. Who draws the screens, `Design source`: `internal` (an agent skill draws them in the repository), `external` (they come from a tool outside it) or not decided yet. Only the source is asked here.
 5. The project commands, with your suggestions from step 1.
 
-Nothing else is asked; every other setting keeps the template's value, `Story track` and `Flow threshold` included.
+Once the `Design source` answer is known, make one separate AskUserQuestion call for its detail: the `Design skill` when the answer is `internal`, the `Design tool` when it is `external`; the other one stays `—`. When the source is not decided yet, skip this call: both stay `—`.
+
+Nothing else is asked beyond these five questions and that follow-up; every other setting keeps the template's value, `Story track` and `Flow threshold` included.
 
 A `Design source` left at `—` is not a choice: every design command stops on it and asks for the source again. Setup never fills it on the user's behalf.
 

@@ -27,7 +27,7 @@ Everything below reads and writes inside the worktree.
 **A plan file already present?** Skip to "Approval" with a summary of it.
 
 ## Inputs
-The story, `docs/research/<id>.md`, `AGENTS.md`, `docs/architecture.md` if present, and the accepted ADRs. The test strategy follows the `testing-doctrine` skill.
+The story, `docs/research/<id>.md`, `docs/designs/<id>/design.md` when it exists, `AGENTS.md`, `docs/architecture.md` if present, and the accepted ADRs. The test strategy follows the `testing-doctrine` skill.
 
 Without a research file, warn that the plan would rest on documents that may no longer match the code, and continue only on the user's go-ahead.
 
@@ -37,6 +37,7 @@ Without a research file, warn that the plan would rest on documents that may no 
 - Stay within `Test budget`, or explain the excess in the test strategy. Access rules go in the policy's tests only; services test business rules; no pair-by-pair enum tests; each rule at one layer; adapters do not retest a 403.
 - **Run interdicts**: what must stay untouched and what must not be done, each verifiable by the reviewer.
 - **The pivot**: the decision everything hinges on and how it could be wrong.
+- When `docs/designs/<id>/design.md` exists, the screen tasks build what it settles, cite it, and add nothing it leaves out.
 - More than about ten tasks, or a story rated 5 → recommend splitting the story instead of writing a long plan.
 - A structural choice with alternatives (library, pattern, data model) gets an ADR in `docs/decisions/` from `templates/adr.md`; it stays on the story branch.
 

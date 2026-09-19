@@ -24,6 +24,7 @@ No Agent tool available → say so and stop.
 4. `docs/plans/<id>.md` exists in the worktree; otherwise point to `/po-plan <id>`.
 5. Its frontmatter holds `validated: yes`; otherwise stop with "The plan for <id> is not approved yet. Review it, then run /po-plan <id>."
 6. `docs/reviews/<id>.md` exists in the worktree with `Ship allowed: no` as its last verdict → this is a **fix run**; the review's findings come before anything else.
+7. Glob `docs/designs/<id>/*` in the worktree: any match means the story **has a design**, even when no orchestrator runs it.
 
 ## Delegation
 Call the Agent tool with `subagent_type: implementer`, description "Implement <id>", and this prompt, filled in:
@@ -33,6 +34,10 @@ Call the Agent tool with `subagent_type: implementer`, description "Implement <i
 For a fix run, append:
 
 > The last review blocked this story. Work from docs/reviews/<id>.md as your agent file describes for fix runs.
+
+When the story has a design, append:
+
+> This story has a design: docs/designs/<id>/ is expected uncommitted work, like the research and the plan. Read design.md before the screen tasks, build the screen it settles, and commit the folder with the story.
 
 Wait for the subagent to finish.
 

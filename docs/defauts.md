@@ -6,9 +6,9 @@ Le tracker d'issues de Polype est ce fichier tant que le dépôt n'est pas sur G
 
 | # | Source | Défaut | Statut |
 |---|---|---|---|
-| 1 | revue s11 | `po-setup` demande `Design skill` ou `Design tool` « dans le même appel » selon la réponse sur `Design source`, alors qu'un appel `AskUserQuestion` pose toutes ses questions d'un coup. | à corriger par s21 |
-| 2 | revue s18 | `/po-design` laisse `docs/designs/<id>/` non commité, mais l'`implementer` ne le compte pas parmi les documents non commités attendus : il s'arrêterait sur une story avec écran. | à corriger par s21 |
-| 3 | revue s20 | Même cause que le n° 2, vue depuis `po-plan` et les Lois 1 et 4 : le chemin manuel (sans orchestrateur) du design n'est pas raccordé. | à corriger par s21 |
+| 1 | revue s11 | `po-setup` demande `Design skill` ou `Design tool` « dans le même appel » selon la réponse sur `Design source`, alors qu'un appel `AskUserQuestion` pose toutes ses questions d'un coup. | corrigé par s21 |
+| 2 | revue s18 | `/po-design` laisse `docs/designs/<id>/` non commité, mais l'`implementer` ne le compte pas parmi les documents non commités attendus : il s'arrêterait sur une story avec écran. | corrigé par s21 |
+| 3 | revue s20 | Même cause que le n° 2, vue depuis `po-plan` et les Lois 1 et 4 : le chemin manuel (sans orchestrateur) du design n'est pas raccordé. | corrigé par s21 |
 | 4 | revue s13 | `po-brief` écrit `status: approved` et l'ADR avant de contrôler la branche et les fichiers d'environnement : un arrêt à ce moment laisse un brief « approuvé » à moitié commité. | ouvert |
 | 5 | revue s14 | L'exigence « brief approuvé » de `po-stories` n'a pas de test qui morde (la phrase testée figure deux fois). | ouvert |
 | 6 | revue s15 | Pour un brief, `stories-review` traite les non-objectifs comme un élément à couvrir et déclare le contrôle du cimetière « non applicable », alors que les non-objectifs jouent ce rôle. | ouvert |
