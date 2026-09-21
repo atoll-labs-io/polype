@@ -471,3 +471,17 @@ Objectif : faire avancer plusieurs stories en parallèle, reprendre après un ar
 - [ ] `help_lists_po_drive` — le test `every_command_listed_in_help` reste vert avec `/po-drive`.
 - [ ] `status_shows_lanes_and_attempts` — `/po-status` affiche, pour une flotte en cours, les lanes, les tentatives et les stories bloquées.
 - [ ] `parity_matrix_reflects_the_fleet` — les lignes A02, D05, D09, D16 et D17 passent à `fait — <chemin>`.
+
+### s32-fleet-consistency — Une lane complète, un linter honnête, des documents d'accord
+**En tant que** développeur **je veux** que la flotte respecte le cycle complet, que le linter ne certifie que ce qu'il a lu, et que les documents ne se contredisent pas **afin que** ce qui est livré en M3 soit fiable.
+
+- **Complexité** : 3
+- **Dépend de** : s31
+- **Owns** : `method/commands/po-drive.md`, `bin/po-lint`, `tests/lint.test.sh`, `tests/drive.test.sh`, `docs/parite-killer-saas.md`, `docs/conception.md`, `docs/defauts.md`
+- **Corrige** : défauts n° 12, 13 et 14
+
+**Critères d'acceptation**
+- [ ] `drive_lane_includes_design_when_the_story_has_a_screen` — une lane insère l'étape de design entre le plan et l'implémentation pour une story avec écran, aux conditions de `/po-design` (design system présent, `Design source` décidé) ; sans elles, la lane s'arrête et le dit, elle ne saute pas l'étape.
+- [ ] `lint_fails_when_it_reads_nothing` — `bin/po-lint` sort non nul si le listage des fichiers de méthode échoue ou ne renvoie aucun fichier, et n'affiche jamais un résumé favorable dans ce cas.
+- [ ] `lint_reports_how_many_files_it_read` — le résumé indique le nombre de fichiers lus, et le test le vérifie sur un répertoire vide comme sur le vrai.
+- [ ] `matrix_and_adr_index_agree_on_the_fleet` — la matrice dit d'une seule voix où vit l'état de la flotte, et `docs/conception.md` présente ADR-0017 comme la décision vivante, ADR-0014 comme remplacée.

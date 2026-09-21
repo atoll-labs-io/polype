@@ -19,3 +19,18 @@ Le tracker d'issues de Polype est ce fichier tant que le dépôt n'est pas sur G
 | 11 | revue s19 | Les tests de `po-flow` vérifient les phrases déclencheuses, pas l'effet des règles : plusieurs règles s'inversent sans test rouge. | corrigé par s25 |
 
 **Motif récurrent (n° 5, 7, 9, 10, 11)** : un test qui cherche une phrase dans un prompt prouve que la phrase existe, pas que l'agent l'applique. Les vraies preuves de comportement sont les passages de bout en bout (`docs/validation/`). Piste : des évaluations comportementales par commande, rejouées en headless.
+
+## Relevés par les revues de M3 (2026-09-21)
+
+| # | Source | Défaut | Statut |
+|---|---|---|---|
+| 12 | revue s27 | Une lane de `/po-drive` enchaîne planner → implementer → reviewer sans l'étape de design, alors que la Loi 1 l'impose pour une story avec écran. | à corriger par s32 |
+| 13 | revue s25 | `bin/po-lint` conclut « aucun manquement » même quand il n'a lu aucun fichier (échec silencieux du listage). | à corriger par s32 |
+| 14 | revue s31 | La matrice se contredit sur l'état de la flotte (D17 contre les lignes tracker), et `docs/conception.md` présente encore ADR-0014 comme vivante alors qu'ADR-0017 la remplace. | à corriger par s32 |
+| 15 | revue s23 | `tests/design-handoff.test.sh` modifié hors du périmètre déclaré de la story. | ouvert |
+| 16 | revue s30 | `docs/decisions/ADR-0014-…` modifiée hors du périmètre déclaré de la story. | ouvert |
+| 17 | revue s28 | `method/templates/review.md` n'a pas de section pour le contrôle d'ownership, qui précède désormais les six étapes. | ouvert |
+| 18 | revue s29 | `/po-drive` : la reprise « research présente, plan absent » est annoncée mais pas décrite jusqu'au bout. | ouvert |
+| 19 | revue s29 | `/po-drive` : deux lignes de la table de reprise se recouvrent, sans priorité déclarée (cas d'un arrêt après un fix run). | ouvert |
+| 20 | revue s25 | `tests/design.test.sh` : le message d'échec promet un contrôle « sur la même ligne » que l'assertion ne fait pas. | ouvert |
+| 21 | revue s22 | Findings mineurs de formulation laissés par plusieurs revues (voir les rapports). | ouvert |
