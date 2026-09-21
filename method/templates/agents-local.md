@@ -26,6 +26,9 @@ Design skill:      —
 Design tool:       —
 Story track:       auto
 Flow threshold:    2
+Parallel:          3
+Max attempts:      2
+Tracker:           none
 ```
 
 | Setting | Values |
@@ -49,6 +52,9 @@ Flow threshold:    2
 | Design tool | tool the screens come from when `Design source` is `external`; `—` otherwise |
 | Story track | `full` — every story walks every stage · `flow` — every story takes the short track · `auto` — the short track up to `Flow threshold` |
 | Flow threshold | highest story complexity allowed on the short track when `Story track` is `auto` |
+| Parallel | how many story lanes the fleet driver runs at once |
+| Max attempts | fix runs a story gets before the fleet driver hands it to a human |
+| Tracker | where the fleet publishes story state: `none` · `github` when the repository has a remote |
 
 ## Commands
 
