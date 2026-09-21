@@ -1,6 +1,6 @@
 ---
 name: stories-review
-description: How to judge docs/stories.md against the approved PRD or brief before any story is built — scope coverage first, then graveyard, disguised layers, testable criteria, dependency order, complexity, ids and Owns overlap, with a severity scale of its own. Preloaded in the stories-reviewer.
+description: How to judge docs/stories.md against the approved PRD or brief before any story is built — scope coverage first, then exclusions (graveyard or non-goals), disguised layers, testable criteria, dependency order, complexity, ids and Owns overlap, with a severity scale of its own. Preloaded in the stories-reviewer.
 ---
 # Reviewing stories before they are built
 
@@ -8,9 +8,9 @@ A gap in the stories is cheapest now: fixing it here means editing one markdown 
 
 ## Checks, in this order
 
-**1. Coverage, table in hand.** Before reading any story on its own merits, list the scope and match each item to the stories that serve it. From a PRD: each line of `## Core loop` and the `## Angle`. From a brief: the `## Wedge & non-goals` and each entry of `## Premises`. One row per item, the ids that cover it, and whether it is covered. A story counts only when its criteria would actually deliver the item, not when its title mentions it. An item of the scope that no story covers is critical. A story that traces to no item is out of scope (see "Scope: core loop and graveyard" in `agentic-stories`).
+**1. Coverage, table in hand.** Before reading any story on its own merits, list the scope and match each item to the stories that serve it. From a PRD: each line of `## Core loop` and the `## Angle`. From a brief: the wedge, the single capability that opens `## Wedge & non-goals`, and each entry of `## Premises`. What that section rules out is scope kept away, not scope to deliver: check 2 reads it. One row per item, the ids that cover it, and whether it is covered. A story counts only when its criteria would actually deliver the item, not when its title mentions it. An item of the scope that no story covers is critical. A story that traces to no item is out of scope (see "Scope: core loop and graveyard" in `agentic-stories`).
 
-**2. Graveyard.** With a PRD (`replace` or `adapt`), read every story against `## Graveyard`. A story that brings a buried feature back, even renamed or shrunk, is critical. With a brief, there is no graveyard: mark the check as not applicable.
+**2. Exclusions.** Read every story against what the source keeps out: with a PRD (`replace` or `adapt`), `## Graveyard`; with a brief, the non-goals listed under `## Wedge & non-goals`. This check runs on every source — a brief names no graveyard, but its non-goals hold that place. A story that brings an excluded item back, even renamed or shrunk, is critical.
 
 **3. Technical layers dressed as stories.** A story nobody can try — a table, an endpoint, a service on its own — breaks "Vertical slices". A contract story that meets the conditions of "Owns and contracts first" is allowed; one that has a single consumer or no observable test is not.
 
@@ -25,7 +25,7 @@ A gap in the stories is cheapest now: fixing it here means editing one markdown 
 **8. Owns overlap.** Compare the `Owns` of every pair of stories, directories included: a directory owned by one story covers every path beneath it. Two stories with no dependency between them that share an `Owns` path are flagged as critical: run side by side, they would edit the same files. A dependency counts when either story reaches the other through its `Depends on` chain. A story that declares no `Owns` at all is a major finding: nobody can tell what it may touch.
 
 ## Severity
-- **critical** — a scope item no story covers; a graveyard feature revived; a dependency on a later or unknown story; an `Owns` path shared by two stories with no dependency between them. Each of these wastes whole cycles once building starts.
+- **critical** — a scope item no story covers; an excluded item revived, graveyard feature or non-goal; a dependency on a later or unknown story; an `Owns` path shared by two stories with no dependency between them. Each of these wastes whole cycles once building starts.
 - **major** — a technical layer dressed as a story; a criterion no test can check; a 5 left unsplit; a 4 without its risk; a story with no `Owns`.
 - **minor** — id format, thin notes, wording.
 

@@ -52,3 +52,36 @@ test_stories_review_is_a_soft_gate() {
   grep -qF 'Stories ready:' <<< "$checks" || fail "po-research does not read the Stories ready verdict"
   grep -qF 'this check never blocks' <<< "$checks" || fail "po-research does not keep the stories review soft"
 }
+
+# s23 — a brief's non-goals are the exclusion list, not scope to cover.
+test_stories_review_treats_non_goals_as_the_graveyard() {
+  local checks coverage exclusions
+  require_file "$SKILL"
+  checks=$(section_of "$SKILL" 'Checks, in this order')
+  coverage=$(grep -m1 '^\*\*1\.' <<< "$checks")
+  exclusions=$(grep -m1 '^\*\*2\.' <<< "$checks")
+  grep -qF 'From a brief: the wedge,' <<< "$coverage" \
+    || fail "the coverage check does not take the wedge alone as the brief's scope item"
+  ! grep -qF '`## Wedge & non-goals` and each entry' <<< "$coverage" \
+    || fail "the coverage check still counts the non-goals among the items to cover"
+  grep -qF '## Graveyard' <<< "$exclusions" || fail "check 2 does not read the graveyard of a PRD"
+  grep -qF 'non-goals' <<< "$exclusions" || fail "check 2 does not read the non-goals of a brief"
+  ! grep -qF 'not applicable' "$SKILL" || fail "stories-review still drops a check as not applicable"
+  section_of "$SKILL" 'Severity' | grep -qF 'non-goal' \
+    || fail "the severity scale does not rate a revived non-goal"
+}
+
+test_stories_review_template_separates_scope_and_exclusions() {
+  local coverage exclusions
+  require_file "$TEMPLATE"
+  coverage=$(section_of "$TEMPLATE" 'Coverage')
+  exclusions=$(section_of "$TEMPLATE" 'Exclusions')
+  grep -q '^| Scope item' <<< "$coverage" || fail "the template has no coverage table"
+  ! grep -qFi 'non-goal' <<< "$coverage" || fail "the template still offers the non-goals as a coverage source"
+  grep -q '^| Excluded item' <<< "$exclusions" || fail "the template has no exclusions table"
+  grep -qF '## Graveyard' <<< "$exclusions" || fail "the exclusions table does not name the graveyard of a PRD"
+  grep -qFi 'non-goal' <<< "$exclusions" || fail "the exclusions table does not name the non-goals of a brief"
+  section_of "$TEMPLATE" 'Checks' | grep -qF 'Exclusions:' \
+    || fail "the template checks do not list the exclusions check"
+  ! grep -qF 'PRD only' "$TEMPLATE" || fail "the template still restricts the exclusions check to a PRD"
+}
