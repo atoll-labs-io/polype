@@ -326,3 +326,148 @@ Construit par Polype lui-même : chaque story passe par `/po-orchestrator`. Conv
 - [ ] `defects_one_to_three_marked_fixed` — dans `docs/defauts.md`, les lignes 1 à 3 passent à `corrigé par s21`.
 
 **Notes pour l'agent** : les formulations de l'orchestrateur (étape 5, phrase ajoutée au prompt de `/po-execute`) restent valables ; `po-execute` doit porter la même information par lui-même. Les tests existants de `tests/setup-modes.test.sh` qui citent l'ancienne formulation de la question 4 changent avec elle : le dire dans le rapport.
+
+## Correctifs des défauts de M2
+
+Mêmes conventions que M2. Chaque story ferme des lignes de `docs/defauts.md` et les passe à `corrigé par <id>`.
+
+### s22-brief-order — Écrire le brief approuvé seulement après les contrôles
+**En tant que** développeur **je veux** que `/po-brief` fasse ses contrôles avant d'écrire quoi que ce soit d'approuvé, et que l'exigence « brief approuvé » de `/po-stories` soit réellement testée **afin qu'**un arrêt en cours de route ne laisse pas un brief à moitié approuvé.
+
+- **Complexité** : 2
+- **Dépend de** : aucune
+- **Owns** : `method/commands/po-brief.md`, `method/commands/po-stories.md`, `tests/brief.test.sh`, `tests/stories.test.sh`, `docs/defauts.md`
+- **Corrige** : défauts n° 4 et 5
+
+**Critères d'acceptation**
+- [ ] `brief_checks_before_writing_approved` — la branche, les fichiers d'environnement et tout autre contrôle bloquant passent **avant** l'écriture de `status: approved` et avant l'ADR ; un arrêt laisse le brief en `status: interviewing`.
+- [ ] `brief_commits_approval_and_adr_together` — l'approbation et son ADR partent dans le même commit, ou aucun des deux.
+- [ ] `stories_requires_an_approved_source_with_a_biting_test` — le test distingue un brief approuvé d'un brief en cours : il échoue si la commande accepte `status: interviewing`.
+
+### s23-stories-review-nongoals — Les non-objectifs jouent le rôle du cimetière
+**En tant que** développeur **je veux** que la revue des stories traite les non-objectifs d'un brief comme le cimetière d'un PRD **afin qu'**une story hors périmètre soit signalée aussi bien pour une idée neuve que pour un clone.
+
+- **Complexité** : 2
+- **Dépend de** : aucune
+- **Owns** : `method/skills/stories-review/SKILL.md`, `method/templates/stories-review.md`, `tests/stories-review.test.sh`, `docs/defauts.md`
+- **Corrige** : défaut n° 6
+
+**Critères d'acceptation**
+- [ ] `stories_review_treats_non_goals_as_the_graveyard` — pour un brief, le contrôle de périmètre porte sur le wedge et les exigences, et les non-objectifs sont contrôlés comme une liste d'exclusions, jamais « non applicable ».
+- [ ] `stories_review_template_separates_scope_and_exclusions` — le gabarit a une section de couverture et une section d'exclusions, chacune remplie quelle que soit la source.
+
+### s24-architect-conventions — Ne jamais perdre une convention écrite à la main
+**En tant que** développeur **je veux** que `/po-architect` complète la section Conventions au lieu de la remplacer, et que la protection des blocs de réglages soit testée **afin qu'**une relance ne fasse disparaître ni réglage ni convention.
+
+- **Complexité** : 2
+- **Dépend de** : aucune
+- **Owns** : `method/commands/po-architect.md`, `tests/architect.test.sh`, `docs/defauts.md`
+- **Corrige** : défauts n° 7 et 8
+
+**Critères d'acceptation**
+- [ ] `architect_merges_conventions_instead_of_replacing` — à la relance, les conventions déjà présentes sont conservées ; les nouvelles s'ajoutent, et une convention contredite est signalée à l'utilisateur au lieu d'être écrasée en silence.
+- [ ] `architect_protects_the_settings_blocks` — la commande ne touche aucun bloc de réglages, et le test échoue si cette garantie disparaît du fichier.
+
+### s25-method-lint — Un linter qui fait mordre les règles de méthode
+**En tant que** développeur **je veux** un contrôle mécanique des invariants de la méthode **afin qu'**une règle supprimée d'un prompt fasse échouer la suite, au lieu de passer parce qu'un test cherchait seulement une phrase.
+
+- **Complexité** : 3
+- **Dépend de** : aucune
+- **Owns** : `bin/po-lint`, `tests/lint.test.sh`, `tests/design.test.sh`, `tests/design-system.test.sh`, `tests/flow.test.sh`, `docs/defauts.md`
+- **Corrige** : défauts n° 9, 10 et 11
+
+**Critères d'acceptation**
+- [ ] `lint_checks_every_command_declares_its_settings` — `bin/po-lint` échoue si une commande ou un subagent n'a pas de ligne `Reads settings:`, ou lit un réglage absent du gabarit.
+- [ ] `lint_checks_tool_permissions_match_the_contract` — il échoue si une commande qui interdit d'écrire du code possède Write, Edit ou Bash, si un subagent qui juge possède Write, ou si une commande qui pose une question n'a pas AskUserQuestion.
+- [ ] `lint_checks_fail_closed_rules_have_a_stop` — chaque règle annoncée comme bloquante (un fichier manquant, un réglage à `—`, un verdict négatif) est suivie d'un arrêt explicite dans le même paragraphe ; sinon il échoue.
+- [ ] `lint_is_part_of_the_suite` — `tests/lint.test.sh` lance `bin/po-lint` et échoue avec lui.
+- [ ] `design_stop_rules_bite` — les tests de `/po-design`, `/po-design-system` et `/po-flow` vérifient la conséquence de chaque règle (l'arrêt, l'absence de production, l'escalade), pas seulement la présence d'une phrase.
+
+**Notes pour l'agent** : `bin/po-lint` est un script bash sans dépendance, à la façon de `bin/ks-overlap`. Il lit `method/` et sort non nul en listant chaque manquement avec `fichier:ligne`. Les règles qu'il vérifie sont celles que l'on peut décider sans interpréter : présence, permissions, voisinage d'un arrêt.
+
+## M3 — La flotte
+
+Objectif : faire avancer plusieurs stories en parallèle, reprendre après un arrêt, et garder toutes les garanties du cycle. Architecture retenue : [ADR-0016](decisions/ADR-0016-flotte-un-driver-des-subagents.md) — un driver unique qui lance des subagents.
+
+### s26-planner — Le subagent qui explore et planifie
+**En tant que** développeur **je veux** un subagent `planner` qui fait la research et le plan d'une story dans son worktree **afin que** le driver puisse lancer plusieurs stories à la fois, puisqu'un subagent ne peut pas exécuter une commande.
+
+- **Complexité** : 3
+- **Dépend de** : aucune
+- **Owns** : `method/agents/planner.md`, `tests/planner.test.sh`
+- **Matrice** : D02 et D04 côté flotte
+
+**Critères d'acceptation**
+- [ ] `planner_carries_the_research_and_plan_contracts` — le subagent porte les exigences de `/po-research` (vérification des hypothèses, faits avec `path:line`, plafond) et de `/po-plan` (tâches vérifiables, interdits, pivot, budget de tests, plafond), sans les réécrire à sa façon.
+- [ ] `planner_preloads_testing_doctrine_and_codebase_analysis` — les deux skills sont préchargés.
+- [ ] `planner_never_writes_code` — il n'écrit que `docs/research/<id>.md` et `docs/plans/<id>.md`, et s'arrête si le worktree ou la branche ne correspondent pas.
+- [ ] `planner_reports_the_track_it_used` — il dit s'il a produit une research séparée ou un plan de voie courte, selon `Story track` et `Flow threshold`.
+
+### s27-drive — Le driver de la flotte
+**En tant que** développeur **je veux** une commande `/po-drive` qui fait avancer toutes les stories prêtes en parallèle **afin de** ne plus lancer une story à la fois.
+
+- **Complexité** : 4 — risque : plusieurs lanes écrivent dans le même dépôt ; l'isolation tient aux worktrees et à `Owns`.
+- **Dépend de** : s26
+- **Owns** : `method/commands/po-drive.md`, `method/templates/agents-local.md`, `tests/drive.test.sh`
+- **Matrice** : D05 et D16 côté flotte
+
+**Critères d'acceptation**
+- [ ] `drive_picks_a_ready_set_without_conflicts` — sont prêtes les stories non livrées dont toutes les dépendances sont livrées et dont les chemins `Owns` ne recoupent ni ceux des autres lanes en cours ni ceux du lot choisi ; au plus `Parallel` lanes.
+- [ ] `drive_dispatches_lanes_in_one_message` — les subagents d'une vague sont lancés ensemble, `planner` puis `implementer` puis `reviewer` par lane, chacun selon son contrat.
+- [ ] `drive_never_writes_code_or_verdicts` — le driver n'a ni Write ni Edit ; il prépare les worktrees, lance, vérifie et rapporte.
+- [ ] `drive_ships_serially_after_each_review` — les ships passent un par un sur la branche cible, gate `Ship allowed` compris ; une story bloquée repart en fix run dans la limite de `Max attempts`.
+- [ ] `settings_template_declares_fleet_settings` — `Parallel` (défaut 3), `Max attempts` (défaut 2) et `Tracker` (`none` par défaut ; `github` quand le dépôt a un remote) sont déclarés et documentés.
+
+**Notes pour l'agent** : `Tracker: github` n'est pas implémenté ici ; la valeur est déclarée et la commande dit qu'elle la traitera quand le dépôt aura un remote. L'état d'une story se lit dans son worktree et dans git, comme le fait `/po-status`.
+
+### s28-ownership — Le diff d'une story reste dans ce qu'elle possède
+**En tant que** développeur **je veux** que le dépassement de périmètre d'une story soit détecté **afin que** deux lanes parallèles ne se marchent pas dessus sans qu'on le voie.
+
+- **Complexité** : 2
+- **Dépend de** : s27
+- **Owns** : `method/agents/reviewer.md`, `method/skills/review-antihallu/SKILL.md`, `tests/ownership.test.sh`
+- **Matrice** : A02 et D09 côté flotte
+
+**Critères d'acceptation**
+- [ ] `reviewer_checks_the_diff_against_owns` — la revue compare les fichiers du diff aux chemins `Owns` de la story ; un fichier hors périmètre est un finding majeur, critique s'il appartient à une autre story en cours.
+- [ ] `review_procedure_places_the_ownership_step_first` — le contrôle de périmètre vient avant la lecture du diff, car il décide de ce qui doit être lu.
+
+### s29-resume — Reprendre une flotte interrompue
+**En tant que** développeur **je veux** que `/po-drive` reprenne ce qui existe déjà **afin qu'**un arrêt, un crash ou une session close ne fasse pas recommencer les stories à zéro.
+
+- **Complexité** : 3
+- **Dépend de** : s27
+- **Owns** : `method/commands/po-drive.md`, `tests/resume.test.sh`
+- **Matrice** : D17 côté flotte
+
+**Critères d'acceptation**
+- [ ] `drive_resumes_from_what_exists` — pour chaque story, l'étape atteinte se déduit des fichiers du worktree (research, plan validé ou non, record, revue) et de git ; la lane reprend à l'étape suivante.
+- [ ] `drive_status_reports_lanes` — `/po-drive status` liste les lanes en cours, les tentatives, les stories bloquées et ce qu'elles attendent, sans rien lancer.
+- [ ] `drive_detects_an_orphan_worktree` — un worktree dont la branche ou le chemin ne correspond pas est signalé et n'est jamais réparé en silence.
+
+### s30-grouped-validation — Valider les plans d'une vague en une fois
+**En tant que** développeur **je veux** approuver les plans d'une vague en une seule question **afin de** garder un regard humain sans sérialiser la flotte.
+
+- **Complexité** : 2
+- **Dépend de** : s27
+- **Owns** : `method/commands/po-drive.md`, `docs/decisions/ADR-0017-validation-groupee.md`, `tests/grouped-validation.test.sh`
+- **Matrice** : ADR-0014 (volet restant)
+
+**Critères d'acceptation**
+- [ ] `drive_groups_plan_approval_per_wave` — avec `Plan validation: human`, le driver présente les plans de la vague dans un seul `AskUserQuestion` : approuver tout, choisir, ou arrêter ; seuls les plans approuvés passent à `validated: yes`.
+- [ ] `drive_says_when_nobody_reviewed` — avec `autonomous`, le driver le dit explicitement dans son rapport de vague.
+- [ ] `adr_0017_records_the_remaining_scope_of_adr_0014` — une ADR acceptée enregistre que la validation groupée reste, que le ship se fait par story (ADR-0015), et qu'ADR-0014 est remplacée.
+
+### s31-fleet-wiring — Relier la flotte aux règles, à l'aide et au statut
+**En tant que** développeur **je veux** que les règles, l'aide et le statut connaissent la flotte **afin qu'**on sache la lancer, la suivre et l'arrêter sans lire les fichiers de méthode.
+
+- **Complexité** : 2
+- **Dépend de** : s26 à s30
+- **Owns** : `method/AGENTS.md`, `method/commands/po-help.md`, `method/commands/po-status.md`, `tests/fleet-wiring.test.sh`, `docs/parite-killer-saas.md`
+- **Matrice** : D05, D16, D17, A02, D09 — statuts à mettre à jour
+
+**Critères d'acceptation**
+- [ ] `rules_describe_the_fleet` — `AGENTS.md` explique qu'une flotte est un driver et des lanes, que les ships restent en série, et que `Owns` borne chaque story.
+- [ ] `help_lists_po_drive` — le test `every_command_listed_in_help` reste vert avec `/po-drive`.
+- [ ] `status_shows_lanes_and_attempts` — `/po-status` affiche, pour une flotte en cours, les lanes, les tentatives et les stories bloquées.
+- [ ] `parity_matrix_reflects_the_fleet` — les lignes A02, D05, D09, D16 et D17 passent à `fait — <chemin>`.
