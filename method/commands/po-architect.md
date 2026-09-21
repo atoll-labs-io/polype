@@ -46,7 +46,11 @@ Each structural choice becomes one ADR in `docs/decisions/` from `templates/adr.
 Number them `NNNN-<slug>.md` from the next free number in `docs/decisions/`, with `scope: framing`. They become `status: accepted` once approved. An accepted ADR is never edited: a changed decision is a new ADR whose `supersedes` names the old one, and the old one gets `superseded-by` and `status: superseded`.
 
 ## Step 4 — Conventions as rules
-Write the conventions as rules in the `## Conventions` section of `AGENTS.local.md`. Replace only that section's placeholder or body, with Edit; every settings block stays as it is — this command reads settings, it never decides them. Each rule is one line an agent can obey, backed by the `path:line` where the base shows it.
+Write the conventions as rules in the `## Conventions` section of `AGENTS.local.md`, with Edit, and edit no other section of that file. A first run replaces the placeholder of that section; a rerun keeps every rule already written there and adds the new ones after them — the section is never rewritten from scratch, because a convention written by hand is not this command's to delete. Each rule is one line an agent can obey, backed by the `path:line` where the base shows it.
+
+A rule already written that the code now contradicts is kept and reported, never deleted in passing; a new rule that contradicts one already written is not added either. Both are quoted to the person in the grouped AskUserQuestion of "Approval and commit", who decides which one stands.
+
+Every settings block of `AGENTS.local.md` stays exactly as it is: this command reads settings, it never decides them.
 
 The project commands are quoted from the settings into `docs/architecture.md`. When the base defines different ones, report the difference and ask the user to edit the settings; do not change them.
 
@@ -55,7 +59,7 @@ Never propose rewriting, replacing or restructuring the base: stories adapt to i
 
 ## Approval and commit
 1. Draft `docs/architecture.md` from `templates/architecture.md`, filling its map, capability table, ownership and attachment points from steps 2 and 3.
-2. One grouped AskUserQuestion shows the drafted ADRs, the conventions and `docs/architecture.md` together and asks for approval. A change goes back to the step it belongs to; nothing is written before approval.
+2. One grouped AskUserQuestion shows the drafted ADRs, the conventions and `docs/architecture.md` together and asks for approval. On a rerun it also shows what the new conventions would remove or contradict, so approval is given on the difference and not on the draft alone. A change goes back to the step it belongs to; nothing is written before approval.
 3. Write the files. Rerun the installer if it is available, so `AGENTS.md` carries the new conventions; otherwise say that `AGENTS.md` will catch up at the next install.
 4. Check `git status --porcelain`: an environment file listed there → stop. On `Target branch`, commit `docs/architecture.md`, the new ADRs, `AGENTS.local.md` and, when the installer regenerated it, `AGENTS.md`, as `docs: architecture`.
 
