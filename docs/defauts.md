@@ -14,8 +14,8 @@ Le tracker d'issues de Polype est ce fichier tant que le dépôt n'est pas sur G
 | 6 | revue s15 | Pour un brief, `stories-review` traite les non-objectifs comme un élément à couvrir et déclare le contrôle du cimetière « non applicable », alors que les non-objectifs jouent ce rôle. | corrigé par s23 |
 | 7 | revue s16 | La garde qui protège les blocs de réglages quand `po-architect` écrit la section Conventions n'a aucun test. | corrigé par s24 |
 | 8 | revue s16 | En relance, `po-architect` remplace la section Conventions : des conventions écrites à la main peuvent disparaître. | corrigé par s24 |
-| 9 | revue s17 | La règle « `po-design-system` n'édite aucun fichier source » n'a pas de test qui morde. | ouvert |
-| 10 | revue s18 | L'arrêt de `po-design` quand `Design source` vaut `—` n'a pas de test qui morde. | ouvert |
-| 11 | revue s19 | Les tests de `po-flow` vérifient les phrases déclencheuses, pas l'effet des règles : plusieurs règles s'inversent sans test rouge. | ouvert |
+| 9 | revue s17 | La règle « `po-design-system` n'édite aucun fichier source » n'a pas de test qui morde. | corrigé par s25 |
+| 10 | revue s18 | L'arrêt de `po-design` quand `Design source` vaut `—` n'a pas de test qui morde. | corrigé par s25 |
+| 11 | revue s19 | Les tests de `po-flow` vérifient les phrases déclencheuses, pas l'effet des règles : plusieurs règles s'inversent sans test rouge. | corrigé par s25 |
 
 **Motif récurrent (n° 5, 7, 9, 10, 11)** : un test qui cherche une phrase dans un prompt prouve que la phrase existe, pas que l'agent l'applique. Les vraies preuves de comportement sont les passages de bout en bout (`docs/validation/`). Piste : des évaluations comportementales par commande, rejouées en headless.

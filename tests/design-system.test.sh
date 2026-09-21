@@ -9,12 +9,23 @@ TEMPLATE="$METHOD/templates/design-system.md"
 section_of() { awk -v h="## $2" '$0 == h {on=1; next} /^## / {on=0} on' "$1"; }
 
 test_design_system_never_invents_an_identity() {
+  local paragraph phrase
   require_file "$COMMAND"
   needs_tool "$COMMAND" AskUserQuestion
   contains "$COMMAND" 'This command never invents an identity:'
   section_of "$COMMAND" 'Step 1 — The source' \
     | grep -qF 'with no visual direction and no system in the base, stop and ask for the source' \
     || fail "step 1 does not stop and ask for the source"
+
+  # The rule holds only if the paragraph that states it also says what happens instead.
+  paragraph=$(section_of "$COMMAND" 'Step 3 — Measure contrast' \
+    | awk -v RS='' 'index($0, "The command edits no source file:")')
+  [ -n "$paragraph" ] || fail "step 3 does not say the command edits no source file"
+  for phrase in 'handed to the person' \
+                'a quick fix they name or through a story' \
+                'the code still carries the old values'; do
+    grep -qF -- "$phrase" <<< "$paragraph" || fail "the contrast fixes have no consequence: $phrase"
+  done
 }
 
 test_design_system_measures_contrast_once() {

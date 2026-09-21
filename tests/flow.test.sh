@@ -33,6 +33,7 @@ test_flow_keeps_every_gate() {
 }
 
 test_flow_checks_escalation_signals_twice() {
+  local body first second escalation plan
   require_file "$COMMAND"
   section_holds 'Escalation signals' \
     'a migration' \
@@ -42,7 +43,22 @@ test_flow_checks_escalation_signals_twice() {
     'a new dependency' \
     'before reading the code' \
     'after reading the code' \
-    'A single signal'
+    'A single signal' \
+    'a signal there → stop and point to' \
+    'keep it as it is, write no plan'
+
+  # Listing the signals proves nothing unless the first check precedes the second
+  # and no plan can be written before either of them.
+  body=$(section_of "$COMMAND" 'Escalation signals' | tr '\n' ' ')
+  first=$(awk -v s="$body" 'BEGIN {print index(s, "before reading the code")}')
+  second=$(awk -v s="$body" 'BEGIN {print index(s, "after reading the code")}')
+  [ "$first" -gt 0 ] && [ "$second" -gt "$first" ] \
+    || fail "the two escalation checks are not in order, before then after reading the code"
+
+  escalation=$(grep -n -x -F '## Escalation signals' "$COMMAND" | cut -d: -f1)
+  plan=$(grep -n -x -F '## The plan' "$COMMAND" | cut -d: -f1)
+  [ -n "$escalation" ] && [ -n "$plan" ] || fail "po-flow.md lacks an escalation or a plan section"
+  [ "$escalation" -lt "$plan" ] || fail "## The plan comes before ## Escalation signals"
 }
 
 test_flow_respects_story_track() {
