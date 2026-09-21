@@ -56,7 +56,12 @@ test_defects_one_to_three_marked_fixed() {
     row=$(grep -m1 "^| $n |" "$DEFECTS" || true)
     [[ "$row" == *'| corrigé par s21 |' ]] || fail "defect $n is not marked fixed by s21"
   done
-  for n in 4 5 6 7 8 9 10 11; do
+  # s22 closed 4 and 5; every other row of the table must still read ouvert.
+  for n in 4 5; do
+    row=$(grep -m1 "^| $n |" "$DEFECTS" || true)
+    [[ "$row" == *'| corrigé par s22 |' ]] || fail "defect $n is not marked fixed by s22"
+  done
+  for n in 6 7 8 9 10 11; do
     row=$(grep -m1 "^| $n |" "$DEFECTS" || true)
     [[ "$row" == *'| ouvert |' ]] || fail "defect $n no longer reads ouvert"
   done

@@ -55,3 +55,30 @@ test_brief_has_exit_criteria() {
     grep -qF -- "$item" <<< "$section" || fail "exit criteria lack: $item"
   done
 }
+
+# s22 — the blocking checks of ## Finish run before anything is written as approved.
+test_brief_checks_before_writing_approved() {
+  local section checks approved
+  section=$(section_of "$BRIEF" 'Finish')
+  checks=$(grep -n -m1 -F -- 'git status --porcelain' <<< "$section" | cut -d: -f1)
+  [ -n "$checks" ] || fail "po-brief.md Finish does not check git status --porcelain"
+  grep -qF -- '`Target branch`' <<< "$section" || fail "po-brief.md Finish does not check the current branch"
+  approved=$(grep -n -m1 -F -- 'set `status: approved`' <<< "$section" | cut -d: -f1)
+  [ -n "$approved" ] || fail "po-brief.md Finish never writes status: approved"
+  [ "$checks" -lt "$approved" ] || fail "po-brief.md writes status: approved before its blocking checks"
+  grep -qF -- 'leaves `docs/brief.md` at `status: interviewing`' <<< "$section" \
+    || fail "po-brief.md does not say an interruption leaves the brief at status: interviewing"
+}
+
+# s22 — the approval and its ADR travel in a single commit.
+test_brief_commits_approval_and_adr_together() {
+  local section commit
+  section=$(section_of "$BRIEF" 'Finish')
+  commit=$(grep -F -- 'docs: brief for <product>' <<< "$section") || true
+  [ -n "$commit" ] || fail "po-brief.md Finish does not commit as docs: brief for <product>"
+  grep -qF -- 'docs/brief.md' <<< "$commit" || fail "the brief commit does not carry docs/brief.md"
+  grep -qF -- 'the ADR' <<< "$commit" || fail "the brief commit does not carry the ADR"
+  grep -qF -- 'in one commit' <<< "$commit" || fail "the brief and its ADR are not committed in one commit"
+  grep -qF -- 'The approval and its ADR go in the same commit, or neither' <<< "$section" \
+    || fail "po-brief.md lets the approval or its ADR travel alone"
+}

@@ -20,6 +20,7 @@ Every later stage reads `docs/stories.md`: research checks its hypotheses, the p
    - `replace` or `adapt` → the source is `docs/prd.md`. Missing, or its frontmatter does not say `status: approved` → stop: "No approved PRD yet: run /po-prd <target SaaS> first."
    - `new` → the source is `docs/brief.md`. Missing, or its frontmatter does not say `status: approved` → stop: "No approved brief yet: run /po-brief first."
    - `—` → stop: "`Entry mode` is not set: run /po-setup or set it in AGENTS.local.md." Do not guess the source from whichever file exists.
+   - Whatever the mode, a source whose frontmatter carries anything other than `status: approved` — `status: interviewing`, a draft, no frontmatter at all — is refused like a missing one: stop, name that file and say it is still being written. Never read its body to decide it is approved enough.
 3. Read the `agentic-stories` skill before drafting. It holds how a story is cut and written; this command does not repeat it.
 
 ## Sequence
