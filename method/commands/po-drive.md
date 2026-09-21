@@ -36,12 +36,35 @@ A story is **ready** when the three hold together:
 
 Take the ready stories in the order of `docs/stories.md` and stop at `Parallel` lanes, the lanes already running counted in. A story dropped for a conflict is named in the report with the path that collided and the lane holding it; it is the first candidate of the next wave. Nothing ready → report which dependency each story is waiting for and stop the wave.
 
+## Resuming
+A wave never sends a story back to stage one: a stop, a crash or a closed session leaves its work in place, and that work is what the lane starts from. For each story the ready set kept, and before any subagent is dispatched, derive the stage it reached from the files of `<Worktree root><id>` and from git — the derivation above, extended to say where the lane resumes:
+
+| Found | Lane starts at |
+| --- | --- |
+| no worktree, or no `docs/research/<id>.md` | the research and plan stage |
+| research present, plan absent or without `validated: yes` | the same stage, at the plan |
+| `po-gate plan-validated <id>` passes, no record or `po-gate verif-current <id>` fails | the code stage |
+| record current, no `docs/reviews/<id>.md` | the review stage |
+| review whose last `Ship allowed:` is `no` | a fix run, at loop `Fix loop:` + 1 |
+| review whose last `Ship allowed:` is `yes` | the ship |
+| a commit whose subject starts with `<id>:` on `Target branch` | nothing — the story is done |
+
+A record that exists proves nothing by itself: `po-gate verif-current <id>` is what tells a record from a stale one, and a record the gate refuses sends the lane back to the code stage.
+
+Two rules keep resuming honest.
+
+**The attempts already spent are read from the `Fix loop:` line of `docs/reviews/<id>.md`**, the way `/po-review` reads it (`method/commands/po-review.md`), never from what you remember of this session: a driver that starts again inherits them, and `Max attempts` counts the loops of every session together instead of handing each new driver a fresh budget.
+
+**A stage already recorded is resumed, never replayed.** No research, plan, record or review is overwritten to give a lane a clean slate, and no finished stage is run again to leave a tidier file behind: what is on disk is what the next stage reads.
+
 ## A wave
 
 ### Preparing the lanes
 You prepare each lane's worktree yourself, before any subagent starts, exactly as `/po-research` describes it (`method/commands/po-research.md`): fetch when the repository has a remote and start from `origin/<Target branch>` when that ref exists, `git worktree add -b story/<id> <Worktree root><id> <start point>`, copy in the `.env*` files git ignores, then run `Install`. `planner` is forbidden to run `git worktree add`, `switch`, `checkout` or `stash` (`method/agents/planner.md`), so a lane you did not prepare cannot exist.
 
-An existing worktree is confirmed, never repaired: `git -C <path> rev-parse --abbrev-ref HEAD` must print `story/<id>`. Anything else — another branch, a detached HEAD, a path that is the repository root — drops that lane from the wave and is reported as it was found.
+An existing worktree is confirmed on two axes, never repaired. The branch: `git -C <path> rev-parse --abbrev-ref HEAD` must print `story/<id>`. The path: `git worktree list --porcelain` must show `story/<id>` checked out at `<Worktree root><id>` and at no other path. Either axis off makes that worktree an **orphan**, and it holds both ways — another branch, a detached HEAD, a path that is the repository root, or a `story/<id>` registered somewhere else.
+
+An orphan is named in the report with the path and the branch actually found, drops that lane from the wave, and waits for a human: you run no `git worktree add --force`, `worktree remove`, `worktree prune`, `switch`, `checkout` or `stash` to make it fit.
 
 ### Dispatching
 The subagents of a wave go out **in a single message**: one Agent call per lane, all of them in that one message, which is what makes the lanes run at the same time. Never two calls for the same story at once.
@@ -68,6 +91,8 @@ Each ship is `/po-ship` applied as written: `po-gate ship-allowed <id>` first �
 A ship that fails sends its story back to a fix run under the same `Max attempts` cap and leaves the other lanes running. Once a story is shipped, its `Owns` paths are free again and the stories depending on it become ready for the next wave.
 
 ## Report
-One table: story · stage reached · plan · verdict · shipped. Then the stories dropped for a conflict with the path that collided, the lanes handed to a human, and the dependencies still blocking. With `$ARGUMENTS` set to `status`, this report is the whole run: no worktree is prepared, no subagent is dispatched, nothing is shipped.
+One table: story · stage reached · plan · verdict · shipped. Then the stories dropped for a conflict with the path that collided, the lanes handed to a human, and the dependencies still blocking. With `$ARGUMENTS` set to `status`, this report is the whole run: no worktree is prepared, no subagent is dispatched, nothing is shipped, no `docs/reviews/<id>.md` is written, and no gate that could change a file is run.
+
+`status` answers three questions and launches nothing. Per lane in flight: the story, the stage it resumes at, its worktree path, and the loops already spent against `Max attempts`. Then, per story a human must decide on, the reason it waits — a dependency not shipped and which one, an `Owns` collision with the path that collided and the lane holding it, `Max attempts` reached with the open findings, or an orphan worktree as it was found.
 
 Finish with the candidates of the next wave, or "Fleet idle: nothing is ready."
