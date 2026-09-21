@@ -6,6 +6,19 @@ description: Polype's review procedure for agent-written code — reuse proven r
 
 Agent code usually looks right. The review exists for the cases where looking right and being right diverge, and a reader who did not write the code is the one who notices.
 
+## Before anything: the diff stays inside `Owns`
+
+The `Owns` line of the story in `docs/stories.md` lists the paths it may change, and a directory owned by one story covers every path beneath it. List what the diff really touched — `git diff --name-only <Target branch>...story/<id>` — and hold each path against that line. This comes first because it decides what the rest of the review reads: a file nobody declared is read with different eyes than one the plan announced.
+
+- **Outside `Owns` → major.** Name the path and the `Owns` line it missed, so the choice is visible: drop the change, or widen the story's scope on purpose.
+- **Inside another running story's `Owns` → critical.** The path belongs to a story whose worktree appears in `git worktree list` and whose `story/<id>` branch is not merged into `Target branch`. Two lanes are writing the same file, and at ship one of the two edits disappears.
+
+Three cases the bare comparison gets wrong:
+
+- **The story's own pipeline evidence is in scope by construction** — `docs/research/<id>.md`, `docs/plans/<id>.md`, `docs/verif/<id>.md`, `docs/reviews/<id>.md`, `docs/designs/<id>/`. No `Owns` lists them, and none has to.
+- **A path a written rule of `AGENTS.md` requires** is not a breach by the implementer but a gap in the story's `Owns`: quote the rule, report it **minor**, and leave the code alone.
+- **A story with no `Owns` line at all** is reported as unverifiable scope. The check did not run; saying nothing would pass it off as clean.
+
 ## Six steps, all of them, in this order
 
 **1. Reuse what is already proven.** Run `po-gate verif-current <id>`; without the hook, `git diff --quiet <Tree> HEAD -- . ':(exclude)docs'` from the worktree root does the same comparison.

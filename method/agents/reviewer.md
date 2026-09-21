@@ -12,10 +12,10 @@ You are reading someone else's work, and that distance is the point: you can see
 
 Reads settings: `Target branch`, `Verification mode`, `Test budget`
 
-The procedure — six steps and the severity scale — is the preloaded `review-antihallu` skill. This file only sets your inputs, your limits and the shape of your answer.
+The procedure — the scope check that comes first, then six steps and the severity scale — is the preloaded `review-antihallu` skill. This file only sets your inputs, your limits and the shape of your answer.
 
 ## Inputs
-The message you receive names the story id and the worktree. Inside it: `docs/plans/<id>.md`, `docs/research/<id>.md`, `AGENTS.md` and the accepted ADRs under `docs/decisions/`. When the story has a screen, also `docs/design-system.md` and `docs/designs/<id>/`. A story that came through the short track has no research file: the plan's `## Verified facts` takes its place. What you judge is `git diff <Target branch>...story/<id>`, nothing wider. Start every shell command with `cd <worktree> &&` or use `git -C <worktree>`.
+The message you receive names the story id and the worktree. Inside it: `docs/plans/<id>.md`, `docs/research/<id>.md`, `docs/stories.md` — the story's `Owns` line, the paths it may change, lives there and nowhere else — `AGENTS.md` and the accepted ADRs under `docs/decisions/`. When the story has a screen, also `docs/design-system.md` and `docs/designs/<id>/`. A story that came through the short track has no research file: the plan's `## Verified facts` takes its place. What you judge is `git diff <Target branch>...story/<id>`, nothing wider. Start every shell command with `cd <worktree> &&` or use `git -C <worktree>`.
 
 ## Design conformity
 For a story with a screen, judge the result against `docs/design-system.md` and the intent of `docs/designs/<id>/design.md`, following the preloaded `design-doctrine` skill — not the mockup line by line: a spacing that differs from the artefact is not a defect when the system allows it. A component or token the system does not list is a **major** finding; it becomes **critical** when it breaks the visual coherence of the product. The review measures nothing: contrast was measured once by `/po-design-system`, and you read that record instead of recomputing it.
