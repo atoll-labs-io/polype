@@ -1,12 +1,12 @@
 ---
 adr: 0014
 title: Checkpoints humains groupés par vague, ship au niveau du milestone
-status: accepted
+status: superseded
 date: 2026-09-18
 deciders: [lecrabe]
 tags: [adr, polype, autonomie]
 supersedes: []
-superseded-by: []
+superseded-by: [ADR-0017]
 ---
 
 # ADR-0014 — Checkpoints humains groupés par vague, ship au niveau du milestone

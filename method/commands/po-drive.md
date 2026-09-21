@@ -70,11 +70,28 @@ An orphan is named in the report with the path and the branch actually found, dr
 The subagents of a wave go out **in a single message**: one Agent call per lane, all of them in that one message, which is what makes the lanes run at the same time. Never two calls for the same story at once.
 
 Per lane, in this order, each stage dispatched as its own wave:
-1. `subagent_type: planner` — the story id and the absolute worktree path; its research, its track and its plan are its own contract, which you do not restate. Under `Plan validation: autonomous` the plan comes back with `validated: yes`; under `human`, group the wave's plans into one AskUserQuestion before any implementer starts.
+1. `subagent_type: planner` — the story id and the absolute worktree path; its research, its track and its plan are its own contract, which you do not restate. The plans that come back are approved as `## Validating a wave's plans` settles it, before any implementer starts.
 2. `subagent_type: implementer` — the prompt `/po-execute` fixes (`method/commands/po-execute.md`), word for word, for each lane whose `docs/plans/<id>.md` holds `validated: yes`. A plan without that line never reaches an implementer.
 3. `subagent_type: reviewer` — the prompt `/po-review` fixes (`method/commands/po-review.md`), word for word, with this lane's `Fix loop: <n>`.
 
 A lane that stops stays stopped and is reported; the other lanes of the wave carry on.
+
+## Validating a wave's plans
+The plans a wave produced are approved together, per `Plan validation`.
+
+Under `autonomous`, nothing is asked: each plan comes back from its lane already holding `validated: yes`, checked against its own acceptance criteria by the planner that wrote it, and the wave report says that no human read it (`## Report`).
+
+Under `human`, the whole wave goes into **one AskUserQuestion**, never one per story: a question per story would serialise the very lanes you started in parallel. The question shows, for each plan, the story id, its tasks and its test strategy, and the path `docs/plans/<id>.md`, so any plan can be opened and read whole before answering. Three answers:
+
+| Answer | What it does |
+| --- | --- |
+| Approve every plan | every plan of the wave is approved, and each lane moves on to its implementer |
+| Choose which ones | only the plans the answer names are approved; the others stay as they are |
+| Stop the wave | nothing is approved, and no implementer is dispatched at all |
+
+`validated: yes` is written through Bash, into the frontmatter of the plans the answer approved and of no other: you have neither Write nor Edit, and a plan nobody named is never approved on your own initiative.
+
+A plan left unapproved keeps `validated: no`. No implementer is dispatched for it, its lane waits for the next wave, where the plan is offered again; the gate refusing it is the same `po-gate plan-validated <id>` as everywhere else, never your memory of the answer. On `Stop`, the plans stay on disk as the planners wrote them, and the next run resumes at the plan with nothing to redo.
 
 ## The verdict, and the fix runs
 A reviewer's answer is recorded **verbatim** into `docs/reviews/<id>.md` in that lane's worktree, through Bash. You transcribe it, you do not author it: no severity is yours to choose, no finding yours to soften or drop. `/po-review` already puts this recording on the coordinating context (`method/commands/po-review.md`), and the `reviewer` subagent has no Write tool to do it itself.
@@ -92,6 +109,8 @@ A ship that fails sends its story back to a fix run under the same `Max attempts
 
 ## Report
 One table: story · stage reached · plan · verdict · shipped. Then the stories dropped for a conflict with the path that collided, the lanes handed to a human, and the dependencies still blocking. With `$ARGUMENTS` set to `status`, this report is the whole run: no worktree is prepared, no subagent is dispatched, nothing is shipped, no `docs/reviews/<id>.md` is written, and no gate that could change a file is run.
+
+The plan column says who approved it. Under `Plan validation: autonomous`, the report states that the plans were approved without a human reading them and names the stories concerned; under `human`, it states which plans the wave approved and which ones are still waiting for the next wave.
 
 `status` answers three questions and launches nothing. Per lane in flight: the story, the stage it resumes at, its worktree path, and the loops already spent against `Max attempts`. Then, per story a human must decide on, the reason it waits — a dependency not shipped and which one, an `Owns` collision with the path that collided and the lane holding it, `Max attempts` reached with the open findings, or an orphan worktree as it was found.
 
