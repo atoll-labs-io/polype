@@ -100,10 +100,10 @@ Garantie de qualité exigée par [ADR-0006](decisions/ADR-0006-adapter-killer-sa
 
 | ID | Mécanisme Killer SaaS | Où | Polype | Traitement | Statut |
 |---|---|---|---|---|---|
-| H01 | Installation projet, globale, `init` par projet après une globale, mise à jour par manifeste (pas de fantômes, commandes perso intactes), templates non modifiés rafraîchis, modifiés signalés, tampon de version, contrôle de dérive | install.sh, DOC | Globale synchronisée par chezmoi + `init` par projet (ADR-0004) ; même mise à jour par manifeste et même contrôle de dérive | Adapter | à faire |
-| H02 | Fichier de règles reconstruit à chaque installation depuis la source + les réglages locaux ; `CLAUDE.md` n'importe que le fichier de règles | install.sh | Identique | Reprendre | fait — `bin/polype-dev-install` |
-| H03 | Source unique, émission par outil (Claude Code, Codex) via un build sans dépendance ; tableau honnête de ce qui se dégrade | bin/ks-build.mjs, DOC | Codex vers mi-octobre (ADR-0005) ; règles en `AGENTS.md` dès maintenant | Adapter | à faire |
-| H04 | Modèles : implémenteur épinglé sur le modèle le plus fort (moins d'allers-retours), relecteurs héritant du modèle de session | agents | Identique par défaut, réglable par story | Étendre | à faire |
+| H01 | Installation projet, globale, `init` par projet après une globale, mise à jour par manifeste (pas de fantômes, commandes perso intactes), templates non modifiés rafraîchis, modifiés signalés, tampon de version, contrôle de dérive | install.sh, DOC | Globale synchronisée par chezmoi + `init` par projet (ADR-0004) ; même mise à jour par manifeste et même contrôle de dérive | Adapter | fait — `bin/polype`, `docs/installation.md` |
+| H02 | Fichier de règles reconstruit à chaque installation depuis la source + les réglages locaux ; `CLAUDE.md` n'importe que le fichier de règles | install.sh | Identique | Reprendre | fait — `bin/polype` (l'assemblage y a migré, `bin/polype-dev-install` n'en est qu'un alias) |
+| H03 | Source unique, émission par outil (Claude Code, Codex) via un build sans dépendance ; tableau honnête de ce qui se dégrade | bin/ks-build.mjs, DOC | Codex vers mi-octobre (ADR-0005) ; règles en `AGENTS.md` dès maintenant | Adapter | partiel — `method/` est la source unique ; émission Codex et tableau de dégradation différés (ADR-0005) |
+| H04 | Modèles : implémenteur épinglé sur le modèle le plus fort (moins d'allers-retours), relecteurs héritant du modèle de session | agents | Identique par défaut, réglable par story | Étendre | partiel — `method/agents/` ; le réglage de modèle par story manque encore |
 
 ## Tensions tranchées
 

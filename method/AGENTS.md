@@ -110,7 +110,9 @@ At most `Test budget` tests per story unless the plan argues for more. A test th
 
 ## Installed files
 
-`.claude/commands/`, `.claude/agents/` and `.claude/skills/` hold the commands, subagents and skills. `.polype/templates/` holds the templates: a reference to `templates/<name>.md` means `.polype/templates/<name>.md`. `.polype/hooks/po-gate.sh`, called `po-gate` in these rules, runs from the repository root or from any story worktree. These files are committed on `Target branch` so every worktree has them and the pre-commit hook works there too.
+`bin/polype` is the installer: it lays the method down, refreshes it with `update`, audits it with `check` and takes it back with `remove`. It has two poses. `polype install --global` puts the commands, the subagents and the skills in `~/.claude/`, so every project on the machine sees them. `polype init <project>` then activates one repository with what belongs to it and travels in its git: the templates, the gate and the assembled `AGENTS.md`. `polype install <project>` does both at once inside a single repository, which is the right shape for a repository whose collaborators' `~/.claude/` you do not control. The detail of each pose — what it writes, what `update` spares, how to read a `check` report — is in Polype's `docs/installation.md`.
+
+`.claude/commands/`, `.claude/agents/` and `.claude/skills/` hold the commands, subagents and skills. `.polype/templates/` holds the templates: a reference to `templates/<name>.md` means `.polype/templates/<name>.md`. `.polype/hooks/po-gate.sh`, called `po-gate` in these rules, runs from the repository root or from any story worktree. These files are committed on `Target branch` so every worktree has them and the pre-commit hook works there too; after a global pose only `.polype/` and `AGENTS.md` are in the repository, the rest living in `~/.claude/`.
 
 Never edit an installed file: the next install overwrites it without asking. Project-specific needs become settings in `AGENTS.local.md`; general improvements go back to Polype itself.
 

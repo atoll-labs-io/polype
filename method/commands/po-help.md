@@ -8,6 +8,10 @@ Reads settings: none
 
 **Aucune modification du code en dehors d'une story**, sauf un correctif rapide que tu annonces toi-même.
 
+## Installation
+- `polype install --global` puis `polype init <projet>` — la méthode dans `~/.claude` pour tous les projets, puis l'activation d'un dépôt ; `polype install <projet>` pose tout dans un seul dépôt.
+- `polype check` — la version posée et les fichiers qui ont dérivé depuis.
+
 ## Mise en place (une fois)
 - `/po-setup` — écrit `AGENTS.local.md` : branche cible, mode de merge, qui approuve les plans, commandes du projet.
 - `/po-prd <SaaS cible>` — cadre le remplacement (`replace`) ou l'adaptation (`adapt`) d'un SaaS existant, une question à la fois.
