@@ -1,12 +1,12 @@
 ---
 adr: 0004
 title: Installation globale synchronisée sur toutes les machines
-status: accepted
+status: superseded
 date: 2026-09-18
 deciders: [lecrabe]
 tags: [adr, polype, distribution]
 supersedes: []
-superseded-by: []
+superseded-by: [ADR-0021]
 ---
 
 # ADR-0004 — Installation globale synchronisée sur toutes les machines
