@@ -25,7 +25,7 @@ Garantie de qualité exigée par [ADR-0006](decisions/ADR-0006-adapter-killer-sa
 | ID | Mécanisme Killer SaaS | Où | Polype | Traitement | Statut |
 |---|---|---|---|---|---|
 | B01 | Fichier de réglages local, une ligne `Nom: valeur`, jamais écrasé par l'installeur, créé par le seul setup | agents-local.md | Identique | Reprendre | fait — `method/templates/agents-local.md` |
-| B02 | Réglages : mode de merge, branche cible, validation du plan, confirmation du ship, piste de story, seuil de la voie courte, source/skill/outil de design, budget de tests, mode de vérification, étapes de la suite complète, de l'E2E (étape, portée, navigateurs) et du build, tracker d'issues, racine des worktrees | agents-local.md | Tous repris ; ajout de : tracker d'état (ADR-0003), parallélisme, tentatives max, profil de boilerplate, briques choisies (ADR-0009) | Étendre | partiel — `method/templates/agents-local.md` ; flotte en M3, profil et briques en M4 |
+| B02 | Réglages : mode de merge, branche cible, validation du plan, confirmation du ship, piste de story, seuil de la voie courte, source/skill/outil de design, budget de tests, mode de vérification, étapes de la suite complète, de l'E2E (étape, portée, navigateurs) et du build, tracker d'issues, racine des worktrees | agents-local.md | Tous repris ; ajout de : tracker (ADR-0003) pour la seule visibilité, l'état venant des worktrees et de git (ADR-0016), parallélisme, tentatives max, profil de boilerplate, briques choisies (ADR-0009) | Étendre | partiel — `method/templates/agents-local.md` ; profil et briques en M4 |
 | B03 | Commandes du projet (gestionnaire de paquets, test, typecheck, E2E, build) citées telles quelles, jamais inventées | agents-local.md | Pré-remplies depuis le profil du boilerplate (ADR-0008) | Étendre | partiel — `method/templates/agents-local.md` ; pré-remplissage par profil en M4 |
 | B04 | Conventions du projet remplies à l'étape architecture et assemblées dans le fichier de règles | ks-architect | Remplies depuis le profil, complétées par l'analyse | Adapter | fait — `method/commands/po-architect.md` |
 
@@ -94,7 +94,7 @@ Garantie de qualité exigée par [ADR-0006](decisions/ADR-0006-adapter-killer-sa
 | G03 | Un commit par story (un second seulement pour ce qu'on voudrait annuler seul, typiquement une migration) ; cases du plan = suivi d'avancement, jamais déclencheur de commit | AGENTS.md | Identique | Reprendre | fait — `method/AGENTS.md`, `method/agents/implementer.md` |
 | G04 | ADR MADR dans `docs/decisions/`, immuables, remplacées par une nouvelle ; celles de cadrage sur la branche par défaut, celles d'une story avec sa branche | AGENTS.md, adr.md | Identique (ADR-0002), plus un pointeur Graphiti | Étendre | fait — `method/AGENTS.md`, `method/templates/adr.md` |
 | G05 | Un défaut n'est pas une story (il va dans le tracker d'issues) ; une remarque de revue reste dans son rapport sauf décision humaine | AGENTS.md | Identique | Reprendre | fait — `method/AGENTS.md` |
-| G06 | État jamais stocké, dérivé des fichiers | AGENTS.md | Écart assumé : l'état de travail vit dans le tracker (ADR-0003) ; les verdicts restent dans les fichiers | Adapter | partiel — verdicts dans les fichiers ; état dans le tracker en M3 |
+| G06 | État jamais stocké, dérivé des fichiers | AGENTS.md | État dérivé des worktrees et de git (ADR-0016), verdicts et gates lus dans les fichiers ; le tracker (ADR-0003) n'est qu'une visibilité optionnelle | Adapter | fait — `method/commands/po-status.md`, `method/commands/po-drive.md` |
 
 ## H. Distribution
 
@@ -111,7 +111,7 @@ Garantie de qualité exigée par [ADR-0006](decisions/ADR-0006-adapter-killer-sa
 |---|---|---|---|
 | T1 | Pas de rouge-d'abord, mutation en revue seulement | Tests d'acceptation d'abord, les voir échouer | Killer SaaS — [ADR-0012](decisions/ADR-0012-pas-de-rouge-dabord.md) |
 | T2 | Squash d'une story dans la branche cible | Merge `--no-ff` de chaque packet dans la branche d'intégration | Squash direct dans la branche cible, corrections au fil de l'eau — [ADR-0015](decisions/ADR-0015-squash-direct-et-corrections-au-fil-de-leau.md) (remplace ADR-0013) |
-| T3 | État dérivé des fichiers | État dans le tracker | Tracker pour l'état, fichiers pour les verdicts — [ADR-0003](decisions/ADR-0003-etat-dans-github-ou-taskwarrior.md) |
+| T3 | État dérivé des fichiers | État dans le tracker | État dérivé des worktrees et de git, fichiers pour les verdicts, tracker en visibilité optionnelle — [ADR-0016](decisions/ADR-0016-flotte-un-driver-des-subagents.md) (précise [ADR-0003](decisions/ADR-0003-etat-dans-github-ou-taskwarrior.md)) |
 | T4 | Checkpoints humains par story (plan, ship) | Autonomie accordée une fois, pause entre milestones | Réglage, regroupé par vague en flotte — [ADR-0014](decisions/ADR-0014-checkpoints-groupes.md) |
 
 ## Au-delà de Killer SaaS
@@ -119,7 +119,7 @@ Garantie de qualité exigée par [ADR-0006](decisions/ADR-0006-adapter-killer-sa
 Ce que Polype ajoute, repris de `/spec`, `/drive` ou des décisions propres :
 
 - **Trois modes d'entrée** : remplacer, adapter, partir de zéro (C02, C04).
-- **Flotte parallèle** : lanes par ownership disjoint, claim dans le tracker, reprise après crash, un seul driver par projet, tentatives bornées puis escalade groupée, interdiction d'affaiblir une acceptation sans accord.
+- **Flotte parallèle** : lanes par ownership disjoint, attribution atomique par le driver unique sans verrou ni claim partagé (ADR-0016), reprise après crash lue dans les worktrees et git, un seul driver par projet, tentatives bornées puis escalade groupée, interdiction d'affaiblir une acceptation sans accord.
 - **Spikes** pour les risques ouverts, avec une ADR proposée en sortie.
 - **Contrats d'abord** : une interface partagée par deux stories devient une story antérieure.
 - **Milestones** comme jalons de livraison, avec une revue transverse (`/roast-me`) à la demande.

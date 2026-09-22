@@ -11,7 +11,7 @@ allowed-tools:
 ---
 # /po-drive
 
-Reads settings: `Target branch`, `Worktree root`, `Install`, `Parallel`, `Max attempts`, `Tracker`, `Plan validation`, `Merge mode`, `Ship confirmation`
+Reads settings: `Target branch`, `Worktree root`, `Install`, `Design source`, `Parallel`, `Max attempts`, `Tracker`, `Plan validation`, `Merge mode`, `Ship confirmation`
 
 Argument: $ARGUMENTS — `status` reports the fleet and changes nothing; empty runs a wave.
 
@@ -43,6 +43,7 @@ A wave never sends a story back to stage one: a stop, a crash or a closed sessio
 | --- | --- |
 | no worktree, or no `docs/research/<id>.md` | the research and plan stage |
 | research present, plan absent or without `validated: yes` | the same stage, at the plan |
+| `po-gate plan-validated <id>` passes, the story has a screen and `docs/designs/<id>/design.md` is absent | the design stage |
 | `po-gate plan-validated <id>` passes, no record or `po-gate verif-current <id>` fails | the code stage |
 | record current, no `docs/reviews/<id>.md` | the review stage |
 | review whose last `Ship allowed:` is `no` | a fix run, at loop `Fix loop:` + 1 |
@@ -71,8 +72,11 @@ The subagents of a wave go out **in a single message**: one Agent call per lane,
 
 Per lane, in this order, each stage dispatched as its own wave:
 1. `subagent_type: planner` — the story id and the absolute worktree path; its research, its track and its plan are its own contract, which you do not restate. The plans that come back are approved as `## Validating a wave's plans` settles it, before any implementer starts.
-2. `subagent_type: implementer` — the prompt `/po-execute` fixes (`method/commands/po-execute.md`), word for word, for each lane whose `docs/plans/<id>.md` holds `validated: yes`. A plan without that line never reaches an implementer.
-3. `subagent_type: reviewer` — the prompt `/po-review` fixes (`method/commands/po-review.md`), word for word, with this lane's `Fix loop: <n>`.
+2. **The design stage**, for a story whose text shows a screen: a stage the lane **stops at**, never one it dispatches. `/po-design` is a command, and a command does not run inside a subagent (ADR-0016); no design subagent exists, so no lane can produce the design itself. Check `/po-design`'s own conditions first, in that worktree (`method/commands/po-design.md`): `docs/design-system.md` missing there → the lane stops and the report names `/po-design-system`; `Design source` at `—` → the lane stops and the report asks a human to choose `internal` or `external` in `AGENTS.local.md`, which you never choose for them. Conditions met and `docs/designs/<id>/design.md` absent → the lane goes no further than its plan and the report names `/po-design <id>` to run in `<Worktree root><id>`. The stage is never skipped to keep a lane moving: on a story with a screen whose design is missing, the implementer does not start. The next wave finds the note on disk and resumes that lane at the code stage.
+3. `subagent_type: implementer` — the prompt `/po-execute` fixes (`method/commands/po-execute.md`), word for word, for each lane whose `docs/plans/<id>.md` holds `validated: yes`. A plan without that line never reaches an implementer.
+4. `subagent_type: reviewer` — the prompt `/po-review` fixes (`method/commands/po-review.md`), word for word, with this lane's `Fix loop: <n>`.
+
+The design of a lane therefore lands **after** its plan, where `/po-orchestrator` settles it before. The planner is not run again for it — `## Resuming` forbids replaying a recorded stage — so the plan's screen tasks were written without the note, and it is the implementer that reads `docs/designs/<id>/design.md` before those tasks, the screen it builds being the one the note settles (`method/agents/implementer.md`). A story whose plan must be built on its design is driven through `/po-orchestrator`, the single-story path, which designs before it plans.
 
 A lane that stops stays stopped and is reported; the other lanes of the wave carry on.
 

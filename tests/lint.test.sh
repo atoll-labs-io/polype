@@ -15,6 +15,16 @@ mutant() {
   echo "$dir/method"
 }
 
+# A method tree whose listing finds nothing: the settings template is in place, the two
+# directories the lint reads are empty. Built by hand, since mutant() copies the real tree.
+empty_method() {
+  local dir
+  dir="$(mktemp -d "$MUTANTS/XXXXXX")"
+  mkdir -p "$dir/method/commands" "$dir/method/agents" "$dir/method/templates"
+  cp "$METHOD/templates/agents-local.md" "$dir/method/templates/"
+  echo "$dir/method"
+}
+
 lint_on() { LINT_STATUS=0; LINT_OUT=$(bash "$ROOT/bin/po-lint" "$@" 2>&1) || LINT_STATUS=$?; }
 
 line_of() { grep -n -m1 -F -- "$2" "$1" | cut -d: -f1; }
@@ -90,4 +100,24 @@ test_lint_checks_fail_closed_rules_have_a_stop() {
   grep -qF 'No mockup yet → continue.' "$f" || fail "negative control not applied"
   lint_on "$m"
   [ "$LINT_STATUS" -eq 0 ] || fail "the fail-closed rule flags legitimate branches: $LINT_OUT"
+}
+
+test_lint_fails_when_it_reads_nothing() {
+  local m; m=$(empty_method)
+  lint_on "$m"
+  [ "$LINT_STATUS" -ne 0 ] || fail "lint exited 0 having read no file: $LINT_OUT"
+  ! grep -qF 'no breach' <<< "$LINT_OUT" || fail "lint called a tree it never read clean: $LINT_OUT"
+  ! grep -qF 'breach(es)' <<< "$LINT_OUT" || fail "lint summarised a tree it never read: $LINT_OUT"
+}
+
+test_lint_reports_how_many_files_it_read() {
+  local n m
+  n=$(ls "$METHOD"/commands/*.md "$METHOD"/agents/*.md | grep -c '')
+  lint_on
+  grep -qF "in $n file(s) of" <<< "$LINT_OUT" \
+    || fail "the summary does not say it read $n file(s): $LINT_OUT"
+
+  m=$(empty_method)
+  lint_on "$m"
+  grep -qF '0 file(s)' <<< "$LINT_OUT" || fail "the empty tree is not reported as 0 file(s): $LINT_OUT"
 }

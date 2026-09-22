@@ -106,8 +106,10 @@ Capacités à couvrir : base de données, auth, autorisation, multi-tenant, fich
 - [ADR-0011](decisions/ADR-0011-usage-cible-et-distribution.md) — B2C d'abord, auto-hébergé en avant, offre gérée par abonnement et à l'usage.
 - [ADR-0012](decisions/ADR-0012-pas-de-rouge-dabord.md) — pas de rouge-d'abord à l'implémentation, preuve de morsure en revue.
 - ~~ADR-0013~~ — remplacée par ADR-0015.
-- [ADR-0014](decisions/ADR-0014-checkpoints-groupes.md) — validation des plans groupée par vague en flotte (le volet « ship au milestone » tombe avec ADR-0015).
+- ~~ADR-0014~~ — remplacée par ADR-0017.
 - [ADR-0015](decisions/ADR-0015-squash-direct-et-corrections-au-fil-de-leau.md) — chaque story squashée dans la branche cible, corrections au fil de l'eau.
+- [ADR-0016](decisions/ADR-0016-flotte-un-driver-des-subagents.md) — la flotte est un driver unique qui lance des subagents en parallèle ; l'état se lit dans les worktrees et git (encore `status: proposed` alors que M3 l'a implémentée).
+- [ADR-0017](decisions/ADR-0017-validation-groupee.md) — validation des plans groupée par vague, ship story par story (remplace ADR-0014).
 
 ## Qualité
 

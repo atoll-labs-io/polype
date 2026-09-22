@@ -24,9 +24,9 @@ Le tracker d'issues de Polype est ce fichier tant que le dépôt n'est pas sur G
 
 | # | Source | Défaut | Statut |
 |---|---|---|---|
-| 12 | revue s27 | Une lane de `/po-drive` enchaîne planner → implementer → reviewer sans l'étape de design, alors que la Loi 1 l'impose pour une story avec écran. | à corriger par s32 |
-| 13 | revue s25 | `bin/po-lint` conclut « aucun manquement » même quand il n'a lu aucun fichier (échec silencieux du listage). | à corriger par s32 |
-| 14 | revue s31 | La matrice se contredit sur l'état de la flotte (D17 contre les lignes tracker), et `docs/conception.md` présente encore ADR-0014 comme vivante alors qu'ADR-0017 la remplace. | à corriger par s32 |
+| 12 | revue s27 | Une lane de `/po-drive` enchaîne planner → implementer → reviewer sans l'étape de design, alors que la Loi 1 l'impose pour une story avec écran. | corrigé par s32 |
+| 13 | revue s25 | `bin/po-lint` conclut « aucun manquement » même quand il n'a lu aucun fichier (échec silencieux du listage). | corrigé par s32 |
+| 14 | revue s31 | La matrice se contredit sur l'état de la flotte (D17 contre les lignes tracker), et `docs/conception.md` présente encore ADR-0014 comme vivante alors qu'ADR-0017 la remplace. | corrigé par s32 |
 | 15 | revue s23 | `tests/design-handoff.test.sh` modifié hors du périmètre déclaré de la story. | ouvert |
 | 16 | revue s30 | `docs/decisions/ADR-0014-…` modifiée hors du périmètre déclaré de la story. | ouvert |
 | 17 | revue s28 | `method/templates/review.md` n'a pas de section pour le contrôle d'ownership, qui précède désormais les six étapes. | ouvert |
@@ -34,3 +34,6 @@ Le tracker d'issues de Polype est ce fichier tant que le dépôt n'est pas sur G
 | 19 | revue s29 | `/po-drive` : deux lignes de la table de reprise se recouvrent, sans priorité déclarée (cas d'un arrêt après un fix run). | ouvert |
 | 20 | revue s25 | `tests/design.test.sh` : le message d'échec promet un contrôle « sur la même ligne » que l'assertion ne fait pas. | ouvert |
 | 21 | revue s22 | Findings mineurs de formulation laissés par plusieurs revues (voir les rapports). | ouvert |
+| 22 | recherche s32 | ADR-0003 est `accepted` et met l'état du travail dans le tracker, alors que la matrice et `/po-drive` le dérivent désormais des worktrees et de git (ADR-0016) : une ADR doit trancher ce point. | ouvert |
+| 23 | recherche s32 | ADR-0016 est encore `status: proposed` alors que M3 l'a implémentée et que la matrice la cite comme décision vivante. | ouvert |
+| 24 | s32 | La flotte n'a pas de subagent de design : une story avec écran s'arrête après son plan, le temps qu'un humain lance `/po-design <id>`, donc sa lane ne va pas de bout en bout. | ouvert |

@@ -69,7 +69,18 @@ body_first_line() {
   ' "$1"
 }
 
-method_files() { ls "$METHOD"/commands/*.md "$METHOD"/agents/*.md; }
+# The file list is built once, here, and every rule iterates that same list: a
+# listing evaluated inside three process substitutions can fail three times
+# without anyone reading its status, and the run then ends on a clean summary
+# having checked nothing.
+METHOD_FILES="$(ls "$METHOD"/commands/*.md "$METHOD"/agents/*.md 2>/dev/null || true)"
+METHOD_FILE_COUNT=0
+[ -z "$METHOD_FILES" ] || METHOD_FILE_COUNT="$(grep -c '' <<< "$METHOD_FILES")"
+
+if [ "$METHOD_FILE_COUNT" -eq 0 ]; then
+  echo "po-lint: read 0 file(s) in ${METHOD##*/}/: nothing was checked" >&2
+  exit 2
+fi
 
 # --- rule: settings -----------------------------------------------------------
 # Every command and subagent declares the settings it reads, and each name it
@@ -100,7 +111,7 @@ check_settings() {
       grep -qxF "$name" <<< "$TEMPLATE_SETTINGS" \
         || report "$rel" "$lineno" settings "reads unknown setting '$name'"
     done < <(grep -o '`[^`]*`' <<< "$text" | tr -d '`' || true)
-  done < <(method_files)
+  done <<< "$METHOD_FILES"
 }
 
 # --- rule: tools --------------------------------------------------------------
@@ -141,7 +152,7 @@ check_tools() {
         [ "$tool" = Write ] && report "$rel" "$line" tools "judges a story but declares Write"
       done <<< "$tools"
     fi
-  done < <(method_files)
+  done <<< "$METHOD_FILES"
 }
 
 # --- rule: fail-closed --------------------------------------------------------
@@ -167,7 +178,7 @@ check_fail_closed() {
         }
       }
     ' "$f")
-  done < <(method_files)
+  done <<< "$METHOD_FILES"
 }
 
 check_settings
@@ -175,8 +186,8 @@ check_tools
 check_fail_closed
 
 if [ "$breaches" -eq 0 ]; then
-  echo "po-lint: no breach in ${METHOD##*/}/"
+  echo "po-lint: no breach in $METHOD_FILE_COUNT file(s) of ${METHOD##*/}/"
 else
-  echo "po-lint: $breaches breach(es) in ${METHOD##*/}/"
+  echo "po-lint: $breaches breach(es) in $METHOD_FILE_COUNT file(s) of ${METHOD##*/}/"
 fi
 [ "$breaches" -eq 0 ]
