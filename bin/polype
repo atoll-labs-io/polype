@@ -1,71 +1,161 @@
 #!/usr/bin/env bash
-# Polype's installer: lays the method down in a project, refreshes it, audits it, takes it back.
+# Polype's installer: lays the method down, refreshes it, audits it, takes it back.
 #
-#   polype install <project-dir> [--hooks]    copy everything, overwriting what is there
-#   polype update  <project-dir> [--hooks]    refresh untouched files, report the modified ones
-#   polype check   <project-dir>              show the installed version and what drifted
-#   polype remove  <project-dir>              take back what was installed
+#   polype <install|update|check|remove> --global       in ~/.claude, for every project
+#   polype <install|update|check|remove> <project-dir>  in one project, everything at once
+#   polype init <project-dir>                           activate a project after a global install
 #
-# Commands, agents and skills land in .claude/, templates and the gate in .polype/. AGENTS.md is
-# regenerated from the method's rules followed by the project's AGENTS.local.md, which is only read.
-# Three state files describe the install: .polype/manifest (what was laid down), .polype/checksums
-# (what it contained) and .polype/version.
+# Two places, two jobs. Globally, commands, agents and skills land directly in ~/.claude/ (or
+# $CLAUDE_CONFIG_DIR), and the payload — bin/ and method/ — under ~/.claude/polype/, so that
+# ~/.claude/polype/bin/polype finds its own method through ../method. In a project, templates and
+# the gate land in .polype/, AGENTS.md is regenerated from the method's rules followed by the
+# project's AGENTS.local.md, which is only read.
+#
+# Three state files describe an install, next to each other: manifest (what was laid down),
+# checksums (what it contained) and version. They live in .polype/ for a project, in
+# ~/.claude/polype/ for the global one, and describe one machine: never synchronise them.
 set -euo pipefail
 
-POLYPE_VERSION="0.1.0"
+POLYPE_VERSION="0.2.0"
 
-method="$(cd "$(dirname "$0")/../method" && pwd)"
+# $0 is followed through symlinks: ~/.local/bin/polype points at the payload's own script, and
+# the method the payload ships sits next to it, never next to the link.
+self="$0"
+while [ -L "$self" ]; do
+  link="$(readlink "$self")"
+  case "$link" in /*) self="$link" ;; *) self="$(dirname "$self")/$link" ;; esac
+done
+base="$(cd "$(dirname "$self")/.." && pwd)"
+method="$base/method"
+home="${CLAUDE_CONFIG_DIR:-$HOME/.claude}"
 marker='<!-- Assembled by Polype.'
-project="" hooks=no
+project="" hooks=no global=no mode=project
+root="" state_dir="" prune_mindepth=0
+PAIRS=() PRUNE_DIRS=() SHIPPED_LINES=()
 
 usage() {
   cat <<'USAGE'
-usage: polype <install|update|check|remove> <project-dir> [--hooks]
+usage: polype <install|update|check|remove> (--global | <project-dir>) [--hooks]
+       polype init <project-dir> [--hooks]
        polype help
+
+  --global              lay commands, agents and skills down in ~/.claude (CLAUDE_CONFIG_DIR
+                        overrides it), with the payload under ~/.claude/polype/
+  <project-dir>         lay the whole method down in that project, under .claude/ and .polype/
+  init <project-dir>    activate a project served by a global install: templates, gate,
+                        AGENTS.md, CLAUDE.md, .gitignore — no copy of the commands
+  --hooks               point core.hooksPath at .polype/hooks (projects only)
 USAGE
 }
 
 die_usage() { usage >&2; exit 2; }
 
-parse_project() {
-  local arg
+parse_target() {
+  local allow_global="$1" arg; shift
   for arg in "$@"; do
     case "$arg" in
+      --global)
+        [ "$allow_global" = yes ] || { echo "polype: init takes a project directory, not --global" >&2; die_usage; }
+        global=yes ;;
       --hooks) hooks=yes ;;
       -*) echo "polype: unknown option $arg" >&2; die_usage ;;
       *) project="$arg" ;;
     esac
   done
-  [ -n "$project" ] || die_usage
-  [ -d "$project" ] || { echo "polype: no such directory: $project" >&2; exit 2; }
+
+  if [ "$global" = yes ]; then
+    [ -z "$project" ] || { echo "polype: --global and a project directory are two different targets" >&2; die_usage; }
+    target_is_the_user_home
+  else
+    [ -n "$project" ] || die_usage
+    [ -d "$project" ] || { echo "polype: no such directory: $project" >&2; exit 2; }
+    target_is_a_project
+  fi
+  manifest="$state_dir/manifest"
+  checksums="$state_dir/checksums"
+  version_file="$state_dir/version"
+}
+
+target_is_the_user_home() {
+  mode=global
+  # Created when something is laid down, never here: check and remove must report "no install"
+  # instead of leaving a directory behind.
+  root="$home"
+  if [ -d "$root" ]; then root="$(cd "$root" && pwd)"; fi
+  state_dir="$root/polype"
+  PAIRS=(method/commands:commands method/agents:agents method/skills:skills
+         bin:polype/bin method:polype/method)
+  # Never $root itself, and never a directory Polype did not create.
+  PRUNE_DIRS=("$root/commands" "$root/agents" "$root/skills")
+  prune_mindepth=1
+}
+
+target_is_a_project() {
   project="$(cd "$project" && pwd)"
-  manifest="$project/.polype/manifest"
-  checksums="$project/.polype/checksums"
-  version_file="$project/.polype/version"
+  root="$project"
+  state_dir="$root/.polype"
+  if [ "$mode" = init ]; then
+    PAIRS=(method/templates:.polype/templates method/hooks:.polype/hooks)
+  else
+    PAIRS=(method/commands:.claude/commands method/agents:.claude/agents method/skills:.claude/skills
+           method/templates:.polype/templates method/hooks:.polype/hooks)
+  fi
+  PRUNE_DIRS=("$root/.claude" "$root/.polype")
+  prune_mindepth=0
 }
 
 sum_of() { cksum < "$1"; }
 
-# One "<source file><tab><path inside the project>" line per shipped file.
+# One "<source file><tab><path inside the destination>" line per shipped file.
 shipped_pairs() {
   local spec from to rel
-  for spec in commands:.claude/commands agents:.claude/agents skills:.claude/skills \
-              templates:.polype/templates hooks:.polype/hooks; do
-    from="$method/${spec%%:*}" to="${spec#*:}"
+  for spec in "${PAIRS[@]}"; do
+    from="$base/${spec%%:*}" to="${spec#*:}"
     while IFS= read -r rel; do
       printf '%s\t%s\n' "$from/$rel" "$to/$rel"
     done < <(cd "$from" && find . -type f | sed 's|^\./||' | sort)
   done
 }
 
-prune_empty_dirs() {
-  find "$project/.claude" "$project/.polype" -type d -empty -delete 2>/dev/null || true
+# Every source must exist before a single file is written: a `cd` failing inside the process
+# substitution of shipped_pairs is invisible to set -e, and would turn an incomplete copy of
+# Polype into a silent zero-file install.
+require_payload() {
+  local spec from
+  for spec in "${PAIRS[@]}"; do
+    from="$base/${spec%%:*}"
+    [ -d "$from" ] || { echo "polype: $from is missing; this copy of Polype is incomplete" >&2; exit 1; }
+  done
+  if [ "$mode" != global ] && [ ! -f "$method/AGENTS.md" ]; then
+    echo "polype: $method/AGENTS.md is missing; this copy of Polype is incomplete" >&2; exit 1
+  fi
 }
 
-copy_into_project() {
-  local src="$1" dest="$2"
-  mkdir -p "$(dirname "$project/$dest")"
-  cp "$src" "$project/$dest"
+# SHIPPED_LINES is filled before anything is deleted: in global mode the payload being copied
+# lives inside the install root, so deleting first would destroy the sources of this very run.
+collect_shipped() {
+  require_payload
+  mapfile -t SHIPPED_LINES < <(shipped_pairs)
+  [ "${#SHIPPED_LINES[@]}" -gt 0 ] || { echo "polype: nothing to install from $base" >&2; exit 1; }
+}
+
+must_be_executable() {
+  case "$1" in */hooks/*|polype/bin/*) return 0 ;; *) return 1 ;; esac
+}
+
+prune_empty_dirs() {
+  find "${PRUNE_DIRS[@]}" -mindepth "$prune_mindepth" -type d -empty -delete 2>/dev/null || true
+}
+
+# Written aside, then renamed over the destination: the replacement is atomic, a polype running
+# from the payload keeps reading its own inode, and a payload file that is its own source is
+# never unlinked before it has been read.
+lay_down() {
+  local src="$1" dest="$2" target="$root/$dest"
+  mkdir -p "$(dirname "$target")"
+  cp "$src" "$target.polype-next"
+  if must_be_executable "$dest"; then chmod +x "$target.polype-next"; fi
+  mv -f "$target.polype-next" "$target"
 }
 
 # A hand-written AGENTS.md is kept aside rather than silently replaced.
@@ -74,13 +164,16 @@ assemble_agents_md() {
     cp "$project/AGENTS.md" "$project/AGENTS.md.before-polype"
     echo "polype: existing AGENTS.md saved as AGENTS.md.before-polype" >&2
   fi
+  # Assembled aside: a redirect straight onto AGENTS.md truncates it before the first read,
+  # so a missing method would leave the project with an empty file.
   {
     cat "$method/AGENTS.md"
     if [ -f "$project/AGENTS.local.md" ]; then
       printf '\n---\n\n'
       cat "$project/AGENTS.local.md"
     fi
-  } > "$project/AGENTS.md"
+  } > "$project/AGENTS.md.polype-next"
+  mv -f "$project/AGENTS.md.polype-next" "$project/AGENTS.md"
 
   touch "$project/CLAUDE.md"
   grep -qx '@AGENTS.md' "$project/CLAUDE.md" || printf '@AGENTS.md\n' >> "$project/CLAUDE.md"
@@ -109,6 +202,14 @@ set_hooks_path() {
   fi
 }
 
+# AGENTS.md, CLAUDE.md, .gitignore and core.hooksPath belong to a project, never to the user home.
+wire_the_project() {
+  [ "$mode" = global ] && return 0
+  assemble_agents_md
+  ignore_worktrees_and_env
+  set_hooks_path
+}
+
 stamp_version() { printf '%s\n' "$POLYPE_VERSION" > "$version_file"; }
 
 # RECORDED[path] = the checksum the installer wrote down for that file.
@@ -122,83 +223,107 @@ load_checksums() {
 has_drifted() {
   local path="$1"
   [ -n "${RECORDED[$path]-}" ] || return 1
-  [ "${RECORDED[$path]}" != "$(sum_of "$project/$path")" ]
+  [ "${RECORDED[$path]}" != "$(sum_of "$root/$path")" ]
 }
 
 require_install() {
-  [ -f "$manifest" ] || { echo "polype: no install found in $project (.polype/manifest is missing)" >&2; exit 1; }
+  [ -f "$manifest" ] || { echo "polype: no install found in $root (${manifest#"$root"/} is missing)" >&2; exit 1; }
+}
+
+warn_without_a_global_install() {
+  [ -f "$home/polype/version" ] && return 0
+  echo "polype: no global install in $home; run 'polype install --global' so this project gets the commands" >&2
+}
+
+done_message() {
+  case "$mode" in
+    global)
+      echo "Polype $POLYPE_VERSION installed in $root ($(wc -l < "$manifest") files), payload in $state_dir. Run 'polype init <project-dir>' in each project." ;;
+    init)
+      echo "Polype $POLYPE_VERSION activated in $project ($(wc -l < "$manifest") files). Commit .polype/, AGENTS.md, CLAUDE.md and .gitignore on the target branch so story worktrees get them." ;;
+    *)
+      echo "Polype $POLYPE_VERSION installed in $project ($(wc -l < "$manifest") files). Commit .claude/, .polype/, AGENTS.md, CLAUDE.md and .gitignore on the target branch so story worktrees get them." ;;
+  esac
 }
 
 cmd_install() {
+  collect_shipped
+  mkdir -p "$root" "$state_dir"
+
+  local line src dest old
+  declare -A SHIPPED=()
+  for line in "${SHIPPED_LINES[@]}"; do SHIPPED["${line#*$'\t'}"]=1; done
+  # Only what this version no longer ships is deleted. A file about to be rewritten stays until
+  # its replacement is ready, so a global install never removes the payload it is reading.
   if [ -f "$manifest" ]; then
-    while IFS= read -r old; do rm -f "$project/$old"; done < "$manifest"
+    while IFS= read -r old; do
+      [ -n "${SHIPPED[$old]-}" ] || rm -f "$root/$old"
+    done < "$manifest"
   fi
-  mkdir -p "$project/.polype"
+
   : > "$manifest.next"
   : > "$checksums.next"
-
-  local src dest
-  while IFS=$'\t' read -r src dest; do
-    copy_into_project "$src" "$dest"
+  for line in "${SHIPPED_LINES[@]}"; do
+    src="${line%%$'\t'*}" dest="${line#*$'\t'}"
+    lay_down "$src" "$dest"
     printf '%s\n' "$dest" >> "$manifest.next"
-    printf '%s %s\n' "$(sum_of "$project/$dest")" "$dest" >> "$checksums.next"
-  done < <(shipped_pairs)
+    printf '%s %s\n' "$(sum_of "$root/$dest")" "$dest" >> "$checksums.next"
+  done
 
-  chmod +x "$project"/.polype/hooks/*
   mv "$manifest.next" "$manifest"
   mv "$checksums.next" "$checksums"
   stamp_version
   prune_empty_dirs
+  wire_the_project
+  done_message
+}
 
-  assemble_agents_md
-  ignore_worktrees_and_env
-  set_hooks_path
-  echo "Polype $POLYPE_VERSION installed in $project ($(wc -l < "$manifest") files). Commit .claude/, .polype/, AGENTS.md, CLAUDE.md and .gitignore on the target branch so story worktrees get them."
+cmd_init() {
+  warn_without_a_global_install
+  cmd_install
 }
 
 cmd_update() {
   if [ ! -f "$manifest" ]; then cmd_install; return; fi
+  collect_shipped
   load_checksums
-  local src dest old
+  local line src dest old
   declare -A SHIPPED=()
-  while IFS=$'\t' read -r src dest; do SHIPPED["$dest"]="$src"; done < <(shipped_pairs)
+  for line in "${SHIPPED_LINES[@]}"; do SHIPPED["${line#*$'\t'}"]=1; done
 
   local ghosts=0
   while IFS= read -r old; do
-    [ -n "${SHIPPED[$old]-}" ] || { rm -f "$project/$old"; ghosts=$((ghosts + 1)); }
+    [ -n "${SHIPPED[$old]-}" ] || { rm -f "$root/$old"; ghosts=$((ghosts + 1)); }
   done < "$manifest"
 
   : > "$manifest.next"
   : > "$checksums.next"
   local modified=()
-  while IFS=$'\t' read -r src dest; do
-    if [ -f "$project/$dest" ] && has_drifted "$dest"; then
+  for line in "${SHIPPED_LINES[@]}"; do
+    src="${line%%$'\t'*}" dest="${line#*$'\t'}"
+    if [ -f "$root/$dest" ] && has_drifted "$dest"; then
       # Left in place, and still recorded with the checksum of the version Polype laid down,
       # so `check` keeps reporting it as modified.
       modified+=("$dest")
       printf '%s %s\n' "${RECORDED[$dest]}" "$dest" >> "$checksums.next"
     else
-      copy_into_project "$src" "$dest"
-      printf '%s %s\n' "$(sum_of "$project/$dest")" "$dest" >> "$checksums.next"
+      lay_down "$src" "$dest"
+      printf '%s %s\n' "$(sum_of "$root/$dest")" "$dest" >> "$checksums.next"
     fi
     printf '%s\n' "$dest" >> "$manifest.next"
-  done < <(shipped_pairs)
+  done
 
-  chmod +x "$project"/.polype/hooks/*
   mv "$manifest.next" "$manifest"
   mv "$checksums.next" "$checksums"
   stamp_version
   prune_empty_dirs
-
-  assemble_agents_md
-  ignore_worktrees_and_env
-  set_hooks_path
+  wire_the_project
 
   local path
   for path in ${modified[@]+"${modified[@]}"}; do
     echo "polype: modified, left as it is: $path" >&2
   done
-  echo "Polype $POLYPE_VERSION updated in $project ($(wc -l < "$manifest") files, $ghosts removed, ${#modified[@]} left modified)."
+  echo "Polype $POLYPE_VERSION updated in $root ($(wc -l < "$manifest") files, $ghosts removed, ${#modified[@]} left modified)."
 }
 
 cmd_check() {
@@ -206,17 +331,17 @@ cmd_check() {
   local status=0 installed path
   if [ -f "$version_file" ]; then
     installed="$(cat "$version_file")"
-    echo "Polype $installed installed in $project"
+    echo "Polype $installed installed in $root"
     [ "$installed" = "$POLYPE_VERSION" ] || echo "this installer ships $POLYPE_VERSION: run polype update"
   else
-    echo "no version stamp: .polype/version is missing"
+    echo "no version stamp: ${version_file#"$root"/} is missing"
     status=1
   fi
 
   load_checksums
   local missing=() modified=()
   while IFS= read -r path; do
-    if [ ! -f "$project/$path" ]; then
+    if [ ! -f "$root/$path" ]; then
       missing+=("$path")
     elif has_drifted "$path"; then
       modified+=("$path")
@@ -233,13 +358,8 @@ cmd_check() {
   exit "$status"
 }
 
-cmd_remove() {
-  require_install
-  local path
-  while IFS= read -r path; do rm -f "$project/$path"; done < "$manifest"
-  rm -f "$manifest" "$checksums" "$version_file"
-  prune_empty_dirs
-
+unwire_the_project() {
+  [ "$mode" = global ] && return 0
   if [ -f "$project/CLAUDE.md" ]; then
     grep -vx '@AGENTS.md' "$project/CLAUDE.md" > "$project/CLAUDE.md.polype-next" || true
     mv "$project/CLAUDE.md.polype-next" "$project/CLAUDE.md"
@@ -257,15 +377,31 @@ cmd_remove() {
   if [ "$current" = ".polype/hooks" ]; then
     git -C "$project" config --unset core.hooksPath
   fi
+}
 
-  echo "Polype removed from $project. AGENTS.local.md, .gitignore, docs/ and the files you added were left alone."
+cmd_remove() {
+  require_install
+  local path
+  while IFS= read -r path; do rm -f "$root/$path"; done < "$manifest"
+  rm -f "$manifest" "$checksums" "$version_file"
+  # The payload lives there too, and nothing else does.
+  if [ "$mode" = global ]; then rm -rf "$state_dir"; fi
+  prune_empty_dirs
+  unwire_the_project
+
+  if [ "$mode" = global ]; then
+    echo "Polype removed from $root. The files you put there yourself were left alone."
+  else
+    echo "Polype removed from $project. AGENTS.local.md, .gitignore, docs/ and the files you added were left alone."
+  fi
 }
 
 main() {
   local command="${1-}"
   [ $# -gt 0 ] && shift
   case "$command" in
-    install|update|check|remove) parse_project "$@"; "cmd_$command" ;;
+    install|update|check|remove) parse_target yes "$@"; "cmd_$command" ;;
+    init) mode=init; parse_target no "$@"; cmd_init ;;
     help|--help|-h) usage; exit 0 ;;
     "") die_usage ;;
     *) echo "polype: unknown command $command" >&2; die_usage ;;
