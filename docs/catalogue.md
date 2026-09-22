@@ -10,6 +10,12 @@ Un boilerplate n'est utile aux agents que s'ils le lisent tous de la même faço
 - La table des capacités ne reprend que les noms de la liste d'ADR-0020 (Database, Auth, Authorization, Multi-tenancy, Files, Jobs, Email, Payment, Cache and rate limiting, Observability, i18n, Deployment) ; un profil ne garde que les lignes qu'il fournit.
 - `bin/po-lint` vérifie chaque `boilerplates/*/profile.md` contre ce gabarit : une section absente, une commande mal nommée ou une capacité inconnue fait échouer le lint, qui nomme le fichier et la ligne. Sans dossier `boilerplates/`, il n'y a rien à vérifier.
 
+## Capacités et briques
+
+- Les briques par défaut, leurs alternatives, le moment d'en changer et ce que prouve un test de contrat vivent dans `method/skills/capability-bricks/SKILL.md`, repris d'ADR-0020.
+- `/po-architect` compare les briques d'un profil à ce tableau, retient une brique par capacité et enregistre chaque écart dans l'ADR de projet de cette capacité.
+- Les noms de capacités d'un profil sont les douze de ce skill, dans le même ordre.
+
 ## Trois niveaux de boilerplate
 
 La flotte ne fait tourner deux stories ensemble que si les chemins qu'elles possèdent sont disjoints (ADR-0007). Le boilerplate retenu fixe donc le parallélisme qu'un projet peut atteindre.

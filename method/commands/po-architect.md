@@ -38,10 +38,12 @@ Apply the `codebase-analysis` skill to the base: the profile first when there is
 No decision is drafted before this analysis is done.
 
 ## Step 3 — Structural decisions
-Each structural choice becomes one ADR in `docs/decisions/` from `templates/adr.md`. Draft one for:
+Each structural choice becomes one ADR in `docs/decisions/` from `templates/adr.md`. Read the `capability-bricks` skill before drafting them. Draft one for:
 - the stack: language, framework, runtime, as the base already fixes them;
-- each capability the project needs — database, authentication, authorization, multi-tenancy, files, background jobs, email, payment, cache, observability, internationalisation, deployment — naming the brick in use as the default and the bricks that could replace it; a capability the project does not need is said so in `docs/architecture.md`, without an ADR;
+- each capability the project needs — database, authentication, authorization, multi-tenancy, files, background jobs, email, payment, cache, observability, internationalisation, deployment — naming the brick retained as the project's default and the bricks that could replace it; a capability the project does not need is said so in `docs/architecture.md`, without an ADR;
 - each third-party integration the project depends on.
+
+For each capability, compare the brick the profile declares with the default brick of the skill; without a profile, compare the brick the code of step 2 shows; with an empty repository, the default applies. A gap is a capability whose profile brick differs from the skill's default. Weigh it against the skill's switch condition, then retain exactly one brick per capability: each gap is recorded in the project ADR of that capability, which names the profile's brick, the default, the brick retained and the switch condition that justifies it. A gap is never settled in silence. Retaining the default over the profile's brick records the choice only: the swap itself is a later story, as "Never rewrite the base" says.
 
 Number them `NNNN-<slug>.md` from the next free number in `docs/decisions/`, with `scope: framing`. They become `status: accepted` once approved. An accepted ADR is never edited: a changed decision is a new ADR whose `supersedes` names the old one, and the old one gets `superseded-by` and `status: superseded`.
 
