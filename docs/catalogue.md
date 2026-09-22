@@ -16,6 +16,13 @@ Un boilerplate n'est utile aux agents que s'ils le lisent tous de la même faço
 - `/po-architect` compare les briques d'un profil à ce tableau, retient une brique par capacité et enregistre chaque écart dans l'ADR de projet de cette capacité.
 - Les noms de capacités d'un profil sont les douze de ce skill, dans le même ordre.
 
+## Briques auto-hébergées chez mustelinet
+
+- `boilerplates/bricks/` tient une note par brique par défaut qu'on déploie chez mustelinet : `postgres.md`, `garage.md`, `jobs.md`, `email.md`, `observability.md`, `deployment.md`.
+- Chaque note dit ce que la brique fournit, comment elle tourne chez mustelinet, ses réglages, ses sauvegardes, ce que l'hébergeur ne fournit pas et la liste de ce qu'un test de contrat doit prouver.
+- Ce sont des notes de documentation, pas du code : elles décrivent un déploiement et ses contrats, sans rien livrer.
+- Ce que la doc de mustelinet ne documente pas (SMTP sortant, snapshots, registre d'images, Kubernetes, domaines personnalisés) y reste une question à poser à l'hébergeur, jamais un fait.
+
 ## Trois niveaux de boilerplate
 
 La flotte ne fait tourner deux stories ensemble que si les chemins qu'elles possèdent sont disjoints (ADR-0007). Le boilerplate retenu fixe donc le parallélisme qu'un projet peut atteindre.
