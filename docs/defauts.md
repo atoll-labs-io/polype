@@ -53,3 +53,9 @@ Le tracker d'issues de Polype est ce fichier tant que le dépôt n'est pas sur G
 |---|---|---|---|
 | 28 | recherche s33 | L'`AGENTS.local.md` de ce dépôt ne déclare ni `Parallel`, ni `Max attempts`, ni `Tracker` (ils n'existent que dans `method/templates/agents-local.md:29-31`) : `/po-drive` lancé ici s'arrête sur un réglage manquant. | corrigé — réglages de flotte ajoutés à `AGENTS.local.md` |
 | 29 | recherche s33 | `method/agents/planner.md:50` dit que le planner écrit la recherche et le plan « et aucun autre fichier », alors que `:51` lui fait écrire une ADR. | corrigé par s34 |
+
+## Relevé par l'essai d'installation (2026-09-22)
+
+| # | Source | Défaut | Statut |
+|---|---|---|---|
+| 31 | essai `polype remove` | La désinstallation retire la ligne d'import d'`AGENTS.md` mais laisse un `CLAUDE.md` vide derrière elle. | ouvert (mineur) |
