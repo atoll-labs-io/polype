@@ -41,10 +41,10 @@ test_drive_dispatches_lanes_in_one_message() {
   holds "$wave" 'You prepare each lane'"'"'s worktree yourself' 'the wave section'
   holds "$wave" 'git worktree add -b story/<id>' 'the wave section'
 
-  # The three subagents, in that order, each under the contract of its own command.
+  # The four subagents of a lane, in that order, each under the contract of its own file.
   local order; order=$(grep -o 'subagent_type: [a-z]*' <<< "$wave" | sed 's/subagent_type: //' | tr '\n' ' ')
-  [ "$order" = "planner implementer reviewer " ] \
-    || fail "expected planner then implementer then reviewer, found: $order"
+  [ "$order" = "planner designer implementer reviewer " ] \
+    || fail "expected planner then designer then implementer then reviewer, found: $order"
   holds "$wave" 'the prompt `/po-execute` fixes' 'the wave section'
   holds "$wave" 'the prompt `/po-review` fixes' 'the wave section'
   holds "$wave" 'A plan without that line never reaches an implementer' 'the wave section'
@@ -108,42 +108,6 @@ test_settings_template_declares_fleet_settings() {
   # `github` is declared as a value, not implemented here.
   grep -q '^| Tracker | .*`github`' "$TEMPLATE" || fail "the Tracker row must name the github value"
   contains "$METHOD/commands/po-drive.md" '`Tracker: github` → say that publishing to GitHub is not handled yet'
-}
-
-test_drive_lane_includes_design_when_the_story_has_a_screen() {
-  require_file "$DRIVE"
-  local wave; wave=$(section_of "$DRIVE" 'A wave')
-  [ -n "$wave" ] || fail "po-drive.md has no '## A wave' section"
-
-  # The stage sits between the plan and the code.
-  local planner design implementer
-  planner=$(grep -n -F 'subagent_type: planner' <<< "$wave" | cut -d: -f1 || true)
-  design=$(grep -n -F '**The design stage**' <<< "$wave" | cut -d: -f1 || true)
-  implementer=$(grep -n -F 'subagent_type: implementer' <<< "$wave" | cut -d: -f1 || true)
-  [ -n "$design" ] || fail 'the wave section names no design stage'
-  { [ "$planner" -lt "$design" ] && [ "$design" -lt "$implementer" ]; } \
-    || fail "the design stage must sit between plan ($planner) and implementation ($implementer), found $design"
-
-  # A stop, not a dispatch, and the reason is stated.
-  holds "$wave" 'a command does not run inside a subagent (ADR-0016)' 'the wave section'
-  holds "$wave" 'no design subagent exists' 'the wave section'
-  holds "$wave" '`/po-design <id>` to run in `<Worktree root><id>`' 'the wave section'
-
-  # Both of /po-design's own conditions, checked before the stop.
-  holds "$wave" '`docs/design-system.md` missing there → the lane stops' 'the wave section'
-  holds "$wave" '`Design source` at `—` → the lane stops' 'the wave section'
-
-  # Never skipped to keep a lane moving.
-  holds "$wave" 'The stage is never skipped' 'the wave section'
-  holds "$wave" 'the implementer does not start' 'the wave section'
-
-  # A resumed lane knows the stage exists.
-  local resuming; resuming=$(section_of "$DRIVE" 'Resuming')
-  [ -n "$resuming" ] || fail "po-drive.md has no '## Resuming' section"
-  holds "$resuming" '`docs/designs/<id>/design.md` is absent | the design stage' 'the resuming table'
-
-  settings_read_by "$DRIVE" | grep -qx 'Design source' \
-    || fail 'po-drive.md does not declare it reads `Design source`'
 }
 
 # s33 — the parallelism the fleet promises.

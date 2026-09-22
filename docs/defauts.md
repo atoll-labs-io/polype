@@ -36,7 +36,7 @@ Le tracker d'issues de Polype est ce fichier tant que le dépôt n'est pas sur G
 | 21 | revue s22 | Findings mineurs de formulation laissés par plusieurs revues (voir les rapports). | ouvert |
 | 22 | recherche s32 | ADR-0003 est `accepted` et met l'état du travail dans le tracker, alors que la matrice et `/po-drive` le dérivent désormais des worktrees et de git (ADR-0016) : une ADR doit trancher ce point. | ouvert |
 | 23 | recherche s32 | ADR-0016 est encore `status: proposed` alors que M3 l'a implémentée et que la matrice la cite comme décision vivante. | ouvert |
-| 24 | s32 | La flotte n'a pas de subagent de design : une story avec écran s'arrête après son plan, le temps qu'un humain lance `/po-design <id>`, donc sa lane ne va pas de bout en bout. | ouvert |
+| 24 | s32 | La flotte n'a pas de subagent de design : une story avec écran s'arrête après son plan, le temps qu'un humain lance `/po-design <id>`, donc sa lane ne va pas de bout en bout. | corrigé par s35 |
 
 ## Relevés par la validation de la flotte (2026-09-22)
 
