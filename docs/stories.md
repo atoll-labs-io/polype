@@ -536,7 +536,7 @@ Objectif : faire avancer plusieurs stories en parallèle, reprendre après un ar
 
 - **Complexité** : 3
 - **Dépend de** : aucune
-- **Owns** : `bin/polype`, `tests/installer.test.sh`, `docs/installation.md`
+- **Owns** : `bin/polype`, `bin/polype-dev-install`, `tests/installer.test.sh`, `docs/installation.md`
 - **Matrice** : H01, H02
 
 **Critères d'acceptation**

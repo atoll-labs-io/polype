@@ -1,0 +1,275 @@
+#!/usr/bin/env bash
+# Polype's installer: lays the method down in a project, refreshes it, audits it, takes it back.
+#
+#   polype install <project-dir> [--hooks]    copy everything, overwriting what is there
+#   polype update  <project-dir> [--hooks]    refresh untouched files, report the modified ones
+#   polype check   <project-dir>              show the installed version and what drifted
+#   polype remove  <project-dir>              take back what was installed
+#
+# Commands, agents and skills land in .claude/, templates and the gate in .polype/. AGENTS.md is
+# regenerated from the method's rules followed by the project's AGENTS.local.md, which is only read.
+# Three state files describe the install: .polype/manifest (what was laid down), .polype/checksums
+# (what it contained) and .polype/version.
+set -euo pipefail
+
+POLYPE_VERSION="0.1.0"
+
+method="$(cd "$(dirname "$0")/../method" && pwd)"
+marker='<!-- Assembled by Polype.'
+project="" hooks=no
+
+usage() {
+  cat <<'USAGE'
+usage: polype <install|update|check|remove> <project-dir> [--hooks]
+       polype help
+USAGE
+}
+
+die_usage() { usage >&2; exit 2; }
+
+parse_project() {
+  local arg
+  for arg in "$@"; do
+    case "$arg" in
+      --hooks) hooks=yes ;;
+      -*) echo "polype: unknown option $arg" >&2; die_usage ;;
+      *) project="$arg" ;;
+    esac
+  done
+  [ -n "$project" ] || die_usage
+  [ -d "$project" ] || { echo "polype: no such directory: $project" >&2; exit 2; }
+  project="$(cd "$project" && pwd)"
+  manifest="$project/.polype/manifest"
+  checksums="$project/.polype/checksums"
+  version_file="$project/.polype/version"
+}
+
+sum_of() { cksum < "$1"; }
+
+# One "<source file><tab><path inside the project>" line per shipped file.
+shipped_pairs() {
+  local spec from to rel
+  for spec in commands:.claude/commands agents:.claude/agents skills:.claude/skills \
+              templates:.polype/templates hooks:.polype/hooks; do
+    from="$method/${spec%%:*}" to="${spec#*:}"
+    while IFS= read -r rel; do
+      printf '%s\t%s\n' "$from/$rel" "$to/$rel"
+    done < <(cd "$from" && find . -type f | sed 's|^\./||' | sort)
+  done
+}
+
+prune_empty_dirs() {
+  find "$project/.claude" "$project/.polype" -type d -empty -delete 2>/dev/null || true
+}
+
+copy_into_project() {
+  local src="$1" dest="$2"
+  mkdir -p "$(dirname "$project/$dest")"
+  cp "$src" "$project/$dest"
+}
+
+# A hand-written AGENTS.md is kept aside rather than silently replaced.
+assemble_agents_md() {
+  if [ -f "$project/AGENTS.md" ] && ! head -n 1 "$project/AGENTS.md" | grep -qF "$marker"; then
+    cp "$project/AGENTS.md" "$project/AGENTS.md.before-polype"
+    echo "polype: existing AGENTS.md saved as AGENTS.md.before-polype" >&2
+  fi
+  {
+    cat "$method/AGENTS.md"
+    if [ -f "$project/AGENTS.local.md" ]; then
+      printf '\n---\n\n'
+      cat "$project/AGENTS.local.md"
+    fi
+  } > "$project/AGENTS.md"
+
+  touch "$project/CLAUDE.md"
+  grep -qx '@AGENTS.md' "$project/CLAUDE.md" || printf '@AGENTS.md\n' >> "$project/CLAUDE.md"
+}
+
+ignore_worktrees_and_env() {
+  local worktree_root=".worktrees/" configured pattern
+  if [ -f "$project/AGENTS.local.md" ]; then
+    configured="$(sed -n 's/^Worktree root:[[:space:]]*\(.*[^[:space:]]\)[[:space:]]*$/\1/p' "$project/AGENTS.local.md" | head -n 1)"
+    [ -n "$configured" ] && worktree_root="$configured"
+  fi
+  touch "$project/.gitignore"
+  for pattern in "$worktree_root" '.env*'; do
+    grep -qxF "$pattern" "$project/.gitignore" || printf '%s\n' "$pattern" >> "$project/.gitignore"
+  done
+}
+
+set_hooks_path() {
+  [ "$hooks" = yes ] || return 0
+  local current
+  current="$(git -C "$project" config --get core.hooksPath || true)"
+  if [ -n "$current" ] && [ "$current" != ".polype/hooks" ]; then
+    echo "polype: core.hooksPath is already '$current'; left unchanged, chain .polype/hooks/pre-commit from there" >&2
+  else
+    git -C "$project" config core.hooksPath .polype/hooks
+  fi
+}
+
+stamp_version() { printf '%s\n' "$POLYPE_VERSION" > "$version_file"; }
+
+# RECORDED[path] = the checksum the installer wrote down for that file.
+load_checksums() {
+  declare -gA RECORDED=()
+  [ -f "$checksums" ] || return 0
+  local crc size path
+  while read -r crc size path; do RECORDED["$path"]="$crc $size"; done < "$checksums"
+}
+
+has_drifted() {
+  local path="$1"
+  [ -n "${RECORDED[$path]-}" ] || return 1
+  [ "${RECORDED[$path]}" != "$(sum_of "$project/$path")" ]
+}
+
+require_install() {
+  [ -f "$manifest" ] || { echo "polype: no install found in $project (.polype/manifest is missing)" >&2; exit 1; }
+}
+
+cmd_install() {
+  if [ -f "$manifest" ]; then
+    while IFS= read -r old; do rm -f "$project/$old"; done < "$manifest"
+  fi
+  mkdir -p "$project/.polype"
+  : > "$manifest.next"
+  : > "$checksums.next"
+
+  local src dest
+  while IFS=$'\t' read -r src dest; do
+    copy_into_project "$src" "$dest"
+    printf '%s\n' "$dest" >> "$manifest.next"
+    printf '%s %s\n' "$(sum_of "$project/$dest")" "$dest" >> "$checksums.next"
+  done < <(shipped_pairs)
+
+  chmod +x "$project"/.polype/hooks/*
+  mv "$manifest.next" "$manifest"
+  mv "$checksums.next" "$checksums"
+  stamp_version
+  prune_empty_dirs
+
+  assemble_agents_md
+  ignore_worktrees_and_env
+  set_hooks_path
+  echo "Polype $POLYPE_VERSION installed in $project ($(wc -l < "$manifest") files). Commit .claude/, .polype/, AGENTS.md, CLAUDE.md and .gitignore on the target branch so story worktrees get them."
+}
+
+cmd_update() {
+  if [ ! -f "$manifest" ]; then cmd_install; return; fi
+  load_checksums
+  local src dest old
+  declare -A SHIPPED=()
+  while IFS=$'\t' read -r src dest; do SHIPPED["$dest"]="$src"; done < <(shipped_pairs)
+
+  local ghosts=0
+  while IFS= read -r old; do
+    [ -n "${SHIPPED[$old]-}" ] || { rm -f "$project/$old"; ghosts=$((ghosts + 1)); }
+  done < "$manifest"
+
+  : > "$manifest.next"
+  : > "$checksums.next"
+  local modified=()
+  while IFS=$'\t' read -r src dest; do
+    if [ -f "$project/$dest" ] && has_drifted "$dest"; then
+      # Left in place, and still recorded with the checksum of the version Polype laid down,
+      # so `check` keeps reporting it as modified.
+      modified+=("$dest")
+      printf '%s %s\n' "${RECORDED[$dest]}" "$dest" >> "$checksums.next"
+    else
+      copy_into_project "$src" "$dest"
+      printf '%s %s\n' "$(sum_of "$project/$dest")" "$dest" >> "$checksums.next"
+    fi
+    printf '%s\n' "$dest" >> "$manifest.next"
+  done < <(shipped_pairs)
+
+  chmod +x "$project"/.polype/hooks/*
+  mv "$manifest.next" "$manifest"
+  mv "$checksums.next" "$checksums"
+  stamp_version
+  prune_empty_dirs
+
+  assemble_agents_md
+  ignore_worktrees_and_env
+  set_hooks_path
+
+  local path
+  for path in ${modified[@]+"${modified[@]}"}; do
+    echo "polype: modified, left as it is: $path" >&2
+  done
+  echo "Polype $POLYPE_VERSION updated in $project ($(wc -l < "$manifest") files, $ghosts removed, ${#modified[@]} left modified)."
+}
+
+cmd_check() {
+  require_install
+  local status=0 installed path
+  if [ -f "$version_file" ]; then
+    installed="$(cat "$version_file")"
+    echo "Polype $installed installed in $project"
+    [ "$installed" = "$POLYPE_VERSION" ] || echo "this installer ships $POLYPE_VERSION: run polype update"
+  else
+    echo "no version stamp: .polype/version is missing"
+    status=1
+  fi
+
+  load_checksums
+  local missing=() modified=()
+  while IFS= read -r path; do
+    if [ ! -f "$project/$path" ]; then
+      missing+=("$path")
+    elif has_drifted "$path"; then
+      modified+=("$path")
+    fi
+  done < "$manifest"
+
+  for path in ${modified[@]+"${modified[@]}"}; do echo "modified: $path"; done
+  for path in ${missing[@]+"${missing[@]}"}; do echo "missing: $path"; done
+  if [ ${#modified[@]} -eq 0 ] && [ ${#missing[@]} -eq 0 ]; then
+    echo "$(wc -l < "$manifest") installed files, none modified"
+  else
+    status=1
+  fi
+  exit "$status"
+}
+
+cmd_remove() {
+  require_install
+  local path
+  while IFS= read -r path; do rm -f "$project/$path"; done < "$manifest"
+  rm -f "$manifest" "$checksums" "$version_file"
+  prune_empty_dirs
+
+  if [ -f "$project/CLAUDE.md" ]; then
+    grep -vx '@AGENTS.md' "$project/CLAUDE.md" > "$project/CLAUDE.md.polype-next" || true
+    mv "$project/CLAUDE.md.polype-next" "$project/CLAUDE.md"
+  fi
+  if [ -f "$project/AGENTS.md" ] && head -n 1 "$project/AGENTS.md" | grep -qF "$marker"; then
+    rm -f "$project/AGENTS.md"
+  fi
+  # Only when the assembled file is gone, so an AGENTS.md written since the install survives.
+  if [ ! -e "$project/AGENTS.md" ] && [ -f "$project/AGENTS.md.before-polype" ]; then
+    mv "$project/AGENTS.md.before-polype" "$project/AGENTS.md"
+  fi
+
+  local current
+  current="$(git -C "$project" config --get core.hooksPath 2>/dev/null || true)"
+  if [ "$current" = ".polype/hooks" ]; then
+    git -C "$project" config --unset core.hooksPath
+  fi
+
+  echo "Polype removed from $project. AGENTS.local.md, .gitignore, docs/ and the files you added were left alone."
+}
+
+main() {
+  local command="${1-}"
+  [ $# -gt 0 ] && shift
+  case "$command" in
+    install|update|check|remove) parse_project "$@"; "cmd_$command" ;;
+    help|--help|-h) usage; exit 0 ;;
+    "") die_usage ;;
+    *) echo "polype: unknown command $command" >&2; die_usage ;;
+  esac
+}
+
+main "$@"
