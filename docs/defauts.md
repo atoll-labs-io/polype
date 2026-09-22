@@ -58,4 +58,4 @@ Le tracker d'issues de Polype est ce fichier tant que le dépôt n'est pas sur G
 
 | # | Source | Défaut | Statut |
 |---|---|---|---|
-| 31 | essai `polype remove` | La désinstallation retire la ligne d'import d'`AGENTS.md` mais laisse un `CLAUDE.md` vide derrière elle. | ouvert (mineur) |
+| 31 | essai `polype remove` | La désinstallation retire la ligne d'import d'`AGENTS.md` mais laisse un `CLAUDE.md` vide derrière elle. | corrigé par s45 |

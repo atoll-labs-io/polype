@@ -112,6 +112,32 @@ test_installer_remove_restores_a_hand_written_agents_md() {
   grep -qx '# Project notes' "$P/CLAUDE.md" || fail "the project's CLAUDE.md content was lost"
 }
 
+test_remove_deletes_a_claude_md_it_created() {
+  project
+  polype install "$P"
+  polype remove "$P"
+  if [ -e "$P/CLAUDE.md" ]; then fail "the CLAUDE.md the installer created was left behind"; fi
+  rm -rf "$SCRATCH"
+  project
+  printf '# Project notes\n' > "$P/CLAUDE.md"
+  polype install "$P"
+  polype remove "$P"
+  require_file "$P/CLAUDE.md"
+  grep -qx '# Project notes' "$P/CLAUDE.md" || fail "the project's CLAUDE.md content was lost"
+  if grep -qx '@AGENTS.md' "$P/CLAUDE.md"; then fail "the import was left in CLAUDE.md"; fi
+}
+
+test_remove_leaves_no_empty_file_behind() {
+  project
+  polype install "$P"
+  polype remove "$P"
+  local empty leftover
+  empty="$(find "$P" -path "$P/.git" -prune -o -type f -empty -print)"
+  [ -z "$empty" ] || fail "empty files left after remove: $empty"
+  leftover="$(find "$P" -path "$P/.git" -prune -o -name '*.polype-next' -print)"
+  [ -z "$leftover" ] || fail "temporary files left after remove: $leftover"
+}
+
 test_installer_state_files_are_not_their_own_ghosts() {
   project && polype install "$P"
   if grep -qxF '.polype/version' "$P/.polype/manifest"; then fail ".polype/version is listed in the manifest"; fi

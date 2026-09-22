@@ -362,7 +362,11 @@ unwire_the_project() {
   [ "$mode" = global ] && return 0
   if [ -f "$project/CLAUDE.md" ]; then
     grep -vx '@AGENTS.md' "$project/CLAUDE.md" > "$project/CLAUDE.md.polype-next" || true
-    mv "$project/CLAUDE.md.polype-next" "$project/CLAUDE.md"
+    if grep -q '[^[:space:]]' "$project/CLAUDE.md.polype-next"; then
+      mv "$project/CLAUDE.md.polype-next" "$project/CLAUDE.md"
+    else
+      rm -f "$project/CLAUDE.md.polype-next" "$project/CLAUDE.md"
+    fi
   fi
   if [ -f "$project/AGENTS.md" ] && head -n 1 "$project/AGENTS.md" | grep -qF "$marker"; then
     rm -f "$project/AGENTS.md"
