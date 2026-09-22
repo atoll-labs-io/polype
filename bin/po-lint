@@ -181,8 +181,79 @@ check_fail_closed() {
   done <<< "$METHOD_FILES"
 }
 
+# --- rule: profiles -----------------------------------------------------------
+# Every boilerplate profile follows the profile template: its sections, the
+# command names of its Commands fence and the capability names of its table all
+# come from the template, so no list is repeated here. The boilerplates/ folder
+# sits beside method/; without it there is nothing to check.
+
+PROFILE_TEMPLATE="$METHOD/templates/profile.md"
+BOILERPLATES="$METHOD/../boilerplates"
+
+# `<line><TAB><name>` of each command named in the fence of `## Commands`.
+profile_commands() {
+  awk '
+    /^## / {sec = ($0 == "## Commands"); next}
+    sec && /^```/ {fence = !fence; next}
+    sec && fence && NF {n = $0; sub(/:.*/, "", n); sub(/^[[:space:]]+/, "", n); print NR "\t" n}
+  ' "$1"
+}
+
+# `<line><TAB><name>` of each row of the `## Capabilities` table, header and separator excluded.
+profile_capabilities() {
+  awk '
+    /^## / {sec = ($0 == "## Capabilities"); next}
+    sec && /^\|/ {
+      split($0, cell, "|"); c = cell[2]
+      gsub(/^[[:space:]]+|[[:space:]]+$/, "", c)
+      if (c == "Capability" || c ~ /^:?-+:?$/) next
+      print NR "\t" c
+    }
+  ' "$1"
+}
+
+check_profiles() {
+  local sections commands capabilities f rel heading line name cmdline
+  if [ ! -f "$PROFILE_TEMPLATE" ]; then
+    report "templates/profile.md" 1 profile "the profile template is missing"
+    return
+  fi
+  [ -d "$BOILERPLATES" ] || return 0
+  sections=$(grep '^## ' "$PROFILE_TEMPLATE")
+  commands=$(profile_commands "$PROFILE_TEMPLATE" | cut -f2)
+  capabilities=$(profile_capabilities "$PROFILE_TEMPLATE" | cut -f2)
+
+  for f in "$BOILERPLATES"/*/profile.md; do
+    [ -f "$f" ] || continue
+    rel="boilerplates/${f#"$BOILERPLATES"/}"
+    while IFS= read -r heading; do
+      grep -qxF -- "$heading" "$f" || report "$rel" 1 profile "missing section '$heading'"
+    done <<< "$sections"
+
+    cmdline=$(grep -n -m1 -x '## Commands' "$f" | cut -d: -f1)
+    if [ -n "$cmdline" ]; then
+      while IFS=$'\t' read -r line name; do
+        [ -n "$name" ] || continue
+        grep -qxF -- "$name" <<< "$commands" \
+          || report "$rel" "$line" profile "command '$name' is not a setting of the template"
+      done < <(profile_commands "$f")
+      while IFS= read -r name; do
+        profile_commands "$f" | cut -f2 | grep -qxF -- "$name" \
+          || report "$rel" "$cmdline" profile "command '$name' is missing"
+      done <<< "$commands"
+    fi
+
+    while IFS=$'\t' read -r line name; do
+      [ -n "$name" ] || continue
+      grep -qxF -- "$name" <<< "$capabilities" \
+        || report "$rel" "$line" profile "capability '$name' is not in the template list"
+    done < <(profile_capabilities "$f")
+  done
+}
+
 check_settings
 check_tools
+check_profiles
 check_fail_closed
 
 if [ "$breaches" -eq 0 ]; then
