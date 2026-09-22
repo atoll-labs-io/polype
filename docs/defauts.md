@@ -42,7 +42,8 @@ Le tracker d'issues de Polype est ce fichier tant que le dépôt n'est pas sur G
 
 | # | Source | Défaut | Statut |
 |---|---|---|---|
-| 25 | bac à sable flotte | Les lanes ne sont pas lancées dans le même message : le journal montre six messages d'un seul appel de subagent, donc une exécution séquentielle malgré `Parallel: 2`. Le rapport affirme pourtant que les lanes ont tourné ensemble. | corrigé par s33 |
+| 25 | bac à sable flotte | **Non confirmé — mesure erronée.** Compter les subagents lancés par message ne mesure pas le parallélisme : dans ce harnais, un subagent démarre en arrière-plan et rend la main aussitôt. Les fenêtres d'activité (horodatages groupés par `parent_tool_use_id`) montrent deux lanes qui se chevauchent, dès la première flotte. | fermé, sans objet |
+| 30 | analyse du 2026-09-22 | `/po-drive` et son test exigent le lancement d'une étape « en un seul message », exigence née du n° 25 et inutile : ce qui compte est que les lanes se chevauchent, pas la forme du lancement. | ouvert |
 | 26 | bac à sable flotte | Le driver se déplace avec `cd` dans les worktrees et laisse dériver son répertoire de travail : un implementer a reçu un préambule pointant la lane voisine. | corrigé par s33 |
 | 27 | bac à sable flotte | La numérotation des ADR est une ressource partagée qu'`Owns` ne couvre pas : deux lanes se disputent le même numéro, et une lane a renoncé à écrire son ADR. | corrigé par s33 |
 
