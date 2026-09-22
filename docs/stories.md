@@ -677,3 +677,19 @@ Objectif : qu'un projet puisse démarrer sur un boilerplate connu, avec des briq
 **Critères d'acceptation**
 - [ ] `remove_deletes_a_claude_md_it_created` — si `CLAUDE.md` ne contenait que l'import de Polype, il est supprimé ; s'il contenait autre chose, seule la ligne d'import part.
 - [ ] `remove_leaves_no_empty_file_behind` — après désinstallation, aucun fichier vide créé par l'installeur ne subsiste.
+
+### s46-adr-directory — Le dossier des ADR devient un réglage
+**En tant que** développeur **je veux** qu'un projet choisisse où vivent ses ADR **afin qu'**un dépôt qui numérote déjà ses décisions ailleurs ne contredise pas la méthode.
+
+- **Complexité** : 2
+- **Dépend de** : aucune
+- **Owns** : `method/templates/agents-local.md`, `method/AGENTS.md`, `method/commands/po-architect.md`, `method/commands/po-plan.md`, `method/agents/planner.md`, `method/agents/implementer.md`, `method/agents/reviewer.md`, `tests/adr-directory.test.sh`
+- **Matrice** : G04 (volet chemin)
+
+**Critères d'acceptation**
+- [ ] `settings_template_declares_the_adr_directory` — le gabarit déclare `ADR directory`, valeur par défaut `docs/decisions/`, documenté dans le tableau des valeurs comme « où vivent les ADR du projet, avec sa propre numérotation ».
+- [ ] `rules_read_the_adr_directory_instead_of_a_fixed_path` — la Loi 6 de `AGENTS.md` parle de `<ADR directory>NNNN-<slug>.md` et non plus d'un chemin écrit en dur.
+- [ ] `every_command_that_writes_an_adr_reads_the_setting` — `/po-architect` et `/po-plan`, ainsi que les subagents qui lisent ou écrivent une ADR, déclarent `ADR directory` dans leur ligne `Reads settings:` et l'utilisent.
+- [ ] `lint_accepts_the_new_setting` — `bin/po-lint` reste vert, et il échouerait si une commande lisait un réglage absent du gabarit.
+
+**Notes pour l'agent** : ne pas renommer le dossier de ce dépôt-ci, qui garde `docs/decisions/` par défaut. Les ADR acceptées existantes ne sont pas déplacées. Le premier projet qui s'en sert est nautile, dont les critères d'acceptation nomment déjà des fichiers sous `docs/adr/`.
