@@ -37,3 +37,11 @@ Le tracker d'issues de Polype est ce fichier tant que le dépôt n'est pas sur G
 | 22 | recherche s32 | ADR-0003 est `accepted` et met l'état du travail dans le tracker, alors que la matrice et `/po-drive` le dérivent désormais des worktrees et de git (ADR-0016) : une ADR doit trancher ce point. | ouvert |
 | 23 | recherche s32 | ADR-0016 est encore `status: proposed` alors que M3 l'a implémentée et que la matrice la cite comme décision vivante. | ouvert |
 | 24 | s32 | La flotte n'a pas de subagent de design : une story avec écran s'arrête après son plan, le temps qu'un humain lance `/po-design <id>`, donc sa lane ne va pas de bout en bout. | ouvert |
+
+## Relevés par la validation de la flotte (2026-09-22)
+
+| # | Source | Défaut | Statut |
+|---|---|---|---|
+| 22 | bac à sable flotte | Les lanes ne sont pas lancées dans le même message : le journal montre six messages d'un seul appel de subagent, donc une exécution séquentielle malgré `Parallel: 2`. Le rapport affirme pourtant que les lanes ont tourné ensemble. | à corriger par s33 |
+| 23 | bac à sable flotte | Le driver se déplace avec `cd` dans les worktrees et laisse dériver son répertoire de travail : un implementer a reçu un préambule pointant la lane voisine. | à corriger par s33 |
+| 24 | bac à sable flotte | La numérotation des ADR est une ressource partagée qu'`Owns` ne couvre pas : deux lanes se disputent le même numéro, et une lane a renoncé à écrire son ADR. | à corriger par s33 |

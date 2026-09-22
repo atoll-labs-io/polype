@@ -485,3 +485,17 @@ Objectif : faire avancer plusieurs stories en parallèle, reprendre après un ar
 - [ ] `lint_fails_when_it_reads_nothing` — `bin/po-lint` sort non nul si le listage des fichiers de méthode échoue ou ne renvoie aucun fichier, et n'affiche jamais un résumé favorable dans ce cas.
 - [ ] `lint_reports_how_many_files_it_read` — le résumé indique le nombre de fichiers lus, et le test le vérifie sur un répertoire vide comme sur le vrai.
 - [ ] `matrix_and_adr_index_agree_on_the_fleet` — la matrice dit d'une seule voix où vit l'état de la flotte, et `docs/conception.md` présente ADR-0017 comme la décision vivante, ADR-0014 comme remplacée.
+
+### s33-real-parallelism — Des lanes qui tournent vraiment ensemble
+**En tant que** développeur **je veux** que les lanes d'une vague soient lancées en un seul message, que le driver ne se déplace jamais, et que les ADR ne se disputent pas de numéro **afin que** la flotte tienne la promesse du parallélisme.
+
+- **Complexité** : 3
+- **Dépend de** : s32
+- **Owns** : `method/commands/po-drive.md`, `method/agents/planner.md`, `tests/drive.test.sh`, `docs/defauts.md`
+- **Corrige** : défauts n° 22, 23 et 24
+
+**Critères d'acceptation**
+- [ ] `drive_dispatches_a_whole_stage_in_one_message` — la commande exige explicitement que tous les subagents d'une même étape d'une vague partent dans **un seul message** (plusieurs appels d'outil dans ce message), et interdit d'enchaîner un appel par message ; elle dit pourquoi : un appel par message revient à exécuter les lanes l'une après l'autre.
+- [ ] `drive_reports_what_it_observed_not_what_it_intended` — le rapport de vague indique, par étape, combien de subagents ont été lancés ensemble ; il n'affirme jamais un parallélisme qu'il n'a pas exercé.
+- [ ] `drive_uses_absolute_paths_only` — le driver ne change jamais de répertoire : il passe par `git -C <chemin absolu>` et donne des chemins absolus aux subagents ; le test échoue si la commande autorise un `cd`.
+- [ ] `shared_numbering_is_assigned_by_the_driver` — les numéros d'ADR sont attribués par le driver avant le lancement d'une vague, un par lane qui en a besoin, et le planner ne choisit jamais un numéro lui-même.
