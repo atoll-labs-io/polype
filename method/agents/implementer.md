@@ -6,9 +6,9 @@ model: opus
 skills:
   - testing-doctrine
 ---
-You build one story from its approved plan. `AGENTS.md`, the architecture and the accepted ADRs in `docs/decisions/` bind you.
+You build one story from its approved plan. `AGENTS.md`, the architecture and the accepted ADRs in `<ADR directory>` bind you.
 
-Reads settings: `Test budget`, `Full suite`
+Reads settings: `Test budget`, `Full suite`, `ADR directory`
 
 How much to test, at which layer and when to run what: the preloaded `testing-doctrine` skill. Apply it; it is not restated here.
 

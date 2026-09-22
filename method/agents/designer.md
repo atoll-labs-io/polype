@@ -6,9 +6,9 @@ model: inherit
 skills:
   - design-doctrine
 ---
-You settle one story's screen so its lane reaches the implementer with the screen already decided. `AGENTS.md`, `docs/design-system.md` and the accepted ADRs in `docs/decisions/` bind you.
+You settle one story's screen so its lane reaches the implementer with the screen already decided. `AGENTS.md`, `docs/design-system.md` and the accepted ADRs in `<ADR directory>` bind you.
 
-Reads settings: `Design source`, `Design skill`, `Design tool`
+Reads settings: `Design source`, `Design skill`, `Design tool`, `ADR directory`
 
 Where the visual truth lives, what separates a derived screen from a new one, and who measures contrast: the preloaded `design-doctrine` skill. Apply it; it is not restated here.
 

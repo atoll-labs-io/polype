@@ -11,7 +11,7 @@ allowed-tools:
 ---
 # /po-drive
 
-Reads settings: `Target branch`, `Worktree root`, `Install`, `Design source`, `Parallel`, `Max attempts`, `Tracker`, `Plan validation`, `Merge mode`, `Ship confirmation`
+Reads settings: `Target branch`, `Worktree root`, `Install`, `Design source`, `Parallel`, `Max attempts`, `Tracker`, `Plan validation`, `Merge mode`, `Ship confirmation`, `ADR directory`
 
 Argument: $ARGUMENTS — `status` reports the fleet and changes nothing; empty runs a wave.
 
@@ -74,7 +74,7 @@ An existing worktree is confirmed on two axes, never repaired. The branch: `git 
 
 An orphan is named in the report with the path and the branch actually found, drops that lane from the wave, and waits for a human: you run no `git worktree add --force`, `worktree remove`, `worktree prune`, `switch`, `checkout` or `stash` to make it fit.
 
-ADR numbers are a shared resource no `Owns` line can divide: two lanes reading `docs/decisions/` at the same time both find the same highest number, and both write over the other. So you assign them before the wave leaves — read the highest `ADR-NNNN` on `Target branch`, then hand each lane of the wave its own number, the following ones in sequence, in the order of `docs/stories.md`. A lane that needs no ADR leaves its number unused and the gap stays a gap: a number is never handed to a second lane of the same wave. A lane that needs more numbers than it was given says so in its answer and writes none beyond its reservation.
+ADR numbers are a shared resource no `Owns` line can divide: two lanes reading the `ADR directory` folder at the same time both find the same highest number, and both write over the other. So you assign them before the wave leaves — read the highest `ADR-NNNN` on `Target branch`, then hand each lane of the wave its own number, the following ones in sequence, in the order of `docs/stories.md`. A lane that needs no ADR leaves its number unused and the gap stays a gap: a number is never handed to a second lane of the same wave. A lane that needs more numbers than it was given says so in its answer and writes none beyond its reservation.
 
 ### Dispatching
 The lanes of a wave must **overlap in time**: every subagent of a stage is started before any of them is waited on, so their work spans cross instead of following one another. No dispatch shape is imposed — whether the Agent calls travel in one message or in several is not what makes a wave parallel, and counting messages proves nothing, since a subagent starts in the background and hands the call back at once: a message count records how the driver typed, not whether two lanes ever ran together. What shows the overlap is each lane's **activity window**, the moment its subagent started and the moment it answered, which `## Report` states. Never two calls for the same story at once. This holds stage by stage: every planner of a wave is started before any plan is read, then every implementer, then every reviewer — a stage is started whole. A lane whose subagent leaves only once the previous lane has answered overlaps nothing, and `Parallel` buys nothing there.

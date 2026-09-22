@@ -683,7 +683,7 @@ Objectif : qu'un projet puisse démarrer sur un boilerplate connu, avec des briq
 
 - **Complexité** : 2
 - **Dépend de** : aucune
-- **Owns** : `method/templates/agents-local.md`, `method/AGENTS.md`, `method/commands/po-architect.md`, `method/commands/po-plan.md`, `method/agents/planner.md`, `method/agents/implementer.md`, `method/agents/reviewer.md`, `tests/adr-directory.test.sh`
+- **Owns** : `method/templates/agents-local.md`, `method/templates/architecture.md`, `method/AGENTS.md`, `method/commands/po-architect.md`, `method/commands/po-plan.md`, `method/commands/po-brief.md`, `method/commands/po-drive.md`, `method/commands/po-status.md`, `method/agents/planner.md`, `method/agents/implementer.md`, `method/agents/reviewer.md`, `method/agents/designer.md`, `method/agents/stories-reviewer.md`, `AGENTS.local.md`, `tests/adr-directory.test.sh`, `tests/architect.test.sh`, `docs/stories.md`, `docs/parite-killer-saas.md`
 - **Matrice** : G04 (volet chemin)
 
 **Critères d'acceptation**

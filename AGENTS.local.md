@@ -18,6 +18,7 @@ E2E browsers:      —
 Build stage:       —
 Issue tracker:     —
 Worktree root:     .worktrees/
+ADR directory:     docs/decisions/
 Entry mode:        —
 Design source:     —
 Design skill:      —

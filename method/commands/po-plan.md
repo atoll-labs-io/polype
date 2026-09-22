@@ -11,7 +11,7 @@ allowed-tools:
 ---
 # /po-plan
 
-Reads settings: `Target branch`, `Worktree root`, `Plan validation`, `Test budget`
+Reads settings: `Target branch`, `Worktree root`, `Plan validation`, `Test budget`, `ADR directory`
 
 Story: $ARGUMENTS
 
@@ -39,7 +39,7 @@ Without a research file, warn that the plan would rest on documents that may no 
 - **The pivot**: the decision everything hinges on and how it could be wrong.
 - When `docs/designs/<id>/design.md` exists, the screen tasks build what it settles, cite it, and add nothing it leaves out.
 - More than about ten tasks, or a story rated 5 → recommend splitting the story instead of writing a long plan.
-- A structural choice with alternatives (library, pattern, data model) gets an ADR in `docs/decisions/` from `templates/adr.md`; it stays on the story branch.
+- A structural choice with alternatives (library, pattern, data model) gets an ADR in `<ADR directory>` from `templates/adr.md`; it stays on the story branch.
 
 Fill `templates/plan.md` into `docs/plans/<id>.md`, frontmatter `validated: no`, **250 lines at most**. Shorten prose, keep decision tables whole.
 

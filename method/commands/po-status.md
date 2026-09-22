@@ -8,7 +8,7 @@ allowed-tools:
 ---
 # /po-status
 
-Reads settings: `Target branch`, `Worktree root`, `Merge mode`, `Plan validation`, `Entry mode`, `Story track`, `Flow threshold`, `Parallel`, `Max attempts`
+Reads settings: `Target branch`, `Worktree root`, `Merge mode`, `Plan validation`, `Entry mode`, `Story track`, `Flow threshold`, `Parallel`, `Max attempts`, `ADR directory`
 
 Everything comes from files and git; nothing is guessed. Bash is used read-only: no commit, checkout, merge or file change. `git fetch` is allowed when a remote exists, so that stories merged through a pull request are seen.
 
@@ -36,6 +36,6 @@ Everything comes from files and git; nothing is guessed. Bash is used read-only:
 
    `Parallel` or `Max attempts` unreadable → say which one and print no fleet section; neither is replaced by a guess, and the rest of the report stands.
 5. **Output.** The framing line first, then a line with shipped / in progress / not started counts, then a table: story (complexity) · track · research · design · plan · record · review · shipped · next. "Next" follows the cycle: research → design (`/po-design <id>`, a story with a screen) → plan → approve plan (`/po-plan` again) → execute → review (blocked → `/po-execute` fix run) → ship, or "waiting for merge". A story expected on the flow track with no plan yet gets `/po-flow <id>` while it has no worktree; once a worktree exists without a plan, `/po-flow` has escalated, and it gets `/po-research <id>`. One line per shipped story.
-6. **Decisions.** With `docs/decisions/`: how many ADRs, and the most recent.
+6. **Decisions.** With the `ADR directory` folder present: how many ADRs, and the most recent.
 
 Finish with the single most useful command, for example "Next: /po-plan s02-refund-order".

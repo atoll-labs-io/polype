@@ -36,7 +36,7 @@ test_architect_analyses_code_before_deciding() {
 test_architect_records_structural_decisions_as_adrs() {
   local step
   require_file "$COMMAND"
-  contains "$COMMAND" 'Each structural choice becomes one ADR in `docs/decisions/` from `templates/adr.md`'
+  contains "$COMMAND" 'Each structural choice becomes one ADR in `<ADR directory>` from `templates/adr.md`'
   step=$(section_of "$COMMAND" 'Step 3 — Structural decisions')
   for word in stack capability integration; do
     grep -qF "$word" <<< "$step" || fail "step 3 does not name the $word"

@@ -13,7 +13,7 @@ allowed-tools:
 ---
 # /po-brief
 
-Reads settings: `Entry mode`, `Target branch`
+Reads settings: `Entry mode`, `Target branch`, `ADR directory`
 
 A project that starts from an idea starts from a brief that has survived objections. `$ARGUMENTS` may carry the idea in one sentence; without it, the interview opens by asking for the pitch.
 
@@ -45,7 +45,7 @@ Until then, keep asking; a missing criterion is the next question.
 ## Finish
 1. Run the blocking checks first, before a single approved byte is written: the current branch is `Target branch`, another branch → stop and say so; `git status --porcelain` lists no environment file, one listed → stop. Stopping here, or anywhere before the last step, leaves `docs/brief.md` at `status: interviewing` — nothing is approved until the commit lands.
 2. Show the whole brief and ask the user to read it end to end. On explicit agreement, set `status: approved`.
-3. Write the first ADR from `templates/adr.md` as `docs/decisions/0001-<slug>.md`, or under the next free number when `docs/decisions/` already holds some: the approach chosen among the alternatives, with the ones turned down and why.
+3. Write the first ADR from `templates/adr.md` as `<ADR directory>0001-<slug>.md`, or under the next free number when the `ADR directory` folder already holds some: the approach chosen among the alternatives, with the ones turned down and why.
 4. From the repository root, commit `docs/brief.md` and the ADR together in one commit, `docs: brief for <product>`. The approval and its ADR go in the same commit, or neither: an ADR that is not written yet is written before committing, and neither of the two is ever committed alone.
 
 Finish with: "Brief approved. Next: write the stories in docs/stories.md."

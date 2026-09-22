@@ -91,7 +91,7 @@ All pipeline output is markdown under `docs/`, in git.
 - Keep research under ~200 lines, plans under ~250, reviews under ~150: every stage after yours reads them. Trim sentences, never tables that record decisions.
 - The plan's checkboxes are the progress bar; ticking one never triggers a commit.
 - A story is committed once by the implementer. A fix run adds one commit of its own; a migration may get its own commit so it can be reverted alone. Ship squashes everything into one commit on `Target branch`.
-- Structural decisions are ADRs in `docs/decisions/NNNN-<slug>.md`, from `templates/adr.md`, listing the options turned down and why. An accepted ADR is never edited; a new ADR supersedes it.
+- Structural decisions are ADRs in `<ADR directory>NNNN-<slug>.md`, from `templates/adr.md`, listing the options turned down and why. An accepted ADR is never edited; a new ADR supersedes it.
 - **Secrets never enter git.** `.env*` files must be ignored; before any commit, check that `git status --porcelain` lists no environment file, and stop if it does.
 
 ## Law 7 — Defects are not stories

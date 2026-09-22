@@ -7,7 +7,7 @@ Written by `/po-architect`, committed on the target branch. Research and plannin
 - **Origin**: <repository URL or generator command, version or commit>
 - **Licence**: <licence of the base>
 - **Profile**: <`boilerplates/<name>/profile.md` used as the starting point, or "analysis only">
-- **Decision**: [ADR-<NNNN>](decisions/<NNNN>-<slug>.md)
+- **Decision**: [ADR-<NNNN>](<ADR directory, relative to docs/><NNNN>-<slug>.md)
 
 ## Map
 Where each kind of code lives, as found in the base. Each line names a path that was opened.
@@ -26,7 +26,7 @@ One row per capability the project needs; a capability it does not need says so 
 
 | Capability | Brick | Alternatives | ADR |
 | --- | --- | --- | --- |
-| <database> | <brick in use> | <bricks that could replace it> | [ADR-<NNNN>](decisions/<NNNN>-<slug>.md) |
+| <database> | <brick in use> | <bricks that could replace it> | [ADR-<NNNN>](<ADR directory, relative to docs/><NNNN>-<slug>.md) |
 
 ## Ownership
 The paths a story may own alone, and the shared ones that only a contract story may change.
