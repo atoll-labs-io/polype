@@ -9,7 +9,7 @@ Un milestone livre un incrément utilisable. Chaque story atterrit sur la branch
 | **M3 — La flotte** | Lanes parallèles, tracker GitHub/Taskwarrior, reprise après crash, checkpoints groupés | D05, D16, D17, extensions | livré |
 | **M4 — Le catalogue** | Profil next-forge, briques auto-hébergées pour mustelinet, tests de contrat | ADR-0008 à ADR-0011 | livré |
 | **M5 — La distribution** | Installation globale chezmoi + `init` par projet, mise à jour par manifeste, migration depuis `/spec` et `/drive` | H | livré |
-| **M6 — Le pilote** | nautile, repris de `/spec` et construit avec Polype (PR `atoll-io/nautile#21`) | validation | en cours |
+| **M6 — Le pilote** | nautile : spec `/spec` repris en 23 stories, revue passée, méthode installée — reste à construire | validation | en cours |
 
 **Amorçage** : M1 est construit à la main en appliquant les règles de Polype (une story, un commit, revue en contexte frais). À partir de M2, Polype construit Polype.
 
