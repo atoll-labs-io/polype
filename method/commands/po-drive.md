@@ -60,6 +60,8 @@ Two rules keep resuming honest.
 
 ## A wave
 
+You never leave the directory you were started in: no `cd`, at any stage of a wave. Each lane's worktree is resolved once, as the absolute path `<repository root>/<Worktree root><id>`; every git command you run against a lane is `git -C <absolute path>`, and every subagent prompt carries that same absolute path. A driver whose working directory drifted addresses one lane with another lane's path, and its own report cannot show that mistake: it says what you meant to do, not where the command landed.
+
 ### Preparing the lanes
 You prepare each lane's worktree yourself, before any subagent starts, exactly as `/po-research` describes it (`method/commands/po-research.md`): fetch when the repository has a remote and start from `origin/<Target branch>` when that ref exists, `git worktree add -b story/<id> <Worktree root><id> <start point>`, copy in the `.env*` files git ignores, then run `Install`. `planner` is forbidden to run `git worktree add`, `switch`, `checkout` or `stash` (`method/agents/planner.md`), so a lane you did not prepare cannot exist.
 
@@ -67,8 +69,10 @@ An existing worktree is confirmed on two axes, never repaired. The branch: `git 
 
 An orphan is named in the report with the path and the branch actually found, drops that lane from the wave, and waits for a human: you run no `git worktree add --force`, `worktree remove`, `worktree prune`, `switch`, `checkout` or `stash` to make it fit.
 
+ADR numbers are a shared resource no `Owns` line can divide: two lanes reading `docs/decisions/` at the same time both find the same highest number, and both write over the other. So you assign them before the wave leaves — read the highest `ADR-NNNN` on `Target branch`, then hand each lane of the wave its own number, the following ones in sequence, in the order of `docs/stories.md`. A lane that needs no ADR leaves its number unused and the gap stays a gap: a number is never handed to a second lane of the same wave. A lane that needs more numbers than it was given says so in its answer and writes none beyond its reservation.
+
 ### Dispatching
-The subagents of a wave go out **in a single message**: one Agent call per lane, all of them in that one message, which is what makes the lanes run at the same time. Never two calls for the same story at once.
+The subagents of a wave go out **in a single message**: one Agent call per lane, all of them in that one message, which is what makes the lanes run at the same time. Never two calls for the same story at once. This holds stage by stage: every planner of a wave leaves together, then every implementer, then every reviewer — a stage is dispatched whole or not at all. Sending one call per message is forbidden: the second call is only written once the first subagent has answered, so the lanes run one after the other and `Parallel` buys nothing.
 
 Per lane, in this order, each stage dispatched as its own wave:
 1. `subagent_type: planner` — the story id and the absolute worktree path; its research, its track and its plan are its own contract, which you do not restate. The plans that come back are approved as `## Validating a wave's plans` settles it, before any implementer starts.
@@ -115,6 +119,8 @@ A ship that fails sends its story back to a fix run under the same `Max attempts
 One table: story · stage reached · plan · verdict · shipped. Then the stories dropped for a conflict with the path that collided, the lanes handed to a human, and the dependencies still blocking. With `$ARGUMENTS` set to `status`, this report is the whole run: no worktree is prepared, no subagent is dispatched, nothing is shipped, no `docs/reviews/<id>.md` is written, and no gate that could change a file is run.
 
 The plan column says who approved it. Under `Plan validation: autonomous`, the report states that the plans were approved without a human reading them and names the stories concerned; under `human`, it states which plans the wave approved and which ones are still waiting for the next wave.
+
+The report also states, per stage, how many subagents left together in the same message. A stage dispatched one call at a time is reported as sequential, with the number of messages it took. No line of the report claims that lanes ran at the same time unless they were dispatched in one message.
 
 `status` answers three questions and launches nothing. Per lane in flight: the story, the stage it resumes at, its worktree path, and the loops already spent against `Max attempts`. Then, per story a human must decide on, the reason it waits — a dependency not shipped and which one, an `Owns` collision with the path that collided and the lane holding it, `Max attempts` reached with the open findings, or an orphan worktree as it was found.
 

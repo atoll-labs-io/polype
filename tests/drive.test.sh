@@ -145,3 +145,63 @@ test_drive_lane_includes_design_when_the_story_has_a_screen() {
   settings_read_by "$DRIVE" | grep -qx 'Design source' \
     || fail 'po-drive.md does not declare it reads `Design source`'
 }
+
+# s33 — the parallelism the fleet promises.
+
+test_drive_dispatches_a_whole_stage_in_one_message() {
+  require_file "$DRIVE"
+  local wave; wave=$(section_of "$DRIVE" 'A wave')
+  [ -n "$wave" ] || fail "po-drive.md has no '## A wave' section"
+
+  # The single message covers a whole stage, not just a pair of lanes.
+  holds "$wave" 'This holds stage by stage' 'the wave section'
+  holds "$wave" 'a stage is dispatched whole or not at all' 'the wave section'
+
+  # The prohibition and what it costs when it is broken.
+  holds "$wave" 'Sending one call per message is forbidden' 'the wave section'
+  holds "$wave" 'the lanes run one after the other and `Parallel` buys nothing' 'the wave section'
+}
+
+test_drive_reports_what_it_observed_not_what_it_intended() {
+  require_file "$DRIVE"
+  local report; report=$(section_of "$DRIVE" 'Report')
+  [ -n "$report" ] || fail "po-drive.md has no '## Report' section"
+
+  holds "$report" 'per stage, how many subagents left together in the same message' 'the report section'
+  holds "$report" 'reported as sequential, with the number of messages it took' 'the report section'
+  holds "$report" 'claims that lanes ran at the same time unless they were dispatched in one message' 'the report section'
+}
+
+test_drive_uses_absolute_paths_only() {
+  require_file "$DRIVE"
+
+  # A backquoted `cd ` in the driver's own file is a permission to drift.
+  local found; found=$(grep -nF -- '`cd ' "$DRIVE" || true)
+  [ -z "$found" ] || fail "po-drive.md lets the driver change directory: $found"
+
+  local wave; wave=$(section_of "$DRIVE" 'A wave')
+  [ -n "$wave" ] || fail "po-drive.md has no '## A wave' section"
+  holds "$wave" 'You never leave the directory you were started in' 'the wave section'
+  holds "$wave" 'resolved once, as the absolute path `<repository root>/<Worktree root><id>`' 'the wave section'
+  holds "$wave" 'every git command you run against a lane is `git -C <absolute path>`' 'the wave section'
+  holds "$wave" 'every subagent prompt carries that same absolute path' 'the wave section'
+}
+
+test_shared_numbering_is_assigned_by_the_driver() {
+  require_file "$DRIVE"
+  local wave; wave=$(section_of "$DRIVE" 'A wave')
+  [ -n "$wave" ] || fail "po-drive.md has no '## A wave' section"
+
+  # The driver allocates before the wave leaves, one number per lane, never twice.
+  holds "$wave" 'ADR numbers are a shared resource no `Owns` line can divide' 'the wave section'
+  holds "$wave" 'you assign them before the wave leaves' 'the wave section'
+  holds "$wave" 'hand each lane of the wave its own number, the following ones in sequence' 'the wave section'
+  holds "$wave" 'a number is never handed to a second lane of the same wave' 'the wave section'
+
+  # The planner takes what it was handed and invents none.
+  local planner="$METHOD/agents/planner.md"
+  require_file "$planner"
+  contains "$planner" 'The number is not yours to choose'
+  contains "$planner" 'use the one the driver reserved for this lane in the message you received'
+  contains "$planner" 'create no file whose name you invented'
+}

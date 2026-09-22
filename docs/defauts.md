@@ -42,6 +42,13 @@ Le tracker d'issues de Polype est ce fichier tant que le dépôt n'est pas sur G
 
 | # | Source | Défaut | Statut |
 |---|---|---|---|
-| 22 | bac à sable flotte | Les lanes ne sont pas lancées dans le même message : le journal montre six messages d'un seul appel de subagent, donc une exécution séquentielle malgré `Parallel: 2`. Le rapport affirme pourtant que les lanes ont tourné ensemble. | à corriger par s33 |
-| 23 | bac à sable flotte | Le driver se déplace avec `cd` dans les worktrees et laisse dériver son répertoire de travail : un implementer a reçu un préambule pointant la lane voisine. | à corriger par s33 |
-| 24 | bac à sable flotte | La numérotation des ADR est une ressource partagée qu'`Owns` ne couvre pas : deux lanes se disputent le même numéro, et une lane a renoncé à écrire son ADR. | à corriger par s33 |
+| 25 | bac à sable flotte | Les lanes ne sont pas lancées dans le même message : le journal montre six messages d'un seul appel de subagent, donc une exécution séquentielle malgré `Parallel: 2`. Le rapport affirme pourtant que les lanes ont tourné ensemble. | corrigé par s33 |
+| 26 | bac à sable flotte | Le driver se déplace avec `cd` dans les worktrees et laisse dériver son répertoire de travail : un implementer a reçu un préambule pointant la lane voisine. | corrigé par s33 |
+| 27 | bac à sable flotte | La numérotation des ADR est une ressource partagée qu'`Owns` ne couvre pas : deux lanes se disputent le même numéro, et une lane a renoncé à écrire son ADR. | corrigé par s33 |
+
+## Relevés par la recherche de s33 (2026-09-22)
+
+| # | Source | Défaut | Statut |
+|---|---|---|---|
+| 28 | recherche s33 | L'`AGENTS.local.md` de ce dépôt ne déclare ni `Parallel`, ni `Max attempts`, ni `Tracker` (ils n'existent que dans `method/templates/agents-local.md:29-31`) : `/po-drive` lancé ici s'arrête sur un réglage manquant. | ouvert |
+| 29 | recherche s33 | `method/agents/planner.md:50` dit que le planner écrit la recherche et le plan « et aucun autre fichier », alors que `:51` lui fait écrire une ADR. | ouvert |

@@ -48,7 +48,7 @@ Leave both files uncommitted: the implementer commits them with the code.
 
 ## Limits
 - You write `docs/research/<id>.md` and `docs/plans/<id>.md`, and no other file. No source file, no test file, no commit: writing the code is the implementer's job and judging it is the reviewer's.
-- A structural choice the architecture and the ADRs leave open is decided here, in the plan, with an ADR in `docs/decisions/` from `templates/adr.md` listing the options turned down. Left to the implementer, it becomes a guess nobody reviewed.
+- A structural choice the architecture and the ADRs leave open is decided here, in the plan, with an ADR in `docs/decisions/` from `templates/adr.md` listing the options turned down. Left to the implementer, it becomes a guess nobody reviewed. The number is not yours to choose: use the one the driver reserved for this lane in the message you received. No number there, or more ADRs needed than numbers reserved → write the decision in the plan, report what is missing, and create no file whose name you invented; two lanes both taking the next free number take the same one.
 - A story you cannot plan — a file it names is gone, an interface differs, the story contradicts itself — ends in a report saying so, never in a plan built on what you hoped to find.
 
 ## Your final message
