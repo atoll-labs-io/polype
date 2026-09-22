@@ -499,3 +499,93 @@ Objectif : faire avancer plusieurs stories en parallèle, reprendre après un ar
 - [ ] `drive_reports_what_it_observed_not_what_it_intended` — le rapport de vague indique, par étape, combien de subagents ont été lancés ensemble ; il n'affirme jamais un parallélisme qu'il n'a pas exercé.
 - [ ] `drive_uses_absolute_paths_only` — le driver ne change jamais de répertoire : il passe par `git -C <chemin absolu>` et donne des chemins absolus aux subagents ; le test échoue si la commande autorise un `cd`.
 - [ ] `shared_numbering_is_assigned_by_the_driver` — les numéros d'ADR sont attribués par le driver avant le lancement d'une vague, un par lane qui en a besoin, et le planner ne choisit jamais un numéro lui-même.
+
+## Passe de défauts et M5 — La distribution
+
+### s34-method-consistency — Fermer les incohérences relevées par les revues
+**En tant que** développeur **je veux** que les documents de méthode disent tous la même chose **afin qu'**un agent ne tombe pas sur deux règles contradictoires.
+
+- **Complexité** : 2
+- **Dépend de** : aucune
+- **Owns** : `method/templates/review.md`, `method/commands/po-drive.md`, `method/agents/planner.md`, `tests/drive.test.sh`, `tests/design.test.sh`, `tests/ownership.test.sh`, `docs/defauts.md`
+- **Corrige** : défauts n° 17, 18, 19, 20, 29 et 30
+
+**Critères d'acceptation**
+- [ ] `review_template_has_an_ownership_section` — le gabarit de revue porte le contrôle d'ownership en tête, avant les six étapes, avec une case par cas (dans le périmètre, hors périmètre, périmètre d'une autre lane, story sans `Owns`).
+- [ ] `drive_resume_table_is_complete_and_ordered` — chaque état de reprise dit à quelle étape la lane repart ; les cas qui se recouvrent ont une priorité déclarée, en particulier un arrêt survenu après un fix run.
+- [ ] `drive_requires_overlapping_lanes_not_a_message_shape` — la commande demande que les lanes d'une vague se chevauchent dans le temps et que le rapport le prouve par leurs fenêtres d'activité ; elle n'impose plus une forme de lancement.
+- [ ] `planner_writes_only_its_documents_and_the_adr_assigned_to_it` — le planner écrit la recherche, le plan et, seulement si le driver lui a attribué un numéro, l'ADR correspondante ; la contradiction interne disparaît.
+- [ ] `design_test_message_matches_its_assertion` — le test de `/po-design` vérifie ce que son message d'échec annonce.
+
+### s35-fleet-design — Une lane mène aussi une story avec écran
+**En tant que** développeur **je veux** qu'une story avec écran traverse sa lane sans intervention **afin que** la flotte n'ait pas besoin d'un humain au milieu d'une vague.
+
+- **Complexité** : 3
+- **Dépend de** : s34
+- **Owns** : `method/agents/designer.md`, `method/commands/po-drive.md`, `tests/fleet-design.test.sh`, `docs/defauts.md`
+- **Corrige** : défaut n° 24
+
+**Critères d'acceptation**
+- [ ] `designer_agent_carries_the_design_contract` — un subagent `designer` porte les exigences de `/po-design` (écran dérivé contre écran nouveau, un seul artefact, rendu et regardé, aucun composant inventé, manques consignés) et précharge `design-doctrine`.
+- [ ] `drive_inserts_design_between_plan_and_execute` — pour une story avec écran, la lane lance le `designer` après le plan et avant l'implémentation.
+- [ ] `drive_stops_a_screen_lane_without_a_design_system` — sans `docs/design-system.md` ou avec `Design source` à `—`, la lane s'arrête, le dit, et ne saute jamais l'étape.
+- [ ] `designer_writes_only_in_the_story_design_folder` — il n'écrit que dans `docs/designs/<id>/`.
+
+### s36-installer — Un installeur digne de ce nom
+**En tant que** développeur **je veux** un installeur qui pose, met à jour et retire Polype proprement **afin de** ne plus dépendre d'un script de développement.
+
+- **Complexité** : 3
+- **Dépend de** : aucune
+- **Owns** : `bin/polype`, `tests/installer.test.sh`, `docs/installation.md`
+- **Matrice** : H01, H02
+
+**Critères d'acceptation**
+- [ ] `installer_supports_install_update_check_and_remove` — `bin/polype install <projet>`, `update`, `check` et `remove` existent et font ce qu'ils annoncent.
+- [ ] `installer_update_leaves_no_ghost` — la mise à jour supprime les fichiers d'une version précédente qui ne sont plus livrés, et ne touche jamais un fichier que le projet a ajouté.
+- [ ] `installer_check_reports_drift` — `check` liste les fichiers installés qui ont été modifiés sur place, et sort non nul quand il y en a.
+- [ ] `installer_stamps_a_version` — la version installée est écrite dans `.polype/version` et affichée par `check`.
+- [ ] `installer_remove_leaves_the_project_intact` — `remove` retire ce que l'installeur a posé, garde `AGENTS.local.md`, les documents du projet et son `.gitignore`.
+
+**Notes pour l'agent** : reprendre le comportement de `bin/polype-dev-install` (manifeste, assemblage d'`AGENTS.md`, import unique dans `CLAUDE.md`, sauvegarde d'un `AGENTS.md` écrit à la main, `.gitignore`, `--hooks`) et le remplacer ; garder un alias `bin/polype-dev-install` qui appelle le nouveau, pour ne pas casser les scripts existants.
+
+### s37-global-install — Polype sur toutes les machines
+**En tant que** développeur **je veux** installer Polype une fois pour toutes dans `~/.claude` et l'activer projet par projet **afin d'**avoir les mêmes commandes partout, synchronisées par chezmoi.
+
+- **Complexité** : 3
+- **Dépend de** : s36
+- **Owns** : `bin/polype`, `tests/global-install.test.sh`, `docs/installation.md`
+- **Matrice** : H01 (volet global), ADR-0004
+
+**Critères d'acceptation**
+- [ ] `installer_global_puts_commands_in_the_user_home` — `bin/polype install --global` pose commandes, subagents et skills dans `~/.claude/` (chemin surchargé par une variable d'environnement pour les tests), et la charge utile dans `~/.claude/polype/`.
+- [ ] `installer_init_activates_a_project_after_a_global_install` — `bin/polype init <projet>` dépose dans le projet ce qui doit y vivre (templates, gate, règles, `CLAUDE.md`) sans recopier les commandes déjà globales.
+- [ ] `installer_global_update_is_idempotent` — deux installations globales successives laissent le même état, sans doublon.
+- [ ] `docs_explain_the_chezmoi_path` — `docs/installation.md` explique comment suivre `~/.claude/polype/` avec chezmoi et ce qu'il ne faut pas y mettre.
+
+### s38-migration — Remplacer /spec et /drive
+**En tant que** développeur **je veux** savoir exactement quoi retirer et comment reprendre mes projets en cours **afin de** passer de `/spec` et `/drive` à Polype sans perdre de travail.
+
+- **Complexité** : 2
+- **Dépend de** : s37
+- **Owns** : `docs/migration.md`, `tests/migration-doc.test.sh`
+- **Matrice** : H01 (volet migration)
+
+**Critères d'acceptation**
+- [ ] `migration_maps_every_old_concept` — le document fait correspondre chaque notion de `/spec` et `/drive` à son équivalent Polype (brief, stories, packets, worktrees, tracker, autonomie) et dit ce qui disparaît.
+- [ ] `migration_gives_a_step_by_step_removal` — il liste les fichiers à retirer de `~/.claude/skills/` et ce qu'il faut vérifier avant.
+- [ ] `migration_covers_a_project_in_flight` — il explique comment reprendre un projet qui a déjà des packets en cours.
+- [ ] `migration_doc_is_checked_by_a_test` — un test vérifie que le document existe, couvre les deux skills et ne renvoie vers aucun chemin inexistant.
+
+### s39-distribution-wiring — Dire partout comment on installe
+**En tant que** développeur **je veux** que les règles, l'aide et la documentation racontent la même installation **afin qu'**on n'ait pas à lire les scripts.
+
+- **Complexité** : 2
+- **Dépend de** : s38
+- **Owns** : `method/AGENTS.md`, `method/commands/po-help.md`, `README.md`, `docs/parite-killer-saas.md`, `tests/distribution-wiring.test.sh`
+- **Matrice** : H01 à H04, statuts à mettre à jour
+
+**Critères d'acceptation**
+- [ ] `rules_point_at_the_installer` — la section des fichiers installés cite `bin/polype` et distingue installation globale et activation d'un projet.
+- [ ] `help_mentions_installation_and_status` — l'aide dit en une ligne comment installer et comment vérifier une installation.
+- [ ] `readme_describes_the_project_and_its_install` — le `README.md` du dépôt décrit Polype, son cycle, sa flotte et son installation, sans promettre ce qui n'existe pas.
+- [ ] `parity_matrix_reflects_the_distribution` — les lignes H01 à H04 passent à `fait — <chemin>` ou disent ce qui reste.

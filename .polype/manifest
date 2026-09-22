@@ -2,6 +2,7 @@
 .claude/commands/po-brief.md
 .claude/commands/po-design.md
 .claude/commands/po-design-system.md
+.claude/commands/po-drive.md
 .claude/commands/po-execute.md
 .claude/commands/po-flow.md
 .claude/commands/po-help.md
@@ -16,6 +17,7 @@
 .claude/commands/po-stories.md
 .claude/commands/po-stories-review.md
 .claude/agents/implementer.md
+.claude/agents/planner.md
 .claude/agents/reviewer.md
 .claude/agents/stories-reviewer.md
 .claude/skills/agentic-stories/SKILL.md

@@ -41,6 +41,12 @@ The short track, `/po-flow`, does research and plan in one context for a story t
 
 Stories are written in `docs/stories.md`, following `templates/stories.md`.
 
+### The fleet
+
+`/po-drive` is one driver: it opens one lane per ready story and advances those lanes at the same time, a lane being that story's worktree and the subagents working in it. `/po-drive status` derives the same state and launches nothing — what is in flight, what waits, and for which reason.
+
+Two limits keep the parallelism honest. **Ships stay serial**: a lane whose review passed lands on `Target branch` alone, the next one lands after it, in the order the reviews passed. **`Owns` bounds a lane**: the `Owns` line of a story fixes the paths its lane may change, and two stories sharing one of those paths never run at once — the second waits for the first to ship.
+
 ## Law 2 — Whoever writes the code does not judge it
 
 Code is written by the `implementer` subagent, reviews are made by the `reviewer` subagent, each in its own context. The main context of a session plans, delegates and reports; it has no business editing source files during a story.
@@ -143,6 +149,9 @@ Design skill:      —
 Design tool:       —
 Story track:       auto
 Flow threshold:    2
+Parallel:          2
+Max attempts:      2
+Tracker:           none
 ```
 
 ## Commands

@@ -27,8 +27,8 @@ Le tracker d'issues de Polype est ce fichier tant que le dépôt n'est pas sur G
 | 12 | revue s27 | Une lane de `/po-drive` enchaîne planner → implementer → reviewer sans l'étape de design, alors que la Loi 1 l'impose pour une story avec écran. | corrigé par s32 |
 | 13 | revue s25 | `bin/po-lint` conclut « aucun manquement » même quand il n'a lu aucun fichier (échec silencieux du listage). | corrigé par s32 |
 | 14 | revue s31 | La matrice se contredit sur l'état de la flotte (D17 contre les lignes tracker), et `docs/conception.md` présente encore ADR-0014 comme vivante alors qu'ADR-0017 la remplace. | corrigé par s32 |
-| 15 | revue s23 | `tests/design-handoff.test.sh` modifié hors du périmètre déclaré de la story. | ouvert |
-| 16 | revue s30 | `docs/decisions/ADR-0014-…` modifiée hors du périmètre déclaré de la story. | ouvert |
+| 15 | revue s23 | `tests/design-handoff.test.sh` modifié hors du périmètre déclaré de la story. | fermé — écart constaté après coup ; le contenu du fichier est correct, rien à défaire |
+| 16 | revue s30 | `docs/decisions/ADR-0014-…` modifiée hors du périmètre déclaré de la story. | fermé — écart constaté après coup ; ADR-0014 est de toute façon remplacée par ADR-0017 |
 | 17 | revue s28 | `method/templates/review.md` n'a pas de section pour le contrôle d'ownership, qui précède désormais les six étapes. | ouvert |
 | 18 | revue s29 | `/po-drive` : la reprise « research présente, plan absent » est annoncée mais pas décrite jusqu'au bout. | ouvert |
 | 19 | revue s29 | `/po-drive` : deux lignes de la table de reprise se recouvrent, sans priorité déclarée (cas d'un arrêt après un fix run). | ouvert |
@@ -51,5 +51,5 @@ Le tracker d'issues de Polype est ce fichier tant que le dépôt n'est pas sur G
 
 | # | Source | Défaut | Statut |
 |---|---|---|---|
-| 28 | recherche s33 | L'`AGENTS.local.md` de ce dépôt ne déclare ni `Parallel`, ni `Max attempts`, ni `Tracker` (ils n'existent que dans `method/templates/agents-local.md:29-31`) : `/po-drive` lancé ici s'arrête sur un réglage manquant. | ouvert |
+| 28 | recherche s33 | L'`AGENTS.local.md` de ce dépôt ne déclare ni `Parallel`, ni `Max attempts`, ni `Tracker` (ils n'existent que dans `method/templates/agents-local.md:29-31`) : `/po-drive` lancé ici s'arrête sur un réglage manquant. | corrigé — réglages de flotte ajoutés à `AGENTS.local.md` |
 | 29 | recherche s33 | `method/agents/planner.md:50` dit que le planner écrit la recherche et le plan « et aucun autre fichier », alors que `:51` lui fait écrire une ADR. | ouvert |

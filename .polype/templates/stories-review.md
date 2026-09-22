@@ -13,10 +13,15 @@ Review status: <complete | blocked>
 ## Coverage
 | Scope item | Source section | Covered by | Covered |
 | --- | --- | --- | --- |
-| <core-loop line, angle, wedge or premise> | <## Core loop \| ## Angle \| ## Wedge & non-goals \| ## Premises> | <story ids, or none> | <yes \| no> |
+| <core-loop line, angle, wedge or premise> | <## Core loop \| ## Angle \| the wedge \| ## Premises> | <story ids, or none> | <yes \| no> |
+
+## Exclusions
+| Excluded item | Source section | Revived by | Revived |
+| --- | --- | --- | --- |
+| <graveyard feature or non-goal> | <## Graveyard \| ## Wedge & non-goals> | <story ids, or none> | <yes \| no> |
 
 ## Checks
-- [ ] Graveyard: no story revives a buried feature, under any name (PRD only)
+- [ ] Exclusions: no story revives an excluded item, under any name — a PRD's graveyard feature or a brief's non-goal
 - [ ] No technical layer dressed as a story; contract stories meet their conditions
 - [ ] Every criterion can be checked by one test
 - [ ] Dependency order: no dependency on a later or unknown id
