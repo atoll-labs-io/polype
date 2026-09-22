@@ -3,6 +3,7 @@
 
 SKILL="$METHOD/skills/review-antihallu/SKILL.md"
 AGENT="$METHOD/agents/reviewer.md"
+TPL="$METHOD/templates/review.md"
 SCOPE='Before anything: the diff stays inside `Owns`'
 
 # The body of one `## <heading>` section, heading excluded; `###` subsections stay inside.
@@ -57,4 +58,31 @@ test_review_procedure_places_the_ownership_step_first() {
   # Ordering is a rule, not an accident of layout: the section says why it comes first.
   local scope; scope=$(section_of "$SKILL" "$SCOPE")
   holds "$scope" 'This comes first because it decides what the rest of the review reads' 'the scope check'
+}
+
+# s34 — the report has somewhere to record that check.
+
+test_review_template_has_an_ownership_section() {
+  require_file "$TPL"
+  local own; own=$(section_of "$TPL" 'Ownership')
+  [ -n "$own" ] || fail "templates/review.md has no '## Ownership' section"
+
+  # Ahead of the six steps, as the procedure orders them.
+  local own_line evidence_line
+  own_line=$(grep -nxF '## Ownership' "$TPL" | cut -d: -f1)
+  evidence_line=$(grep -nxF '## Evidence reused' "$TPL" | cut -d: -f1)
+  [ -n "$evidence_line" ] || fail "templates/review.md lost its '## Evidence reused' heading"
+  [ "$own_line" -lt "$evidence_line" ] \
+    || fail "## Ownership (line $own_line) must come before the six steps (line $evidence_line)"
+
+  holds "$own" 'git diff --name-only <Target branch>...story/<id>' 'the ownership section'
+
+  # One box per outcome: a case named in prose records nothing.
+  local case
+  for case in 'Every path inside `Owns`' \
+              'Outside `Owns` → major' \
+              "Inside another running story's \`Owns\` → critical" \
+              'No `Owns` line on this story → unverifiable scope'; do
+    grep -qF -- "- [ ] $case" <<< "$own" || fail "the ownership section has no box for: $case"
+  done
 }

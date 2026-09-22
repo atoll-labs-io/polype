@@ -27,21 +27,28 @@ test_design_fails_closed_without_system_or_source() {
     'Either way the command writes nothing and draws no mockup.'
 }
 
-# The phrases of the test above can survive their stop word. This one checks the
-# consequence: each trigger carries its stop, and no production step precedes the gate.
-test_design_stop_rules_bite() {
-  local trigger checks checks_line first_step
+# The phrases of the test above can survive their stop word: a decoy line holding the
+# trigger would satisfy them. This one pins the occurrence that matters — each trigger
+# appears once and that one stops — and that no production step precedes the gate.
+test_design_test_message_matches_its_assertion() {
+  local trigger hits checks checks_line first_step
   require_file "$COMMAND"
   for trigger in '`docs/design-system.md` is missing' '`Design source` is `—`'; do
+    hits=$(grep -cF -- "$trigger" "$COMMAND" || true)
+    [ "$hits" -eq 1 ] \
+      || fail "'$trigger' appears $hits times in po-design.md: the stop could sit on another line"
     grep -F -- "$trigger" "$COMMAND" | grep -qF 'stop' \
-      || fail "the rule '$trigger' does not stop on its own line"
+      || fail "the line holding '$trigger' does not stop"
   done
 
   checks=$(section_of "$COMMAND" 'Checks')
   grep -qF 'Either way the command writes nothing and draws no mockup.' <<< "$checks" \
     || fail "section 'Checks' does not say both stops write nothing"
+  hits=$(grep -cF 'no screen' <<< "$checks" || true)
+  [ "$hits" -eq 1 ] \
+    || fail "'no screen' appears $hits times in section 'Checks': another line could carry the rule"
   grep -F 'no screen' <<< "$checks" | grep -qF 'writing nothing' \
-    || fail "the no-screen rule does not say it writes nothing"
+    || fail "the line holding 'no screen' does not say it writes nothing"
 
   checks_line=$(grep -n -x -F '## Checks' "$COMMAND" | cut -d: -f1)
   first_step=$(grep -n -E '^## (Step |Where the design lives)' "$COMMAND" | head -1 | cut -d: -f1)

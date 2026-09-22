@@ -39,18 +39,23 @@ Take the ready stories in the order of `docs/stories.md` and stop at `Parallel` 
 ## Resuming
 A wave never sends a story back to stage one: a stop, a crash or a closed session leaves its work in place, and that work is what the lane starts from. For each story the ready set kept, and before any subagent is dispatched, derive the stage it reached from the files of `<Worktree root><id>` and from git — the derivation above, extended to say where the lane resumes:
 
+The table is read top to bottom and **the first row that matches wins**: several rows can describe the same worktree, and that order is the only thing saying which one applies.
+
 | Found | Lane starts at |
 | --- | --- |
 | no worktree, or no `docs/research/<id>.md` | the research and plan stage |
-| research present, plan absent or without `validated: yes` | the same stage, at the plan |
+| research present, plan absent or without `validated: yes` | the plan, built on the research already on disk — the lane keeps that file and never writes it again (`method/agents/planner.md`) |
 | `po-gate plan-validated <id>` passes, the story has a screen and `docs/designs/<id>/design.md` is absent | the design stage |
 | `po-gate plan-validated <id>` passes, no record or `po-gate verif-current <id>` fails | the code stage |
 | record current, no `docs/reviews/<id>.md` | the review stage |
+| record current, review blocked, and its `Fix loop:` shows it judged an earlier commit | the review stage, at loop `Fix loop:` + 1 |
 | review whose last `Ship allowed:` is `no` | a fix run, at loop `Fix loop:` + 1 |
 | review whose last `Ship allowed:` is `yes` | the ship |
 | a commit whose subject starts with `<id>:` on `Target branch` | nothing — the story is done |
 
 A record that exists proves nothing by itself: `po-gate verif-current <id>` is what tells a record from a stale one, and a record the gate refuses sends the lane back to the code stage.
+
+The row above the fix run is what a lane stopped between its fix run and its review looks like: the code of that fix run is recorded and current, and the review on disk is the blocked one that judged the commit before it. Reading it as a plain blocked review would send the lane through a second fix run with nothing to fix, and spend one `Max attempts` unit on it. A review at `Fix loop: <n>` judged the story's `<n>` + 1st implementer commit, since the first implementation is one commit and each fix run adds one of its own (`AGENTS.md`, Law 6); more implementer commits than that on `story/<id>` means the fix run landed after the review, and the code was never judged. A story whose migration took a commit of its own makes that count drift: there, compare the `Tree:` of `docs/verif/<id>.md` with the tree of the commit the review judged, and treat the review as stale when they differ.
 
 Two rules keep resuming honest.
 
@@ -72,7 +77,7 @@ An orphan is named in the report with the path and the branch actually found, dr
 ADR numbers are a shared resource no `Owns` line can divide: two lanes reading `docs/decisions/` at the same time both find the same highest number, and both write over the other. So you assign them before the wave leaves — read the highest `ADR-NNNN` on `Target branch`, then hand each lane of the wave its own number, the following ones in sequence, in the order of `docs/stories.md`. A lane that needs no ADR leaves its number unused and the gap stays a gap: a number is never handed to a second lane of the same wave. A lane that needs more numbers than it was given says so in its answer and writes none beyond its reservation.
 
 ### Dispatching
-The subagents of a wave go out **in a single message**: one Agent call per lane, all of them in that one message, which is what makes the lanes run at the same time. Never two calls for the same story at once. This holds stage by stage: every planner of a wave leaves together, then every implementer, then every reviewer — a stage is dispatched whole or not at all. Sending one call per message is forbidden: the second call is only written once the first subagent has answered, so the lanes run one after the other and `Parallel` buys nothing.
+The lanes of a wave must **overlap in time**: every subagent of a stage is started before any of them is waited on, so their work spans cross instead of following one another. No dispatch shape is imposed — whether the Agent calls travel in one message or in several is not what makes a wave parallel, and counting messages proves nothing, since a subagent starts in the background and hands the call back at once: a message count records how the driver typed, not whether two lanes ever ran together. What shows the overlap is each lane's **activity window**, the moment its subagent started and the moment it answered, which `## Report` states. Never two calls for the same story at once. This holds stage by stage: every planner of a wave is started before any plan is read, then every implementer, then every reviewer — a stage is started whole. A lane whose subagent leaves only once the previous lane has answered overlaps nothing, and `Parallel` buys nothing there.
 
 Per lane, in this order, each stage dispatched as its own wave:
 1. `subagent_type: planner` — the story id and the absolute worktree path; its research, its track and its plan are its own contract, which you do not restate. The plans that come back are approved as `## Validating a wave's plans` settles it, before any implementer starts.
@@ -120,7 +125,7 @@ One table: story · stage reached · plan · verdict · shipped. Then the storie
 
 The plan column says who approved it. Under `Plan validation: autonomous`, the report states that the plans were approved without a human reading them and names the stories concerned; under `human`, it states which plans the wave approved and which ones are still waiting for the next wave.
 
-The report also states, per stage, how many subagents left together in the same message. A stage dispatched one call at a time is reported as sequential, with the number of messages it took. No line of the report claims that lanes ran at the same time unless they were dispatched in one message.
+The report also states, per stage, the activity window of each lane — when its subagent started and when it answered — and whether those windows overlap. A stage whose windows do not overlap is reported as sequential, naming the lanes that ran one after the other. No line of the report claims that lanes ran at the same time unless their activity windows show it; the number of messages the dispatch took is not evidence of anything and is not reported as such.
 
 `status` answers three questions and launches nothing. Per lane in flight: the story, the stage it resumes at, its worktree path, and the loops already spent against `Max attempts`. Then, per story a human must decide on, the reason it waits — a dependency not shipped and which one, an `Owns` collision with the path that collided and the lane holding it, `Max attempts` reached with the open findings, or an orphan worktree as it was found.
 

@@ -37,8 +37,9 @@ You do not restate `/po-research` and `/po-plan`, you are bound by them: read `m
 - **Research** — every assumption the story makes is opened and checked against the code, a false one is written at the very top and the story gets corrected rather than worked around; every fact carries its `path:line`; doubts stay questions; you score the complexity yourself. Fill `templates/research.md` into `docs/research/<id>.md`, **200 lines at most**.
 - **Plan** — tasks in execution order, each checkable on its own and grounded in the research, each naming the test that would fail if the task were wrong; a `## Run interdicts` section of what must stay untouched, each item verifiable by the reviewer; a `## The pivot` section naming the decision everything hinges on and how it could be wrong; tests within `Test budget` or an excess argued in the test strategy. Fill `templates/plan.md` into `docs/plans/<id>.md`, frontmatter `validated: no`, **250 lines at most**.
 - **Short track** — one file instead of two: `templates/plan-flow.md` into `docs/plans/<id>.md`, frontmatter `track: flow`, the verified facts with their `path:line` standing in for the research, the five signals each marked absent with where you checked, six tasks at most, about 150 lines.
+- **Research already on disk** — a `docs/research/<id>.md` that exists is this lane's research: read it, build the plan on it, and never write that file again. A driver resumes a stopped lane at its plan with the research already done (`method/commands/po-drive.md`), and a stage already recorded is resumed, never replayed.
 
-Leave both files uncommitted: the implementer commits them with the code.
+Leave the files you wrote uncommitted: the implementer commits them with the code.
 
 ## Validation — per `Plan validation`
 - `autonomous` — check the plan yourself against each acceptance criterion of the story, write `validated: yes` into the frontmatter, and say in your answer that no human reviewed it.
@@ -47,7 +48,7 @@ Leave both files uncommitted: the implementer commits them with the code.
 `/po-execute` refuses a plan whose frontmatter lacks `validated: yes`.
 
 ## Limits
-- You write `docs/research/<id>.md` and `docs/plans/<id>.md`, and no other file. No source file, no test file, no commit: writing the code is the implementer's job and judging it is the reviewer's.
+- You write `docs/research/<id>.md`, `docs/plans/<id>.md` and, when the driver reserved a number for this lane, the ADR that number names — and no other file. No source file, no test file, no commit: writing the code is the implementer's job and judging it is the reviewer's.
 - A structural choice the architecture and the ADRs leave open is decided here, in the plan, with an ADR in `docs/decisions/` from `templates/adr.md` listing the options turned down. Left to the implementer, it becomes a guess nobody reviewed. The number is not yours to choose: use the one the driver reserved for this lane in the message you received. No number there, or more ADRs needed than numbers reserved → write the decision in the plan, report what is missing, and create no file whose name you invented; two lanes both taking the next free number take the same one.
 - A story you cannot plan — a file it names is gone, an interface differs, the story contradicts itself — ends in a report saying so, never in a plan built on what you hoped to find.
 

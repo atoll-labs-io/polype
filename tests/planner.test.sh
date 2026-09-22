@@ -43,7 +43,7 @@ test_planner_never_writes_code() {
   needs_tool "$AGENT" Bash
   contains "$AGENT" '`git -C <path> rev-parse --abbrev-ref HEAD` not printing `story/<id>` → stop and report'
   contains "$AGENT" 'Never run `git worktree add`, `switch`, `checkout` or `stash`'
-  contains "$AGENT" 'You write `docs/research/<id>.md` and `docs/plans/<id>.md`, and no other file.'
+  contains "$AGENT" 'the ADR that number names — and no other file. No source file, no test file, no commit'
 }
 
 test_planner_reports_the_track_it_used() {

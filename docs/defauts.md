@@ -29,10 +29,10 @@ Le tracker d'issues de Polype est ce fichier tant que le dépôt n'est pas sur G
 | 14 | revue s31 | La matrice se contredit sur l'état de la flotte (D17 contre les lignes tracker), et `docs/conception.md` présente encore ADR-0014 comme vivante alors qu'ADR-0017 la remplace. | corrigé par s32 |
 | 15 | revue s23 | `tests/design-handoff.test.sh` modifié hors du périmètre déclaré de la story. | fermé — écart constaté après coup ; le contenu du fichier est correct, rien à défaire |
 | 16 | revue s30 | `docs/decisions/ADR-0014-…` modifiée hors du périmètre déclaré de la story. | fermé — écart constaté après coup ; ADR-0014 est de toute façon remplacée par ADR-0017 |
-| 17 | revue s28 | `method/templates/review.md` n'a pas de section pour le contrôle d'ownership, qui précède désormais les six étapes. | ouvert |
-| 18 | revue s29 | `/po-drive` : la reprise « research présente, plan absent » est annoncée mais pas décrite jusqu'au bout. | ouvert |
-| 19 | revue s29 | `/po-drive` : deux lignes de la table de reprise se recouvrent, sans priorité déclarée (cas d'un arrêt après un fix run). | ouvert |
-| 20 | revue s25 | `tests/design.test.sh` : le message d'échec promet un contrôle « sur la même ligne » que l'assertion ne fait pas. | ouvert |
+| 17 | revue s28 | `method/templates/review.md` n'a pas de section pour le contrôle d'ownership, qui précède désormais les six étapes. | corrigé par s34 |
+| 18 | revue s29 | `/po-drive` : la reprise « research présente, plan absent » est annoncée mais pas décrite jusqu'au bout. | corrigé par s34 |
+| 19 | revue s29 | `/po-drive` : deux lignes de la table de reprise se recouvrent, sans priorité déclarée (cas d'un arrêt après un fix run). | corrigé par s34 |
+| 20 | revue s25 | `tests/design.test.sh` : le message d'échec promet un contrôle « sur la même ligne » que l'assertion ne fait pas. | corrigé par s34 |
 | 21 | revue s22 | Findings mineurs de formulation laissés par plusieurs revues (voir les rapports). | ouvert |
 | 22 | recherche s32 | ADR-0003 est `accepted` et met l'état du travail dans le tracker, alors que la matrice et `/po-drive` le dérivent désormais des worktrees et de git (ADR-0016) : une ADR doit trancher ce point. | ouvert |
 | 23 | recherche s32 | ADR-0016 est encore `status: proposed` alors que M3 l'a implémentée et que la matrice la cite comme décision vivante. | ouvert |
@@ -43,7 +43,7 @@ Le tracker d'issues de Polype est ce fichier tant que le dépôt n'est pas sur G
 | # | Source | Défaut | Statut |
 |---|---|---|---|
 | 25 | bac à sable flotte | **Non confirmé — mesure erronée.** Compter les subagents lancés par message ne mesure pas le parallélisme : dans ce harnais, un subagent démarre en arrière-plan et rend la main aussitôt. Les fenêtres d'activité (horodatages groupés par `parent_tool_use_id`) montrent deux lanes qui se chevauchent, dès la première flotte. | fermé, sans objet |
-| 30 | analyse du 2026-09-22 | `/po-drive` et son test exigent le lancement d'une étape « en un seul message », exigence née du n° 25 et inutile : ce qui compte est que les lanes se chevauchent, pas la forme du lancement. | ouvert |
+| 30 | analyse du 2026-09-22 | `/po-drive` et son test exigent le lancement d'une étape « en un seul message », exigence née du n° 25 et inutile : ce qui compte est que les lanes se chevauchent, pas la forme du lancement. | corrigé par s34 |
 | 26 | bac à sable flotte | Le driver se déplace avec `cd` dans les worktrees et laisse dériver son répertoire de travail : un implementer a reçu un préambule pointant la lane voisine. | corrigé par s33 |
 | 27 | bac à sable flotte | La numérotation des ADR est une ressource partagée qu'`Owns` ne couvre pas : deux lanes se disputent le même numéro, et une lane a renoncé à écrire son ADR. | corrigé par s33 |
 
@@ -52,4 +52,4 @@ Le tracker d'issues de Polype est ce fichier tant que le dépôt n'est pas sur G
 | # | Source | Défaut | Statut |
 |---|---|---|---|
 | 28 | recherche s33 | L'`AGENTS.local.md` de ce dépôt ne déclare ni `Parallel`, ni `Max attempts`, ni `Tracker` (ils n'existent que dans `method/templates/agents-local.md:29-31`) : `/po-drive` lancé ici s'arrête sur un réglage manquant. | corrigé — réglages de flotte ajoutés à `AGENTS.local.md` |
-| 29 | recherche s33 | `method/agents/planner.md:50` dit que le planner écrit la recherche et le plan « et aucun autre fichier », alors que `:51` lui fait écrire une ADR. | ouvert |
+| 29 | recherche s33 | `method/agents/planner.md:50` dit que le planner écrit la recherche et le plan « et aucun autre fichier », alors que `:51` lui fait écrire une ADR. | corrigé par s34 |

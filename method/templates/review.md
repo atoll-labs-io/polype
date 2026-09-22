@@ -11,6 +11,13 @@ Fix loop: <0 for the first review, then 1, 2>
 - Required adaptation: <what must change before retrying>
 - Next action: <command or human action>
 
+## Ownership
+Diff listed with `git diff --name-only <Target branch>...story/<id>`, each path held against the story's `Owns`.
+- [ ] Every path inside `Owns`
+- [ ] Outside `Owns` → major: <path — the `Owns` line it missed>
+- [ ] Inside another running story's `Owns` → critical: <path — the story holding it and its worktree>
+- [ ] No `Owns` line on this story → unverifiable scope, reported as such
+
 ## Evidence reused
 - [ ] `po-gate verif-current <id>` → <passes, record reused | fails or missing → suite and type check run here, with results>
 

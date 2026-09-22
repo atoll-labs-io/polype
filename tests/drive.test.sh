@@ -33,8 +33,8 @@ test_drive_dispatches_lanes_in_one_message() {
   local wave; wave=$(section_of "$DRIVE" 'A wave')
   [ -n "$wave" ] || fail "po-drive.md has no '## A wave' section"
 
-  holds "$wave" 'in a single message' 'the wave section'
-  holds "$wave" 'one Agent call per lane, all of them in that one message' 'the wave section'
+  holds "$wave" 'The lanes of a wave must **overlap in time**' 'the wave section'
+  holds "$wave" 'every subagent of a stage is started before any of them is waited on' 'the wave section'
   holds "$wave" 'Never two calls for the same story at once' 'the wave section'
 
   # The driver prepares the lane itself: planner may not.
@@ -148,18 +148,25 @@ test_drive_lane_includes_design_when_the_story_has_a_screen() {
 
 # s33 — the parallelism the fleet promises.
 
-test_drive_dispatches_a_whole_stage_in_one_message() {
+test_drive_requires_overlapping_lanes_not_a_message_shape() {
   require_file "$DRIVE"
   local wave; wave=$(section_of "$DRIVE" 'A wave')
   [ -n "$wave" ] || fail "po-drive.md has no '## A wave' section"
 
-  # The single message covers a whole stage, not just a pair of lanes.
+  # What is owed is overlap, over a whole stage, and what proves it.
+  holds "$wave" 'must **overlap in time**' 'the wave section'
   holds "$wave" 'This holds stage by stage' 'the wave section'
-  holds "$wave" 'a stage is dispatched whole or not at all' 'the wave section'
+  holds "$wave" 'a stage is started whole' 'the wave section'
+  holds "$wave" "activity window" 'the wave section'
+  holds "$wave" 'overlaps nothing, and `Parallel` buys nothing there' 'the wave section'
 
-  # The prohibition and what it costs when it is broken.
-  holds "$wave" 'Sending one call per message is forbidden' 'the wave section'
-  holds "$wave" 'the lanes run one after the other and `Parallel` buys nothing' 'the wave section'
+  # No shape is imposed, and the reason the old measure was wrong is stated.
+  holds "$wave" 'No dispatch shape is imposed' 'the wave section'
+  holds "$wave" 'a subagent starts in the background and hands the call back at once' 'the wave section'
+
+  # The abandoned requirement must be gone from the whole file, not just from this section.
+  local shape; shape=$(grep -n -F -e 'in a single message' -e 'dispatched in one message' "$DRIVE" || true)
+  [ -z "$shape" ] || fail "po-drive.md still requires a dispatch shape: $shape"
 }
 
 test_drive_reports_what_it_observed_not_what_it_intended() {
@@ -167,9 +174,11 @@ test_drive_reports_what_it_observed_not_what_it_intended() {
   local report; report=$(section_of "$DRIVE" 'Report')
   [ -n "$report" ] || fail "po-drive.md has no '## Report' section"
 
-  holds "$report" 'per stage, how many subagents left together in the same message' 'the report section'
-  holds "$report" 'reported as sequential, with the number of messages it took' 'the report section'
-  holds "$report" 'claims that lanes ran at the same time unless they were dispatched in one message' 'the report section'
+  holds "$report" 'per stage, the activity window of each lane' 'the report section'
+  holds "$report" 'when its subagent started and when it answered' 'the report section'
+  holds "$report" 'A stage whose windows do not overlap is reported as sequential' 'the report section'
+  holds "$report" 'claims that lanes ran at the same time unless their activity windows show it' 'the report section'
+  holds "$report" 'the number of messages the dispatch took is not evidence of anything' 'the report section'
 }
 
 test_drive_uses_absolute_paths_only() {
@@ -204,4 +213,61 @@ test_shared_numbering_is_assigned_by_the_driver() {
   contains "$planner" 'The number is not yours to choose'
   contains "$planner" 'use the one the driver reserved for this lane in the message you received'
   contains "$planner" 'create no file whose name you invented'
+}
+
+# s34 — the resume table decides every case, and says which row wins.
+
+test_drive_resume_table_is_complete_and_ordered() {
+  require_file "$DRIVE"
+  local resuming; resuming=$(section_of "$DRIVE" 'Resuming')
+  [ -n "$resuming" ] || fail "po-drive.md has no '## Resuming' section"
+
+  holds "$resuming" 'the first row that matches wins' 'the resuming section'
+
+  # Every row names the stage the lane restarts at: an empty right column decides nothing.
+  local rows row stage
+  rows=$(grep '^| ' <<< "$resuming" | grep -v '^| --- ' | grep -v '^| Found ')
+  [ -n "$rows" ] || fail "the resuming section has no table"
+  while IFS= read -r row; do
+    stage=$(cut -d'|' -f3 <<< "$row" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+    [ -n "$stage" ] || fail "a resume row names no stage: $row"
+  done <<< "$rows"
+
+  # A lane stopped after its fix run holds a recorded stage, not a second fix run, so the
+  # row that catches it must be read before the blocked-review row.
+  local stale fix
+  stale=$(grep -n -F 'record current, review blocked' <<< "$rows" | cut -d: -f1)
+  fix=$(grep -n -F 'review whose last `Ship allowed:` is `no`' <<< "$rows" | cut -d: -f1)
+  [ -n "$stale" ] || fail 'the resuming table has no row for a lane stopped after a fix run'
+  [ -n "$fix" ] || fail 'the resuming table lost its fix-run row'
+  [ "$stale" -lt "$fix" ] \
+    || fail "the stale-review row (row $stale) must be read before the fix-run row (row $fix)"
+  holds "$resuming" 'judged the story'"'"'s `<n>` + 1st implementer commit' 'the resuming section'
+
+  # The plan row keeps the research the lane already has.
+  local plan_row; plan_row=$(grep -F 'plan absent or without `validated: yes`' <<< "$rows")
+  grep -qF 'the lane keeps that file and never writes it again' <<< "$plan_row" \
+    || fail "the plan row does not say the research on disk is kept: $plan_row"
+}
+
+test_planner_writes_only_its_documents_and_the_adr_assigned_to_it() {
+  local planner="$METHOD/agents/planner.md"
+  require_file "$planner"
+  local limits; limits=$(section_of "$planner" 'Limits')
+  [ -n "$limits" ] || fail "planner.md has no '## Limits' section"
+
+  # The three files it may write, the ADR conditioned on the reservation, nothing else.
+  holds "$limits" '`docs/research/<id>.md`, `docs/plans/<id>.md` and, when the driver reserved a number for this lane, the ADR that number names' 'the planner limits'
+  holds "$limits" 'and no other file' 'the planner limits'
+  holds "$limits" 'No source file, no test file, no commit' 'the planner limits'
+
+  # The old wording forbade the very ADR the next paragraph orders: it must be gone.
+  local contradiction
+  contradiction=$(grep -n -F 'and `docs/plans/<id>.md`, and no other file' "$planner" || true)
+  [ -z "$contradiction" ] || fail "planner.md still forbids the ADR it is told to write: $contradiction"
+
+  # A resumed lane finds its research done: the planner reuses it instead of rewriting it.
+  local contracts; contracts=$(section_of "$planner" 'The contracts you carry')
+  holds "$contracts" 'a `docs/research/<id>.md` that exists is this lane'"'"'s research' 'the planner contracts'
+  holds "$contracts" 'read it, build the plan on it, and never write that file again' 'the planner contracts'
 }
