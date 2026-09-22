@@ -22,6 +22,8 @@ Every change is a story unless the user explicitly calls it a quick fix. Framing
 | Architecture | `/po-architect` | `docs/architecture.md` and its ADRs |
 | Design system | `/po-design-system` | `docs/design-system.md` |
 
+Boilerplate profiles live in Polype's repository, at `boilerplates/<name>/profile.md`. `/po-setup` offers them to a project that has no base yet and records the chosen one in the conventions of `AGENTS.local.md`; `/po-architect` starts its reading from that profile, and the project's own code confirms or corrects it.
+
 ### Per story
 
 A story walks these stages, none skipped, none reordered:

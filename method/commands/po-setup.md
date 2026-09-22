@@ -22,7 +22,8 @@ Every other Polype command starts by reading `AGENTS.local.md`. This one creates
 Collect what the repository states on its own:
 - the package manager, from the lockfile present;
 - the scripts the project really defines (package manifest, Makefile, task runner) — candidates for `Install`, `Test`, `Typecheck`, `E2E`, `Build`;
-- the default branch: `git symbolic-ref --short refs/remotes/origin/HEAD`, or the current branch when there is no remote.
+- the default branch: `git symbolic-ref --short refs/remotes/origin/HEAD`, or the current branch when there is no remote;
+- whether the repository has a base, as `/po-architect` defines it: a package manifest, or source files outside Polype's own files (`AGENTS*.md`, `CLAUDE.md`, `docs/`, `.claude/`, `.polype/`, `.gitignore`).
 
 These become the suggested answers. A command you did not find in a file stays `—`.
 
@@ -35,14 +36,16 @@ These become the suggested answers. A command you did not find in a file stays `
 
 Once the `Design source` answer is known, make one separate AskUserQuestion call for its detail: the `Design skill` when the answer is `internal`, the `Design tool` when it is `external`; the other one stays `—`. When the source is not decided yet, skip this call: both stay `—`.
 
-Nothing else is asked beyond these five questions and that follow-up; every other setting keeps the template's value, `Story track` and `Flow threshold` included.
+When step 1 found no base, offer the catalogue before question 5, in one AskUserQuestion: each profile of Polype's catalogue (`boilerplates/*/profile.md` in Polype's repository, when it is at hand) with its name and origin, plus the answer "no profile". A chosen profile's `## Commands` block becomes the suggestions of question 5, copied verbatim. When the catalogue cannot be reached, say so and carry on without a profile. A repository that already has a base gets no offer.
+
+Nothing else is asked beyond these five questions, that design follow-up and the catalogue offer; every other setting keeps the template's value, `Story track` and `Flow threshold` included.
 
 A `Design source` left at `—` is not a choice: every design command stops on it and asks for the source again. Setup never fills it on the user's behalf.
 
 ## Step 3 — Write and commit
-1. Copy `templates/agents-local.md` to `AGENTS.local.md` at the repository root and fill in the answers. Keep one setting per line and no trailing comment. Leave the conventions placeholder as it is.
+1. Copy `templates/agents-local.md` to `AGENTS.local.md` at the repository root and fill in the answers. Keep one setting per line and no trailing comment. Leave the conventions placeholder as it is, unless a profile was chosen: then the conventions section holds one line naming `boilerplates/<name>/profile.md` and its `Commit profiled`, the profile `/po-architect` starts from.
 2. Make sure `.gitignore` lists the `Worktree root` folder and `.env*`; add what is missing.
 3. Rerun the installer if it is available, so `AGENTS.md` includes the new settings; otherwise say that `AGENTS.md` will catch up at the next install.
 4. On `Target branch`, commit `AGENTS.local.md`, `.gitignore`, `AGENTS.md`, `CLAUDE.md`, `.claude/` and `.polype/` together as `chore: set up polype`. Worktrees are created from this branch: without this commit they would have neither the rules, nor the templates, nor the gate.
 
-Finish with: "Polype is set up. Write stories in docs/stories.md, then run /po-research <story>."
+Finish with: "Polype is set up. Write stories in docs/stories.md, then run /po-research <story>." When a profile was chosen, add that the person brings the boilerplate into the repository at its `Commit profiled` and commits it before running `/po-architect`.

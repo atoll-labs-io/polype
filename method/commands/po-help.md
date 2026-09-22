@@ -14,6 +14,7 @@ Reads settings: none
 
 ## Mise en place (une fois)
 - `/po-setup` — écrit `AGENTS.local.md` : branche cible, mode de merge, qui approuve les plans, commandes du projet.
+  - Sans socle, il propose le catalogue de profils de `boilerplates/` et en reprend les commandes.
 - `/po-prd <SaaS cible>` — cadre le remplacement (`replace`) ou l'adaptation (`adapt`) d'un SaaS existant, une question à la fois.
 - `/po-brief` — met une idée neuve (`new`) à l'épreuve, une question à la fois, jusqu'à un brief approuvé.
 - `/po-stories` — découpe le PRD ou le brief approuvé en stories livrables par un agent, dans `docs/stories.md`.
