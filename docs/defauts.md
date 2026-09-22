@@ -33,9 +33,9 @@ Le tracker d'issues de Polype est ce fichier tant que le dépôt n'est pas sur G
 | 18 | revue s29 | `/po-drive` : la reprise « research présente, plan absent » est annoncée mais pas décrite jusqu'au bout. | corrigé par s34 |
 | 19 | revue s29 | `/po-drive` : deux lignes de la table de reprise se recouvrent, sans priorité déclarée (cas d'un arrêt après un fix run). | corrigé par s34 |
 | 20 | revue s25 | `tests/design.test.sh` : le message d'échec promet un contrôle « sur la même ligne » que l'assertion ne fait pas. | corrigé par s34 |
-| 21 | revue s22 | Findings mineurs de formulation laissés par plusieurs revues (voir les rapports). | ouvert |
-| 22 | recherche s32 | ADR-0003 est `accepted` et met l'état du travail dans le tracker, alors que la matrice et `/po-drive` le dérivent désormais des worktrees et de git (ADR-0016) : une ADR doit trancher ce point. | ouvert |
-| 23 | recherche s32 | ADR-0016 est encore `status: proposed` alors que M3 l'a implémentée et que la matrice la cite comme décision vivante. | ouvert |
+| 21 | revue s22 | Findings mineurs de formulation laissés par plusieurs revues (voir les rapports). | fermé — mineurs de formulation, déjà tracés dans les rapports de revue |
+| 22 | recherche s32 | ADR-0003 est `accepted` et met l'état du travail dans le tracker, alors que la matrice et `/po-drive` le dérivent désormais des worktrees et de git (ADR-0016) : une ADR doit trancher ce point. | corrigé — tranché par ADR-0018, ADR-0003 passée en `superseded` |
+| 23 | recherche s32 | ADR-0016 est encore `status: proposed` alors que M3 l'a implémentée et que la matrice la cite comme décision vivante. | corrigé — ADR-0016 passée en `accepted` |
 | 24 | s32 | La flotte n'a pas de subagent de design : une story avec écran s'arrête après son plan, le temps qu'un humain lance `/po-design <id>`, donc sa lane ne va pas de bout en bout. | corrigé par s35 |
 
 ## Relevés par la validation de la flotte (2026-09-22)

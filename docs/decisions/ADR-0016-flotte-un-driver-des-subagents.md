@@ -1,7 +1,7 @@
 ---
 adr: 0016
 title: La flotte est un driver unique qui lance des subagents en parallèle
-status: proposed
+status: accepted
 date: 2026-09-21
 deciders: [lecrabe]
 tags: [adr, polype, flotte]

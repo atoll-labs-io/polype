@@ -589,3 +589,91 @@ Objectif : faire avancer plusieurs stories en parallèle, reprendre après un ar
 - [ ] `help_mentions_installation_and_status` — l'aide dit en une ligne comment installer et comment vérifier une installation.
 - [ ] `readme_describes_the_project_and_its_install` — le `README.md` du dépôt décrit Polype, son cycle, sa flotte et son installation, sans promettre ce qui n'existe pas.
 - [ ] `parity_matrix_reflects_the_distribution` — les lignes H01 à H04 passent à `fait — <chemin>` ou disent ce qui reste.
+
+## M4 — Le catalogue
+
+Objectif : qu'un projet puisse démarrer sur un boilerplate connu, avec des briques choisies et non subies. Décisions : [ADR-0008](decisions/ADR-0008-catalogue-de-profils-gratuits-dabord.md), [ADR-0009](decisions/ADR-0009-briques-optimales-interchangeables.md), [ADR-0010](decisions/ADR-0010-next-forge-premier-profil.md), [ADR-0020](decisions/ADR-0020-briques-par-defaut-des-capacites.md).
+
+### s40-profile-format — Le format d'un profil de boilerplate
+**En tant que** développeur **je veux** un format de profil que tous les agents lisent de la même façon **afin qu'**un boilerplate soit décrit une fois et exploité partout.
+
+- **Complexité** : 2
+- **Dépend de** : aucune
+- **Owns** : `method/templates/profile.md`, `bin/po-lint`, `tests/profile.test.sh`, `docs/catalogue.md`
+- **Matrice** : B03, C07 (volet profil)
+
+**Critères d'acceptation**
+- [ ] `profile_template_declares_every_section` — le gabarit impose : identité et licence, commandes du projet, carte du code, granularité d'ownership, où vit chaque règle, capacités fournies avec leurs briques, inventaire UI, pièges connus.
+- [ ] `profile_commands_map_to_settings` — la section des commandes donne exactement les noms de réglages du projet (`Install`, `Test`, `Typecheck`, `E2E`, `Build`), pour être recopiée sans traduction.
+- [ ] `lint_checks_profiles` — `bin/po-lint` vérifie chaque `boilerplates/*/profile.md` : sections présentes, commandes nommées comme les réglages, capacités tirées de la liste d'ADR-0020 ; il échoue et nomme le fichier sinon.
+- [ ] `catalogue_doc_explains_the_three_levels` — `docs/catalogue.md` explique les trois niveaux (maison, tiers profilé, aucun) et ce que chacun coûte en parallélisme.
+
+### s41-capability-bricks — Le catalogue des capacités et de leurs briques
+**En tant que** développeur **je veux** que le choix d'une brique soit guidé par un document unique **afin que** l'architecture ne réinvente pas ce choix à chaque projet.
+
+- **Complexité** : 3
+- **Dépend de** : s40
+- **Owns** : `method/skills/capability-bricks/`, `method/commands/po-architect.md`, `tests/capability-bricks.test.sh`, `docs/catalogue.md`
+- **Matrice** : B02 (volet briques), C07 (volet capacités)
+
+**Critères d'acceptation**
+- [ ] `skill_lists_the_capabilities_and_their_default_bricks` — le skill `capability-bricks` reprend le tableau d'ADR-0020 (capacité, brique par défaut, alternatives) et dit quand basculer sur une alternative.
+- [ ] `skill_defines_what_a_contract_test_must_prove` — pour chaque capacité, il dit ce qu'un test de contrat doit prouver de n'importe quelle brique (au minimum : le comportement nominal, le refus attendu, et l'effet observable côté données).
+- [ ] `architect_chooses_bricks_and_records_the_gaps` — `/po-architect` compare les briques du profil à celles d'ADR-0020, retient un choix par capacité, et enregistre chaque écart en ADR de projet.
+- [ ] `self_hosted_edition_has_no_payment_brick` — le skill rappelle qu'une édition auto-hébergée se construit sans brique de paiement, et que l'offre gérée porte abonnement et usage.
+
+### s42-next-forge-profile — Le profil de next-forge
+**En tant que** développeur **je veux** un profil réel pour next-forge **afin de** pouvoir démarrer un projet dessus sans le relire entièrement.
+
+- **Complexité** : 3 — risque : le profil doit décrire le dépôt réel, pas ce qu'on en suppose.
+- **Dépend de** : s40, s41
+- **Owns** : `boilerplates/next-forge/profile.md`, `tests/next-forge-profile.test.sh`
+- **Matrice** : ADR-0010
+
+**Critères d'acceptation**
+- [ ] `next_forge_profile_passes_the_lint` — `bin/po-lint` accepte le profil.
+- [ ] `next_forge_profile_is_grounded_in_the_real_repository` — chaque commande, chemin et capacité citée est vérifiée dans une copie du dépôt (`git clone --depth 1 https://github.com/vercel/next-forge` dans un dossier temporaire), avec le commit relevé dans le profil.
+- [ ] `next_forge_profile_states_its_gaps_against_adr_0020` — il nomme les capacités dont la brique par défaut du boilerplate diffère de celle d'ADR-0020 (auth, base, fichiers notamment) et ce qu'il faut écrire pour les remplacer.
+- [ ] `next_forge_profile_declares_ownership_granularity` — il dit quel chemin une story peut posséder seule, en s'appuyant sur le découpage en packages.
+
+**Notes pour l'agent** : cloner dans `/tmp` ou un dossier temporaire, jamais dans le dépôt ; ne recopier aucun fichier du boilerplate, seulement le décrire.
+
+### s43-mustelinet-bricks — Les briques auto-hébergées pour les prototypes
+**En tant que** développeur **je veux** savoir exactement quoi déployer chez mustelinet pour chaque capacité **afin qu'**un prototype tourne sans compte tiers.
+
+- **Complexité** : 3
+- **Dépend de** : s41
+- **Owns** : `boilerplates/bricks/`, `tests/bricks.test.sh`, `docs/catalogue.md`
+- **Matrice** : ADR-0020 (volet mustelinet)
+
+**Critères d'acceptation**
+- [ ] `each_default_brick_has_a_note` — une note par brique par défaut d'ADR-0020 déployable chez mustelinet (Postgres, stockage S3, jobs, email, observabilité, déploiement) : ce qu'elle fournit, comment elle tourne là-bas, ses réglages, ses sauvegardes.
+- [ ] `notes_state_what_mustelinet_does_not_provide` — chaque note dit ce que l'hébergeur ne fournit pas et ce que cela implique (ni base ni stockage objet managés, publication HTTP/HTTPS seulement).
+- [ ] `notes_give_a_contract_test_checklist` — chaque note liste ce qu'un test de contrat doit prouver pour cette brique.
+- [ ] `bricks_are_documentation_not_code` — aucune note ne prétend livrer du code ; elles décrivent le déploiement et les contrats.
+
+### s44-catalogue-wiring — Raccorder le catalogue au cadrage
+**En tant que** développeur **je veux** que le setup et l'architecture proposent le catalogue **afin qu'**un nouveau projet en profite sans le connaître.
+
+- **Complexité** : 2
+- **Dépend de** : s42, s43
+- **Owns** : `method/commands/po-setup.md`, `method/commands/po-help.md`, `method/AGENTS.md`, `docs/parite-killer-saas.md`, `tests/catalogue-wiring.test.sh`
+- **Matrice** : C01 (volet boilerplate), B03, statuts à mettre à jour
+
+**Critères d'acceptation**
+- [ ] `setup_offers_the_catalogue` — `/po-setup` propose les profils disponibles quand le projet démarre sans boilerplate, et enregistre le choix.
+- [ ] `rules_name_the_catalogue` — les règles disent où vivent les profils et que l'architecture s'appuie dessus.
+- [ ] `help_mentions_the_catalogue` — l'aide cite le catalogue en une ligne.
+- [ ] `parity_matrix_reflects_the_catalogue` — B03, C01 et C07 passent à `fait — <chemin>` ou disent précisément ce qui reste.
+
+### s45-clean-uninstall — Une désinstallation qui ne laisse rien derrière
+**En tant que** développeur **je veux** que `polype remove` ne laisse pas de fichier vide **afin qu'**un projet désinstallé soit vraiment propre.
+
+- **Complexité** : 1
+- **Dépend de** : aucune
+- **Owns** : `bin/polype`, `tests/installer.test.sh`, `docs/defauts.md`
+- **Corrige** : défaut n° 31
+
+**Critères d'acceptation**
+- [ ] `remove_deletes_a_claude_md_it_created` — si `CLAUDE.md` ne contenait que l'import de Polype, il est supprimé ; s'il contenait autre chose, seule la ligne d'import part.
+- [ ] `remove_leaves_no_empty_file_behind` — après désinstallation, aucun fichier vide créé par l'installeur ne subsiste.

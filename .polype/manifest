@@ -16,6 +16,7 @@
 .claude/commands/po-status.md
 .claude/commands/po-stories.md
 .claude/commands/po-stories-review.md
+.claude/agents/designer.md
 .claude/agents/implementer.md
 .claude/agents/planner.md
 .claude/agents/reviewer.md

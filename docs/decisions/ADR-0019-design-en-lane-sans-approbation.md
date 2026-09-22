@@ -1,7 +1,7 @@
 ---
 adr: 0019
 title: Un design produit dans une lane part sans approbation humaine
-status: proposed
+status: accepted
 date: 2026-09-22
 deciders: [lecrabe]
 scope: story s35-fleet-design

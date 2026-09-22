@@ -1,12 +1,12 @@
 ---
 adr: 0003
 title: L'état du travail vit dans GitHub Issues ou Taskwarrior
-status: accepted
+status: superseded
 date: 2026-09-18
 deciders: [lecrabe]
 tags: [adr, polype, tracker]
 supersedes: []
-superseded-by: []
+superseded-by: [ADR-0018]
 ---
 
 # ADR-0003 — L'état du travail vit dans GitHub Issues ou Taskwarrior

@@ -1,7 +1,7 @@
 ---
 adr: 0018
 title: L'état du travail se dérive des worktrees et de git ; le tracker n'est qu'un miroir
-status: proposed
+status: accepted
 date: 2026-09-22
 deciders: [lecrabe]
 tags: [adr, polype, etat, flotte]
