@@ -59,3 +59,9 @@ Le tracker d'issues de Polype est ce fichier tant que le dépôt n'est pas sur G
 | # | Source | Défaut | Statut |
 |---|---|---|---|
 | 31 | essai `polype remove` | La désinstallation retire la ligne d'import d'`AGENTS.md` mais laisse un `CLAUDE.md` vide derrière elle. | corrigé par s45 |
+
+## Relevé par l'étude de gstack (2026-10-07)
+
+| # | Source | Défaut | Statut |
+|---|---|---|---|
+| 32 | `docs/references/gstack-agent-skills.md` | `po-gate ship-allowed` ne lit que la dernière ligne `Ship allowed:` de la revue, sans la lier au code jugé : un commit ajouté sur `story/<id>` après un verdict favorable part au ship sans avoir été relu. | ouvert — s47 |

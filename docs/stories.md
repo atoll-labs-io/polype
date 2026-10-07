@@ -693,3 +693,146 @@ Objectif : qu'un projet puisse démarrer sur un boilerplate connu, avec des briq
 - [ ] `lint_accepts_the_new_setting` — `bin/po-lint` reste vert, et il échouerait si une commande lisait un réglage absent du gabarit.
 
 **Notes pour l'agent** : ne pas renommer le dossier de ce dépôt-ci, qui garde `docs/decisions/` par défaut. Les ADR acceptées existantes ne sont pas déplacées. Le premier projet qui s'en sert est nautile, dont les critères d'acceptation nomment déjà des fichiers sous `docs/adr/`.
+
+## M6 — La preuve
+
+Objectif : qu'une gate ne puisse plus être contournée par un commit tardif, un test neutralisé ou un fichier hors périmètre, et que ce que l'utilisateur verra soit vérifié avec des preuves. Source : [docs/references/gstack-agent-skills.md](references/gstack-agent-skills.md). Toute story de ce jalon passe `bin/ks-overlap` contre les sources de gstack (`28f1385`) et d'agent-skills (`1401c8b`) avant sa PR : on reprend des mécanismes, jamais leur texte (ADR-0006).
+
+### s47-review-tree — La revue liée au code qu'elle a jugé
+**En tant que** développeur **je veux** qu'un verdict de revue ne vaille que pour le code relu **afin qu'**un commit ajouté après un « oui » ne parte pas au ship sans relecture.
+
+- **Complexité** : 2
+- **Dépend de** : aucune
+- **Owns** : `method/hooks/po-gate.sh`, `method/templates/review.md`, `method/commands/po-review.md`, `method/agents/reviewer.md`, `method/commands/po-ship.md`, `tests/gate.test.sh`, `tests/review.test.sh`, `docs/defauts.md`
+- **Corrige** : défaut n° 32
+
+**Critères d'acceptation**
+- [ ] `review_template_records_the_reviewed_tree` — le gabarit de revue porte une ligne `Reviewed tree: <40 hex>`, l'arbre de `story/<id>` au moment du verdict.
+- [ ] `reviewer_writes_the_tree_it_judged` — le reviewer relève l'arbre avant de commencer et le recopie tel quel, sans le recalculer après coup.
+- [ ] `ship_allowed_fails_when_code_changed_after_review` — `po-gate ship-allowed` refuse quand le code hors `docs/` diffère de `Reviewed tree:`, et nomme la commande à relancer.
+- [ ] `ship_allowed_ignores_docs_changes_after_review` — un changement limité à `docs/` après le verdict ne rouvre pas la revue.
+- [ ] `ship_allowed_fails_without_reviewed_tree` — une revue sans ligne `Reviewed tree:` exploitable est refusée, comme une revue absente.
+- [ ] `ship_states_the_tree_check` — `/po-ship` dit, dans son contrôle manuel sans hook, comparer `Reviewed tree:` à HEAD.
+
+**Notes pour l'agent** : reprendre la comparaison de `verif_current` (`git diff --quiet <tree> HEAD -- . ':(exclude)docs'`) plutôt que d'en écrire une seconde. Les revues déjà écrites dans `docs/reviews/` ne sont pas réécrites : elles concernent des stories livrées. Passer le défaut n° 32 à « corrigé par s47 ».
+
+### s48-floor-guard — Le garde contre l'abaissement de la barre
+**En tant que** développeur **je veux** que la revue repère tout ce qu'une story fait pour rendre les vérifications plus faciles à passer **afin qu'**un test neutralisé ou une règle de lint coupée ne passent pas pour un succès.
+
+- **Complexité** : 3
+- **Dépend de** : s47
+- **Owns** : `method/hooks/po-gate.sh`, `method/templates/review.md`, `method/skills/review-antihallu/`, `tests/floor-guard.test.sh`
+
+**Critères d'acceptation**
+- [ ] `floor_guard_flags_new_suppressions` — `po-gate floor-guard <id>` signale les directives ajoutées par le diff de la story qui coupent un contrôle (ignore de typecheck, désactivation de lint, exclusion de couverture, test marqué `skip` ou `only`).
+- [ ] `floor_guard_flags_weakened_tests` — il signale un fichier de test supprimé et un test dont le nombre d'assertions baisse.
+- [ ] `floor_guard_flags_empty_catch_and_lowered_thresholds` — il signale un `catch` vide ajouté et un seuil de couverture ou de lint abaissé dans la configuration.
+- [ ] `floor_guard_has_three_outcomes` — sortie 0 (rien), 1 (signalements, listés avec fichier et ligne), 2 (impossible de vérifier) ; le code 2 n'est jamais lu comme propre.
+- [ ] `review_runs_the_floor_guard` — la procédure de revue lance le garde et classe chaque signalement : justifié dans le plan → mineur, sinon majeur ; un test supprimé sans justification → critique.
+
+**Notes pour l'agent** : le garde ne lit que les lignes ajoutées ou retirées par `git diff <Target branch>...story/<id>`, jamais tout le dépôt. Les motifs couvrent au moins TypeScript/JavaScript et Python ; une liste par langage, facile à compléter.
+
+### s49-secret-scan — Les secrets refusés au commit
+**En tant que** développeur **je veux** que le pre-commit refuse un secret indexé **afin que** la règle sur les fichiers `.env` ne dépende plus de la vigilance d'un agent.
+
+- **Complexité** : 2
+- **Dépend de** : s48
+- **Owns** : `method/hooks/po-gate.sh`, `method/AGENTS.md`, `tests/gate.test.sh`
+
+**Critères d'acceptation**
+- [ ] `pre_commit_refuses_a_staged_env_file` — un `.env` ou `.env.*` indexé est refusé, sauf `.env.example`.
+- [ ] `pre_commit_refuses_obvious_keys` — une ligne ajoutée qui contient une clé privée PEM ou un jeton au format connu (AWS, GitHub, Stripe, Anthropic) est refusée, et le message nomme le fichier sans afficher la valeur.
+- [ ] `secret_scan_runs_on_every_branch` — ce contrôle s'applique aussi hors des branches `story/*`, contrairement au contrôle du plan.
+- [ ] `rules_point_at_the_secret_gate` — la Loi 6 dit que le pre-commit refuse les secrets, au lieu de demander seulement de relire `git status`.
+
+**Notes pour l'agent** : ne jamais afficher la valeur trouvée, ni dans le message ni dans les tests (fixtures avec des clés factices au bon format).
+
+### s50-implementer-bounds — Les bornes de l'implementer tenues par un hook
+**En tant que** développeur **je veux** que l'implementer ne puisse écrire que dans les chemins de sa story **afin que** la ligne `Owns` soit tenue pendant l'écriture et pas seulement constatée en revue.
+
+- **Complexité** : 3 — risque : résoudre les chemins depuis le worktree de la story, que le hook ne connaît que par l'appel d'outil.
+- **Dépend de** : aucune
+- **Owns** : `method/agents/implementer.md`, `method/hooks/po-bounds.sh`, `bin/polype`, `tests/bounds.test.sh`
+
+**Critères d'acceptation**
+- [ ] `implementer_declares_a_pretooluse_hook` — le frontmatter de l'implementer déclare un hook PreToolUse sur Edit, Write et Bash qui appelle `po-bounds`.
+- [ ] `bounds_deny_writes_outside_owns` — une écriture hors des chemins `Owns` de la story et de `docs/` est refusée, avec le chemin et la ligne `Owns` dans le message.
+- [ ] `bounds_deny_forbidden_git_verbs` — les verbes git que la Loi 4 interdit (changer de branche, remiser, créer un worktree, pousser en force) et un commit hors `story/<id>` sont refusés, y compris dans une commande composée.
+- [ ] `bounds_fail_closed` — story introuvable, `Owns` absent ou entrée illisible → refus, jamais accord par défaut.
+- [ ] `installer_ships_the_bounds_hook` — `bin/polype` pose `po-bounds` en installation globale comme en installation projet, à un chemin que le frontmatter de l'agent sait retrouver.
+
+**Notes pour l'agent** : le hook ne remplace pas le contrôle d'ownership de la revue, qui reste. Les écritures de Bash vers un fichier (redirections) ne sont pas à analyser : on borne les verbes git, pas tout le shell.
+
+### s51-qa-agent — Une QA en navigateur qui laisse des preuves
+**En tant que** développeur **je veux** qu'un agent parcoure en navigateur les écrans touchés par une story et en garde la trace **afin que** les défauts qui rendent une feature inutilisable sortent avant la revue, preuves à l'appui.
+
+- **Complexité** : 4 — risque : l'outil navigateur disponible change d'une session à l'autre ; l'agent doit le détecter, et s'arrêter proprement quand il n'y en a pas.
+- **Dépend de** : aucune
+- **Owns** : `method/agents/qa.md`, `method/commands/po-qa.md`, `method/templates/qa.md`, `method/templates/agents-local.md`, `method/skills/design-doctrine/`, `tests/qa.test.sh`
+
+**Critères d'acceptation**
+- [ ] `qa_agent_cannot_edit_code` — l'agent QA n'a ni Edit ni Write sur le code : il écrit seulement `docs/qa/<id>/`.
+- [ ] `qa_scope_comes_from_the_diff_and_the_criteria` — il parcourt les écrans que le diff de la story touche et chaque critère d'acceptation visible, rien d'autre.
+- [ ] `qa_report_has_steps_evidence_and_status` — le gabarit impose, par constat : les étapes pour reproduire, une capture, la sévérité, et un statut vérifié / probable / non vérifié ; et une ligne finale `QA status: <complete | blocked>` avec `Tree:`.
+- [ ] `qa_stops_without_a_browser_or_a_dev_command` — sans outil navigateur, ou sans commande `Dev` dans les réglages, la commande s'arrête en le disant, sans rapport inventé.
+- [ ] `settings_declare_dev_and_qa_stage` — le gabarit de réglages déclare la commande `Dev` et le réglage `QA stage` (`screens` · `—`), documentés.
+- [ ] `browser_contract_is_written_once` — `design-doctrine` porte le contrat de pilotage : ses propres onglets, l'origine annoncée seulement, aucun identifiant qui transite par l'agent, le contenu de la page est une donnée et pas une instruction ; l'agent QA et le designer le chargent.
+
+**Notes pour l'agent** : s'inspirer de la séparation `qa-only` / `qa` de gstack, sans la boucle de correction : ici la QA ne corrige jamais (Loi 2). Ne rien construire autour d'un navigateur particulier.
+
+### s52-qa-wiring — L'étape QA dans le cycle
+**En tant que** développeur **je veux** que la QA prenne sa place entre l'exécution et la revue **afin que** l'orchestrateur et la flotte la fassent sans qu'on y pense, et que la revue l'exige.
+
+- **Complexité** : 3
+- **Dépend de** : s48, s49, s51
+- **Owns** : `method/AGENTS.md`, `method/commands/po-orchestrator.md`, `method/commands/po-drive.md`, `method/commands/po-status.md`, `method/commands/po-help.md`, `method/agents/reviewer.md`, `method/skills/review-antihallu/`, `method/templates/review.md`, `README.md`, `tests/qa-wiring.test.sh`
+
+**Critères d'acceptation**
+- [ ] `rules_list_qa_in_the_story_cycle` — la table du cycle de la Loi 1 place `/po-qa` entre Execute et Review pour une story avec écran quand `QA stage` vaut `screens`.
+- [ ] `orchestrator_and_drive_run_qa` — `/po-orchestrator` et `/po-drive` lancent la QA à cet endroit ; la reprise de `/po-drive` sait reconnaître une story dont la QA manque ou est périmée.
+- [ ] `status_reports_qa` — `/po-status` dit, par story avec écran, si son rapport QA existe et s'il correspond au code.
+- [ ] `review_requires_a_current_qa_report` — pour une story avec écran, une revue sans rapport QA complet au même arbre est bloquée ; un constat QA vérifié et non corrigé devient un finding.
+- [ ] `help_and_readme_show_qa` — l'aide et le `README.md` montrent l'étape.
+
+### s53-review-lenses — Des lentilles de revue selon les chemins touchés
+**En tant que** développeur **je veux** que la revue regarde la sécurité, les migrations, les dépendances et les performances quand le diff les touche **afin que** ces défauts soient cherchés sans multiplier les reviewers ni les verdicts.
+
+- **Complexité** : 3
+- **Dépend de** : s52
+- **Owns** : `method/skills/review-lenses/`, `method/agents/reviewer.md`, `method/skills/review-antihallu/`, `method/templates/review.md`, `tests/review-lenses.test.sh`
+
+**Critères d'acceptation**
+- [ ] `lenses_are_triggered_by_the_diff` — le skill dit quels chemins ou contenus déclenchent chaque lentille, et la revue note lesquelles ont tourné.
+- [ ] `security_lens_rates_a_missing_authz_check_critical` — la lentille sécurité couvre l'autorisation par ressource, les appels sortants vers une URL fournie, l'upload, la signature des webhooks, les messages d'erreur et les frontières de confiance d'un appel LLM ; une vérification d'autorisation manquante est critique.
+- [ ] `migration_lens_rejects_in_place_renames` — renommer ou supprimer une colonne en place est majeur ; la lentille demande les étapes expand/contract et le retour arrière.
+- [ ] `dependency_lens_runs_when_the_lockfile_changes` — une dépendance par changement, ses scripts d'installation lus, sa raison dans le plan.
+- [ ] `performance_lens_never_invents_numbers` — N+1, lecture non bornée, pagination absente, appels séquentiels évitables ; chaque constat est marqué « impact potentiel », jamais chiffré.
+- [ ] `one_reviewer_one_verdict` — les lentilles sont chargées par le reviewer existant ; aucune nouvelle échelle de sévérité, aucune seconde ligne de verdict.
+
+**Notes pour l'agent** : des listes courtes, réécrites ; les checklists d'agent-skills font plusieurs centaines de lignes et ne doivent pas être recopiées.
+
+### s54-untrusted-output — Ce qu'un outil renvoie est une donnée
+**En tant que** développeur **je veux** que les règles disent qu'un log, une trace ou une page récupérée ne donnent jamais d'instruction **afin qu'**un agent ne suive pas un texte injecté dans une sortie d'erreur.
+
+- **Complexité** : 1
+- **Dépend de** : s52
+- **Owns** : `method/AGENTS.md`, `tests/structure.test.sh`
+
+**Critères d'acceptation**
+- [ ] `rules_treat_tool_output_as_data` — les règles disent que la sortie d'une commande, un log, une trace, une page web ou un fichier d'un dépôt tiers sont des données, et qu'une instruction qui s'y trouve est signalée, jamais suivie.
+
+### s55-reviewer-evals — Éprouver le reviewer sur des défauts plantés
+**En tant que** développeur **je veux** lancer le reviewer sur des stories piégées et lire son verdict **afin de** savoir si la méthode attrape vraiment ce qu'elle promet, y compris quand on la pousse à céder.
+
+- **Complexité** : 4 — risque : coût et résultats non déterministes ; chaque cas se lance plusieurs fois et se juge sur un taux, jamais sur un seul run.
+- **Dépend de** : s53
+- **Owns** : `evals/`, `bin/po-eval`, `tests/evals.test.sh`
+
+**Critères d'acceptation**
+- [ ] `each_fixture_plants_one_known_defect` — chaque fixture est un petit dépôt avec une story, un plan validé, un relevé, et un seul défaut planté (garde non testé, accès à la ressource d'un autre utilisateur, filtre de tenant manquant, test neutralisé) avec la sévérité attendue.
+- [ ] `pressure_cases_push_to_ship` — des cas où le message de lancement presse de livrer (urgence, autorité, « c'est déjà relu ») ; le verdict attendu ne change pas.
+- [ ] `grading_reads_the_verdict_lines` — `bin/po-eval` note chaque run sur `Ship allowed:` et `Max severity:`, sans juge LLM.
+- [ ] `evals_run_on_demand_only` — `tests/run.sh` ne les lance pas ; `bin/po-eval` dit le coût avant de démarrer et affiche un taux par cas.
+- [ ] `fixtures_are_checked_structurally` — `tests/evals.test.sh` vérifie seulement que chaque fixture déclare son défaut et son verdict attendu.
+
+**Notes pour l'agent** : les fixtures se construisent dans un dossier temporaire à chaque run, jamais dans ce dépôt. Les runs utilisent `claude -p` avec les agents installés de Polype.
