@@ -4,6 +4,7 @@ Diff reviewed: `git diff <Target branch>...story/<id>`, in a context that did no
 
 Review status: <complete | blocked>
 Fix loop: <0 for the first review, then 1, 2>
+Reviewed tree: <40 hex — git rev-parse 'story/<id>^{tree}', taken before the review starts>
 
 ## When blocked
 - Failure cause: <what failed, with the error>
@@ -34,6 +35,7 @@ Diff listed with `git diff --name-only <Target branch>...story/<id>`, each path 
 - [ ] No accepted ADR contradicted
 
 ## Tests
+- [ ] Floor: `po-gate floor-guard <id> <Target branch>` → <0 nothing lowered | 1 each flag graded, listed under Findings | 2 review blocked>
 - [ ] Assertions pin down the acceptance criteria; none of the six empty test shapes
 - [ ] Within `Test budget`, or the excess is justified in the plan
 - [ ] Bite: <rule disabled> → <N> failing tests → undone, `git diff --exit-code` clean

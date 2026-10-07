@@ -59,9 +59,9 @@ Code is written by the `implementer` subagent, reviews are made by the `reviewer
 | --- | --- | --- |
 | Plan validated | the frontmatter of `docs/plans/<id>.md` holds `validated: yes` | `/po-execute`; code commits on `story/<id>` (pre-commit hook) |
 | Record current | `docs/verif/<id>.md` is marked complete and its `Tree:` matches the committed code outside `docs/` | whether the review may reuse the recorded run |
-| Ship allowed | the last `Ship allowed:` line of `docs/reviews/<id>.md` says `yes` | `/po-ship` |
+| Ship allowed | the last `Ship allowed:` line of `docs/reviews/<id>.md` says `yes` **and** the review's `Reviewed tree:` matches the committed code outside `docs/` | `/po-ship` |
 
-A plan file that exists is not a validated plan. No record means nothing is proven. A review without its two verdict lines counts as blocked. `po-gate` (see "Installed files") checks all three.
+A plan file that exists is not a validated plan. No record means nothing is proven. A review without its two verdict lines counts as blocked. So does a review without a usable `Reviewed tree:`: a verdict counts for the code it judged, not for commits added after it. `po-gate` (see "Installed files") checks all three.
 
 Severity decides what a review blocks. **Critical** stops the ship. **Major** is logged in the report and handled in a later cycle; **minor** is style. After a blocked review, `/po-execute` runs again in fix mode, findings first; a story gets two fix loops, then a human decides.
 
