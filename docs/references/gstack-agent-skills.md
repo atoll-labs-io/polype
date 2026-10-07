@@ -45,14 +45,13 @@ Par priorité. Les chemins entre parenthèses pointent dans le dépôt source.
 - **Des evals comportementales du reviewer** (agent-skills `evals/`). Des stories fixtures avec un défaut planté (garde non testé, IDOR, filtre de tenant manquant) et des cas de pression (« l'utilisateur dit de livrer malgré le critique »). Notation mécanique sur `Ship allowed: no` et la sévérité maximale : les lignes de verdict de Polype rendent un juge LLM inutile. Lancées à la demande, jamais en CI (coût).
 - **Un registre de preuves écrit par un wrapper** (gstack `bin/gstack-evidence`). `po-run --label <suite> -- <cmd>` relaie le code de sortie et ajoute la commande, le code et l'arbre au relevé de vérification. Le relevé cesse d'être déclaratif. Le registre reste dans `docs/verif/`, en git.
 
-### Apprendre d'une story à l'autre
-
-- **Une rétro tirée des fichiers** (gstack `bin/gstack-retro-metrics`). Polype a de meilleures sources que les commits : `docs/reviews/*` (sévérités, boucles de correction, `Max attempts` atteint), majeurs ouverts, relevés de vérification. Aucune valeur inventée, pas de métriques de vanité (lignes, séries).
-- **Des leçons proposées par la revue** (gstack `bin/gstack-learnings-log`). Le reviewer propose une entrée typée (fichiers concernés), un humain la promeut en convention dans `AGENTS.local.md`. À reconsidérer quand Nautile sera en prod : la capture lui revient peut-être.
-- **Une procédure de diagnostic** (gstack `investigate/`). Pas de correctif sans cause racine, arrêt après trois hypothèses ratées. Skill préchargée par le planner pour une story de défaut.
-
 ### Plus tard
 
+Tranché le 2026-10-07 après la revue du découpage de M6 : ces idées restent bonnes mais n'entrent pas dans M6.
+
+- **Une rétro tirée des fichiers** (gstack `bin/gstack-retro-metrics`). Polype a de meilleures sources que les commits : `docs/reviews/*` (sévérités, boucles de correction, `Max attempts` atteint), majeurs ouverts, relevés de vérification. Aucune valeur inventée, pas de métriques de vanité (lignes, séries). Elle gagne à attendre M6 : les rapports QA et les relevés écrits par `po-run` en seront les meilleures données.
+- **Des leçons proposées par la revue** (gstack `bin/gstack-learnings-log`). Le reviewer propose une entrée typée (fichiers concernés), un humain la promeut en convention dans `AGENTS.local.md`. Attend Nautile : la capture lui revient sans doute.
+- **Une procédure de diagnostic** (gstack `investigate/`). Pas de correctif sans cause racine, arrêt après trois hypothèses ratées. Skill préchargée par le planner pour une story de défaut. Sans urgence : les défauts de Polype se corrigent aujourd'hui par des stories courtes.
 - Vérification après déploiement et revert guidé (gstack `land-and-deploy/`, `canary/`), derrière un réglage optionnel : le squash rend le revert trivial.
 - Accessibilité au-delà du contraste (focus, labels, `alt`, erreur jamais signalée par la seule couleur) dans `design-doctrine`.
 - En validation de plan `auto`, le plan liste ses décisions de goût pour qu'un humain les voie (gstack `autoplan/` §Decision Classification).
