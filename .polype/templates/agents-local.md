@@ -20,6 +20,7 @@ E2E browsers:      —
 Build stage:       ship-if-route
 Issue tracker:     github
 Worktree root:     .worktrees/
+ADR directory:     docs/decisions/
 Entry mode:        —
 Design source:     —
 Design skill:      —
@@ -46,6 +47,7 @@ Tracker:           none
 | Build stage | where the production build runs: `ship-if-route` (only when routing or a manifest changed) · `ship` · `ci` · `—` |
 | Issue tracker | where defects are filed: `github` · `taskwarrior` · `—` |
 | Worktree root | folder that holds story worktrees, ending with `/`; kept out of git by `.gitignore` |
+| ADR directory | where the project's ADRs live, with its own numbering; ends with `/` |
 | Entry mode | where the project starts: `replace` — build an internal replacement of a paid SaaS · `adapt` — a competing product with its own angle · `new` — an idea from scratch · `—` not chosen yet |
 | Design source | who draws the screens: `internal` — screens drawn in the repository by an agent skill · `external` — a tool outside the repository · `—` means design commands stop and ask |
 | Design skill | skill that draws the screens when `Design source` is `internal`; `—` otherwise |
