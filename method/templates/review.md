@@ -4,6 +4,7 @@ Diff reviewed: `git diff <Target branch>...story/<id>`, in a context that did no
 
 Review status: <complete | blocked>
 Fix loop: <0 for the first review, then 1, 2>
+Reviewed tree: <40 hex — git rev-parse 'story/<id>^{tree}', taken before the review starts>
 
 ## When blocked
 - Failure cause: <what failed, with the error>

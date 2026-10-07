@@ -17,6 +17,8 @@ The procedure — the scope check that comes first, then six steps and the sever
 ## Inputs
 The message you receive names the story id and the worktree. Inside it: `docs/plans/<id>.md`, `docs/research/<id>.md`, `docs/stories.md` — the story's `Owns` line, the paths it may change, lives there and nowhere else — `AGENTS.md` and the accepted ADRs under `<ADR directory>`. When the story has a screen, also `docs/design-system.md` and `docs/designs/<id>/`. A story that came through the short track has no research file: the plan's `## Verified facts` takes its place. What you judge is `git diff <Target branch>...story/<id>`, nothing wider. Start every shell command with `cd <worktree> &&` or use `git -C <worktree>`.
 
+Before reading the diff, take the tree you are about to judge: `git -C <worktree> rev-parse 'story/<id>^{tree}'`. That full 40-hex hash goes on the `Reviewed tree:` line of your answer; your verdict counts for that tree only, and `po-gate ship-allowed` refuses it once the code outside `docs/` moves away from it.
+
 ## Design conformity
 For a story with a screen, judge the result against `docs/design-system.md` and the intent of `docs/designs/<id>/design.md`, following the preloaded `design-doctrine` skill — not the mockup line by line: a spacing that differs from the artefact is not a defect when the system allows it. A component or token the system does not list is a **major** finding; it becomes **critical** when it breaks the visual coherence of the product. The review measures nothing: contrast was measured once by `/po-design-system`, and you read that record instead of recomputing it.
 
@@ -35,7 +37,7 @@ If a failing command, a missing tool, a missing prerequisite or missing evidence
 A partial review never declares the code safe.
 
 ## Your answer
-Structured like `templates/review.md`. Before the verdict, write down what you did **not** verify and why — a screen you never opened, a flow you never ran, a third party that only ever appeared as a mock — and what a person should do to cover it. An empty list would claim that everything was seen.
+Structured like `templates/review.md`, with the `Reviewed tree:` line in its header. Take the tree again just before answering: if it no longer equals the one you recorded, someone committed while you were reading, and your answer is a blocked report naming both hashes. Before the verdict, write down what you did **not** verify and why — a screen you never opened, a flow you never ran, a third party that only ever appeared as a mock — and what a person should do to cover it. An empty list would claim that everything was seen.
 
 The last two lines, exactly:
 

@@ -39,3 +39,16 @@ test_ship_runs_expensive_checks_once() {
 test_ship_goes_straight_to_cleanup_after_a_human_merge() {
   contains "$CMD" 'already prints `MERGED`, go straight to cleanup'
 }
+
+# s47 — the verdict is bound to the tree it judged.
+
+test_rules_and_ship_describe_the_bound_verdict() {
+  local row step0 status
+  row=$(grep -F '| Ship allowed |' "$METHOD/AGENTS.md")
+  grep -qF 'Reviewed tree:' <<< "$row" || fail "the Law 3 Ship allowed row does not mention 'Reviewed tree:'"
+  step0=$(awk '/^## Step 0/ {on=1; next} /^## Step 1/ {on=0} on' "$CMD")
+  grep -qF 'Reviewed tree:' <<< "$step0" || fail "po-ship.md Step 0 does not check 'Reviewed tree:'"
+  grep -qF "':(exclude)docs'" <<< "$step0" || fail "po-ship.md Step 0 does not leave docs/ out of the comparison"
+  status=$(grep -F -- '- review:' "$METHOD/commands/po-status.md")
+  grep -qF 'Reviewed tree:' <<< "$status" || fail "the review bullet of po-status.md does not mention 'Reviewed tree:'"
+}

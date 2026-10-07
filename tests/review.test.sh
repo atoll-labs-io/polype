@@ -50,3 +50,16 @@ test_only_critical_blocks() {
   contains "$AGENT" '`Ship allowed: no` means a critical finding or a blocked review, and nothing else.'
   contains "$METHOD/AGENTS.md" '**Critical** stops the ship.'
 }
+
+# s47 — a verdict counts only for the tree it judged.
+
+test_review_template_records_the_reviewed_tree() {
+  local tree_line verdict_line
+  tree_line=$(grep -n '^Reviewed tree:' "$TPL" | head -n 1 | cut -d: -f1)
+  verdict_line=$(grep -n '^Max severity:' "$TPL" | tail -n 1 | cut -d: -f1)
+  [ -n "$tree_line" ] || fail "the review template has no 'Reviewed tree:' line"
+  [ "$tree_line" -lt "$verdict_line" ] || fail "'Reviewed tree:' must sit in the header, before 'Max severity:'"
+  contains "$TPL" "rev-parse 'story/<id>^{tree}'"
+  contains "$AGENT" "rev-parse 'story/<id>^{tree}'"
+  contains "$CMD" 'Reviewed tree:'
+}

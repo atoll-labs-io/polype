@@ -30,7 +30,7 @@ Agent tool, `subagent_type: reviewer`, description "Review <id>", prompt filled 
 > Story <id>. Worktree: <absolute path>. How to review is settled by your agent file and the review-antihallu skill; below are the details of this story. The scope is `git diff <Target branch>...story/<id>`, no wider. Shape your answer like templates/review.md with `Fix loop: <n>`. Report every finding now — none kept for later. Settings and project commands come from AGENTS.local.md, used verbatim; when a command is `—`, your report says the project has none and you do not substitute your own. Start every shell command with `cd <absolute path> &&` or use `git -C <absolute path>`. End with the lines `Max severity:` and `Ship allowed:`.
 
 ## Recording
-Write the subagent's answer, whole, to `docs/reviews/<id>.md` in the worktree. It must contain `Review status:` and `Fix loop:`, and end with `Max severity: …` then `Ship allowed: yes|no` — `/po-ship` reads the last of these.
+Write the subagent's answer, whole, to `docs/reviews/<id>.md` in the worktree. It must contain `Review status:`, `Fix loop:` and the `Reviewed tree:` hash the reviewer took before reading — `/po-ship` refuses a verdict whose tree no longer matches the code outside `docs/` — and end with `Max severity: …` then `Ship allowed: yes|no` — `/po-ship` reads the last of these.
 
 If the subagent fails, times out, returns nothing, or returns a report without both verdict lines, write the file yourself: `Review status: blocked`, the concrete cause, what is missing, what must change, the loop number, then `Max severity: critical` and `Ship allowed: no`. Do not turn a failure into "review failed" and do not guess a severity.
 

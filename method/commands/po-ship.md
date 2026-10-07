@@ -15,7 +15,7 @@ Story: $ARGUMENTS
 Match the id in `docs/stories.md`. The worktree `<Worktree root><id>` must exist on `story/<id>` (`git -C <path> rev-parse --abbrev-ref HEAD`); otherwise stop without touching any branch. Run commands with `cd <path> &&` or `git -C <path>` unless a step says to use the repository root.
 
 ## Step 0 — The verdict, before anything else
-`po-gate ship-allowed <id>` from the worktree. Without the hook: the **last** line starting with `Ship allowed:` in `docs/reviews/<id>.md` must be `Ship allowed: yes`. No review, or any other answer → stop with "Cannot ship <id>: the review is missing or blocks it. Run /po-review <id>."
+`po-gate ship-allowed <id>` from the worktree. Without the hook: the **last** line starting with `Ship allowed:` in `docs/reviews/<id>.md` must be `Ship allowed: yes`, and the 40-hex hash on its first `Reviewed tree:` line must pass `git diff --quiet <Reviewed tree> HEAD -- . ':(exclude)docs'` run from the worktree. No review, no usable `Reviewed tree:`, a diff that fails, or any other answer → stop with "Cannot ship <id>: the review is missing or blocks it. Run /po-review <id>."
 
 Then read the settings above and the project commands from `AGENTS.local.md`; stop if the file or a setting is missing. Every branch below depends on them.
 

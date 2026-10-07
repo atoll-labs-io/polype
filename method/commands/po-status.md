@@ -26,7 +26,7 @@ Everything comes from files and git; nothing is guessed. Bash is used read-only:
    - design: `docs/designs/<id>/design.md` present or not;
    - plan: none · draft · approved (`validated: yes` in the frontmatter), and ticked boxes over total;
    - record: present or not, and whether `po-gate verif-current <id>` passes;
-   - review: last `Ship allowed:` value — yes · no · none — and its `Fix loop:`;
+   - review: last `Ship allowed:` value — yes · no · none — and its `Fix loop:`, plus whether `po-gate ship-allowed <id>` passes; a `yes` whose `Reviewed tree:` no longer matches the code is shown as stale, next `/po-review <id>`;
    - shipped: a commit whose subject starts with `<id>:` on `Target branch` or `origin/<Target branch>` → shipped; an open pull request from `story/<id>` → waiting for merge;
    - dependencies: if one of them is not shipped, the story shows "waiting for <ids>" instead of a next command.
 4. **Fleet.** The lanes `/po-drive` would see, derived from the same worktrees and the same git, never from a memory of a wave:

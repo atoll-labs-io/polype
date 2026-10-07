@@ -50,12 +50,15 @@ The table is read top to bottom and **the first row that matches wins**: several
 | record current, no `docs/reviews/<id>.md` | the review stage |
 | record current, review blocked, and its `Fix loop:` shows it judged an earlier commit | the review stage, at loop `Fix loop:` + 1 |
 | review whose last `Ship allowed:` is `no` | a fix run, at loop `Fix loop:` + 1 |
+| review whose last `Ship allowed:` is `yes` but `po-gate ship-allowed <id>` refuses its `Reviewed tree:` | the review stage, at loop `Fix loop:` + 1 |
 | review whose last `Ship allowed:` is `yes` | the ship |
 | a commit whose subject starts with `<id>:` on `Target branch` | nothing — the story is done |
 
 A record that exists proves nothing by itself: `po-gate verif-current <id>` is what tells a record from a stale one, and a record the gate refuses sends the lane back to the code stage.
 
 The row above the fix run is what a lane stopped between its fix run and its review looks like: the code of that fix run is recorded and current, and the review on disk is the blocked one that judged the commit before it. Reading it as a plain blocked review would send the lane through a second fix run with nothing to fix, and spend one `Max attempts` unit on it. A review at `Fix loop: <n>` judged the story's `<n>` + 1st implementer commit, since the first implementation is one commit and each fix run adds one of its own (`AGENTS.md`, Law 6); more implementer commits than that on `story/<id>` means the fix run landed after the review, and the code was never judged. A story whose migration took a commit of its own makes that count drift: there, compare the `Tree:` of `docs/verif/<id>.md` with the tree of the commit the review judged, and treat the review as stale when they differ.
+
+A favourable review whose `Reviewed tree:` the gate refuses means code was committed after the verdict, so that code was never judged and goes back to review rather than to the ship; such a re-review spends one `Max attempts` unit. When the late commit also left the record stale, the code-stage row matches first, which is right: the checks run again before anyone judges the new code.
 
 Two rules keep resuming honest.
 
@@ -116,7 +119,7 @@ The single report you compose yourself is the failure `/po-review` mandates: a s
 ## Ships, one at a time
 Ships never overlap. `Merge mode: local` requires the repository root clean and on `Target branch` (`method/commands/po-ship.md`), and two merges into the same branch at once would race each other in any mode; so you ship one story, prove it, then ship the next, in the order their reviews passed.
 
-Each ship is `/po-ship` applied as written: `po-gate ship-allowed <id>` first — the **last** `Ship allowed:` line of `docs/reviews/<id>.md` must be `yes`, and anything else stops that ship — then the expensive checks once, the squash merge titled `<id>: <story title>`, and cleanup only on proof of the merge. `Ship confirmation: human` means one AskUserQuestion per merge; `automatic` lets the gate decide alone.
+Each ship is `/po-ship` applied as written: `po-gate ship-allowed <id>` first — the **last** `Ship allowed:` line of `docs/reviews/<id>.md` must be `yes` **and** its `Reviewed tree:` must still match the code outside `docs/`, and anything else stops that ship — then the expensive checks once, the squash merge titled `<id>: <story title>`, and cleanup only on proof of the merge. `Ship confirmation: human` means one AskUserQuestion per merge; `automatic` lets the gate decide alone.
 
 A ship that fails sends its story back to a fix run under the same `Max attempts` cap and leaves the other lanes running. Once a story is shipped, its `Owns` paths are free again and the stories depending on it become ready for the next wave.
 

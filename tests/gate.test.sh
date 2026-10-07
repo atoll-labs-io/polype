@@ -26,17 +26,20 @@ test_plan_validated_fails_without_file() {
   ! passes plan-validated s01-a || fail "missing plan accepted"
 }
 
+# A review bound to the tree HEAD has now, followed by the given verdict lines.
+review() { { echo "Reviewed tree: $(git rev-parse 'HEAD^{tree}')"; printf '%b' "$1"; } > docs/reviews/s01-a.md; }
+
 test_ship_allowed_passes_only_on_exact_line() {
   sandbox
-  printf 'Max severity: minor\nShip allowed: yes\n' > docs/reviews/s01-a.md
+  review 'Max severity: minor\nShip allowed: yes\n'
   passes ship-allowed s01-a || fail "positive verdict refused"
-  printf 'Ship allowed: yes, once fixed\n' > docs/reviews/s01-a.md
+  review 'Ship allowed: yes, once fixed\n'
   ! passes ship-allowed s01-a || fail "qualified verdict accepted"
 }
 
 test_ship_allowed_fails_on_no() {
   sandbox
-  printf 'Ship allowed: no\n' > docs/reviews/s01-a.md
+  review 'Ship allowed: no\n'
   ! passes ship-allowed s01-a || fail "negative verdict accepted"
   rm docs/reviews/s01-a.md
   ! passes ship-allowed s01-a || fail "missing review accepted"
@@ -44,8 +47,36 @@ test_ship_allowed_fails_on_no() {
 
 test_ship_allowed_reads_the_last_verdict() {
   sandbox
-  printf 'Earlier run said:\nShip allowed: yes\n\nMax severity: critical\nShip allowed: no\n' > docs/reviews/s01-a.md
+  review 'Earlier run said:\nShip allowed: yes\n\nMax severity: critical\nShip allowed: no\n'
   ! passes ship-allowed s01-a || fail "an earlier quoted verdict overrode the final one"
+}
+
+test_ship_allowed_fails_when_code_changed_after_review() {
+  sandbox
+  review 'Ship allowed: yes\n'
+  passes ship-allowed s01-a || fail "review of the current code refused"
+  echo 'z' > src/app.txt && git commit -qam 'late change'
+  local err
+  if err=$(bash "$GATE" ship-allowed s01-a 2>&1); then fail "code committed after the review shipped"; fi
+  grep -qF '/po-review s01-a' <<< "$err" || fail "the refusal does not name /po-review s01-a: $err"
+}
+
+test_ship_allowed_ignores_docs_changes_after_review() {
+  sandbox
+  review 'Ship allowed: yes\n'
+  echo '- [x] task' > docs/plans/s01-a.md && git add -A && git commit -qm 'record the review'
+  passes ship-allowed s01-a || fail "a docs-only change reopened the review"
+}
+
+test_ship_allowed_fails_without_reviewed_tree() {
+  sandbox
+  local tree; tree=$(git rev-parse 'HEAD^{tree}')
+  printf 'Max severity: minor\nShip allowed: yes\n' > docs/reviews/s01-a.md
+  ! passes ship-allowed s01-a || fail "a review without 'Reviewed tree:' allowed the ship"
+  printf 'Reviewed tree: %s\nShip allowed: yes\n' "${tree:0:12}" > docs/reviews/s01-a.md
+  ! passes ship-allowed s01-a || fail "an abbreviated tree hash was accepted"
+  printf 'Reviewed tree: %s\nShip allowed: yes\n' "$(printf 'f%.0s' {1..40})" > docs/reviews/s01-a.md
+  ! passes ship-allowed s01-a || fail "a tree naming no object was accepted"
 }
 
 record() {

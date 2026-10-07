@@ -81,7 +81,7 @@ test_drive_ships_serially_after_each_review() {
 
   # The gate, read exactly as /po-ship reads it.
   holds "$ships" '`po-gate ship-allowed <id>` first' 'the ship section'
-  holds "$ships" 'the **last** `Ship allowed:` line of `docs/reviews/<id>.md` must be `yes`' 'the ship section'
+  holds "$ships" 'the **last** `Ship allowed:` line of `docs/reviews/<id>.md` must be `yes` **and** its `Reviewed tree:` must still match the code outside `docs/`' 'the ship section'
   holds "$ships" '`Ship confirmation: human` means one AskUserQuestion per merge' 'the ship section'
 
   # A blocked story loops back, within a bounded number of attempts.
@@ -234,4 +234,17 @@ test_planner_writes_only_its_documents_and_the_adr_assigned_to_it() {
   local contracts; contracts=$(section_of "$planner" 'The contracts you carry')
   holds "$contracts" 'a `docs/research/<id>.md` that exists is this lane'"'"'s research' 'the planner contracts'
   holds "$contracts" 'read it, build the plan on it, and never write that file again' 'the planner contracts'
+}
+
+# s47 — a favourable review on code that moved since goes back to review, not to the ship.
+
+test_drive_sends_a_stale_review_back_to_review() {
+  require_file "$DRIVE"
+  local rows stale ship
+  rows=$(section_of "$DRIVE" 'Resuming' | grep '^| ')
+  stale=$(grep -n -F 'Reviewed tree:' <<< "$rows" | grep -F 'the review stage' | head -n 1 | cut -d: -f1)
+  ship=$(grep -n -F 'is `yes` | the ship' <<< "$rows" | cut -d: -f1)
+  [ -n "$stale" ] || fail "the resuming table has no row sending a stale favourable review back to review"
+  [ -n "$ship" ] || fail "the resuming table lost its ship row"
+  [ "$stale" -lt "$ship" ] || fail "the stale-review row (row $stale) must be read before the ship row (row $ship)"
 }

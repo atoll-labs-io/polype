@@ -64,4 +64,4 @@ Le tracker d'issues de Polype est ce fichier tant que le dépôt n'est pas sur G
 
 | # | Source | Défaut | Statut |
 |---|---|---|---|
-| 32 | `docs/references/gstack-agent-skills.md` | `po-gate ship-allowed` ne lit que la dernière ligne `Ship allowed:` de la revue, sans la lier au code jugé : un commit ajouté sur `story/<id>` après un verdict favorable part au ship sans avoir été relu. | ouvert — s47 |
+| 32 | `docs/references/gstack-agent-skills.md` | `po-gate ship-allowed` ne lit que la dernière ligne `Ship allowed:` de la revue, sans la lier au code jugé : un commit ajouté sur `story/<id>` après un verdict favorable part au ship sans avoir été relu. | corrigé par s47 |

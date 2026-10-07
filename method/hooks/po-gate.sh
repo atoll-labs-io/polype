@@ -2,11 +2,13 @@
 # po-gate — Polype's gates as plain file checks, so any tool (or CI) can enforce them.
 #
 #   po-gate plan-validated <id>   0 when the plan's frontmatter says `validated: yes`
-#   po-gate ship-allowed <id>     0 when the review's last `Ship allowed:` line says yes
+#   po-gate ship-allowed <id>     0 when the review's last `Ship allowed:` line says yes and its
+#                                 `Reviewed tree:` still matches HEAD outside docs/
 #   po-gate verif-current <id>    0 when the verification record is complete and matches HEAD
 #   po-gate pre-commit            non-zero on a code commit to story/<id> whose plan is not approved
 #
-# Squash merges leave nothing for a push hook to inspect; put `po-gate ship-allowed <id>` in CI.
+# Squash merges leave nothing for a push hook to inspect; put `po-gate ship-allowed <id>` in CI,
+# on a checkout of the story branch tip rather than a merge ref: it compares against HEAD.
 set -euo pipefail
 
 top() { git rev-parse --show-toplevel 2>/dev/null || pwd; }
@@ -21,26 +23,37 @@ plan_validated() {
     || refuse "the plan of $1 is not approved: its frontmatter lacks 'validated: yes' — /po-plan $1"
 }
 
+# The first `<label>:` line holding a full 40-hex hash; abbreviations would resolve in git, so they are refused.
+first_hash() { sed -n "s/^$1:[[:space:]]*\([0-9a-f]\{40\}\)[[:space:]]*\$/\1/p" "$2" | head -n 1; }
+
+tree_exists() { git -C "$(top)" cat-file -e "$1^{tree}" 2>/dev/null; }
+
+# docs/ is left out of the comparison: the record, the ticked plan and the review are written after the code they judge.
+code_matches() { git -C "$(top)" diff --quiet "$1" HEAD -- . ':(exclude)docs'; }
+
 # Only the last verdict line counts: a report may quote an earlier verdict before giving its own.
 ship_allowed() {
-  local review verdict; review="$(top)/docs/reviews/$1.md"
+  local review verdict tree; review="$(top)/docs/reviews/$1.md"
   [ -f "$review" ] || refuse "$1 has not been reviewed (docs/reviews/$1.md) — /po-review $1" || return 1
   verdict="$(grep -E '^Ship allowed:' "$review" | tail -n 1 || true)"
   [[ "$verdict" =~ ^Ship\ allowed:[[:space:]]*yes[[:space:]]*$ ]] \
-    || refuse "the review of $1 does not allow shipping (last verdict: ${verdict:-none})"
+    || refuse "the review of $1 does not allow shipping (last verdict: ${verdict:-none})" || return 1
+  tree="$(first_hash 'Reviewed tree' "$review")"
+  [ -n "$tree" ] || refuse "the review of $1 has no usable 'Reviewed tree:' hash — /po-review $1" || return 1
+  { tree_exists "$tree" && code_matches "$tree"; } \
+    || refuse "the code of $1 changed after its review (tree $tree); the verdict no longer applies — /po-review $1"
 }
 
-# docs/ is left out of the comparison: the record and the ticked plan are written after the checks ran.
 verif_current() {
-  local root record tree; root="$(top)"; record="$root/docs/verif/$1.md"
+  local record tree; record="$(top)/docs/verif/$1.md"
   [ -f "$record" ] || refuse "$1 has no verification record (docs/verif/$1.md)" || return 1
   grep -qE '^Verification status:[[:space:]]*complete[[:space:]]*$' "$record" \
     || refuse "the verification record of $1 is not marked complete" || return 1
-  tree="$(sed -n 's/^Tree:[[:space:]]*\([0-9a-f]\{40\}\)[[:space:]]*$/\1/p' "$record" | head -n 1)"
+  tree="$(first_hash 'Tree' "$record")"
   [ -n "$tree" ] || refuse "the verification record of $1 has no usable 'Tree:' hash" || return 1
-  git -C "$root" cat-file -e "${tree}^{tree}" 2>/dev/null \
+  tree_exists "$tree" \
     || refuse "tree $tree from the record of $1 does not exist in this repository" || return 1
-  git -C "$root" diff --quiet "$tree" HEAD -- . ':(exclude)docs' \
+  code_matches "$tree" \
     || refuse "the code of $1 changed after its checks ran; the record no longer matches HEAD"
 }
 
