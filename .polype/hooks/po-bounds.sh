@@ -175,7 +175,8 @@ case "$mode" in
 esac
 
 command -v jq > /dev/null 2>&1 || deny "jq is required and was not found; every call is refused without it"
-input="$(< /dev/stdin)"
+# Claude Code hands the input over a socket, which /dev/stdin cannot open; cat reads fd 0 directly.
+input="$(cat)"
 tool="$(jq -er '.tool_name | strings' <<< "$input" 2>/dev/null)" || deny "unreadable hook input"
 
 case "$mode:$tool" in
