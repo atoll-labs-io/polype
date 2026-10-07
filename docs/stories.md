@@ -877,3 +877,20 @@ Objectif : qu'une gate ne puisse plus être contournée par un commit tardif, un
 - [ ] `help_and_readme_show_qa` — l'aide et le `README.md` montrent l'étape.
 
 **Notes pour l'agent** : `tests/drive.test.sh` et `tests/fleet-design.test.sh` figent l'ordre des subagents de la vague : les mettre à jour avec le texte, pas les contourner. Une story sans écran garde la vague à quatre subagents.
+
+## Correctifs hors jalon
+
+### s58-designer-browser — Le designer peut ouvrir son écran dans un navigateur
+**En tant que** développeur **je veux** que le designer et `/po-design` aient accès à l'outil navigateur de la session **afin que** la maquette soit vraiment regardée, comme leurs propres fichiers le demandent.
+
+- **Complexité** : 2
+- **Dépend de** : aucune
+- **Owns** : `method/agents/designer.md`, `method/commands/po-design.md`, `tests/fleet-design.test.sh`, `tests/design.test.sh`, `tests/designer-browser.test.sh`, `docs/defauts.md`
+- **Corrige** : défaut n° 33
+
+**Critères d'acceptation**
+- [ ] `designer_inherits_the_session_browser` — le frontmatter du designer ne restreint plus ses outils par une liste `tools:` qui exclut le navigateur ; il suit la forme retenue pour l'agent QA par ADR-0026 (pas de `tools:`, `disallowedTools` pour ce qu'il ne doit pas avoir), sans perdre Write, Edit ni Bash dont il a besoin.
+- [ ] `po_design_can_reach_a_browser` — `/po-design` ne limite plus ses outils à une liste qui exclut le navigateur de la session.
+- [ ] `design_still_writes_no_source_file` — la consigne qui interdit au designer et à `/po-design` d'écrire un fichier source reste en place.
+
+**Notes pour l'agent** : ne nommer aucun navigateur ni serveur MCP particulier (`tests/qa.test.sh` vérifie qu'aucun `mcp__`, `playwright` ou `chrome` n'apparaît dans `method/`). Les tests qui lisent le frontmatter du designer (`tests/fleet-design.test.sh`) se mettent à jour avec le texte. Passer le défaut n° 33 à « corrigé par s58 ».

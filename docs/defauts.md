@@ -65,3 +65,9 @@ Le tracker d'issues de Polype est ce fichier tant que le dépôt n'est pas sur G
 | # | Source | Défaut | Statut |
 |---|---|---|---|
 | 32 | `docs/references/gstack-agent-skills.md` | `po-gate ship-allowed` ne lit que la dernière ligne `Ship allowed:` de la revue, sans la lier au code jugé : un commit ajouté sur `story/<id>` après un verdict favorable part au ship sans avoir été relu. | corrigé par s47 |
+
+## Relevé par le planner de s51 (2026-10-07)
+
+| # | Source | Défaut | Statut |
+|---|---|---|---|
+| 33 | plan de s51 | `method/agents/designer.md` déclare `tools:` sans outil navigateur, et `/po-design` déclare `allowed-tools` sans outil navigateur ; tous deux demandent pourtant d'ouvrir la maquette dans le navigateur de la session, ce qu'ils ne peuvent pas faire. | ouvert — s58 |
