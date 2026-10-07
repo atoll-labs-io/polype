@@ -165,3 +165,69 @@ test_hook_blocks_code_inside_a_story_worktree() {
   if err=$(git commit -qm code 2>&1); then fail "the hook let a code commit through inside the worktree"; fi
   grep -qF 'po-gate: no code commit on story/s01-a' <<< "$err" || fail "commit failed for another reason: $err"
 }
+
+# s49 — secret scan. Every key is assembled at run time so no literal secret ever sits in this file.
+refused_naming() {
+  local err
+  if err=$(bash "$GATE" pre-commit 2>&1); then fail "$2 slipped past the gate"; fi
+  grep -qF -- "$1" <<< "$err" || fail "refusal of $2 does not name $1: $err"
+  [ -z "${3:-}" ] || ! grep -qF -- "$3" <<< "$err" || fail "refusal of $2 shows the value"
+}
+
+# Moves HEAD to another branch while keeping the index, as a developer switching branches with staged work would.
+on_branch() { git branch -f "$1" HEAD 2>/dev/null || true; git symbolic-ref HEAD "refs/heads/$1"; }
+
+test_pre_commit_refuses_a_staged_env_file() {
+  sandbox
+  echo 'K=v' > .env && git add .env
+  refused_naming '.env: environment file staged' '.env'
+  git reset -q && rm .env
+  mkdir -p config && echo 'K=v' > config/.env.local && git add config
+  refused_naming 'config/.env.local' 'config/.env.local'
+  git reset -q && rm -r config
+  echo 'K=' > .env.example && git add .env.example
+  passes pre-commit || fail ".env.example refused"
+  git commit -qm example
+  echo 'K=v' > .env && git add .env && git commit -qm leak
+  git rm -q --cached .env
+  passes pre-commit || fail "unstaging a tracked .env refused"
+}
+
+test_pre_commit_refuses_obvious_keys() {
+  sandbox
+  local q16 a36 value
+  q16="$(printf 'Q%.0s' {1..16})"; a36="$(printf 'a%.0s' {1..36})"
+  for value in "-----BEGIN RSA PRIV""ATE KEY-----" "AKI""A$q16" "gh""p_$a36" "sk_""live_$a36" "sk-""ant-api03-$a36"; do
+    echo "token = $value" > src/leak.txt && git add src/leak.txt
+    refused_naming 'src/leak.txt:1:' "$value" "$value"
+    git reset -q
+  done
+  printf 'pk_live_%s\ndesk_live_%s\n' "${a36:0:24}" "${a36:0:24}" > src/leak.txt && git add src/leak.txt
+  passes pre-commit || fail "a publishable key or a near-miss identifier was refused"
+}
+
+test_secret_scan_runs_on_every_branch() {
+  sandbox
+  echo 'K=v' > .env && git add .env
+  refused_naming '.env' 'a .env on main'
+  on_branch feature/x
+  refused_naming '.env' 'a .env on feature/x'
+  on_branch story/s01-a
+  plan yes && git add docs
+  refused_naming '.env' 'a .env on a story with an approved plan'
+  on_branch main && git reset -q && rm -f .env docs/plans/s01-a.md
+  mkdir -p .polype/hooks && cp "$METHOD"/hooks/* .polype/hooks/ && chmod +x .polype/hooks/*
+  git add -A && git commit -qm 'install polype'
+  git config core.hooksPath .polype/hooks
+  echo 'K=v' > .env && git add .env
+  local err
+  if err=$(git commit -qm leak 2>&1); then fail "the hook let a .env through on main"; fi
+  grep -qF 'po-gate:' <<< "$err" || fail "commit failed for another reason: $err"
+}
+
+test_rules_point_at_the_secret_gate() {
+  contains "$METHOD/AGENTS.md" '**Secrets never enter git.**'
+  contains "$METHOD/AGENTS.md" 'the pre-commit refuses'
+  contains "$METHOD/AGENTS.md" 'git status --porcelain'
+  contains "$METHOD/AGENTS.md" '.env.example'
+}

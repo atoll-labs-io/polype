@@ -5,7 +5,9 @@
 #   po-gate ship-allowed <id>     0 when the review's last `Ship allowed:` line says yes and its
 #                                 `Reviewed tree:` still matches HEAD outside docs/
 #   po-gate verif-current <id>    0 when the verification record is complete and matches HEAD
-#   po-gate pre-commit            non-zero on a code commit to story/<id> whose plan is not approved
+#   po-gate pre-commit            non-zero, on every branch, when a staged environment file or an added line holding
+#                                 a private key or a known token is staged; and on a code commit to story/<id>
+#                                 whose plan is not approved
 #   po-gate floor-guard <id> <base>  scans `git diff <base>...story/<id>` for what lowers the bar of the checks:
 #                                 0 nothing, 1 one `<path>:<line>: <rule>: <detail>` per flag, 2 cannot verify
 #
@@ -59,8 +61,92 @@ verif_current() {
     || refuse "the code of $1 changed after its checks ran; the record no longer matches HEAD"
 }
 
+# --- secret scan ---------------------------------------------------------------
+# One entry per line: <rule>|<min length>|<POSIX ERE>, matched against every line a commit adds, on any branch.
+# A new format is one more line. The minimum length stands in for {n} (see the floor guard's patterns below), and a
+# match preceded by [A-Za-z0-9_] does not count, so `desk_live_...` is not a Stripe key.
+SECRET_PATTERNS='private-key|0|-----BEGIN[A-Z ]*PRIVATE KEY
+aws-access-key|20|(AKIA|ASIA)[0-9A-Z]+
+github-token|40|gh[pousr]_[A-Za-z0-9]+
+github-token|40|github_pat_[A-Za-z0-9_]+
+stripe-secret-key|24|(sk|rk)_(live|test)_[A-Za-z0-9]+
+anthropic-key|40|sk-ant-[A-Za-z0-9_-]+'
+
+# Prints one line per hit on stdout, never the matched text; returns 1 only when the index cannot be read.
+secret_scan() {
+  local paths path base diff out rc=0
+  # --diff-filter=d: unstaging a tracked .env is the fix, so a staged deletion passes.
+  paths="$(git -c core.quotePath=false diff --cached --name-only --no-renames --diff-filter=d -z | tr '\0' '\n')" \
+    || refuse "could not list the staged files; refusing the commit" || return 1
+  while IFS= read -r path; do
+    base="${path##*/}"
+    case "$base" in
+      .env.example) ;;
+      .env|.env.*) echo "po-gate: $path: environment file staged — unstage it and list it in .gitignore" ;;
+    esac
+  done <<< "$paths"
+  diff="$(git -c core.quotePath=false diff --cached --no-color --no-ext-diff --no-textconv --no-renames \
+    --src-prefix=a/ --dst-prefix=b/ -U0)" \
+    || refuse "could not read the staged diff; refusing the commit" || return 1
+  [ -n "$diff" ] || return 0
+  out="$(SECRET_PATTERNS="$SECRET_PATTERNS" awk '
+    function header_path(s, pre) {
+      sub(/\t$/, "", s)
+      if (s ~ /^".*"$/) s = substr(s, 2, length(s) - 2)
+      if (substr(s, 1, 2) == pre) s = substr(s, 3)
+      return s
+    }
+    function hit(s, i,   rest, pos, before) {
+      rest = s; pos = 0
+      while (match(rest, pat[i])) {
+        before = pos + RSTART - 1 > 0 ? substr(s, pos + RSTART - 1, 1) : ""
+        if (before !~ /[A-Za-z0-9_]/ && RLENGTH >= plen[i]) return 1
+        pos += RSTART + RLENGTH - 1; rest = substr(rest, RSTART + RLENGTH)
+        if (RLENGTH == 0) return 0
+      }
+      return 0
+    }
+    function added(s,   i, seen) {
+      split("", seen)
+      for (i = 1; i <= np; i++) if (!(prule[i] in seen) && hit(s, i)) { seen[prule[i]] = 1; print "po-gate: " file ":" line ": " prule[i] " (value not shown)" }
+    }
+    BEGIN {
+      n = split(ENVIRON["SECRET_PATTERNS"], rows, "\n")
+      for (i = 1; i <= n; i++) {
+        if (rows[i] == "") continue
+        p1 = index(rows[i], "|"); rest = substr(rows[i], p1 + 1); p2 = index(rest, "|")
+        np++; prule[np] = substr(rows[i], 1, p1 - 1); plen[np] = substr(rest, 1, p2 - 1) + 0; pat[np] = substr(rest, p2 + 1)
+      }
+    }
+    remold > 0 || remnew > 0 {
+      c = substr($0, 1, 1)
+      if (c == "-" && remold > 0) { remold--; next }
+      if (c == "+" && remnew > 0) { remnew--; added(substr($0, 2)); line++; next }
+      if (c == "\\") next
+      bad = 1; remold = 0; remnew = 0
+    }
+    /^diff --git / { file = ""; next }
+    /^\+\+\+ / { s = substr($0, 5); file = (s == "/dev/null") ? "" : header_path(s, "b/"); next }
+    /^@@ / {
+      o = substr($2, 2); w = substr($3, 2)
+      if (index(o, ",")) { split(o, t, ","); remold = t[2] + 0 } else remold = 1
+      if (index(w, ",")) { split(w, t, ","); line = t[1] + 0; remnew = t[2] + 0 } else { line = w + 0; remnew = 1 }
+      next
+    }
+    END { if (bad) exit 3 }
+  ' <<< "$diff")" || rc=$?
+  [ "$rc" -eq 0 ] || refuse "could not scan the staged diff for secrets (awk exit $rc); refusing the commit" || return 1
+  [ -z "$out" ] || printf '%s\n' "$out"
+}
+
 pre_commit() {
-  local branch staged path code=no
+  local branch staged path code=no hits count
+  hits="$(secret_scan)" || return 1
+  if [ -n "$hits" ]; then
+    printf '%s\n' "$hits" >&2
+    count="$(printf '%s\n' "$hits" | wc -l | tr -d ' ')"
+    refuse "refusing the commit: $count staged secret(s); the values are not shown" || return 1
+  fi
   branch="$(git rev-parse --abbrev-ref HEAD 2>/dev/null || true)"
   [[ "$branch" == story/* ]] || return 0
   # --no-renames: moving code into docs/ must count as touching code.
