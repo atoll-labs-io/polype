@@ -6,6 +6,10 @@
 #                              story whose linked story/<id> worktree holds it.
 #                              Bash: no git switch, checkout, stash, push or worktree add, and no
 #                              git commit outside a story/<id> worktree.
+#   po-bounds.sh qa            Write: the path must lie in docs/qa/<id>/ of the story whose linked
+#                              story/<id> worktree holds it; the rest of docs/ is refused too.
+#                              Bash: every git call must use a reading verb of an allowlist
+#                              (ADR-0026); an unknown verb, or none, is refused. Edit is refused.
 #
 # Exit 0 allows the call, exit 2 refuses it with the reason on stderr. Claude Code lets any other
 # code through, so every failure ends in a refusal. Reads no setting; needs jq (ADR-0024).
@@ -93,10 +97,23 @@ check_write() {
   exit 0
 }
 
+# Not check_write: its docs/ shortcut belongs to the implementer.
+check_write_qa() {
+  local path="$1" rel
+  resolve_path "$path"
+  story_of_dir "$path is not inside a story worktree (a linked worktree on a story/<id> branch)" "$NEAREST"
+  case "$RESOLVED" in "$TOP"/*) ;; *) deny "$path is not inside a file of worktree $TOP" ;; esac
+  rel="${RESOLVED#"$TOP"/}"
+  case "$rel" in "docs/qa/$STORY/"?*) exit 0 ;; esac
+  deny "$RESOLVED is outside docs/qa/$STORY/, the only folder mode qa writes to"
+}
+
 join_dir() { case "$2" in /*) printf '%s' "$2" ;; *) printf '%s' "${1%/}/$2" ;; esac; }
 
+QA_GIT_VERBS=" status diff log show rev-parse ls-files ls-tree cat-file merge-base grep blame describe symbolic-ref shortlog "
+
 check_bash() {
-  local cmd="$1" cur="$2" text i j n w verb gdir dir
+  local cmd="$1" cur="$2" mode="$3" text i j n w verb gdir dir
   local -a words=()
   text="${cmd//[\'\"\\]/}"
   text="${text//\$(/ }"
@@ -122,16 +139,28 @@ check_bash() {
         esac
       done
       verb="${words[j]-}"
-      case "$verb" in
-        switch|checkout|stash|push) deny "git $verb is forbidden to the implementer: $cmd" ;;
-        worktree) [ "${words[j+1]-}" != add ] || deny "git worktree add is forbidden to the implementer: $cmd" ;;
-        commit)
-          dir="$cur"
-          [ -z "$gdir" ] || dir="$(join_dir "$cur" "$gdir")"
-          [ -n "$dir" ] && [ -d "$dir" ] || deny "git commit outside a story/<id> branch: $cmd"
-          story_of_dir "git commit outside a story/<id> branch: $cmd" "$dir"
-          ;;
-      esac
+      if [ "$mode" = qa ]; then
+        if [ "$verb" = worktree ]; then
+          [ "${words[j+1]-}" = list ] || deny "git worktree ${words[j+1]-} is forbidden in mode qa, only worktree list reads: $cmd"
+        else
+          # An empty verb never matches: the list holds single spaces only.
+          case "$QA_GIT_VERBS" in
+            *" $verb "*) ;;
+            *) deny "git ${verb:-without a verb} is forbidden in mode qa, which runs reading verbs only: $cmd" ;;
+          esac
+        fi
+      else
+        case "$verb" in
+          switch|checkout|stash|push) deny "git $verb is forbidden to the implementer: $cmd" ;;
+          worktree) [ "${words[j+1]-}" != add ] || deny "git worktree add is forbidden to the implementer: $cmd" ;;
+          commit)
+            dir="$cur"
+            [ -z "$gdir" ] || dir="$(join_dir "$cur" "$gdir")"
+            [ -n "$dir" ] && [ -d "$dir" ] || deny "git commit outside a story/<id> branch: $cmd"
+            story_of_dir "git commit outside a story/<id> branch: $cmd" "$dir"
+            ;;
+        esac
+      fi
       i=$j
     fi
     i=$((i + 1))
@@ -141,8 +170,8 @@ check_bash() {
 
 mode="${1-}"
 case "$mode" in
-  implementer) ;;
-  *) deny "unknown mode '${mode}' (expected: implementer)" ;;
+  implementer|qa) ;;
+  *) deny "unknown mode '${mode}' (expected: implementer or qa)" ;;
 esac
 
 command -v jq > /dev/null 2>&1 || deny "jq is required and was not found; every call is refused without it"
@@ -154,10 +183,14 @@ case "$mode:$tool" in
     path="$(jq -er '.tool_input.file_path | strings' <<< "$input" 2>/dev/null)" || deny "unreadable hook input: no file_path"
     check_write "$path"
     ;;
-  implementer:Bash)
+  qa:Write)
+    path="$(jq -er '.tool_input.file_path | strings' <<< "$input" 2>/dev/null)" || deny "unreadable hook input: no file_path"
+    check_write_qa "$path"
+    ;;
+  implementer:Bash|qa:Bash)
     cmd="$(jq -er '.tool_input.command | strings' <<< "$input" 2>/dev/null)" || deny "unreadable hook input: no command"
     cwd="$(jq -r '.cwd // empty | strings' <<< "$input" 2>/dev/null)" || deny "unreadable hook input"
-    check_bash "$cmd" "$cwd"
+    check_bash "$cmd" "$cwd" "$mode"
     ;;
   *) deny "tool $tool is not allowed in mode $mode" ;;
 esac

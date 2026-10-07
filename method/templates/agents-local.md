@@ -18,6 +18,7 @@ E2E stage:         ship
 E2E scope:         nominal
 E2E browsers:      —
 Build stage:       ship-if-route
+QA stage:          —
 Issue tracker:     github
 Worktree root:     .worktrees/
 ADR directory:     docs/decisions/
@@ -45,6 +46,7 @@ Tracker:           none
 | E2E scope | how much end-to-end runs; `nominal` means one happy path |
 | E2E browsers | browsers used before ship, e.g. `chromium`; `—` leaves the project default. Ship always uses all of them |
 | Build stage | where the production build runs: `ship-if-route` (only when routing or a manifest changed) · `ship` · `ci` · `—` |
+| QA stage | `screens` — /po-qa walks the screens a story touches before its review · `—` — no QA stage |
 | Issue tracker | where defects are filed: `github` · `taskwarrior` · `—` |
 | Worktree root | folder that holds story worktrees, ending with `/`; kept out of git by `.gitignore` |
 | ADR directory | where the project's ADRs live, with its own numbering; ends with `/` |
@@ -67,9 +69,10 @@ Test:              —
 Typecheck:         —
 E2E:               —
 Build:             —
+Dev:               —
 ```
 
-Agents run these exactly as written. `—` means the project has no such command, and no agent will make one up. `Test` has to accept paths to test files, so a single task's tests can run alone.
+Agents run these exactly as written. `—` means the project has no such command, and no agent will make one up. `Test` has to accept paths to test files, so a single task's tests can run alone. `Dev` starts the development server and prints the address it serves; `/po-qa` needs it and stops on `—`.
 
 ## Conventions
 

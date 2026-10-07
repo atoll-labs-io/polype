@@ -28,6 +28,7 @@ Reads settings: none
    - `/po-design <story>` — pour une story avec écran : dérive l'écran du design system dans `docs/designs/<id>/`.
 2. `/po-plan <story>` — découpe en tâches testables, puis approbation.
 3. `/po-execute <story>` — l'implementer code, trace ses vérifications, commite.
+   - `/po-qa <story>` — pour une story avec écran : un agent parcourt en navigateur les écrans touchés et laisse ses preuves dans `docs/qa/<id>/`, sans rien corriger.
 4. `/po-review <story>` — relecture par un autre contexte, tests mis à l'épreuve, verdict.
 5. `/po-ship <story>` — verdict vérifié, contrôles lourds une fois, squash, nettoyage.
 

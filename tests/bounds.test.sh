@@ -3,6 +3,7 @@
 
 BOUNDS="$METHOD/hooks/po-bounds.sh"
 IMPLEMENTER="$METHOD/agents/implementer.md"
+QA_AGENT="$METHOD/agents/qa.md"
 
 # A repository with a committed docs/stories.md and one linked story/<id> worktree per story,
 # plus s99-ghost, whose story the file does not hold.
@@ -46,7 +47,7 @@ bash_status() { bounds_status "$(hook_input Bash command "$1")"; }
 expect() { [ "$1" = "$2" ] || fail "$3: expected exit $2, got $1"; }
 
 hook_command() {
-  frontmatter "$IMPLEMENTER" | grep -m1 '^[[:space:]]*command:' \
+  frontmatter "${1:-$IMPLEMENTER}" | grep -m1 '^[[:space:]]*command:' \
     | sed -e "s/^[[:space:]]*command:[[:space:]]*//" -e "s/^'//" -e "s/'\$//"
 }
 
@@ -134,6 +135,42 @@ test_bounds_fail_closed() {
   expect "$(status_with "$(hook_input Write file_path "$WT/src/app.sh")")" 2 "mode missing"
   expect "$(status_with "$(hook_input Write file_path "$WT/src/app.sh")" nobody)" 2 "unknown mode"
   expect "$(write_status NotebookEdit "$WT/src/app.sh")" 2 "unknown tool"
+}
+
+qa_status() { status_with "$(hook_input "$1" "$2" "$3")" qa; }
+
+test_qa_writes_are_bounded_by_the_hook() {
+  lane
+  local c
+  expect "$(qa_status Write file_path "$WT/docs/qa/s01-demo/a.png")" 0 "docs/qa/<id>/, missing folders"
+  expect "$(qa_status Write file_path "$WT/docs/qa/s03-en/a.png")" 2 "another story's qa folder"
+  expect "$(qa_status Write file_path "$WT/docs/plans/x.md")" 2 "docs/ outside docs/qa/<id>/"
+  expect "$(qa_status Write file_path "$WT/src/app.sh")" 2 "a file inside Owns"
+  expect "$(qa_status Write file_path "$WT/docs/qa/s01-demo/../../x")" 2 "escape from docs/qa/<id>/"
+  expect "$(qa_status Edit file_path "$WT/docs/qa/s01-demo/r.md")" 2 "Edit"
+  for c in "git -C $WT add -A" "cd $WT && git commit -m x" "git -C $WT restore ." "git -C $WT branch x"; do
+    expect "$(qa_status Bash command "$c")" 2 "$c"
+  done
+  for c in "git -C $WT diff main...story/s01-demo" "git -C $WT rev-parse 'story/s01-demo^{tree}'" "cd $WT && npm run dev"; do
+    expect "$(qa_status Bash command "$c")" 0 "$c"
+  done
+
+  local fm cmd pd input s
+  fm="$(frontmatter "$QA_AGENT")"
+  ! grep -q '^tools:' <<< "$fm" || fail "qa.md declares tools:, which cancels disallowedTools"
+  grep -m1 '^disallowedTools:' <<< "$fm" | grep -qw Edit || fail "qa.md does not remove Edit through disallowedTools"
+  cmd="$(hook_command "$QA_AGENT")"
+  grep -qF 'po-bounds.sh qa' <<< "$cmd" || fail "the qa hook does not call po-bounds.sh qa: $cmd"
+  pd="$SCRATCH/project"
+  mkdir -p "$pd/.polype/hooks"
+  input="$(hook_input Write file_path "$WT/docs/qa/s01-demo/report.md")"
+  run() { s=0; printf '%s' "$input" | CLAUDE_PROJECT_DIR="$pd" sh -c "$cmd" >/dev/null 2>&1 || s=$?; printf '%s' "$s"; }
+  expect "$(run)" 2 "qa hook, no script laid down"
+  cp "$BOUNDS" "$pd/.polype/hooks/po-bounds.sh"
+  chmod -x "$pd/.polype/hooks/po-bounds.sh"
+  expect "$(run)" 2 "qa hook, script without the exec bit"
+  chmod +x "$pd/.polype/hooks/po-bounds.sh"
+  expect "$(run)" 0 "qa hook, executable script, write in docs/qa/<id>/"
 }
 
 # Throwaway HOME, as in global-install.test.sh: nothing may reach the real ~/.claude.

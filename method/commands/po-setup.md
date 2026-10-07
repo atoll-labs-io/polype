@@ -21,7 +21,7 @@ Every other Polype command starts by reading `AGENTS.local.md`. This one creates
 ## Step 1 — Look before asking
 Collect what the repository states on its own:
 - the package manager, from the lockfile present;
-- the scripts the project really defines (package manifest, Makefile, task runner) — candidates for `Install`, `Test`, `Typecheck`, `E2E`, `Build`;
+- the scripts the project really defines (package manifest, Makefile, task runner) — candidates for `Install`, `Test`, `Typecheck`, `E2E`, `Build`, and `Dev`, the command that starts the development server;
 - the default branch: `git symbolic-ref --short refs/remotes/origin/HEAD`, or the current branch when there is no remote;
 - whether the repository has a base, as `/po-architect` defines it: a package manifest, or source files outside Polype's own files (`AGENTS*.md`, `CLAUDE.md`, `docs/`, `.claude/`, `.polype/`, `.gitignore`).
 
@@ -32,13 +32,15 @@ These become the suggested answers. A command you did not find in a file stays `
 2. Who approves plans: `Plan validation` `human` or `autonomous`. Propose the same value for `Ship confirmation`; change it only if the user asks.
 3. Where the project starts, `Entry mode`: `replace` (an internal replacement for a paid SaaS), `adapt` (a competing product with an angle of its own) or `new` (an idea built from nothing).
 4. Who draws the screens, `Design source`: `internal` (an agent skill draws them in the repository), `external` (they come from a tool outside it) or not decided yet. Only the source is asked here.
-5. The project commands, with your suggestions from step 1.
+5. The project commands, `Dev` included, with your suggestions from step 1.
 
 Once the `Design source` answer is known, make one separate AskUserQuestion call for its detail: the `Design skill` when the answer is `internal`, the `Design tool` when it is `external`; the other one stays `—`. When the source is not decided yet, skip this call: both stay `—`.
 
+Once the `Dev` answer is known, make one separate AskUserQuestion call for `QA stage`: `screens` (/po-qa walks the screens a story touches) or `—`. Suggest `screens` only when `Dev` is not `—`. When `Dev` is `—`, skip this call: `QA stage` stays `—`, since QA cannot start the application.
+
 When step 1 found no base, offer the catalogue before question 5, in one AskUserQuestion: each profile of Polype's catalogue (`boilerplates/*/profile.md` in Polype's repository, when it is at hand) with its name and origin, plus the answer "no profile". A chosen profile's `## Commands` block becomes the suggestions of question 5, copied verbatim. When the catalogue cannot be reached, say so and carry on without a profile. A repository that already has a base gets no offer.
 
-Nothing else is asked beyond these five questions, that design follow-up and the catalogue offer; every other setting keeps the template's value, `Story track` and `Flow threshold` included.
+Nothing else is asked beyond these five questions, that design follow-up, the `QA stage` follow-up and the catalogue offer; every other setting keeps the template's value, `Story track` and `Flow threshold` included.
 
 A `Design source` left at `—` is not a choice: every design command stops on it and asks for the source again. Setup never fills it on the user's behalf.
 
