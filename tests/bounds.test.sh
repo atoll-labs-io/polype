@@ -137,6 +137,22 @@ test_bounds_fail_closed() {
   expect "$(write_status NotebookEdit "$WT/src/app.sh")" 2 "unknown tool"
 }
 
+# Claude Code passes the hook input over a socket; a pipe hides a read that only works on pipes.
+test_bounds_read_input_from_a_socket() {
+  lane
+  local input s
+  input="$(hook_input Write file_path "$WT/src/app.sh")"
+  s="$(python3 -I - "$BOUNDS" "$input" <<'PY'
+import socket, subprocess, sys
+a, b = socket.socketpair()
+a.sendall(sys.argv[2].encode())
+a.shutdown(socket.SHUT_WR)
+print(subprocess.run(["bash", sys.argv[1], "implementer"], stdin=b, capture_output=True).returncode)
+PY
+)"
+  expect "$s" 0 "a write inside Owns, input read from a socket"
+}
+
 qa_status() { status_with "$(hook_input "$1" "$2" "$3")" qa; }
 
 test_qa_writes_are_bounded_by_the_hook() {

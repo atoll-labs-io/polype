@@ -71,3 +71,9 @@ Le tracker d'issues de Polype est ce fichier tant que le dépôt n'est pas sur G
 | # | Source | Défaut | Statut |
 |---|---|---|---|
 | 33 | plan de s51 | `method/agents/designer.md` déclare `tools:` sans outil navigateur, et `/po-design` déclare `allowed-tools` sans outil navigateur ; tous deux demandent pourtant d'ouvrir la maquette dans le navigateur de la session, ce qu'ils ne peuvent pas faire. | ouvert — s58 |
+
+## Relevé par la lane de s58 (2026-10-08)
+
+| # | Source | Défaut | Statut |
+|---|---|---|---|
+| 34 | implementer de s58 | `po-bounds.sh` lisait son entrée par `$(< /dev/stdin)`. Claude Code la passe par une socket, que `/dev/stdin` ne sait pas ouvrir : le hook refusait tout appel, et aucun implementer ne pouvait plus travailler, dans aucun projet. Les tests passaient parce qu'ils envoient l'entrée par un pipe. | corrigé hors story (correctif direct demandé par l'utilisateur : la flotte ne pouvait pas réparer son propre implementer), test `bounds_read_input_from_a_socket` |
