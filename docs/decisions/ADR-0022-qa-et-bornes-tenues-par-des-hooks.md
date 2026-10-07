@@ -1,7 +1,7 @@
 ---
 adr: 0022
 title: Une étape QA en lecture seule, et des bornes de subagent tenues par des hooks
-status: proposed
+status: accepted
 date: 2026-10-07
 deciders: [lecrabe]
 tags: [adr, polype, cycle, gates]
