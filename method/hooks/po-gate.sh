@@ -6,6 +6,8 @@
 #                                 `Reviewed tree:` still matches HEAD outside docs/
 #   po-gate verif-current <id>    0 when the verification record is complete and matches HEAD
 #   po-gate pre-commit            non-zero on a code commit to story/<id> whose plan is not approved
+#   po-gate floor-guard <id> <base>  scans `git diff <base>...story/<id>` for what lowers the bar of the checks:
+#                                 0 nothing, 1 one `<path>:<line>: <rule>: <detail>` per flag, 2 cannot verify
 #
 # Squash merges leave nothing for a push hook to inspect; put `po-gate ship-allowed <id>` in CI,
 # on a checkout of the story branch tip rather than a merge ref: it compares against HEAD.
@@ -72,7 +74,164 @@ pre_commit() {
     || refuse "no code commit on $branch before its plan is approved (commits touching only docs/ are fine)"
 }
 
+# --- floor guard ---------------------------------------------------------------
+# One entry per line: <extensions>|<rule>|<POSIX ERE>, matched against the lines a story adds to a file with one
+# of those extensions. A new language is new lines: its extensions, then one ERE per directive. POSIX classes
+# only ([[:space:]], never \s or \b, no {n}) so the awk of macOS and mawk read them as gawk does.
+FLOOR_PATTERNS='ts tsx js jsx mjs cjs mts cts|typecheck-ignored|@ts-(ignore|nocheck|expect-error)
+ts tsx js jsx mjs cjs mts cts|lint-disabled|eslint-disable|biome-ignore
+ts tsx js jsx mjs cjs mts cts|coverage-excluded|(istanbul|c8|v8) ignore
+ts tsx js jsx mjs cjs mts cts|test-skipped|(^|[^A-Za-z0-9_$.])(it|test|describe|suite|context)\.skip([^A-Za-z0-9_$]|$)
+ts tsx js jsx mjs cjs mts cts|test-skipped|(^|[^A-Za-z0-9_$.])x(it|test|describe)[[:space:]]*\(
+ts tsx js jsx mjs cjs mts cts|test-only|(^|[^A-Za-z0-9_$.])(it|test|describe|suite|context)\.only([^A-Za-z0-9_$]|$)
+ts tsx js jsx mjs cjs mts cts|test-only|(^|[^A-Za-z0-9_$.])f(it|describe)[[:space:]]*\(
+ts tsx js jsx mjs cjs mts cts|empty-catch|catch[[:space:]]*(\([^)]*\))?[[:space:]]*\{[[:space:]]*\}
+ts tsx js jsx mjs cjs mts cts|empty-catch|\.catch\([[:space:]]*(\([^)]*\)|[A-Za-z_$][A-Za-z0-9_$]*)?[[:space:]]*=>[[:space:]]*\{[[:space:]]*\}[[:space:]]*\)
+py pyi|typecheck-ignored|#[[:space:]]*(type|pyright):[[:space:]]*ignore
+py pyi|lint-disabled|#[[:space:]]*(noqa|pylint:[[:space:]]*disable|ruff:[[:space:]]*noqa)
+py pyi|coverage-excluded|#[[:space:]]*pragma:[[:space:]]*no[[:space:]]*cover
+py pyi|test-skipped|pytest\.mark\.(skip|skipif|xfail)|pytest\.skip\(|unittest\.skip|skipTest\(
+py pyi|empty-catch|^[[:space:]]*except([^A-Za-z0-9_][^:]*)?:[[:space:]]*(pass|\.\.\.)[[:space:]]*(#.*)?$'
+
+# A test file is a path matching one of these EREs.
+FLOOR_TEST_PATHS='(^|/)(tests?|__tests__|specs?)/
+(^|/)[^/]*\.(test|spec)\.[^/]*$
+(^|/)test_[^/]*\.py$
+(^|/)[^/]*_test\.py$'
+
+unverifiable() { echo "po-gate: cannot verify the floor of ${1:-<id>}: $2" >&2; exit 2; }
+
+# Reads only the story's diff; every failure path exits 2, because under `set -e` it would otherwise read as 1 (flags).
+floor_guard() {
+  local id="$1" base="$2" repo diff status out rc=0 count
+  [ -n "$id" ] && [ -n "$base" ] || unverifiable "$id" "usage: po-gate floor-guard <id> <base>"
+  repo="$(top)"
+  git -C "$repo" rev-parse --verify --quiet "story/$id^{commit}" >/dev/null \
+    || unverifiable "$id" "branch story/$id does not resolve"
+  git -C "$repo" rev-parse --verify --quiet "$base^{commit}" >/dev/null \
+    || unverifiable "$id" "base $base does not resolve"
+  git -C "$repo" merge-base "$base" "story/$id" >/dev/null 2>&1 \
+    || unverifiable "$id" "story/$id and $base share no merge base"
+  # Options pinned so user config (prefixes, quoting, colour, external diff, renames) cannot change the format.
+  diff="$(git -C "$repo" -c core.quotePath=false diff --no-color --no-ext-diff --no-textconv --find-renames \
+    --src-prefix=a/ --dst-prefix=b/ -U0 "$base...story/$id")" \
+    || unverifiable "$id" "git diff $base...story/$id failed"
+  status="$(git -C "$repo" -c core.quotePath=false diff --no-color --name-status --find-renames "$base...story/$id")" \
+    || unverifiable "$id" "git diff --name-status $base...story/$id failed"
+  [ -n "$diff" ] || exit 0
+  out="$(FLOOR_PATTERNS="$FLOOR_PATTERNS" FLOOR_TEST_PATHS="$FLOOR_TEST_PATHS" FLOOR_STATUS="$status" awk '
+    function trim(s) { sub(/^[[:space:]]+/, "", s); sub(/[[:space:]]+$/, "", s); return s }
+    function flag(p, l, rule, detail) { print p ":" l ": " rule ": " detail }
+    function is_test(p,   i) { for (i = 1; i <= ntp; i++) if (tp[i] != "" && p ~ tp[i]) return 1; return 0 }
+    function header_path(s, pre) {
+      sub(/\t$/, "", s)
+      if (s ~ /^".*"$/) s = substr(s, 2, length(s) - 2)
+      if (substr(s, 1, 2) == pre) s = substr(s, 3)
+      return s
+    }
+    function threshold(s, side, l,   rest, m, k, v, key) {
+      rest = s
+      while (match(rest, /(^|[^A-Za-z0-9_])(branches|functions|lines|statements|fail[-_]under)["\047]?[[:space:]]*[:=][[:space:]]*[0-9]+(\.[0-9]+)?/)) {
+        m = substr(rest, RSTART, RLENGTH); rest = substr(rest, RSTART + RLENGTH)
+        v = m; sub(/.*[^0-9.]/, "", v)
+        k = m; sub(/^[^A-Za-z]/, "", k); match(k, /^[a-z]+([-_]under)?/); k = substr(k, 1, RLENGTH); sub(/-/, "_", k)
+        key = file SUBSEP k
+        if (!(key in tseen)) { tseen[key] = 1; tord[++nt] = key }
+        if (side == "-") { nrem[key]++; rval[key, nrem[key]] = v; rline[key, nrem[key]] = l }
+        else { nadd[key]++; aval[key, nadd[key]] = v; aline[key, nadd[key]] = l }
+      }
+    }
+    function assertion(side, l) {
+      if (!(file in aseen)) { aseen[file] = 1; aord[++na] = file }
+      if (side == "-") { if (!arem[file]) apos[file] = l; arem[file]++ } else aadd[file]++
+    }
+    function removed(s) {
+      if (thr) threshold(s, "-", rpos)
+      if (testfile && !gone && s ~ /expect\(|assert/) assertion("-", rpos)
+    }
+    function added(s,   i, t) {
+      t = trim(s)
+      if (ext != "") for (i = 1; i <= np; i++) if (index(pext[i], " " ext " ") && s ~ pat[i]) flag(file, line, prule[i], t)
+      if (pend_catch && t == "}") flag(file, pend_catch, "empty-catch", pend_text)
+      if (pend_except && t ~ /^(pass|\.\.\.)[[:space:]]*(#.*)?$/) flag(file, pend_except, "empty-catch", pend_text)
+      pend_catch = 0; pend_except = 0
+      if (js && s ~ /catch[[:space:]]*(\([^)]*\))?[[:space:]]*\{[[:space:]]*$/) { pend_catch = line; pend_text = t }
+      if (py && s ~ /^[[:space:]]*except([^A-Za-z0-9_][^:]*)?:[[:space:]]*(#.*)?$/) { pend_except = line; pend_text = t }
+      if (tsconfig && s ~ /"(strict|noImplicitAny|strictNullChecks|strictFunctionTypes|strictBindCallApply|strictPropertyInitialization|noImplicitThis|alwaysStrict|useUnknownInCatchVariables|noUncheckedIndexedAccess|exactOptionalPropertyTypes)"[[:space:]]*:[[:space:]]*false/) flag(file, line, "strict-off", t)
+      if (thr) threshold(s, "+", line)
+      if (testfile && s ~ /expect\(|assert/) assertion("+", line)
+    }
+    function open_file(p,   b) {
+      file = p; b = p; sub(/.*\//, "", b)
+      ext = ""; if (b ~ /\./) { ext = b; sub(/.*\./, "", ext) }
+      js = index(" ts tsx js jsx mjs cjs mts cts ", " " ext " ") && ext != ""
+      py = (ext == "py" || ext == "pyi")
+      tsconfig = (b ~ /^tsconfig.*\.json$/)
+      thr = (b ~ /^(jest|vitest|vite)\.config\./ || b == "pyproject.toml" || b == ".coveragerc")
+      testfile = is_test(p)
+    }
+    BEGIN {
+      n = split(ENVIRON["FLOOR_PATTERNS"], rows, "\n")
+      for (i = 1; i <= n; i++) {
+        if (rows[i] == "") continue
+        p1 = index(rows[i], "|"); rest = substr(rows[i], p1 + 1); p2 = index(rest, "|")
+        np++; pext[np] = " " substr(rows[i], 1, p1 - 1) " "; prule[np] = substr(rest, 1, p2 - 1); pat[np] = substr(rest, p2 + 1)
+      }
+      ntp = split(ENVIRON["FLOOR_TEST_PATHS"], tp, "\n")
+      ns = split(ENVIRON["FLOOR_STATUS"], st, "\n")
+      for (i = 1; i <= ns; i++) if (st[i] ~ /^D\t/ && is_test(substr(st[i], 3))) flag(substr(st[i], 3), 0, "test-file-deleted", "deleted by the story")
+    }
+    remold > 0 || remnew > 0 {
+      c = substr($0, 1, 1)
+      if (c == "-" && remold > 0) { remold--; removed(substr($0, 2)); next }
+      if (c == "+" && remnew > 0) { remnew--; added(substr($0, 2)); line++; next }
+      if (c == "\\") next
+      bad = 1; remold = 0; remnew = 0
+    }
+    /^\\/ { next }
+    /^diff --git a\// { blocks++; file = ""; next }
+    /^--- / { oldpath = header_path(substr($0, 5), "a/"); next }
+    /^\+\+\+ / {
+      s = substr($0, 5); headers++
+      if (s == "/dev/null") { open_file(oldpath); gone = 1 } else { open_file(header_path(s, "b/")); gone = 0 }
+      next
+    }
+    /^@@ / {
+      if (file == "") { bad = 1; next }
+      o = substr($2, 2); w = substr($3, 2)
+      if (index(o, ",")) { split(o, t, ","); remold = t[2] + 0 } else remold = 1
+      if (index(w, ",")) { split(w, t, ","); start = t[1] + 0; remnew = t[2] + 0 } else { start = w + 0; remnew = 1 }
+      line = start
+      rpos = gone ? 0 : (remnew == 0 && start == 0 ? 1 : start)
+      pend_catch = 0; pend_except = 0
+      next
+    }
+    END {
+      if (bad || (NR > 0 && blocks == 0 && headers == 0)) exit 3
+      for (i = 1; i <= na; i++) {
+        f = aord[i]
+        if (arem[f] > aadd[f]) flag(f, apos[f], "assertions-dropped", arem[f] " removed, " (aadd[f] + 0) " added")
+      }
+      for (i = 1; i <= nt; i++) {
+        key = tord[i]; split(key, kk, SUBSEP)
+        for (j = 1; j <= nrem[key]; j++) {
+          if (j <= nadd[key]) { if (aval[key, j] + 0 < rval[key, j] + 0) flag(kk[1], aline[key, j], "threshold-lowered", kk[2] " " rval[key, j] " → " aval[key, j]) }
+          else flag(kk[1], rline[key, j], "threshold-removed", kk[2] " " rval[key, j])
+        }
+      }
+    }
+  ' <<< "$diff")" || rc=$?
+  [ "$rc" -ne 3 ] || unverifiable "$id" "the diff of $base...story/$id is in a format this guard cannot read"
+  [ "$rc" -eq 0 ] || unverifiable "$id" "awk failed with exit $rc while reading the diff"
+  [ -n "$out" ] || exit 0
+  printf '%s\n' "$out"
+  count="$(printf '%s\n' "$out" | wc -l | tr -d ' ')"
+  echo "po-gate: $count flag(s) lower the bar of $id against $base" >&2
+  exit 1
+}
+
 case "${1:-}" in
+  floor-guard)    floor_guard "${2:-}" "${3:-}" ;;
   plan-validated) plan_validated "${2:?story id required}" ;;
   ship-allowed)   ship_allowed "${2:?story id required}" ;;
   verif-current)  verif_current "${2:?story id required}" ;;
