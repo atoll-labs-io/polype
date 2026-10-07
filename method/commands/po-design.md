@@ -1,14 +1,6 @@
 ---
 description: Settles one story's screen from docs/design-system.md inside the story worktree — a note of deltas for a derived screen, the note plus one artefact for a new one, looked at in a browser, never measured
 argument-hint: <story id or name>
-allowed-tools:
-  - Read
-  - Glob
-  - Grep
-  - Write
-  - Edit
-  - Bash
-  - AskUserQuestion
 ---
 # /po-design
 

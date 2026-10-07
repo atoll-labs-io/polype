@@ -20,7 +20,6 @@ section_holds() {
 
 test_design_fails_closed_without_system_or_source() {
   require_file "$COMMAND"
-  needs_tool "$COMMAND" AskUserQuestion
   section_holds 'Checks' \
     '`docs/design-system.md` is missing' \
     '`Design source` is `—`' \
@@ -70,7 +69,6 @@ test_design_distinguishes_new_and_derived_screens() {
 
 test_design_renders_and_looks_without_measuring() {
   require_file "$COMMAND"
-  needs_tool "$COMMAND" Bash
   section_holds 'Step 4 — Look at the mockup' \
     'over local HTTP' \
     'in light and in dark' \

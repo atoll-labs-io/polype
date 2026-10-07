@@ -122,8 +122,9 @@ test_designer_writes_only_in_the_story_design_folder() {
 
 test_designer_asks_no_one() {
   require_file "$DESIGNER"
-  lacks_tool "$DESIGNER" AskUserQuestion
-  local asked; asked=$(grep -n -F 'AskUserQuestion' "$DESIGNER" || true)
+  frontmatter "$DESIGNER" | grep -m1 '^disallowedTools:' | grep -qw AskUserQuestion \
+    || fail "designer.md does not disallow AskUserQuestion"
+  local asked; asked=$(grep -n -F 'AskUserQuestion' "$DESIGNER" | grep -v ':disallowedTools:' || true)
   [ -z "$asked" ] || fail "designer.md still reaches for a question: $asked"
 
   local autonomy; autonomy=$(section_of "$DESIGNER" 'You ask no one')

@@ -1,7 +1,7 @@
 ---
 name: designer
 description: Settles the screen of one story inside its worktree — the design note, plus one artefact when the screen is new — from the recorded design system, without writing a source file. Called by the fleet driver.
-tools: Read, Write, Edit, Bash, Grep, Glob
+disallowedTools: AskUserQuestion, NotebookEdit
 model: inherit
 skills:
   - design-doctrine
