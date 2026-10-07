@@ -6,7 +6,7 @@ This file is the project's. Polype's installer never rewrites it. Rules live in 
 
 ```
 Merge mode:        local
-Target branch:     m4-catalogue
+Target branch:     main
 Plan validation:   autonomous
 Ship confirmation: automatic
 Test budget:       25
