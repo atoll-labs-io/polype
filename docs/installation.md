@@ -77,6 +77,28 @@ plus bas. Aucune copie des commandes, des subagents ni des skills : ils sont dé
 ajoute au tableau ci-dessus `.claude/commands/`, `.claude/agents/` et `.claude/skills/`. C'est la
 bonne forme pour un dépôt partagé dont on ne contrôle pas le `~/.claude` des autres.
 
+### Le hook des bornes de l'implementer
+
+Le frontmatter du subagent `implementer` déclare un hook PreToolUse sur `Edit`, `Write` et `Bash`
+qui appelle `.polype/hooks/po-bounds.sh implementer`. Le script refuse une écriture hors de
+`docs/` et hors de l'`Owns` committé de la story dont le worktree `story/<id>` contient le chemin,
+ainsi que `git switch`, `checkout`, `stash`, `push`, `worktree add` et un `git commit` hors d'une
+branche `story/<id>`. La revue garde son propre contrôle d'ownership : le hook ne voit ni les
+redirections du shell ni un `cp`.
+
+Le script a besoin de `jq` ; sans lui, il refuse tout.
+
+Après une mise à jour par `polype install --global`, relance `polype init <projet>` dans chaque
+projet et committe le nouveau `.polype/hooks/po-bounds.sh` sur la branche cible : le subagent global
+appelle déjà le script, et tant qu'il manque au projet,
+le hook fermé refuse toute écriture de l'implementer.
+
+Limite de confiance : avec `polype install <projet>`, les subagents vivent dans `.claude/agents/`,
+et Claude Code n'exécute les hooks de leur frontmatter qu'une fois accepté le dialogue de confiance
+du dossier — jamais dans une session `claude -p`, où les bornes ne sont **pas** tenues. Avec
+l'installation globale, les subagents de `~/.claude/agents/` exécutent leurs hooks sans cette
+condition.
+
 ## Suivre `~/.claude/polype/` avec chezmoi
 
 La pose globale est faite pour être synchronisée entre machines (ADR-0004).
