@@ -984,7 +984,7 @@ Objectif : fermer les faiblesses que les revues de M6, s58 et s59 ont laissées 
 **En tant que** développeur **je veux** qu'une revue soit traitée comme bloquée par la QA seulement quand elle est bloquée, et que toutes les commandes la renvoient au même endroit **afin qu'**aucune revue ne parte en QA par erreur, ni en fix run inutile.
 
 - **Complexité** : 3
-- **Dépend de** : aucune
+- **Dépend de** : s60
 - **Owns** : `method/commands/po-review.md`, `method/commands/po-orchestrator.md`, `method/commands/po-drive.md`, `method/commands/po-flow.md`, `method/commands/po-execute.md`, `method/commands/po-status.md`, `tests/qa-fleet.test.sh`
 - **Corrige** : majeur et mineur de `docs/reviews/s57-qa-in-the-fleet.md` ; limite notée dans ADR-0034
 
@@ -992,6 +992,9 @@ Objectif : fermer les faiblesses que les revues de M6, s58 et s59 ont laissées 
 - [ ] `qa_blocked_needs_a_blocked_status` — une revue n'est « bloquée par la QA » que si elle porte `Review status: blocked` et que son `Next action:` nomme `/po-qa`.
 - [ ] `flow_and_execute_send_qa_blocks_to_qa` — `/po-flow` et `/po-execute` lancés à la main renvoient une revue bloquée par la QA vers `/po-qa`, pas vers un fix run.
 - [ ] `status_agrees_with_the_fleet_on_a_blocked_report` — pour un rapport QA `blocked`, `/po-status` dit qu'un humain décide, comme `/po-drive`.
+- [ ] `drive_resumes_on_an_uncommitted_report` — depuis que `qa-current` exige un rapport committé (s60), la table de reprise de `/po-drive` reconnaît un rapport à jour mais non committé et fait le commit des preuves sans nouvelle visite, au lieu de renvoyer la lane en QA ; la phrase qui disait qu'un rapport non committé passe `qa-current` est corrigée.
+
+**Notes pour l'agent** : le dernier critère vient du planner de s60 (2026-10-08) : la ligne de la table de reprise qui faisait le commit des preuves d'un rapport non committé ne pouvait plus s'appliquer, puisque `qa-current` échoue désormais sur ce rapport ; `tests/qa-fleet.test.sh` cite cette ligne.
 
 ### s65-upgrade-path — Une mise à jour qui dit ce qui manque
 **En tant que** développeur **je veux** que l'installeur signale les réglages que le gabarit a gagnés et que mon projet n'a pas **afin qu'**une mise à jour de Polype ne bloque pas un projet en silence.
