@@ -25,15 +25,15 @@ Reads settings: none
 
 ## Le cycle d'une story
 1. `/po-research <story>` — ouvre le worktree, lit le code réel, vérifie les hypothèses de la story.
-   - `/po-design <story>` — pour une story avec écran : dérive l'écran du design system dans `docs/designs/<id>/`.
+   - `/po-design <story>` — pour une story avec écran (`Surface: screen`, ou sans ligne `Surface` un texte qui montre un écran) : dérive l'écran du design system dans `docs/designs/<id>/`.
 2. `/po-plan <story>` — découpe en tâches testables, puis approbation.
 3. `/po-execute <story>` — l'implementer code, trace ses vérifications, commite.
-   - `/po-qa <story>` — pour une story avec écran : un agent parcourt en navigateur les écrans touchés et laisse ses preuves dans `docs/qa/<id>/`, sans rien corriger. `/po-orchestrator` et `/po-drive` la lancent eux-mêmes quand `QA stage` vaut `screens`.
+   - `/po-qa <story>` — pour une story que `QA stage` envoie en QA : un agent vérifie sa surface avec le pilote qui lui va (navigateur, scénarios, rendu de scène, simulation) et laisse ses preuves dans `docs/qa/<id>/`, sans rien corriger. `/po-orchestrator` et `/po-drive` la lancent eux-mêmes quand `QA stage` vaut `screens` (les stories `screen`) ou `surfaces` (toute surface autre que `—`).
 4. `/po-review <story>` — relecture par un autre contexte, tests mis à l'épreuve, verdict.
 5. `/po-ship <story>` — verdict vérifié, contrôles lourds une fois, squash, nettoyage.
 
 ## Outils
-- `/po-orchestrator <story>` — choisit la piste (complète ou courte), ajoute le design et la QA pour une story avec écran, enchaîne les étapes et ne s'arrête que pour tes décisions.
+- `/po-orchestrator <story>` — choisit la piste (complète ou courte), ajoute le design pour une story avec écran et la QA pour une story que `QA stage` y envoie, enchaîne les étapes et ne s'arrête que pour tes décisions.
 - `/po-drive` — la flotte : fait avancer en parallèle toutes les stories prêtes, une lane par story, et ship une par une.
   - `/po-drive status` — le même état en lecture seule : ce qui est en vol, ce qui attend et pourquoi ; ne prépare aucun worktree et ne lance rien.
 - `/po-status` — l'état du cadrage, puis de chaque story (piste comprise) et la commande suivante.

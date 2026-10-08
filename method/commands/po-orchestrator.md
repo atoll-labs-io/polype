@@ -30,7 +30,7 @@ Then check the framing on `Target branch`, following `Entry mode`:
 
 `docs/reviews/stories.md` missing, or ending with `Stories ready: no` → warn, name `/po-stories-review`, and carry on: that verdict informs, it does not block.
 
-A story whose text shows a screen also needs, before any worktree exists, `docs/design-system.md` on `Target branch` and a `Design source` other than `—`: the design stage stops without them. Either missing → stop now and point to `/po-design-system`, or ask the person to set `Design source`, rather than run research and stop at stage 3.
+A story with a screen (`AGENTS.md`, Law 1) also needs, before any worktree exists, `docs/design-system.md` on `Target branch` and a `Design source` other than `—`: the design stage stops without them. Either missing → stop now and point to `/po-design-system`, or ask the person to set `Design source`, rather than run research and stop at stage 3.
 
 ## Stage 1 — Track
 Read `Story track`; a missing setting is a stop, never a guess.
@@ -38,7 +38,7 @@ Read `Story track`; a missing setting is a stop, never a guess.
 - `flow` → the short track.
 - `auto` → the short track when the story's complexity in `docs/stories.md` is at most `Flow threshold`; above it, or with no complexity written, the full track.
 
-A story whose text shows a new screen takes the full track whatever the settings say: `/po-flow` would escalate on it, and the screen needs the design stage. With `QA stage: screens`, any story whose text shows a screen takes the full track too, because `/po-flow` runs no QA.
+A story with a screen takes the full track whatever the settings say when that screen is new: `/po-flow` would escalate on it, and the screen needs the design stage. Any story that goes to QA takes the full track too, because `/po-flow` runs no QA; `QA stage` missing for a story that has a screen or a `Surface` other than `—` → stop and name the setting.
 
 On the short track, apply `/po-flow` as written and stop sequencing stages here: it runs its own execute, review and ship. If `/po-flow` escalates, continue on the full track at stage 2, reusing the worktree it left.
 
@@ -60,7 +60,7 @@ When `docs/designs/<id>/` exists, append this sentence to the prompt of `/po-exe
 > This story has a design: docs/designs/<id>/ is expected uncommitted work, like the research and the plan. Read design.md before the screen tasks, build the screen it settles, and commit the folder with the story.
 
 ## Stage 6 — QA
-Only for a story whose text shows a screen when `QA stage` is `screens`; skip it otherwise. `QA stage` missing for such a story → stop and name the setting.
+Only for a story that goes to QA (`AGENTS.md`, Law 1); skip it otherwise. `QA stage` missing for a story that has a screen or a `Surface` other than `—` → stop and name the setting.
 
 Apply `/po-qa` as written: its preconditions, the `qa` subagent with `model:` set to `Model strong`, then the evidence commit that this context makes. Run it after every execution, first run and fix run alike, since each one leaves a tree the previous walk never saw. No report → stop with the reason the subagent gave. `QA status: blocked` → commit the report as evidence, then stop for a human with its cause: no review is requested on a walk that did not happen. When `po-gate qa-current <id>` refuses with `is current but`, the report on disk is current and only uncommitted: make the evidence commit alone, no walk (ADR-0041).
 

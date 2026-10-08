@@ -97,7 +97,7 @@ test_rules_list_qa_in_the_story_cycle() {
   review="$(grep -n '`/po-review`' <<< "$table" | cut -d: -f1)"
   [ -n "$qa" ] || fail "the per-story table has no /po-qa row"
   [ "$execute" -lt "$qa" ] && [ "$qa" -lt "$review" ] || fail "the /po-qa row is not between Execute and Review"
-  grep '`/po-qa`' <<< "$table" | grep -qF '`QA stage` is `screens`' || fail "the /po-qa row does not name QA stage: screens"
+  grep '`/po-qa`' <<< "$table" | grep -qF 'stories that go to QA' || fail "the /po-qa row does not name the stories that go to QA"
 }
 
 test_po_qa_commits_its_evidence() {
@@ -123,5 +123,5 @@ test_review_requires_a_current_qa_report() {
 test_implementer_hands_the_screen_to_qa() {
   settings_read_by "$IMPLEMENTER" | grep -qx 'QA stage' || fail "implementer.md does not declare it reads QA stage"
   contains "$IMPLEMENTER" '**If a task produces a screen, open it in a browser before you finish**'
-  contains "$IMPLEMENTER" 'When `QA stage` is `screens`, the walk of the screen belongs to the QA stage: `/po-qa`'
+  contains "$IMPLEMENTER" 'When it goes to QA (`AGENTS.md`, Law 1), checking its surface belongs to the QA stage: `/po-qa`'
 }

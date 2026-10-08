@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# s57 — the orchestrator and the fleet run QA for a screen story, and a review blocked on QA goes back to QA.
+# s57 — the orchestrator and the fleet run QA for a story that goes to QA (s80), and a review blocked on QA goes back to QA.
 # s64 — blocked on QA needs `Review status: blocked`, every command routes it alike, and a current uncommitted report is committed, not walked.
 
 ORCH="$METHOD/commands/po-orchestrator.md"
@@ -36,7 +36,7 @@ test_orchestrator_runs_qa_for_a_screen() {
   before "$e" "$q" "the QA stage must follow execute"
   before "$q" "$r" "the QA stage must precede review"
   local qa; qa=$(section_of "$ORCH" 'Stage 6 — QA')
-  holds "$qa" '`QA stage` is `screens`' 'the QA stage'
+  holds "$qa" 'Only for a story that goes to QA' 'the QA stage'
   holds "$qa" 'Apply `/po-qa` as written' 'the QA stage'
   holds "$qa" 'first run and fix run alike' 'the QA stage'
   holds "$qa" 'no review is requested on a walk that did not happen' 'the QA stage'
@@ -54,13 +54,13 @@ test_drive_wave_includes_qa() {
   before "$i" "$q" "the qa dispatch must follow the implementer"
   before "$q" "$r" "the qa dispatch must precede the reviewer"
   local item; item=$(sed -n "${q}p" <<< "$wave")
-  holds "$item" '`QA stage` is `screens`' 'the QA item'
+  holds "$item" 'for a story that goes to QA' 'the QA item'
   holds "$item" 'the prompt `/po-qa` fixes' 'the QA item'
   holds "$item" 'QA evidence' 'the QA item'
   holds "$item" '-- docs/qa/<id>/' 'the QA item'
   holds "$item" 'every qa of a wave leaves before any of them is waited on' 'the QA item'
   holds "$wave" 'then every implementer, then every qa, then every reviewer' 'the wave section'
-  holds "$(section_of "$DRIVE" 'Checks')" '`QA stage` missing → only the lanes of stories whose text shows a screen stop' 'the checks'
+  holds "$(section_of "$DRIVE" 'Checks')" '`QA stage` missing → only the lanes of stories that would need it stop' 'the checks'
 }
 
 test_drive_resumes_on_qa_current() {
@@ -86,7 +86,7 @@ test_status_reports_qa() {
   require_file "$STATUS"
   reads_setting "$STATUS" 'QA stage'
   contains "$STATUS" 'whether `po-gate qa-current <id>` passes'
-  contains "$STATUS" '`QA stage` unset → shown as unset for a screen story, never guessed'
+  contains "$STATUS" '`QA stage` unset → shown as unset for a story that has a screen or a `Surface` other than `—`, never guessed'
   contains "$STATUS" '· record · qa · review ·'
   contains "$STATUS" '→ QA (`/po-qa <id>`'
 }
@@ -94,10 +94,10 @@ test_status_reports_qa() {
 test_help_and_readme_show_qa() {
   require_file "$HELP"; require_file "$README"
   contains "$HELP" '`/po-orchestrator` et `/po-drive` la lancent eux-mêmes quand `QA stage` vaut `screens`'
-  contains "$HELP" 'ajoute le design et la QA pour une story avec écran'
+  contains "$HELP" 'ajoute le design pour une story avec écran et la QA pour une story que `QA stage` y envoie'
   local e q r
   e=$(grep -n '^| Exécution | `/po-execute`' "$README" | cut -d: -f1)
-  q=$(grep -n '^| QA (story avec écran, `QA stage: screens`) | `/po-qa` |' "$README" | cut -d: -f1)
+  q=$(grep -n '^| QA (story que `QA stage` envoie en QA) | `/po-qa` |' "$README" | cut -d: -f1)
   r=$(grep -n '^| Revue | `/po-review`' "$README" | cut -d: -f1)
   [ -n "$e" ] && [ -n "$q" ] && [ -n "$r" ] || fail "README.md cycle table needs Exécution, QA and Revue rows"
   before "$e" "$q" "the README QA row must follow Exécution"

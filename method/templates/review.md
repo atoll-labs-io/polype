@@ -21,7 +21,7 @@ Diff listed with `git diff --name-only <Target branch>...story/<id>`, each path 
 
 ## Evidence reused
 - [ ] `po-gate verif-current <id>` → <passes, record reused | fails or missing → suite and type check run here, with results>
-- [ ] `po-gate qa-current <id>` (screen, `QA stage: screens`) → <passes, verified QA findings carried to Findings | fails → review blocked | not required: no screen or `QA stage: —`>
+- [ ] `po-gate qa-current <id>` (a story that goes to QA, `AGENTS.md` Law 1) → <passes, verified QA findings carried to Findings | fails → review blocked | not required: the story does not go to QA>
 
 ## Plan
 - [ ] Each task present; nothing outside the plan
@@ -53,7 +53,7 @@ Lenses run: <security | migration | dependencies | performance — each with the
 <one per line: severity — file:line — the problem>
 
 ## Not verified
-<what this review did not check, why, and what a person should do instead>
+<what this review did not check, why, and what a person should do instead; every item of the QA report's `## Not seen`; for a `scene` story, each viewpoint no capture shows>
 
 Max severity: <critical | major | minor | none>
 Ship allowed: <yes | no>

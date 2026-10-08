@@ -12,7 +12,7 @@ allowed-tools:
 ---
 # /po-flow
 
-Reads settings: `Target branch`, `Worktree root`, `Install`, `Story track`, `Flow threshold`, `Plan validation`, `Test budget`, `Verification mode`, `Full suite`, `Merge mode`, `Ship confirmation`, `Model strong`, `Model light`, `Light up to`
+Reads settings: `Target branch`, `Worktree root`, `Install`, `Story track`, `Flow threshold`, `QA stage`, `Plan validation`, `Test budget`, `Verification mode`, `Full suite`, `Merge mode`, `Ship confirmation`, `Model strong`, `Model light`, `Light up to`
 
 Story: $ARGUMENTS
 
@@ -46,6 +46,8 @@ They are checked twice. First on the story text, before reading the code and bef
 A single signal is enough, at either check. Found after reading the code, the worktree already exists: keep it as it is, write no plan, and point to `/po-research <id>`, which reuses that worktree.
 
 A story that needs more than about six tasks escalates the same way.
+
+A story that goes to QA (`AGENTS.md`, Law 1) escalates the same way, at the first check, because its `Surface` line and `QA stage` are read before any code and `/po-flow` runs no QA. `QA stage` missing for a story that has a screen or a `Surface` other than `—` → stop and name the setting.
 
 ## The worktree
 Create it, or confirm it, exactly as `/po-research` does: path `<repository root>/<Worktree root><id>`, branch `story/<id>`, started from the freshest `Target branch` (after a fetch when a remote exists), ignored `.env*` files copied in and any tracked `.env*` refused, `Install` run (or reported absent with `Install: —`), the tests not run. An existing worktree on any branch other than `story/<id>`, or on a detached HEAD, ends the command; no `switch`, `checkout` or `stash`.

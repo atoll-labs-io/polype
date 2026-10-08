@@ -53,7 +53,7 @@ test_drive_inserts_design_between_plan_and_execute() {
     || fail "expected planner then designer then implementer then qa then reviewer, found: $order"
 
   # The stage is a dispatch, with the same two arguments as every other lane stage.
-  holds "$wave" '**The design stage**, for a story whose text shows a screen: `subagent_type: designer`' 'the wave section'
+  holds "$wave" '**The design stage**, for a story with a screen (`AGENTS.md`, Law 1): `subagent_type: designer`' 'the wave section'
   holds "$wave" 'the story id and the absolute worktree path' 'the wave section'
   holds "$wave" '`method/agents/designer.md`' 'the wave section'
 

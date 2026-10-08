@@ -34,9 +34,11 @@ A story walks these stages, none skipped, none reordered:
 | Design (stories with a screen) | `/po-design` | `docs/designs/<id>/` |
 | Plan | `/po-plan` | `docs/plans/<id>.md`, validated |
 | Execute | `/po-execute` | code, tests, `docs/verif/<id>.md`, one commit |
-| QA (stories with a screen, when `QA stage` is `screens`) | `/po-qa` | `docs/qa/<id>/`, report and captures, committed alone |
+| QA (stories that go to QA, by `QA stage`) | `/po-qa` | `docs/qa/<id>/`, report and evidence, committed alone |
 | Review | `/po-review` | `docs/reviews/<id>.md` with a verdict |
 | Ship | `/po-ship` | one squash commit on `Target branch` |
+
+**Design and QA, by surface.** A story **has a screen** when its `Surface` line says `screen`, or when it has no `Surface` line and its text shows a screen (ADR-0054); the design stage is for it alone. A story **goes to QA** when `QA stage` is `screens` and the story has a screen, or when `QA stage` is `surfaces` and its `Surface` line says anything but `—`; a story with no `Surface` line goes only when it has a screen. With `QA stage: —`, no story goes to QA. With `QA stage` missing, a story that has a screen or a `Surface` other than `—` cannot be routed and stops, naming the setting; any other story carries on, since no value would send it to QA. Every command, agent and template that routes a story uses these two terms and does not restate the rule (ADR-0058).
 
 The short track, `/po-flow`, does research and plan in one context for a story that `Story track` and `Flow threshold` allow, then runs the same execute, review and ship; every gate stays in place.
 
@@ -61,7 +63,7 @@ Code is written by the `implementer` subagent, reviews are made by the `reviewer
 | Plan validated | the frontmatter of `docs/plans/<id>.md` holds `validated: yes` | `/po-execute`; code commits on `story/<id>` (pre-commit hook) |
 | Record current | `docs/verif/<id>.md` is marked complete, its `Tree:` matches the committed code outside `docs/`, **and** every check its `## Checks` table declares has a passing `po-run` row on that same code | whether the review may reuse the recorded run |
 | Ship allowed | the last `Ship allowed:` line of `docs/reviews/<id>.md` says `yes` **and** the review's `Reviewed tree:` matches the committed code outside `docs/` | `/po-ship` |
-| QA current | the last `QA status:` line of `docs/qa/<id>/report.md` says `complete` **and** its `Tree:` matches the committed code outside `docs/` | the review of a story with a screen, when `QA stage` is `screens` |
+| QA current | the last `QA status:` line of `docs/qa/<id>/report.md` says `complete` **and** its `Tree:` matches the committed code outside `docs/` | the review of a story that goes to QA |
 
 A plan file that exists is not a validated plan. No record means nothing is proven. A review without its two verdict lines counts as blocked. So does a review without a usable `Reviewed tree:`: a verdict counts for the code it judged, not for commits added after it. `po-gate` (see "Installed files") checks all four.
 

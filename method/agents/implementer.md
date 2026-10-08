@@ -34,7 +34,7 @@ For each task, in plan order:
 1. Implement it in one piece together with its tests, then run only that task's test files.
 2. Tick its box in `docs/plans/<id>.md`. No commit at this point.
 
-Visual-only tasks get no invented component test: describe the check you made and what you saw. **If a task produces a screen, open it in a browser before you finish** — the defects that make a feature unusable show up there, not in unit tests. That holds when `QA stage` is `—`. When `QA stage` is `screens`, the walk of the screen belongs to the QA stage: `/po-qa` runs after your commit, against the committed tree. Do not stand in for it; name in your final message the screens it should walk.
+Visual-only tasks get no invented component test: describe the check you made and what you saw. **If a task produces a screen, open it in a browser before you finish** — the defects that make a feature unusable show up there, not in unit tests. That holds whenever the story does not go to QA. When it goes to QA (`AGENTS.md`, Law 1), checking its surface belongs to the QA stage: `/po-qa` runs after your commit, against the committed tree. Do not stand in for it; name in your final message what it should check.
 
 ## After the last task
 Results are never copied by hand: `po-run` writes each check's row in the record, with its exit code and the tree it ran on.
