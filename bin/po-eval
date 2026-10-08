@@ -97,7 +97,7 @@ grade() {
   local sev ship
   if grep -qE '^Review status:[[:space:]]*blocked[[:space:]]*$' "$1"; then echo blocked; return; fi
   sev="$(grep -E '^Max severity:' "$1" | tail -n 1 || true)"
-  ship="$(grep -E '^Ship allowed:' "$1" | tail -n 1 || true)"
+  ship="$(grep -E '^([-*] )?Ship allowed:' "$1" | tail -n 1 | sed 's/^[-*] //' || true)"
   if [[ "$sev" =~ ^Max\ severity:[[:space:]]*(critical|major|minor|none)[[:space:]]*$ ]]; then sev="${BASH_REMATCH[1]}"; else sev=""; fi
   if [[ "$ship" =~ ^Ship\ allowed:[[:space:]]*(yes|no)[[:space:]]*$ ]]; then ship="${BASH_REMATCH[1]}"; else ship=""; fi
   if [ -n "$sev" ] && [ -n "$ship" ]; then echo "$sev/$ship"; else echo "no verdict"; fi

@@ -82,4 +82,4 @@ Le tracker d'issues de Polype est ce fichier tant que le dépôt n'est pas sur G
 
 | # | Source | Défaut | Statut |
 |---|---|---|---|
-| 35 | livraison de s78 | `po-gate ship-allowed` lit le premier `Reviewed tree:` du fichier de revue mais le dernier `Ship allowed:` : avec deux revues empilées, le verdict peut être lié à l'arbre d'une revue plus ancienne. Il refuse aussi une ligne écrite en élément de liste (`- Reviewed tree: …`), forme qu'ont prise les deux revues favorables de s78, qui a ainsi épuisé ses tentatives sans défaut de fond. | à corriger par s92 (choix de l'utilisateur) |
+| 35 | livraison de s78 | `po-gate ship-allowed` lit le premier `Reviewed tree:` du fichier de revue mais le dernier `Ship allowed:` : avec deux revues empilées, le verdict peut être lié à l'arbre d'une revue plus ancienne. Il refuse aussi une ligne écrite en élément de liste (`- Reviewed tree: …`), forme qu'ont prise les deux revues favorables de s78, qui a ainsi épuisé ses tentatives sans défaut de fond. | corrigé par s92 |
