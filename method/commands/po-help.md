@@ -37,6 +37,7 @@ Reads settings: none
 - `/po-drive` — la flotte : fait avancer en parallèle toutes les stories prêtes, une lane par story, et ship une par une.
   - `/po-drive status` — le même état en lecture seule : ce qui est en vol, ce qui attend et pourquoi ; ne prépare aucun worktree et ne lance rien.
 - `/po-status` — l'état du cadrage, puis de chaque story (piste comprise) et la commande suivante.
+- `/po-retro <jalon | premier..dernier>` — résume un jalon ou une plage de stories depuis les revues, les relevés et les rapports QA : sévérités, boucles de correction, revues et QA bloquées, majeurs encore ouverts ; chaque chiffre cite sa ligne, rien n'est écrit.
 - `/po-flow <story>` — voie courte pour une petite story : research et plan en une passe, puis le même cycle, sans rien alléger.
 
 ## Repères
