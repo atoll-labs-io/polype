@@ -6,7 +6,7 @@ date: 2026-10-08
 tags: [adr, polype, review, hooks, bounds]
 scope: story s70-reviewer-bounds
 supersedes: []
-superseded-by: []
+superseded-by: [ADR-0051]
 ---
 
 # ADR-0047 — Le reviewer est tenu par po-bounds en mode reviewer

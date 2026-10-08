@@ -502,3 +502,90 @@ test_accepted_gaps_are_written_in_an_adr() {
   contains "$old" 'superseded-by: [ADR-0050]'
   contains "$old" 'status: superseded'
 }
+
+# s74 — the reviewer judges the git command git will run (ADR-0051).
+test_chained_git_dirs_are_folded() {
+  reviewer_lane
+  local c
+  mkdir -p "$TMPROOT/probe/~"
+  for c in "cd $TMPROOT/probe && git -C $SCRATCH -C . commit -m x" \
+           "cd $TMPROOT/probe && git -C \"\$(echo $SCRATCH)\" commit -m x" \
+           "cd $TMPROOT/probe && cd \"\$(echo $SCRATCH)\" && git commit -m x" \
+           "cd $TMPROOT/probe && cd && git commit -m x" \
+           "cd $TMPROOT/probe && git -C ~ commit -m x"; do
+    expect "$(rev_bash "$c")" 2 "$c"
+  done
+  c="cd $WT && git -C $SCRATCH -C . commit -m x"
+  expect "$(bash_status "$c")" 2 "implementer: $c"
+  c="git -C $TMPROOT -C probe commit -m x"
+  expect "$(rev_bash "$c")" 0 "$c"
+}
+
+test_global_option_values_are_not_verbs() {
+  reviewer_lane
+  local c
+  for c in "cd $TMPROOT/probe && git --attr-source HEAD push" \
+           "cd $TMPROOT/probe && git --config-env x.y=HOME push"; do
+    expect "$(rev_bash "$c")" 2 "$c"
+  done
+  c="git -C $WT --attr-source HEAD status"
+  expect "$(rev_bash "$c")" 0 "$c"
+}
+
+test_config_worktree_override_is_refused() {
+  reviewer_lane
+  local c
+  for c in "git -C $TMPROOT/probe -c core.worktree=$SCRATCH reset --hard" \
+           "git -C $WT -c core.worktree=$SCRATCH checkout -- src/app.sh" \
+           "git -C $TMPROOT/probe -c Core.WorkTree=$SCRATCH status" \
+           "git -C $TMPROOT/probe --config-env core.worktree=HOME status" \
+           "git -C $TMPROOT/probe --config-env=core.worktree=HOME status" \
+           "GIT_CONFIG_COUNT=1 git -C $TMPROOT/probe status" \
+           "GIT_CONFIG_PARAMETERS=x git -C $TMPROOT/probe status"; do
+    expect "$(rev_bash "$c")" 2 "$c"
+  done
+  c="git -C $TMPROOT/probe -c user.name=x commit -m x"
+  expect "$(rev_bash "$c")" 0 "$c"
+}
+
+test_temp_zone_verbs_keep_their_paths_in_temp() {
+  reviewer_lane
+  local c
+  ln -s "$SCRATCH" "$TMPROOT/link"
+  for c in "cd $TMPROOT/probe && git init $SCRATCH/x" \
+           "git -C $TMPROOT/probe clone $SCRATCH $SCRATCH/sub" \
+           "git -C $TMPROOT/probe worktree add $SCRATCH/evil" \
+           "git -C $TMPROOT/probe worktree add ../../$(basename "$SCRATCH")/evil" \
+           "git -C $TMPROOT init --separate-git-dir=$SCRATCH/g x" \
+           "git -C $TMPROOT/probe archive -o$SCRATCH/a.tar HEAD" \
+           "git -C $TMPROOT/probe config core.worktree $SCRATCH" \
+           "git -C $TMPROOT/probe init '\$X'/y" \
+           "git -C $TMPROOT/probe init $TMPROOT/link/x"; do
+    expect "$(rev_bash "$c")" 2 "$c"
+  done
+  for c in "git -C $TMPROOT/probe worktree add $TMPROOT/wt2" \
+           "git -C $TMPROOT clone file://$SCRATCH c" \
+           "git -C $TMPROOT clone probe c2" \
+           "git -C $TMPROOT/probe commit -m x"; do
+    expect "$(rev_bash "$c")" 0 "$c"
+  done
+}
+
+test_reviewer_knows_how_to_check_merged() {
+  contains "$REVIEWER" 'git branch --merged'
+  contains "$REVIEWER" 'merge-base --is-ancestor'
+  contains "$REVIEWER" 'file://'
+}
+
+test_reviewer_rules_are_written_in_adr_0051() {
+  local adr="$ROOT/docs/decisions/ADR-0051-le-reviewer-juge-la-commande-git-que-git-executera.md"
+  local old="$ROOT/docs/decisions/ADR-0047-le-reviewer-tenu-par-po-bounds-en-mode-reviewer.md"
+  local p fm
+  require_file "$adr"
+  for p in 'supersedes: [ADR-0047]' '**Répertoire**' 'core.worktree' "la portée d'un \`cd\`"; do
+    contains "$adr" "$p"
+  done
+  fm="$(frontmatter "$old")"
+  grep -qx 'superseded-by: \[ADR-0051\]' <<< "$fm" || fail "ADR-0047 does not say superseded-by: [ADR-0051]"
+  grep -qx 'status: accepted' <<< "$fm" || fail "ADR-0047 is no longer accepted"
+}

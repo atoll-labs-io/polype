@@ -16,16 +16,22 @@
 #                              (ADR-0026); an unknown verb, or none, is refused, and so are any
 #                              --output and a symbolic-ref given a target or a writing option.
 #                              Edit is refused.
-#   po-bounds.sh reviewer      two zones (ADR-0047). A story worktree (as for the implementer, its
-#                              story holding an Owns line at the fork point): Write/Edit anywhere but
-#                              .git; git reading verbs of the qa allowlist only, plus git checkout --
-#                              <path> and git restore [-q|-W|--worktree] [--] <path>. The temp dir,
+#   po-bounds.sh reviewer      two zones (ADR-0047, ADR-0051). A story worktree (as for the implementer,
+#                              its story holding an Owns line at the fork point): Write/Edit anywhere
+#                              but .git; git reading verbs of the qa allowlist only, plus git checkout
+#                              -- <path> and git restore [-q|-W|--worktree] [--] <path>. The temp dir,
 #                              physical ${TMPDIR:-/tmp}, refused when it is / or missing: Write/Edit
 #                              anywhere under it, git any verb but push, in no repository or in one
-#                              whose common git dir and top level lie under it too. Everywhere: git
-#                              push and send-pack, --git-dir, --work-tree and an unquoted or quoted
-#                              word starting with GIT_DIR= or GIT_WORK_TREE= are refused, and so is
-#                              git outside both zones.
+#                              whose common git dir and top level lie under it too, and every path the
+#                              call names after its verb (a word, --opt=value, -o<value>) resolving
+#                              under it as well. A git call runs where the cds and every chained -C
+#                              lead; a word holding a substitution, $ or a leading ~, a bare cd and
+#                              cd -<x> make that directory unknown, and git there is refused.
+#                              Everywhere: git push and send-pack, --git-dir, --work-tree, a -c or
+#                              --config-env setting core.worktree in any case, and an unquoted or
+#                              quoted word starting with GIT_DIR=, GIT_WORK_TREE=,
+#                              GIT_CONFIG_PARAMETERS= or GIT_CONFIG_COUNT= are refused, and so is git
+#                              outside both zones.
 #
 # Bash commands are read the way bash splits them (ADR-0050): text inside quotes or in a
 # here-document body is never taken for a git call, but the substitutions bash would run there are,
@@ -285,10 +291,20 @@ check_write_reviewer() {
 
 join_dir() { case "$2" in /*) printf '%s' "$2" ;; *) printf '%s' "${1%/}/$2" ;; esac; }
 
+# Prints the directory reached from $1 by cd $2 or git -C $2; empty means unknown. A word bash
+# would expand (substitution, $, ~) is unknown, and so is a relative step from an unknown dir.
+step_dir() {
+  case "$2" in *$'\036'*|*'$'*|'~'*) return 0 ;; /*) printf '%s' "$2"; return 0 ;; esac
+  [ -n "$1" ] || return 0
+  join_dir "$1" "$2"
+  return 0
+}
+
 QA_GIT_VERBS=" status diff log show rev-parse ls-files ls-tree cat-file merge-base grep blame describe symbolic-ref shortlog "
 
 # Prints the simple commands of the Bash command read on stdin, one per line, words separated by
-# \037, each word prefixed with u (no quoted part) or q (some part quoted); a line !<reason> means
+# \037, each word prefixed with u (no quoted part) or q (some part quoted); a word that held a $(…),
+# `…`, $((…)), <(…) or >(…) carries a \036 byte where the substitution stood; a line !<reason> means
 # the command cannot be read (ADR-0050). POSIX awk only: BWK awk and mawk must run it too.
 lex_command() {
   awk '
@@ -301,7 +317,7 @@ lex_command() {
     function owner() { return t[sp] == "dq" ? sp - 1 : sp }
     function app(ch,   f) { if (t[sp] == "hd") return; f = owner(); wv[f] = wv[f] ch; inw[f] = 1 }
     function quoted(   f) { f = owner(); wq[f] = 1; inw[f] = 1 }
-    function opensub(type,   f) { if (t[sp] != "hd") { f = owner(); inw[f] = 1; ws[f] = 1 } push(type) }
+    function opensub(type,   f) { if (t[sp] != "hd") { f = owner(); inw[f] = 1; ws[f] = 1; wv[f] = wv[f] SM } push(type) }
     function inbq(   x) { for (x = sp; x >= 1; x--) if (t[x] == "bq") return 1; return 0 }
     function endword(f) {
       if (!inw[f]) return
@@ -518,7 +534,7 @@ lex_command() {
       endcmd(1, 0)
     }
     BEGIN {
-      US = sprintf("%c", 31); SQ = sprintf("%c", 39)
+      US = sprintf("%c", 31); SQ = sprintf("%c", 39); SM = sprintf("%c", 30)
       split("sh bash zsh dash ksh mksh ash fish", tmp, " ")
       for (y in tmp) { INTERP[tmp[y]] = 1; SHELLS[tmp[y]] = 1 }
       INTERP["eval"] = 1; INTERP["watch"] = 1; INTERP["su"] = 1
@@ -579,8 +595,39 @@ check_restore() {
   [ "$paths" -gt 0 ] || deny "git restore without a path is forbidden to the reviewer: $cmd"
 }
 
+# In a throwaway repo of the temp dir ($1), every path the git call names after its verb (word $2 of
+# vals) must resolve under the temp dir: a bare word, the value of --opt=value and of -o<value>.
+check_temp_paths() {
+  local base="$1" j="$2" k a cand
+  local -a cands
+  for ((k = j + 1; k < n; k++)); do
+    a="${vals[k]}"; cands=()
+    case "$a" in
+      --*=*) cands+=("${a#*=}") ;;
+      -[A-Za-z]?*) cands+=("${a:2}") ;;
+      -*) ;;
+      *) cands+=("$a") ;;
+    esac
+    for cand in ${cands[@]+"${cands[@]}"}; do
+      case "$cand" in
+        *$'\036'*|*'$'*|'~'*) deny "git ${vals[j]} names $a, a path the reviewer cannot read: $cmd" ;;
+      esac
+      resolve_path "$(join_dir "$base" "$cand")"
+      under_temp "$RESOLVED" || deny "git ${vals[j]} names $a, which lies outside the temp dir ($TMP_ROOT): $cmd"
+    done
+  done
+}
+
+# Refuses a command-line config entry ($1: key[=value]) that sets core.worktree. tr, not ${key,,}:
+# macOS ships bash 3.2.
+check_config_key() {
+  local key
+  key="$(printf '%s' "${1%%=*}" | tr '[:upper:]' '[:lower:]')"
+  [ "$key" != core.worktree ] || deny "core.worktree points git elsewhere, forbidden to the reviewer: $cmd"
+}
+
 check_bash() {
-  local cmd="$1" cur="$2" mode="$3" lexed line i j k n w a verb gdir dir nonopt re
+  local cmd="$1" cur="$2" mode="$3" lexed line i j k n w a verb dir nonopt re
   local -a words=() vals=()
   lexed="$(printf '%s' "$cmd" | lex_command)" || deny "po-bounds cannot read this command: the lexer failed: $cmd"
   while IFS= read -r line; do
@@ -598,30 +645,42 @@ check_bash() {
       # A quoted value is still an assignment (GIT_DIR="/x" git log), so q words count too.
       for ((k = 0; k < n; k++)); do
         case "${words[k]:0:1}:${vals[k]}" in
-          [uq]:GIT_DIR=*|[uq]:GIT_WORK_TREE=*) deny "${vals[k]%%=*} points git elsewhere, forbidden to the reviewer: $cmd" ;;
+          [uq]:GIT_DIR=*|[uq]:GIT_WORK_TREE=*|[uq]:GIT_CONFIG_PARAMETERS=*|[uq]:GIT_CONFIG_COUNT=*) deny "${vals[k]%%=*} points git elsewhere, forbidden to the reviewer: $cmd" ;;
         esac
       done
     fi
     i=0
     while [ "$i" -lt "$n" ]; do
       w="${vals[i]}"
-      if [ "$w" = cd ] && [ $((i + 1)) -lt "$n" ]; then
-        cur="$(join_dir "$cur" "${vals[i+1]}")"
-        i=$((i + 2)); continue
+      if [ "$w" = cd ]; then
+        if [ $((i + 1)) -lt "$n" ] && [[ "${vals[i+1]}" != -* ]]; then
+          cur="$(step_dir "$cur" "${vals[i+1]}")"
+          i=$((i + 2))
+        else
+          cur=""
+          i=$((i + 1))
+        fi
+        continue
       fi
       # Quoted text is a git call only as the command word ("git", env \git, A=1 'git').
       if { [ "$w" = git ] || [[ "$w" == */git ]]; } && [ "${words[i]:0:1}" != q ]; then
-        j=$((i + 1)); gdir=""
+        j=$((i + 1)); dir="$cur"
         while [ "$j" -lt "$n" ]; do
           case "${vals[j]}" in
-            -C) gdir="${vals[j+1]-}"; j=$((j + 2)) ;;
+            -C) dir="$(step_dir "$dir" "${vals[j+1]-}")"; j=$((j + 2)) ;;
             --git-dir=*|--work-tree=*)
               [ "$mode" != reviewer ] || deny "git ${vals[j]%%=*} points git elsewhere, forbidden to the reviewer: $cmd"
               j=$((j + 1)) ;;
             --git-dir|--work-tree)
               [ "$mode" != reviewer ] || deny "git ${vals[j]} points git elsewhere, forbidden to the reviewer: $cmd"
               j=$((j + 2)) ;;
-            -c|--git-dir|--work-tree|--namespace) j=$((j + 2)) ;;
+            -c|--config-env)
+              [ "$mode" != reviewer ] || check_config_key "${vals[j+1]-}"
+              j=$((j + 2)) ;;
+            --config-env=*)
+              [ "$mode" != reviewer ] || check_config_key "${vals[j]#*=}"
+              j=$((j + 1)) ;;
+            --git-dir|--work-tree|--namespace|--attr-source) j=$((j + 2)) ;;
             -*) j=$((j + 1)) ;;
             *) break ;;
           esac
@@ -631,9 +690,7 @@ check_bash() {
           check_git_read "$verb" "$j"
         elif [ "$mode" = reviewer ]; then
           case "$verb" in push|send-pack) deny "git $verb is forbidden to the reviewer, everywhere: $cmd" ;; esac
-          dir="$cur"
-          [ -z "$gdir" ] || dir="$(join_dir "$cur" "$gdir")"
-          [ -n "$dir" ] && [ -d "$dir" ] || deny "git ${verb:-without a verb} runs in a directory that does not exist (${dir:-none}): $cmd"
+          [ -n "$dir" ] && [ -d "$dir" ] || deny "git ${verb:-without a verb} runs in an unknown or missing directory (${dir:-unknown}): $cmd"
           if try_story_of_dir "$dir"; then
             owns_line "$TOP" "$STORY"
             case "$verb" in
@@ -643,7 +700,9 @@ check_bash() {
               restore) check_restore "$j" ;;
               *) check_git_read "$verb" "$j" ;;
             esac
-          elif ! in_temp_zone "$dir"; then
+          elif in_temp_zone "$dir"; then
+            check_temp_paths "$dir" "$j"
+          else
             deny "git ${verb:-without a verb} runs in $dir, outside a story worktree and outside a throwaway repo of the temp dir (${TMP_ROOT:-no usable temp dir}): $cmd"
           fi
         else
@@ -662,8 +721,6 @@ check_bash() {
               done
               ;;
             commit|reset|merge|rebase|cherry-pick|revert|am|pull)
-              dir="$cur"
-              [ -z "$gdir" ] || dir="$(join_dir "$cur" "$gdir")"
               [ -n "$dir" ] && [ -d "$dir" ] || deny "git $verb outside a story/<id> branch: $cmd"
               story_of_dir "git $verb outside a story/<id> branch: $cmd" "$dir"
               ;;
