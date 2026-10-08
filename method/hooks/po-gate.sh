@@ -7,7 +7,7 @@
 #   po-gate verif-current <id>    0 when the verification record is complete, matches HEAD, and every check its
 #                                 `## Checks` table declares has a passing `po-run` row on the recorded code
 #   po-gate qa-current <id>       0 when the committed QA report's last `QA status:` says complete and its `Tree:`
-#                                 matches HEAD
+#                                 matches HEAD; ignored files do not count (ADR-0044)
 #   po-gate pre-commit            non-zero, on every branch, when a staged environment file or an added line holding
 #                                 a private key or a known token is staged; and on a code commit to story/<id>
 #                                 whose plan is not approved
@@ -104,6 +104,7 @@ record_rows() {
 # docs/; the last of those decides, so a failure on the final code is not hidden by a success on earlier code.
 runs_cover_checks() {
   local id="$1" record="$2" tree="$3" rows kind label command kind_r label_r command_r code run_tree last found
+  local q="'\\''" ql qc
   rows="$(record_rows "$record")" || refuse "could not read the tables of the verification record of $id" || return 1
   while IFS=$'\037' read -r kind label command; do
     [ "$kind" = E ] || continue
@@ -118,8 +119,9 @@ runs_cover_checks() {
       tree_exists "$run_tree" && git -C "$(top)" diff --quiet "$run_tree" "$tree" -- . ':(exclude)docs' || continue
       found=1 last="$code"
     done <<< "$rows"
+    ql="'${label//\'/$q}'" qc="'${command//\'/$q}'"
     [ "$found" -eq 1 ] \
-      || refuse "check '$label' of $id has no po-run row on the recorded code — po-run --story $id --label \"$label\" -- \"$command\"" \
+      || refuse "check '$label' of $id has no po-run row on the recorded code — po-run --story $id --label $ql -- $qc" \
       || return 1
     [ "$last" = 0 ] || refuse "check '$label' of $id last exited $last on the recorded code" || return 1
   done <<< "$rows"
@@ -127,7 +129,7 @@ runs_cover_checks() {
 
 # Like the review's verdict, only the last status line counts: a report may quote an earlier one.
 qa_current() {
-  local report status tree repo dirty; repo="$(top)"; report="$repo/docs/qa/$1/report.md"
+  local report status tree repo dirty hint=""; repo="$(top)"; report="$repo/docs/qa/$1/report.md"
   [ -f "$report" ] || refuse "$1 has no QA report (docs/qa/$1/report.md) — /po-qa $1" || return 1
   status="$(grep -E '^QA status:' "$report" | tail -n 1 || true)"
   [[ "$status" =~ ^QA\ status:[[:space:]]*complete[[:space:]]*$ ]] \
@@ -139,9 +141,13 @@ qa_current() {
   code_matches "$tree" \
     || refuse "the code of $1 changed after its QA walk; the report no longer matches HEAD — /po-qa $1" || return 1
   { git -C "$repo" cat-file -e "HEAD:docs/qa/$1/report.md" 2>/dev/null \
-    && dirty="$(git -C "$repo" status --porcelain --untracked-files=all --ignored -- "docs/qa/$1/")" \
+    && dirty="$(git -C "$repo" status --porcelain --untracked-files=all -- "docs/qa/$1/")" \
     && [ -z "$dirty" ]; } \
-    || refuse "the QA report of $1 is current but docs/qa/$1/ is not committed — commit it alone: git commit -m \"$1: QA evidence\" -- docs/qa/$1/ (/po-qa $1)"
+    || {
+      git -C "$repo" check-ignore -q -- "docs/qa/$1/report.md" \
+        && hint=" (report.md is ignored by git: un-ignore it first)"
+      refuse "the QA report of $1 is current but docs/qa/$1/ is not committed$hint — commit it alone: git commit -m \"$1: QA evidence\" -- docs/qa/$1/ (/po-qa $1)"
+    }
 }
 
 # --- secret scan ---------------------------------------------------------------

@@ -74,6 +74,21 @@ test_qa_current_requires_a_committed_report() {
   ! passes qa-current s01-a || fail "an uncommitted capture beside the report was accepted"
 }
 
+# s67 — ignored files do not count (ADR-0044); an ignored, never-committed report is still refused.
+test_qa_current_ignores_ignored_files() {
+  sandbox
+  local err
+  echo '*.log' > .gitignore && git add -A && git commit -qm ignore
+  qa_report 'QA status: complete\n'
+  echo 'noise' > docs/qa/s01-a/walk.log
+  passes qa-current s01-a || fail "an ignored file beside a committed report was refused"
+  git rm -q --cached docs/qa/s01-a/report.md && git commit -qm unqa
+  echo 'docs/qa/s01-a/report.md' >> .gitignore
+  err="$(bash "$GATE" qa-current s01-a 2>&1)" && fail "an ignored, uncommitted report was accepted"
+  grep -qF 'is ignored by git' <<< "$err" && grep -qF 'not committed' <<< "$err" \
+    || fail "the refusal does not say the report is ignored and not committed: $err"
+}
+
 test_rules_list_qa_in_the_story_cycle() {
   local table execute qa review
   table="$(awk '/^### Per story/ {on=1; next} on && /^### / {exit} on && /^\|/' "$RULES")"

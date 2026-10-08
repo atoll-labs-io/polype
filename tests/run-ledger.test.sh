@@ -145,6 +145,26 @@ test_implementer_runs_checks_through_po_run() {
     || fail "the implementer still copies results by hand"
 }
 
+# s67 — a fix run keeps the record and its runs.
+test_fix_run_keeps_the_runs() {
+  contains "$METHOD/agents/implementer.md" 'Fix run: the record already exists; keep it with every row under `## Runs` and never start it again from the template'
+}
+
+# s67 — the command po-run is given and the one the gate suggests are single-quoted, so they copy verbatim.
+test_suggested_command_is_single_quoted() {
+  local agent="$METHOD/agents/implementer.md" err rest
+  contains "$agent" "-- '<Test>'"
+  ! grep -qF -- '-- "<Test>"' "$agent" || fail "the implementer still double-quotes the command"
+  story_sandbox
+  fresh_record "test \"\$(echo 'a b')\" = 'a b'"
+  seal
+  err="$(bash "$GATE" verif-current s01-a 2>&1)" && fail "a check with no run was accepted"
+  rest="${err##*— po-run }"
+  eval "bash \"\$RUN\" $rest" || fail "the suggested command does not run as suggested: $rest"
+  seal
+  accepted || fail "running the suggested command did not satisfy the gate: $rest"
+}
+
 test_eval_recipes_follow_the_new_record() {
   local wt id=s01-archive-note cmd
   LEDGER_TMP="$(mktemp -d)"
