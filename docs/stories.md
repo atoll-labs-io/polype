@@ -1285,7 +1285,7 @@ Objectif : Polype pilote un projet mobile, une CLI, une API ou une bibliothèque
 
 **Critères d'acceptation**
 - [ ] `expo_profile_passes_the_lint` — `boilerplates/expo/profile.md` suit le gabarit de profil, écrit depuis le gabarit de départ officiel d'Expo à un commit nommé, sous sa licence, et `bin/po-lint` l'accepte.
-- [ ] `expo_profile_names_its_web_render` — sa plateforme est `mobile`, son pilote `mobile-web`, sa commande `Dev` sert le rendu web de l'app, et sa commande `Test` accepte des chemins.
+- [ ] `expo_profile_names_its_web_render` — sa plateforme est `mobile`, son pilote `mobile-web`, sa commande `Dev` sert le rendu web de l'app; le gabarit n'a pas de commande de test, et la commande `Test` du profil est celle qu'une première story installe, qui accepte des chemins (ADR-0062, ADR-0069).
 
 ### s84-flutter-profile — Le profil Flutter
 **En tant que** développeur **je veux** un profil de boilerplate pour Flutter **afin que** `/po-setup` et `/po-architect` partent de faits vérifiés sur cette pile.

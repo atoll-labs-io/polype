@@ -20,7 +20,7 @@ test_qa_walks_with_the_keyboard() {
   local body phrase
   require_file "$SKILL"
   body=$(section_of "$SKILL" 'Driving a browser')
-  for phrase in 'keyboard alone' 'cannot reach' 'finding'; do
+  for phrase in 'keyboard alone' 'cannot reach' 'written down as a finding'; do
     printf '%s' "$body" | grep -qF -- "$phrase" || fail "Driving a browser lacks: $phrase"
   done
 }

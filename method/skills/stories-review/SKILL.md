@@ -1,6 +1,6 @@
 ---
 name: stories-review
-description: How to judge docs/stories.md against the approved PRD or brief before any story is built — scope coverage first, then exclusions (graveyard or non-goals), disguised layers, testable criteria, dependency order, complexity, ids, Owns overlap and surface, with a severity scale of its own. Preloaded in the stories-reviewer.
+description: How to judge docs/stories.md against the approved PRD or brief before any story is built — scope coverage first, then exclusions (graveyard or non-goals), disguised layers, testable criteria, dependency order, complexity, ids, Owns overlap, surface and owned records, with a severity scale of its own. Preloaded in the stories-reviewer.
 ---
 # Reviewing stories before they are built
 
@@ -36,9 +36,13 @@ How to decide: read a plain folder `x/` as `x/**`; compare the two entries segme
 
 **9. Surface.** Every story carries a `Surface` line: `screen`, `command`, `endpoint`, `scene`, `behaviour` or `—`. A story without one keeps the old rule — it has a screen when its text shows one — and is a minor finding. A surface that the project's `Platform`, as the command passes it, does not admit by the table of "Surface" in `agentic-stories` is major: the story would be designed or checked with the wrong driver.
 
+**10. Owned records.** Two things a story edits without saying so.
+(i) The defect record. A story with a `Fixes` line (`Corrige` in a French stories file) must own the defects file or tracker file that the line names as the defect's record, since marking the defect fixed edits that file. A review finding named there needs no `Owns` entry: a review is evidence and stays as written (Law 7).
+(ii) The superseded ADR. A story whose text says its ADR supersedes another, wholly or in part, must own that other ADR's file, since its `superseded-by` line changes (`templates/adr.md`).
+
 ## Severity
 - **critical** — a scope item no story covers; an excluded item revived, graveyard feature or non-goal; a dependency on a later or unknown story; two `Owns` entries that overlap, between two stories with no dependency. Each of these wastes whole cycles once building starts.
-- **major** — a technical layer dressed as a story; a criterion no test can check; a 5 left unsplit; a 4 without its risk; a story with no `Owns`; a `Surface` the project's `Platform` does not admit.
+- **major** — a technical layer dressed as a story; a criterion no test can check; a 5 left unsplit; a 4 without its risk; a story with no `Owns`; a `Surface` the project's `Platform` does not admit; a story that fixes a defect without owning the record its `Fixes` line names, or whose ADR supersedes another without owning that ADR's file.
 - **minor** — id format, thin notes, wording; a story with no `Surface` line.
 
 `Stories ready: no` means a critical finding or a blocked review, and nothing else. Majors are reported and fixed when convenient; they do not hold back the first story. Rate each finding for what it is, never to push a verdict one way or the other.
