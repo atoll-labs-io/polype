@@ -1,4 +1,4 @@
-2472606643 7031 .claude/commands/po-architect.md
+2231801387 7234 .claude/commands/po-architect.md
 881075361 3304 .claude/commands/po-brief.md
 3814311873 5322 .claude/commands/po-design.md
 516804569 4936 .claude/commands/po-design-system.md
@@ -23,7 +23,7 @@
 1012510216 4083 .claude/agents/qa.md
 3951933702 5568 .claude/agents/reviewer.md
 4162979073 2215 .claude/agents/stories-reviewer.md
-1482214599 4486 .claude/skills/agentic-stories/SKILL.md
+865819796 4567 .claude/skills/agentic-stories/SKILL.md
 1897128106 6149 .claude/skills/capability-bricks/SKILL.md
 3290389435 1595 .claude/skills/codebase-analysis/SKILL.md
 573463234 3096 .claude/skills/design-doctrine/SKILL.md
@@ -32,7 +32,7 @@
 1311165776 4774 .claude/skills/review-lenses/SKILL.md
 340585121 5033 .claude/skills/stories-review/SKILL.md
 1573348266 4964 .claude/skills/testing-doctrine/SKILL.md
-807932122 635 .polype/templates/adr.md
+1666085348 787 .polype/templates/adr.md
 1046058577 4779 .polype/templates/agents-local.md
 3260360512 2097 .polype/templates/architecture.md
 2304942730 1973 .polype/templates/brief.md
