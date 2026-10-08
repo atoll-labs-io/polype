@@ -34,12 +34,13 @@ Read `Story track` before anything else.
 A missing setting is a stop, never a guess: a model setting missing → stop and name it.
 
 ## Escalation signals
-Five signals send a story to the full track:
+These signals send a story to the full track:
 - a migration;
 - a new screen;
 - authorization or tenant scope;
 - an API contract;
-- a new dependency.
+- a new dependency;
+- a defect to fix: a `Fixes` line (`Corrige` in a French stories file), whose research follows the `diagnostic` skill on the full track.
 
 They are checked twice. First on the story text, before reading the code and before any worktree exists: a signal there → stop and point to `/po-research <id>`. Then after reading the code, since the code often shows what the story left out.
 
@@ -60,7 +61,7 @@ Read the story, `AGENTS.md`, `docs/architecture.md` when it exists and the accep
 Then run the second signal check described above.
 
 ## The plan
-Fill `templates/plan-flow.md` into `docs/plans/<id>.md`: frontmatter `track: flow` and `validated: no`, verified facts with their `path:line`, the five signals each marked absent with where it was checked, six tasks at most, each naming the test that would fail if it were wrong. Tests follow the `testing-doctrine` skill and stay within `Test budget`. About 150 lines at most.
+Fill `templates/plan-flow.md` into `docs/plans/<id>.md`: frontmatter `track: flow` and `validated: no`, verified facts with their `path:line`, each escalation signal marked absent with where it was checked, six tasks at most, each naming the test that would fail if it were wrong. Tests follow the `testing-doctrine` skill and stay within `Test budget`. About 150 lines at most.
 
 Leave the plan uncommitted; the implementer commits it with the code.
 

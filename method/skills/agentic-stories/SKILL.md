@@ -49,6 +49,9 @@ The surface must be one the project's `Platform` admits. This table is the only 
 
 A project declaring several platforms admits the surfaces of each: a web project that also serves an API declares `web, api`.
 
+## Defect stories
+Law 7 keeps defects out of `docs/stories.md` unless a person turns one into a story. Such a story carries a `Fixes` line (`Corrige` in a French stories file) naming the defect and where it is recorded. Its criteria state the wrong behaviour and the expected one. The line is optional and sends the story to the full track, researched under the `diagnostic` skill.
+
 ## Complexity and splitting
 Score each story on the scale of `templates/stories.md`, from 1 (plain create, read, update, delete) to 5 (real time, migrations or external systems).
 

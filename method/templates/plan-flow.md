@@ -10,7 +10,7 @@ Written by `/po-flow`. On the short track this one file stands in for both the r
 <What the code actually does around this story, each fact opened in the code and given with its `path:line`. Any assumption of the story that proved wrong comes first. The implementer and the reviewer read this section in place of a research file.>
 
 ## Escalation signals
-<Each of the five, marked `absent`, with where it was checked — once on the story text before reading the code, once after reading it. Any signal present means this file should not exist: the story belongs to the full track.>
+<Each escalation signal, marked `absent`, with where it was checked — once on the story text before reading the code, once after reading it. Any signal present means this file should not exist: the story belongs to the full track.>
 
 | Signal | Before reading the code | After reading the code |
 | --- | --- | --- |
@@ -19,6 +19,7 @@ Written by `/po-flow`. On the short track this one file stands in for both the r
 | Authorization or tenant scope | absent — <where checked> | absent — <where checked> |
 | API contract | absent — <where checked> | absent — <where checked> |
 | New dependency | absent — <where checked> | absent — <where checked> |
+| Defect to fix (`Fixes` or `Corrige` line) | absent — <where checked> | absent — <where checked> |
 
 ## Story
 <restatement and acceptance criteria>
