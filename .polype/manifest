@@ -11,6 +11,7 @@
 .claude/commands/po-prd.md
 .claude/commands/po-qa.md
 .claude/commands/po-research.md
+.claude/commands/po-retro.md
 .claude/commands/po-review.md
 .claude/commands/po-setup.md
 .claude/commands/po-ship.md
@@ -32,6 +33,7 @@
 .claude/skills/qa-drivers/mobile-web.md
 .claude/skills/qa-drivers/scenarios.md
 .claude/skills/qa-drivers/scene.md
+.claude/skills/qa-drivers/simulation.md
 .claude/skills/qa-drivers/SKILL.md
 .claude/skills/review-antihallu/SKILL.md
 .claude/skills/review-lenses/SKILL.md
