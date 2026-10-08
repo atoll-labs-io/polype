@@ -54,7 +54,7 @@ Write `docs/plans/<id>.md` under the `/po-plan` contract if it does not exist. W
 - `autonomous` → check the plan against every acceptance criterion, write `validated: yes`, and state that no human reviewed it.
 
 ## Stage 5 — Execute
-Delegate to `implementer` the way `/po-execute` does, its model chosen by `/po-execute`'s `## Model`: `Model light` up to `Light up to`, `Model strong` above, fix runs included — as a fix run when the latest review blocks the story on findings; a review blocked on QA never triggers the fix run. Never implement in this context.
+Delegate to `implementer` the way `/po-execute` does, its model chosen by `/po-execute`'s `## Model`: `Model light` up to `Light up to`, `Model strong` above, fix runs included — as a fix run when the latest review blocks the story on findings; a review blocked on QA never triggers the fix run, nor does one blocked on QA evidence. Never implement in this context.
 
 When `docs/designs/<id>/` exists, append this sentence to the prompt of `/po-execute`:
 > This story has a design: docs/designs/<id>/ is expected uncommitted work, like the research and the plan. Read design.md before the screen tasks, build the screen it settles, and commit the folder with the story.
@@ -62,12 +62,16 @@ When `docs/designs/<id>/` exists, append this sentence to the prompt of `/po-exe
 ## Stage 6 — QA
 Only for a story whose text shows a screen when `QA stage` is `screens`; skip it otherwise. `QA stage` missing for such a story → stop and name the setting.
 
-Apply `/po-qa` as written: its preconditions, the `qa` subagent with `model:` set to `Model strong`, then the evidence commit that this context makes. Run it after every execution, first run and fix run alike, since each one leaves a tree the previous walk never saw. No report → stop with the reason the subagent gave. `QA status: blocked` → commit the report as evidence, then stop for a human with its cause: no review is requested on a walk that did not happen.
+Apply `/po-qa` as written: its preconditions, the `qa` subagent with `model:` set to `Model strong`, then the evidence commit that this context makes. Run it after every execution, first run and fix run alike, since each one leaves a tree the previous walk never saw. No report → stop with the reason the subagent gave. `QA status: blocked` → commit the report as evidence, then stop for a human with its cause: no review is requested on a walk that did not happen. When `po-gate qa-current <id>` refuses with `is current but`, the report on disk is current and only uncommitted: make the evidence commit alone, no walk (ADR-0041).
 
 ## Stage 7 — Review
 Delegate to `reviewer` the way `/po-review` does, `model:` set to `Model strong`, and record `docs/reviews/<id>.md` with its `Fix loop:`. A missing or incomplete verdict is recorded as blocked: `Max severity: critical`, `Ship allowed: no`.
 
-Blocked on QA — the review's `Next action:` names `/po-qa` → back to stage 6, then stage 7 again at the same `Fix loop:`; that return is not a fix run and spends none of the two (ADR-0034). A second review blocked on QA while `story/<id>` already holds two `<id>: QA evidence` commits since the last implementer commit → stop for a human.
+Blocked on QA — `Review status: blocked` and a `Next action:` naming `/po-qa` → back to stage 6, then stage 7 again at the same `Fix loop:`; that return is not a fix run and spends none of the two (ADR-0034, ADR-0041).
+
+Blocked on QA evidence — `Review status: blocked` and a `Next action:` naming the `<id>: QA evidence` commit → that evidence commit as stage 6 makes it, without a walk, then stage 7 again at the same `Fix loop:`; it spends none of the two either.
+
+A second review blocked on QA or on QA evidence while `story/<id>` already holds two `<id>: QA evidence` commits since the last implementer commit → stop for a human.
 
 Any other blocked review → back to stage 5 as a fix run, with the full latest report. After two fix runs still blocked → stop and list the open findings for a human. A verdict is never softened to reach the next stage.
 

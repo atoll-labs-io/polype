@@ -23,7 +23,7 @@ No Agent tool available → say so and stop.
 - $ARGUMENTS matches one id; otherwise list the ids and stop.
 - `Model strong` missing → stop and name it.
 - The worktree is registered for this story, checked the way `/po-execute` does it (shared git directory found through `<repository root>/.git`, folder or file; then `<shared>/worktrees/<id>/gitdir` and `<shared>/worktrees/<id>/HEAD`). Otherwise stop; do not switch branches.
-- Read the previous `docs/reviews/<id>.md` if there is one: its `Fix loop:` value plus one is this review's loop number (0 when there is none). When that previous review was blocked on QA — its `Next action:` names `/po-qa` — this review keeps the same `Fix loop:` value instead, because a QA return is not a fix run (ADR-0034). A third blocked review in a row is not requested: stop and hand the open findings to a human. Reviews blocked on QA do not count toward those three.
+- Read the previous `docs/reviews/<id>.md` if there is one: its `Fix loop:` value plus one is this review's loop number (0 when there is none). A review is blocked on QA when it carries `Review status: blocked` and a `Next action:` naming `/po-qa`, and blocked on QA evidence when it carries `Review status: blocked` and a `Next action:` naming the `<id>: QA evidence` commit; nothing less makes either. When that previous review was blocked on QA or on QA evidence, this review keeps the same `Fix loop:` value instead, because a QA return is not a fix run (ADR-0034, ADR-0041). A third blocked review in a row is not requested: stop and hand the open findings to a human. Reviews blocked on QA or on QA evidence do not count toward those three.
 
 ## Delegation
 Agent tool, `subagent_type: reviewer`, `model:` set to `Model strong` whatever the story's complexity, description "Review <id>", prompt filled in:
@@ -38,6 +38,7 @@ Write the subagent's answer, whole, to `docs/reviews/<id>.md` in the worktree. I
 If the subagent fails, times out, returns nothing, or returns a report without both verdict lines, write the file yourself: `Review status: blocked`, the concrete cause, what is missing, what must change, the loop number, then `Max severity: critical` and `Ship allowed: no`. Do not turn a failure into "review failed" and do not guess a severity.
 
 ## Outcome
-- `Ship allowed: no` with a `Next action:` naming `/po-qa` → "Review blocked on QA for <id>. Run /po-qa <id>, then /po-review <id> again; no fix run is spent."
+- `Ship allowed: no` with `Review status: blocked` and a `Next action:` naming `/po-qa` → "Review blocked on QA for <id>. Run /po-qa <id>, then /po-review <id> again; no fix run is spent."
+- `Ship allowed: no` with `Review status: blocked` and a `Next action:` naming the `<id>: QA evidence` commit → "Review blocked on uncommitted QA evidence for <id>. Commit it alone: git commit -m "<id>: QA evidence" -- docs/qa/<id>/, then /po-review <id> again; no fix run is spent."
 - Any other `Ship allowed: no` → "Ship blocked for <id>. Run /po-execute <id> (fix run), then /po-review <id> again." At loop 2, instead: "Ship still blocked after two fix runs. Open findings: <list>. A human decides what happens next."
 - `Ship allowed: yes` → "Review passed. Next: /po-ship <id>"

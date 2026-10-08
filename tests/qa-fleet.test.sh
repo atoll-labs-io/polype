@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 # s57 — the orchestrator and the fleet run QA for a screen story, and a review blocked on QA goes back to QA.
+# s64 — blocked on QA needs `Review status: blocked`, every command routes it alike, and a current uncommitted report is committed, not walked.
 
 ORCH="$METHOD/commands/po-orchestrator.md"
 DRIVE="$METHOD/commands/po-drive.md"
@@ -71,14 +72,13 @@ test_drive_resumes_on_qa_current() {
   stale_qa=$(only_line "$resuming" '`po-gate qa-current <id>` fails | the QA stage' 'the resuming table')
   no_review=$(only_line "$resuming" '| record current, no `docs/reviews/<id>.md` |' 'the resuming table')
   stale_review=$(only_line "$resuming" '| record current, review blocked,' 'the resuming table')
-  review_on_qa=$(only_line "$resuming" '| a blocked review whose `Next action:` names `/po-qa` | the review stage, at the same `Fix loop:`' 'the resuming table')
+  review_on_qa=$(only_line "$resuming" '| `Review status: blocked` and a `Next action:` naming `/po-qa` or the `<id>: QA evidence` commit | the review stage, at the same `Fix loop:`' 'the resuming table')
   fix_run=$(only_line "$resuming" '| a fix run, at loop `Fix loop:` + 1 |' 'the resuming table')
   before "$code" "$blocked_qa" "a stale record must be rebuilt before any QA row applies"
   before "$blocked_qa" "$stale_qa" "a blocked walk goes to a human before a new walk is tried"
   before "$stale_qa" "$no_review" "the QA rows must come before every review row"
   before "$stale_review" "$review_on_qa" "a stale review must be judged again before the QA return applies"
   before "$review_on_qa" "$fix_run" "a review blocked on QA must not fall into the fix-run row"
-  holds "$resuming" 'lists the report | the evidence commit of `/po-qa`, without a new walk' 'the resuming table'
   holds "$resuming" 'Commits whose subject is `<id>: QA evidence` are not implementer commits and are never counted' 'the resuming section'
 }
 
@@ -121,4 +121,66 @@ test_qa_blocked_review_goes_back_to_qa() {
   holds "$verdict" 'A review blocked on QA is not a fix run: the lane goes back to `qa`, then to `reviewer` at the same `Fix loop:`' 'the verdict section'
   holds "$verdict" 'no `Max attempts` unit is spent' 'the verdict section'
   holds "$verdict" 'Any other `Ship allowed: no` sends that lane back to `implementer` as a fix run' 'the verdict section'
+}
+
+P1='`Review status: blocked` and a `Next action:` naming `/po-qa`'
+P2='`Review status: blocked` and a `Next action:` naming the `<id>: QA evidence` commit'
+M1='Review blocked on QA for <id>. Run /po-qa <id>, then /po-review <id> again; no fix run is spent.'
+M2='Review blocked on uncommitted QA evidence for <id>. Commit it alone: git commit -m "<id>: QA evidence" -- docs/qa/<id>/, then /po-review <id> again; no fix run is spent.'
+
+test_qa_blocked_needs_a_blocked_status() {
+  require_file "$REVIEW"; require_file "$ORCH"; require_file "$DRIVE"
+  holds "$(section_of "$REVIEW" 'Preconditions')" "$P1" 'po-review.md preconditions'
+  holds "$(section_of "$REVIEW" 'Preconditions')" "$P2" 'po-review.md preconditions'
+  holds "$(section_of "$REVIEW" 'Outcome')" "- \`Ship allowed: no\` with $P1 → \"$M1\"" 'po-review.md outcome'
+  holds "$(section_of "$REVIEW" 'Outcome')" "- \`Ship allowed: no\` with $P2 → \"$M2\"" 'po-review.md outcome'
+  local review; review=$(section_of "$ORCH" 'Stage 7 — Review')
+  holds "$review" "Blocked on QA — $P1 → back to stage 6" 'the review stage'
+  holds "$review" "Blocked on QA evidence — $P2 → that evidence commit as stage 6 makes it, without a walk" 'the review stage'
+  holds "$(section_of "$DRIVE" 'Resuming')" "$P1" 'the resuming section'
+  holds "$(section_of "$DRIVE" 'The verdict, and the fix runs')" "Blocked on QA means $P1, nothing less" 'the verdict section'
+  holds "$(section_of "$DRIVE" 'The verdict, and the fix runs')" "$P2" 'the verdict section'
+  local f line
+  for f in po-review po-orchestrator po-drive po-execute po-flow po-status; do
+    require_file "$METHOD/commands/$f.md"
+    while IFS= read -r line; do
+      grep -qF -- '`Review status: blocked`' <<< "$line" || fail "$f.md pairs \`Next action:\` and \`/po-qa\` without \`Review status: blocked\`: $line"
+    done < <(grep -F -- '`Next action:`' "$METHOD/commands/$f.md" | grep -F -- '`/po-qa`')
+  done
+}
+
+test_flow_and_execute_send_qa_blocks_to_qa() {
+  local exe="$METHOD/commands/po-execute.md" flow="$METHOD/commands/po-flow.md"
+  require_file "$exe"; require_file "$flow"
+  local pre; pre=$(section_of "$exe" 'Preconditions, checked by reading files')
+  holds "$pre" "$P1 → stop with \"$M1\"" 'po-execute.md preconditions'
+  holds "$pre" "$P2 → stop with \"$M2\"" 'po-execute.md preconditions'
+  local run; run=$(section_of "$flow" 'Execute, review, ship')
+  holds "$run" "$P1 → stop with \"$M1\"" 'po-flow.md execute, review, ship'
+  holds "$run" "$P2 → stop with \"$M2\"" 'po-flow.md execute, review, ship'
+  holds "$run" 'neither spends a fix run' 'po-flow.md execute, review, ship'
+  holds "$run" 'Any other `Ship allowed: no` → a fix run of the implementer' 'po-flow.md execute, review, ship'
+}
+
+test_status_agrees_with_the_fleet_on_a_blocked_report() {
+  require_file "$STATUS"; require_file "$DRIVE"
+  contains "$STATUS" 'is `blocked` → "a human decides"'
+  contains "$STATUS" 'a QA report `blocked`, with its cause'
+  contains "$STATUS" '`po-gate qa-current <id>` refusing with `is current but` → the evidence commit'
+  holds "$(section_of "$DRIVE" 'Resuming')" 'is `blocked` | a human' 'the resuming table'
+}
+
+test_drive_resumes_on_an_uncommitted_report() {
+  require_file "$DRIVE"
+  local resuming; resuming=$(section_of "$DRIVE" 'Resuming')
+  local blocked_qa uncommitted stale_qa
+  blocked_qa=$(only_line "$resuming" '`QA status:` of `docs/qa/<id>/report.md` is `blocked` | a human' 'the resuming table')
+  uncommitted=$(only_line "$resuming" 'refuses a report that `is current but` not committed | the evidence commit of `/po-qa`, without a new walk' 'the resuming table')
+  stale_qa=$(only_line "$resuming" '`po-gate qa-current <id>` fails | the QA stage' 'the resuming table')
+  before "$blocked_qa" "$uncommitted" "a blocked walk goes to a human before its evidence is committed"
+  before "$uncommitted" "$stale_qa" "an uncommitted current report must be committed before the QA-stage row walks it again"
+  grep -qF -- 'lists the report' <<< "$resuming" && fail "the dead evidence-commit row is still in the resuming table"
+  holds "$resuming" 'a current report left uncommitted fails it' 'the resuming section'
+  grep -qF -- 'a current report left uncommitted passes it' <<< "$resuming" && fail "the resuming section still says an uncommitted report passes qa-current"
+  contains "$METHOD/hooks/po-gate.sh" 'is current but docs/qa/$1/ is not committed'
 }
