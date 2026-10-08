@@ -27,7 +27,7 @@ Review status: <complete | blocked>
 - [ ] Dependency order: no dependency on a later or unknown id
 - [ ] Complexity: no 5 left unsplit, every 4 names its risk
 - [ ] Ids: `s<number>-<slug>`, unique, numbered in file order
-- [ ] Owns: every story declares one; no path shared by two stories with no dependency between them
+- [ ] Owns: every story declares one; no two stories with no dependency between them hold entries that overlap by the overlap rule of check 8 of the `stories-review` skill
 
 ## Findings
 <one per line: severity — story id — the problem>

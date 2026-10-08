@@ -24,7 +24,7 @@ A gap in the stories is cheapest now: fixing it here means editing one markdown 
 
 **8. Owns overlap.** Compare the `Owns` of every pair of stories, directories included: a directory owned by one story covers every path beneath it. Two `Owns` entries overlap when one path could match both: a folder `x/` covers every path beneath it, `*` matches within one path segment, `**` matches any number of segments; when in doubt, they overlap. Two stories with no dependency between them that share an `Owns` path are flagged as critical: run side by side, they would edit the same files. A dependency counts when either story reaches the other through its `Depends on` chain. A story that declares no `Owns` at all is a major finding: nobody can tell what it may touch.
 
-How to decide: read a plain folder `x/` as `x/**`; compare the two entries segment by segment from the left. They are **disjoint** only when, before either has reached a `**`, two segments at the same position are different plain names, or a plain name that the other's `*` segment cannot take (`a.ts` against `*.md`), or one entry ends without `/` while the other must go deeper. Two segments that both hold `*`, and everything after a `**`, count as overlapping.
+How to decide: read a plain folder `x/` as `x/**`; compare the two entries segment by segment from the left. They are **disjoint** only when, before either has reached a `**`, one of these holds: two segments at the same position are different plain names; a plain name meets a `*` segment that cannot take it (`a.ts` against `*.md`); or one entry ends without `/` while the other must go deeper. Two segments that both hold `*`, and everything after a `**`, count as overlapping.
 
 | Entry | Entry | Verdict | Why |
 | --- | --- | --- | --- |

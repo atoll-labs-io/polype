@@ -39,7 +39,7 @@ Go through the draft story by story; a failed line is fixed before anything is w
 - [ ] Dependency order holds: no story depends on a story placed after it.
 - [ ] Every story traces to the core loop or the angle (PRD), or to the wedge or a premise (brief).
 - [ ] In `replace` or `adapt`, no story brings back a graveyard feature, under its own name or another.
-- [ ] Every story declares Owns, and two stories sharing a path depend on one another.
+- [ ] Every story declares Owns, and two stories whose `Owns` entries overlap, by the overlap rule of check 8 of the `stories-review` skill, depend on one another.
 - [ ] Every interface shared by two stories is an earlier contract story they both depend on.
 
 ## Finish
