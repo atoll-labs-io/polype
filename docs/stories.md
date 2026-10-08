@@ -1386,3 +1386,21 @@ Objectif : Polype pilote un projet mobile, une CLI, une API ou une bibliothèque
 - [ ] `qa_walks_with_the_keyboard` — la section qui pilote un navigateur fait parcourir chaque écran au clavier seul et relever ce qui n'est pas atteignable.
 
 **Notes pour l'agent** : `tests/qa.test.sh` fige les quatre phrases de tête de `## Driving a browser` ; les garder telles quelles.
+
+## Correctifs hors jalon (suite)
+
+### s92-review-tree-gate — La gate lit l'arbre de la dernière revue
+**En tant que** développeur **je veux** que `po-gate ship-allowed` lise l'arbre jugé par la même revue que le verdict qu'il retient, et qu'il accepte ces lignes écrites en élément de liste **afin qu'**une revue favorable ne soit ni refusée pour une puce, ni liée à l'arbre d'une revue plus ancienne.
+
+- **Complexité** : 2
+- **Dépend de** : aucune
+- **Surface** : —
+- **Owns** : `method/hooks/po-gate.sh`, `tests/gate.test.sh`, `tests/review-tree-gate.test.sh`
+- **Corrige** : défaut n° 35 de `docs/defauts.md` (lane de s78, 2026-10-08)
+
+**Critères d'acceptation**
+- [ ] `ship_gate_reads_the_last_review` — quand `docs/reviews/<id>.md` empile plusieurs revues, `ship-allowed` prend le `Reviewed tree:` de la dernière, celle qui porte le dernier `Ship allowed:`, et non le premier du fichier.
+- [ ] `verdict_lines_may_be_list_items` — une ligne `Reviewed tree:` ou `Ship allowed:` précédée d'une puce de liste (`- ` ou `* `) est lue comme la même ligne sans puce ; toute autre forme reste refusée.
+- [ ] `other_tree_lines_read_the_same_way` — les lignes `Tree:` du relevé et du rapport QA suivent la même règle de lecture que `Reviewed tree:`.
+
+**Notes pour l'agent** : `first_hash` sert aux trois gates (`po-gate.sh:34`) ; la revue de s78, sur la branche `story/s78-platform-setting`, montre les deux formes fautives. Une gate est un garde-fou : n'élargir la lecture qu'à ces puces-là.

@@ -77,3 +77,9 @@ Le tracker d'issues de Polype est ce fichier tant que le dépôt n'est pas sur G
 | # | Source | Défaut | Statut |
 |---|---|---|---|
 | 34 | implementer de s58 | `po-bounds.sh` lisait son entrée par `$(< /dev/stdin)`. Claude Code la passe par une socket, que `/dev/stdin` ne sait pas ouvrir : le hook refusait tout appel, et aucun implementer ne pouvait plus travailler, dans aucun projet. Les tests passaient parce qu'ils envoient l'entrée par un pipe. | corrigé hors story (correctif direct demandé par l'utilisateur : la flotte ne pouvait pas réparer son propre implementer), test `bounds_read_input_from_a_socket` |
+
+## Relevé par la lane de s78 (2026-10-08)
+
+| # | Source | Défaut | Statut |
+|---|---|---|---|
+| 35 | livraison de s78 | `po-gate ship-allowed` lit le premier `Reviewed tree:` du fichier de revue mais le dernier `Ship allowed:` : avec deux revues empilées, le verdict peut être lié à l'arbre d'une revue plus ancienne. Il refuse aussi une ligne écrite en élément de liste (`- Reviewed tree: …`), forme qu'ont prise les deux revues favorables de s78, qui a ainsi épuisé ses tentatives sans défaut de fond. | à corriger par s92 (choix de l'utilisateur) |
