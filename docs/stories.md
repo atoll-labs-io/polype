@@ -1395,12 +1395,12 @@ Objectif : Polype pilote un projet mobile, une CLI, une API ou une bibliothèque
 - **Complexité** : 2
 - **Dépend de** : aucune
 - **Surface** : —
-- **Owns** : `method/hooks/po-gate.sh`, `tests/gate.test.sh`, `tests/review-tree-gate.test.sh`
+- **Owns** : `method/hooks/po-gate.sh`, `method/commands/po-ship.md`, `bin/po-eval`, `tests/gate.test.sh`, `tests/review-tree-gate.test.sh`
 - **Corrige** : défaut n° 35 de `docs/defauts.md` (lane de s78, 2026-10-08)
 
 **Critères d'acceptation**
 - [ ] `ship_gate_reads_the_last_review` — quand `docs/reviews/<id>.md` empile plusieurs revues, `ship-allowed` prend le `Reviewed tree:` de la dernière, celle qui porte le dernier `Ship allowed:`, et non le premier du fichier.
-- [ ] `verdict_lines_may_be_list_items` — une ligne `Reviewed tree:` ou `Ship allowed:` précédée d'une puce de liste (`- ` ou `* `) est lue comme la même ligne sans puce ; toute autre forme reste refusée.
-- [ ] `other_tree_lines_read_the_same_way` — les lignes `Tree:` du relevé et du rapport QA suivent la même règle de lecture que `Reviewed tree:`.
+- [ ] `verdict_lines_may_be_list_items` — une ligne `Reviewed tree:` ou `Ship allowed:` précédée d'une puce de liste (`- ` ou `* `) est lue comme la même ligne sans puce, et un texte séparé du hash par une espace après lui (une remarque entre parenthèses) ne l'empêche pas d'être lu ; toute autre forme reste refusée (indentation, autre puce, hash incomplet).
+- [ ] `other_tree_lines_read_the_same_way` — les lignes `Tree:` du relevé et du rapport QA suivent la même règle de lecture que `Reviewed tree:`, et `/po-ship` (contrôle sans hook) comme `bin/po-eval` décrivent ou lisent ces lignes de la même façon.
 
 **Notes pour l'agent** : `first_hash` sert aux trois gates (`po-gate.sh:34`) ; la revue de s78, sur la branche `story/s78-platform-setting`, montre les deux formes fautives. Une gate est un garde-fou : n'élargir la lecture qu'à ces puces-là.
