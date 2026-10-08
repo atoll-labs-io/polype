@@ -21,7 +21,7 @@
 2598334128 5909 .claude/agents/designer.md
 2294516841 5899 .claude/agents/implementer.md
 88454050 6522 .claude/agents/planner.md
-3290207871 5000 .claude/agents/qa.md
+324440817 5507 .claude/agents/qa.md
 2429299304 6300 .claude/agents/reviewer.md
 1590527754 2303 .claude/agents/stories-reviewer.md
 3262471946 5996 .claude/skills/agentic-stories/SKILL.md
@@ -32,10 +32,10 @@
 3649530943 6774 .claude/skills/interrogation/SKILL.md
 2323248751 1144 .claude/skills/qa-drivers/browser.md
 1185975541 2759 .claude/skills/qa-drivers/mobile-web.md
-4049857112 4176 .claude/skills/qa-drivers/scenarios.md
-3900528101 5335 .claude/skills/qa-drivers/scene.md
-4075212425 6383 .claude/skills/qa-drivers/simulation.md
-662276980 2731 .claude/skills/qa-drivers/SKILL.md
+1171685324 4622 .claude/skills/qa-drivers/scenarios.md
+297398171 5791 .claude/skills/qa-drivers/scene.md
+4225199151 7162 .claude/skills/qa-drivers/simulation.md
+3379038249 3064 .claude/skills/qa-drivers/SKILL.md
 1568792004 8375 .claude/skills/review-antihallu/SKILL.md
 1311165776 4774 .claude/skills/review-lenses/SKILL.md
 1992924500 5561 .claude/skills/stories-review/SKILL.md
@@ -47,8 +47,8 @@
 1271924568 923 .polype/templates/design-brief.md
 4167975288 1328 .polype/templates/design-screen.md
 3828095113 1449 .polype/templates/design-system.md
-4165273990 2180 .polype/templates/plan-flow.md
-143444701 1228 .polype/templates/plan.md
+3406621878 2264 .polype/templates/plan-flow.md
+2746139342 1312 .polype/templates/plan.md
 4291076552 1959 .polype/templates/prd.md
 1280284064 2968 .polype/templates/profile.md
 2153717428 1663 .polype/templates/qa.md
