@@ -1,5 +1,5 @@
 ---
-description: Hands one story's screens to the qa subagent, which walks them in a browser and reports with captures, then commits that evidence alone. This command cannot edit files; its shell serves that one commit.
+description: Hands one story's surface to the qa subagent, which checks it with the driver of that surface and reports with its evidence, then commits that evidence alone. This command cannot edit files; its shell serves that one commit.
 argument-hint: <story id or name>
 allowed-tools:
   - Read
@@ -14,7 +14,7 @@ Reads settings: `Worktree root`, `Dev`, `Model strong`
 
 Story: $ARGUMENTS
 
-This command has no Write or Edit tool. Bash serves exactly one use, the evidence commit below; any other shell command is out of bounds. The `qa` subagent walks the story's screens and writes its report; it fixes nothing, and neither does this command. Never describe a walk the subagent did not report.
+This command has no Write or Edit tool. Bash serves exactly one use, the evidence commit below; any other shell command is out of bounds. The `qa` subagent checks the story's surface with its driver and writes its report; it fixes nothing, and neither does this command. Never describe a walk the subagent did not report.
 
 No Agent tool available → say so and stop.
 
@@ -23,8 +23,8 @@ No Agent tool available → say so and stop.
 2. $ARGUMENTS matches exactly one id of `docs/stories.md`; otherwise list the ids and stop.
 3. The worktree is registered, checked as `/po-execute` checks it: `<shared>/worktrees/<id>/gitdir` contains `<repository root>/<Worktree root><id>/.git`, and `<shared>/worktrees/<id>/HEAD` contains `ref: refs/heads/story/<id>`, `<shared>` being `<repository root>/.git` or, when that is a file, the `<common>` its `gitdir:` line names. Any difference → point to `/po-research <id>` and stop.
 4. `docs/verif/<id>.md` missing in the worktree → there is no built code to walk yet: point to `/po-execute <id>` and stop.
-5. `Dev` is `—` → stop: the project has no command to start it; ask for `Dev` in `AGENTS.local.md`.
-6. The story shows no screen → stop and say so: there is nothing to walk.
+5. The story's surface is `screen` and `Dev` is `—` → stop: the project has no command to start it; ask for `Dev` in `AGENTS.local.md`.
+6. The story's surface is `—`, or it has no `Surface` line and its text shows no screen → stop and say so: there is nothing to check.
 7. `Model strong` missing → stop and name it.
 
 ## Delegation

@@ -80,7 +80,7 @@ Build:             —
 Dev:               —
 ```
 
-Agents run these exactly as written. `—` means the project has no such command, and no agent will make one up. `Test` has to accept paths to test files, so a single task's tests can run alone. `Dev` starts the development server, or whatever serves what a person looks at (the web render of a mobile app), and prints the address it serves; `—` when the project has nothing to serve. `/po-qa` needs it and stops on `—`.
+Agents run these exactly as written. `—` means the project has no such command, and no agent will make one up. `Test` has to accept paths to test files, so a single task's tests can run alone. `Dev` starts the development server, or whatever serves what a person looks at (the web render of a mobile app), and prints the address it serves; `—` when the project has nothing to serve. QA of a `screen` surface needs it; the other drivers start what they check themselves.
 
 ## Conventions
 

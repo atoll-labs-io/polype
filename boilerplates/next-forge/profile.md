@@ -13,6 +13,10 @@ Package version 6.0.2, commit dated 2026-05-28. A Bun and Turborepo monorepo of 
 
 - Platform: web
 
+## QA driver
+
+- QA driver: browser
+
 ## Commands
 
 ```
@@ -21,9 +25,10 @@ Test:              bun run test
 Typecheck:         —
 E2E:               —
 Build:             bun run build
+Dev:               bun run dev
 ```
 
-`Test` runs the tests of every workspace through Turbo and does **not** accept paths, unlike what the template asks: to run a single file, go into `apps/app/` or `apps/api/`, the only two workspaces with tests, and run `bunx vitest run <file>` there. `Typecheck` is `—` because neither the root `package.json` nor `turbo.json` defines a type-check task; each workspace carries its own `typecheck` script instead. There is no end-to-end tooling at all. Two other root scripts matter to a project: `bun run check` (Biome, driven by Ultracite) for lint and format, and `bun run migrate` for Prisma migrations in `packages/database/`.
+`Test` runs the tests of every workspace through Turbo and does **not** accept paths, unlike what the template asks: to run a single file, go into `apps/app/` or `apps/api/`, the only two workspaces with tests, and run `bunx vitest run <file>` there. `Typecheck` is `—` because neither the root `package.json` nor `turbo.json` defines a type-check task; each workspace carries its own `typecheck` script instead. There is no end-to-end tooling at all. `bun run dev` runs `turbo dev`, every app at once, the product (`apps/app/`) on port 3000. Two other root scripts matter to a project: `bun run check` (Biome, driven by Ultracite) for lint and format, and `bun run migrate` for Prisma migrations in `packages/database/`.
 
 ## Code map
 

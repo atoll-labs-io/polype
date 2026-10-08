@@ -16,7 +16,7 @@ profile_command_names() {
 test_profile_template_declares_every_section() {
   require_file "$PROFILE"
   local heading
-  for heading in "## Identity and licence" "## Platform" "## Commands" "## Code map" "## Ownership granularity" \
+  for heading in "## Identity and licence" "## Platform" "## QA driver" "## Commands" "## Code map" "## Ownership granularity" \
       "## Where each rule lives" "## Capabilities" "## UI inventory" "## Known traps"; do
     grep -qxF -- "$heading" "$PROFILE" || fail "profile template lacks the section: $heading"
   done
@@ -28,10 +28,10 @@ test_profile_commands_map_to_settings() {
   require_file "$PROFILE"
   local got
   got=$(profile_command_names | tr '\n' ' ')
-  [ "$got" = "Install Test Typecheck E2E Build " ] \
-    || fail "profile commands are '$got', expected exactly Install Test Typecheck E2E Build"
+  [ "$got" = "Install Test Typecheck E2E Build Dev " ] \
+    || fail "profile commands are '$got', expected exactly Install Test Typecheck E2E Build Dev"
   local name
-  for name in Install Test Typecheck E2E Build; do
+  for name in Install Test Typecheck E2E Build Dev; do
     template_settings | grep -qxF "$name" || fail "$name is not a setting of agents-local.md"
   done
 }

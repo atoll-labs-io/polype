@@ -43,12 +43,12 @@ test_qa_scope_comes_from_the_diff_and_the_criteria() {
 
 test_qa_stops_without_a_browser_or_a_dev_command() {
   require_file "$PO_QA"
-  contains "$PO_QA" '`Dev` is `—` → stop: the project has no command to start it'
+  contains "$PO_QA" 'The story'\''s surface is `screen` and `Dev` is `—` → stop: the project has no command to start it'
   contains "$PO_QA" 'This command never writes a report: when the agent stops, there is none.'
   lacks_tool "$PO_QA" Write
   lacks_tool "$PO_QA" Edit
   needs_tool "$PO_QA" Agent
-  contains "$QA_AGENT" 'No tool in your session can open a page and capture it → stop and report it'
+  contains "$QA_AGENT" 'The surface is `screen` and no tool in your session can open a page and capture it → stop and report it'
   contains "$QA_AGENT" 'write no report'
 }
 

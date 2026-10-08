@@ -1,6 +1,6 @@
 # Profile — <boilerplate name>
 
-A profile describes one boilerplate once, so that setup, architecture, planning and execution all read the same facts about it. It lives at `boilerplates/<name>/profile.md`. `bin/po-lint` checks it against this template: every `## ` heading below must be present, the command names must stay as they are, each capability must come from the list in `## Capabilities`, and the platforms of `## Platform` must be values of the `Platform` setting.
+A profile describes one boilerplate once, so that setup, architecture, planning and execution all read the same facts about it. It lives at `boilerplates/<name>/profile.md`. `bin/po-lint` checks it against this template: every `## ` heading below must be present, the command names must stay as they are, each capability must come from the list in `## Capabilities`, the platforms of `## Platform` must be values of the `Platform` setting, and the driver of `## QA driver` must name a file of the `qa-drivers` skill.
 
 ## Identity and licence
 
@@ -15,6 +15,12 @@ A profile describes one boilerplate once, so that setup, architecture, planning 
 
 One or more values of the `Platform` setting of `templates/agents-local.md`, separated by commas; `/po-setup` offers this profile only to a project that declares one of them.
 
+## QA driver
+
+- QA driver: browser
+
+The name of a driver file of the `qa-drivers` skill, without `.md`, or `—` when no driver applies to this boilerplate yet.
+
 ## Commands
 
 ```
@@ -23,9 +29,10 @@ Test:              —
 Typecheck:         —
 E2E:               —
 Build:             —
+Dev:               —
 ```
 
-These names are the ones of the `## Commands` block of `AGENTS.local.md`, and the values are copied there verbatim. `—` means the boilerplate has no such command. A `Test` command must accept paths to test files.
+These names are the ones of the `## Commands` block of `AGENTS.local.md`, and the values are copied there verbatim. `—` means the boilerplate has no such command. A `Test` command must accept paths to test files. `Dev` serves what a person looks at and prints the address it serves.
 
 ## Code map
 

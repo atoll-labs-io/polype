@@ -186,8 +186,9 @@ check_fail_closed() {
 # command names of its Commands fence and the capability names of its table all
 # come from the template, and each value of its `- Platform:` line is one of the
 # backticked lowercase words of the `| Platform |` row of the settings template
-# (ADR-0055), so no list is repeated here. The boilerplates/ folder sits beside
-# method/; without it there is nothing to check.
+# (ADR-0055), so no list is repeated here. The value of its `- QA driver:` line
+# is `—` or the name of a driver file of method/skills/qa-drivers/ (ADR-0057).
+# The boilerplates/ folder sits beside method/; without it there is nothing to check.
 
 PROFILE_TEMPLATE="$METHOD/templates/profile.md"
 BOILERPLATES="$METHOD/../boilerplates"
@@ -209,6 +210,14 @@ profile_platform_line() {
   ' "$1"
 }
 
+# `<line><TAB><value>` of the first `- QA driver:` line under `## QA driver`.
+profile_driver_line() {
+  awk '
+    /^## / {sec = ($0 == "## QA driver"); next}
+    sec && /^- QA driver:/ {v = $0; sub(/^- QA driver:[[:space:]]*/, "", v); sub(/[[:space:]]+$/, "", v); print NR "\t" v; exit}
+  ' "$1"
+}
+
 # `<line><TAB><name>` of each row of the `## Capabilities` table, header and separator excluded.
 profile_capabilities() {
   awk '
@@ -223,7 +232,7 @@ profile_capabilities() {
 }
 
 check_profiles() {
-  local sections commands capabilities platforms f rel heading line name cmdline platline value
+  local sections commands capabilities platforms f rel heading line name cmdline platline drvline value
   if [ ! -f "$PROFILE_TEMPLATE" ]; then
     report "templates/profile.md" 1 profile "the profile template is missing"
     return
@@ -268,6 +277,18 @@ check_profiles() {
           grep -qxF -- "$name" <<< "$platforms" \
             || report "$rel" "$line" profile "platform '$name' is not a value of the Platform setting"
         done < <(tr ',' '\n' <<< "$value")
+      fi
+    fi
+
+    drvline=$(grep -n -m1 -x '## QA driver' "$f" | cut -d: -f1)
+    if [ -n "$drvline" ]; then
+      line=""
+      IFS=$'\t' read -r line value < <(profile_driver_line "$f") || true
+      if [ -z "${line:-}" ]; then
+        report "$rel" "$drvline" profile "no '- QA driver:' line under '## QA driver'"
+      elif [ "$value" != "—" ] && { [ "$value" = SKILL ] || [[ "$value" == */* ]] \
+          || [ ! -f "$METHOD/skills/qa-drivers/$value.md" ]; }; then
+        report "$rel" "$line" profile "QA driver '$value' is not a file of qa-drivers"
       fi
     fi
 
