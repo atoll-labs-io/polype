@@ -788,16 +788,16 @@ Objectif : qu'une gate ne puisse plus être contournée par un commit tardif, un
 
 - **Complexité** : 3
 - **Dépend de** : s48, s49, s50, s51
-- **Owns** : `method/AGENTS.md`, `method/hooks/po-gate.sh`, `method/commands/po-qa.md`, `method/agents/reviewer.md`, `method/agents/implementer.md`, `method/skills/review-antihallu/`, `method/templates/review.md`, `tests/qa-gate.test.sh`
+- **Owns** : `method/AGENTS.md`, `method/hooks/po-gate.sh`, `method/commands/po-qa.md`, `method/agents/reviewer.md`, `method/agents/implementer.md`, `method/skills/review-antihallu/`, `method/templates/review.md`, `tests/qa.test.sh`, `tests/qa-gate.test.sh`
 
 **Critères d'acceptation**
 - [ ] `rules_list_qa_in_the_story_cycle` — la table du cycle de la Loi 1 place `/po-qa` entre Execute et Review pour une story avec écran quand `QA stage` vaut `screens`.
 - [ ] `po_gate_qa_current` — `po-gate qa-current <id>` passe seulement quand `docs/qa/<id>/` contient un rapport `QA status: complete` dont le `Tree:` correspond au code hors `docs/`.
-- [ ] `po_qa_commits_its_evidence` — `/po-qa` committe `docs/qa/<id>/` seul sur `story/<id>` une fois le rapport écrit, comme `/po-ship` committe la revue ; la Loi 6 cite ce commit à côté de celui de l'implementer.
-- [ ] `review_requires_a_current_qa_report` — pour une story avec écran, le reviewer lance `po-gate qa-current` à la première étape de `review-antihallu`, à côté de `verif-current` ; un échec bloque la revue, et un constat QA vérifié et non corrigé devient un finding.
+- [ ] `po_qa_commits_its_evidence` — `/po-qa` reçoit Bash pour un seul usage : committer `docs/qa/<id>/` seul sur `story/<id>` une fois le rapport écrit, comme `/po-ship` committe la revue ; il n'a toujours ni Write ni Edit, sa description ne dit plus qu'il ne lance pas de shell, et la Loi 6 cite ce commit à côté de celui de l'implementer.
+- [ ] `review_requires_a_current_qa_report` — pour une story avec écran, quand `QA stage` vaut `screens`, le reviewer lance `po-gate qa-current` à la première étape de `review-antihallu`, à côté de `verif-current` ; un échec bloque la revue, et un constat QA vérifié et non corrigé devient un finding. Le reviewer déclare `QA stage` dans sa ligne `Reads settings:`.
 - [ ] `implementer_hands_the_screen_to_qa` — la consigne de `implementer.md` d'ouvrir l'écran dans un navigateur renvoie désormais à l'étape QA quand `QA stage` vaut `screens`, et reste telle quelle sinon.
 
-**Notes pour l'agent** : `/po-review` n'a pas Bash (`tests/review.test.sh` le fige) : la gate tourne dans le reviewer, pas dans la commande. Une story sans écran ne voit aucune différence.
+**Notes pour l'agent** : `/po-review` n'a pas Bash (`tests/review.test.sh` le fige) : la gate tourne dans le reviewer, pas dans la commande. `tests/qa.test.sh` fige l'absence de Bash dans `/po-qa` : ce test change avec le texte, et vérifie désormais l'absence de Write et d'Edit. `docs/qa/<id>/` rejoint la liste des fichiers de preuve que le contrôle d'ownership de `review-antihallu` tient pour dans le périmètre, et celle du travail non committé que la Loi 4 admet. Un rapport `QA status: blocked` ne passe pas `qa-current`. Une story sans écran, ou un projet avec `QA stage: —`, ne voit aucune différence. Revu le 2026-10-08 : le premier planner a trouvé que le commit des preuves était impossible dans les `Owns` d'origine.
 
 ### s53-review-lenses — Des lentilles de revue selon les chemins touchés
 **En tant que** développeur **je veux** que la revue regarde la sécurité, les migrations, les dépendances et les performances quand le diff les touche **afin que** ces défauts soient cherchés sans multiplier les reviewers ni les verdicts.
