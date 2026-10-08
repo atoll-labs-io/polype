@@ -226,3 +226,79 @@ test_installation_doc_names_the_upgrade_path() {
   contains "$doc" "le hook fermé refuse toute écriture de l'implementer"
   contains "$doc" '`jq`'
 }
+
+# s61 — Owns read at the fork point, globs, unreadable entries refused.
+
+# Commits story $1 with Owns value $2 on main, then forks its worktree, so the fork point holds it.
+add_story() {
+  printf '\n### %s — Added\n- **Owns**: %s\n' "$1" "$2" >> "$SCRATCH/docs/stories.md"
+  git -C "$SCRATCH" commit -qam "add $1"
+  git -C "$SCRATCH" worktree add -q -b "story/$1" "$SCRATCH/.worktrees/$1"
+}
+
+test_owns_are_read_where_the_story_started() {
+  lane
+  local fork err origin other
+  fork="$(git -C "$SCRATCH" rev-parse --short main)"
+  sed -i.bak 's/`lib\/`/`lib\/`, `src\/`/' "$WT/docs/stories.md"
+  rm -f "$WT/docs/stories.md.bak"
+  git -C "$WT" commit -qam widen
+  expect "$(write_status Write "$WT/src/other.sh")" 2 "Owns widened by a commit of the story"
+  err="$(bounds_stderr "$(hook_input Write file_path "$WT/src/other.sh")")"
+  grep -qF "at $fork " <<< "$err" || fail "the refusal does not name the fork commit $fork: $err"
+  expect "$(write_status Write "$WT/src/app.sh")" 0 "Owns as committed at the fork point"
+
+  # A lane forked from origin/main while the local main lags behind it.
+  origin="$SCRATCH/origin.git"
+  other="$SCRATCH/other"
+  git clone -q --bare "$SCRATCH" "$origin"
+  git -C "$SCRATCH" remote add origin "$origin"
+  git -C "$SCRATCH" fetch -q origin
+  git -C "$SCRATCH" branch -q -u origin/main main
+  git clone -q "$origin" "$other"
+  git -C "$other" config user.email test@example.com
+  git -C "$other" config user.name test
+  printf '\n### s06-remote — Remote\n- **Owns**: `rem/`\n' >> "$other/docs/stories.md"
+  git -C "$other" commit -qam "add s06-remote"
+  git -C "$other" push -q origin main
+  git -C "$SCRATCH" fetch -q origin
+  git -C "$SCRATCH" worktree add -q -b story/s06-remote "$SCRATCH/.worktrees/s06-remote" origin/main
+  expect "$(write_status Write "$SCRATCH/.worktrees/s06-remote/rem/x")" 0 "lane forked from the upstream of main"
+
+  git -C "$SCRATCH" checkout -q --detach
+  expect "$(write_status Write "$WT/src/app.sh")" 2 "main worktree detached"
+}
+
+test_owns_accept_globs() {
+  lane
+  add_story s04-globs '`crates/*/Cargo.toml`, `crates/**/tests/`, `tools/**`, `cfg/*.sh`'
+  local g="$SCRATCH/.worktrees/s04-globs" p
+  for p in crates/core/Cargo.toml crates/a/b/tests/t.rs crates/tests/t.rs tools/a/b/c cfg/run.sh; do
+    expect "$(write_status Write "$g/$p")" 0 "$p"
+  done
+  for p in crates/a/b/Cargo.toml crates/core/src/lib.rs cfg/runXsh cfg/sub/run.sh; do
+    expect "$(write_status Write "$g/$p")" 2 "$p"
+  done
+}
+
+test_bounds_refuse_an_entry_they_cannot_read() {
+  lane
+  local n=10 owns bad wt err
+  while IFS='|' read -r owns bad; do
+    n=$((n + 1))
+    add_story "s$n-bad" "$owns"
+    wt="$SCRATCH/.worktrees/s$n-bad"
+    expect "$(write_status Write "$wt/src/app.sh")" 2 "Owns $owns"
+    err="$(bounds_stderr "$(hook_input Write file_path "$wt/src/app.sh")")"
+    grep -qF "cannot read: $bad" <<< "$err" || fail "the refusal does not name $bad: $err"
+    expect "$(write_status Write "$wt/docs/notes.md")" 0 "docs/ with Owns $owns"
+  done <<'CASES'
+`src/`, src/x.sh|src/x.sh
+`src/`, `/abs/x`|`/abs/x`
+`src/`, `../up/`|`../up/`
+`src/`, `a//b`|`a//b`
+`src/`, `a/**b`|`a/**b`
+`src/`, `src/[ab].sh`|`src/[ab].sh`
+`src/app.sh`, `src/x` and more|and more
+CASES
+}

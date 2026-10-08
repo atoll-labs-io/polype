@@ -69,3 +69,13 @@ test_stories_requires_an_approved_source_with_a_biting_test() {
   grep -qF -- '`status: interviewing`' <<< "$section" || fail "po-stories does not refuse a source still being written"
   grep -qF -- 'is refused like a missing one' <<< "$section" || fail "po-stories does not refuse an unapproved source like a missing one"
 }
+
+# s61 — the Owns entry syntax, stated where stories are written.
+test_owns_syntax_is_written_once() {
+  local clause='a file path, a folder ending in `/`, or a glob where `*` stays inside one path segment and `**` spans any number of segments'
+  local refused='any other text on the line is refused'
+  contains "$METHOD/templates/stories.md" "$clause"
+  contains "$METHOD/templates/stories.md" "$refused"
+  section_of "$SKILL" 'Owns and contracts first' | grep -qF -- "$clause" || fail "agentic-stories does not state the Owns syntax"
+  section_of "$SKILL" 'Owns and contracts first' | grep -qF -- "$refused" || fail "agentic-stories does not say other text is refused"
+}

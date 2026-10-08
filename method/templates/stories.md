@@ -9,7 +9,7 @@ Each story is a slice a user can actually use, described precisely enough that a
 
 - **Complexity**: <1–5>
 - **Depends on**: <ids, or none>
-- **Owns**: <paths this story is allowed to change; stories sharing a path never run at the same time>
+- **Owns**: <paths this story is allowed to change, each in backticks and separated by commas: a file path, a folder ending in `/`, or a glob where `*` stays inside one path segment and `**` spans any number of segments; any other text on the line is refused; stories sharing a path never run at the same time>
 
 ### Acceptance criteria
 - [ ] <an observable result, precise enough to turn into a test>
