@@ -1198,16 +1198,16 @@ Objectif : Polype pilote un projet mobile, une CLI, une API ou une bibliothèque
 - **Complexité** : 3
 - **Dépend de** : aucune
 - **Surface** : —
-- **Owns** : `method/templates/agents-local.md`, `method/commands/po-setup.md`, `method/templates/stories.md`, `method/skills/agentic-stories/`, `method/commands/po-stories.md`, `method/skills/stories-review/`, `method/templates/profile.md`, `bin/po-lint`, `boilerplates/next-forge/profile.md`, `AGENTS.local.md`, `tests/profile.test.sh`, `tests/next-forge-profile.test.sh`, `tests/setup-modes.test.sh`, `tests/stories-review.test.sh`, `tests/platform-setting.test.sh`
+- **Owns** : `method/templates/agents-local.md`, `method/commands/po-setup.md`, `method/templates/stories.md`, `method/skills/agentic-stories/`, `method/commands/po-stories.md`, `method/skills/stories-review/`, `method/agents/stories-reviewer.md`, `method/commands/po-stories-review.md`, `method/templates/profile.md`, `bin/po-lint`, `boilerplates/next-forge/profile.md`, `AGENTS.local.md`, `tests/profile.test.sh`, `tests/next-forge-profile.test.sh`, `tests/setup-modes.test.sh`, `tests/stories-review.test.sh`, `tests/platform-setting.test.sh`
 
 **Critères d'acceptation**
 - [ ] `platform_is_a_setting` — le gabarit `agents-local.md` déclare `Platform`, une liste parmi `web`, `mobile`, `cli`, `api`, `lib`, `xr`, `robot` ; `QA stage` accepte `screens`, `surfaces` ou `—` avec leur sens d'ADR-0054 ; `Dev` y est décrit comme la commande qui sert ce qu'on regarde (serveur de dev, rendu web d'une app mobile), `—` pour un projet qui n'a rien à servir.
 - [ ] `profiles_declare_their_platform` — le gabarit de profil a une section `## Platform`, `bin/po-lint` l'exige, et le profil next-forge déclare `web`.
 - [ ] `setup_asks_the_platform` — `/po-setup` demande la ou les plateformes en question de suite non numérotée (comme `QA stage`), n'offre que les profils de boilerplate de ces plateformes, et pose la question `QA stage` même quand `Dev` est `—` si une plateforme sans écran (`cli`, `api`, `lib`, `robot`) est déclarée.
-- [ ] `stories_declare_a_surface` — le gabarit de stories et `agentic-stories` font écrire une ligne `Surface` (`screen`, `command`, `endpoint`, `scene`, `behaviour` ou `—`) à chaque story, `/po-stories` la remplit d'après `Platform`, et `stories-review` signale une story sans `Surface` ou dont la surface ne va pas avec les plateformes du projet.
+- [ ] `stories_declare_a_surface` — le gabarit de stories et `agentic-stories` font écrire une ligne `Surface` (`screen`, `command`, `endpoint`, `scene`, `behaviour` ou `—`) à chaque story, `/po-stories` la remplit d'après `Platform`, et `stories-review` (qui lit alors `Platform`) signale en mineur une story sans `Surface`, qui garde l'ancienne règle, et en majeur une surface qui ne va pas avec les plateformes du projet.
 - [ ] `polype_declares_its_platform` — l'`AGENTS.local.md` de Polype déclare `Platform: cli` et `polype check .` ne signale aucun réglage manquant.
 
-**Notes pour l'agent** : `tests/setup-modes.test.sh` et `tests/qa.test.sh` figent cinq questions numérotées à l'étape 2 de `/po-setup` : `Platform` reste hors de cette numérotation. `bin/po-lint` lit les sections exigées dans le gabarit de profil lui-même ; vérifier qu'un profil sans écran peut y laisser `## Capabilities` presque vide.
+**Notes pour l'agent** : `tests/setup-modes.test.sh` et `tests/qa.test.sh` figent cinq questions numérotées à l'étape 2 de `/po-setup` : `Platform` reste hors de cette numérotation. `tests/qa.test.sh` fige aussi la phrase `` `Dev` starts the development server `` du gabarit : la garder mot pour mot. `bin/po-lint` lit les sections exigées dans le gabarit de profil lui-même ; vérifier qu'un profil sans écran peut y laisser `## Capabilities` presque vide.
 
 ### s79-qa-drivers — La QA vérifie une surface avec le pilote qui lui va
 **En tant que** développeur **je veux** que l'agent `qa` choisisse son pilote d'après la surface de la story et la plateforme du projet **afin qu'**une CLI, une scène ou un robot soient vérifiés avant la revue comme un écran l'est.
@@ -1215,16 +1215,16 @@ Objectif : Polype pilote un projet mobile, une CLI, une API ou une bibliothèque
 - **Complexité** : 4 — risque : le contrat de `qa` est figé par plusieurs tests et lu par `/po-drive` ; il doit s'ouvrir aux surfaces sans écran sans changer ce que vaut un rapport (`QA status:`, `Tree:`, preuves committées, `qa-current`).
 - **Dépend de** : s78
 - **Surface** : —
-- **Owns** : `method/agents/qa.md`, `method/commands/po-qa.md`, `method/templates/qa.md`, `method/skills/qa-drivers/SKILL.md`, `method/skills/qa-drivers/browser.md`, `method/templates/profile.md`, `bin/po-lint`, `boilerplates/next-forge/profile.md`, `tests/qa.test.sh`, `tests/profile.test.sh`, `tests/next-forge-profile.test.sh`, `tests/qa-drivers.test.sh`
+- **Owns** : `method/agents/qa.md`, `method/commands/po-qa.md`, `method/templates/qa.md`, `method/templates/agents-local.md`, `method/skills/qa-drivers/SKILL.md`, `method/skills/qa-drivers/browser.md`, `method/templates/profile.md`, `bin/po-lint`, `boilerplates/next-forge/profile.md`, `tests/qa.test.sh`, `tests/profile.test.sh`, `tests/next-forge-profile.test.sh`, `tests/qa-drivers.test.sh`
 
 **Critères d'acceptation**
 - [ ] `qa_picks_the_driver_of_the_surface` — `qa` précharge `qa-drivers`, dont le `SKILL.md` dit quel fichier de pilote vaut pour chaque surface et plateforme (table d'ADR-0054) ; un fichier de pilote absent arrête la QA avec `QA status: blocked` et la cause.
-- [ ] `qa_runs_without_a_screen` — pour une surface autre que `screen`, `/po-qa` et `qa` ne s'arrêtent plus sur `Dev` à `—`, sur « pas d'écran » ni sur l'absence d'outil de navigateur ; ils lisent les critères qu'un utilisateur constate, pas seulement ceux vus à l'écran, et le dossier de travail reste propre après la QA.
+- [ ] `qa_runs_without_a_screen` — pour une surface autre que `screen`, `/po-qa` et `qa` ne s'arrêtent plus sur `Dev` à `—`, sur « pas d'écran » ni sur l'absence d'outil de navigateur ; ils lisent les critères qu'un utilisateur constate, pas seulement ceux vus à l'écran, et le dossier de travail reste propre après la QA ; ce qu'un pilote produit hors de sa preuve va sous le répertoire temporaire, seule exception à « rien hors de `docs/qa/<id>/` », et la définition de `Dev` dans le gabarit de réglages ne dit plus que `/po-qa` s'arrête sur `—`.
 - [ ] `browser_driver_is_the_first_one` — `qa-drivers/browser.md` renvoie à la section de `design-doctrine` qui pilote déjà un navigateur, sans la recopier.
 - [ ] `qa_report_names_its_driver` — le gabarit de rapport QA porte le pilote utilisé et la forme de la preuve (captures, transcriptions, journaux), et sa section de ce qui n'a pas été vu nomme ce que seul un matériel réel, un simulateur iOS ou un casque montrerait.
 - [ ] `profiles_declare_their_driver` — le gabarit de profil a une section `## QA driver` et une commande `Dev` dans son bloc `## Commands` (celle qui sert ce qu'on regarde), `bin/po-lint` les exige, et le profil next-forge les remplit (navigateur, sa commande de dev).
 
-**Notes pour l'agent** : `tests/qa.test.sh` fige des phrases de `qa.md` et de `po-qa.md` sur `Dev` et sur l'écran ; ce test est dans les `Owns`, ses phrases changent avec la clause. Le mode `qa` de `po-bounds` limite les écritures à `docs/qa/<id>/` : un pilote qui produit des fichiers ailleurs (build, enregistrements) les écrit sous le répertoire temporaire.
+**Notes pour l'agent** : `tests/qa.test.sh` fige des phrases de `qa.md` et de `po-qa.md` sur `Dev` et sur l'écran ; ce test est dans les `Owns`, ses phrases changent avec la clause. Le mode `qa` de `po-bounds` limite les écritures à `docs/qa/<id>/` : un pilote qui produit des fichiers ailleurs (build, enregistrements) les écrit sous le répertoire temporaire. Un fichier de pilote se cherche dans le dossier de la skill telle qu'elle est chargée (pose globale ou projet), jamais à un chemin fixe.
 
 ### s80-surface-routing — La flotte route une story d'après sa surface
 **En tant que** développeur **je veux** que `/po-drive`, `/po-orchestrator`, `/po-flow`, `/po-status` et la revue lisent la ligne `Surface` **afin que** le design et la QA s'appliquent aux bonnes stories sans deviner depuis le texte.
@@ -1232,16 +1232,17 @@ Objectif : Polype pilote un projet mobile, une CLI, une API ou une bibliothèque
 - **Complexité** : 4 — risque : la phrase « story with a screen » est répétée dans une dizaine de fichiers et figée par plusieurs tests ; un oubli laisse deux règles de routage différentes.
 - **Dépend de** : s79
 - **Surface** : —
-- **Owns** : `method/commands/po-drive.md`, `method/commands/po-orchestrator.md`, `method/commands/po-flow.md`, `method/commands/po-status.md`, `method/commands/po-review.md`, `method/commands/po-help.md`, `method/skills/review-antihallu/`, `method/agents/reviewer.md`, `method/agents/implementer.md`, `method/templates/review.md`, `method/AGENTS.md`, `README.md`, `tests/qa-fleet.test.sh`, `tests/qa-gate.test.sh`, `tests/fleet-design.test.sh`, `tests/wiring.test.sh`, `tests/design-handoff.test.sh`, `tests/surface-routing.test.sh`
+- **Owns** : `method/commands/po-drive.md`, `method/commands/po-orchestrator.md`, `method/commands/po-flow.md`, `method/commands/po-status.md`, `method/commands/po-review.md`, `method/commands/po-help.md`, `method/skills/review-antihallu/`, `method/agents/reviewer.md`, `method/agents/implementer.md`, `method/templates/review.md`, `method/templates/plan.md`, `method/templates/plan-flow.md`, `method/AGENTS.md`, `README.md`, `tests/qa-fleet.test.sh`, `tests/qa-gate.test.sh`, `tests/fleet-design.test.sh`, `tests/wiring.test.sh`, `tests/design-handoff.test.sh`, `tests/surface-routing.test.sh`
 
 **Critères d'acceptation**
 - [ ] `design_follows_a_screen_surface` — le design s'applique à une story de surface `screen`, et à une story sans ligne `Surface` dont le texte montre un écran (ADR-0054).
 - [ ] `qa_follows_the_qa_stage` — sous `QA stage: screens`, seules les stories `screen` passent en QA ; sous `surfaces`, toute story dont la surface n'est pas `—` ; une story sans ligne `Surface` suit l'ancienne règle de l'écran ; la table de reprise de `/po-drive`, `/po-orchestrator` et `/po-status` disent la même chose.
 - [ ] `flow_escalates_a_surface_with_qa` — `/po-flow` passe en voie complète une story que le réglage `QA stage` fait passer en QA, comme il le fait déjà pour un nouvel écran.
 - [ ] `review_requires_qa_for_a_surface` — `review-antihallu` et le reviewer exigent `po-gate qa-current` pour toute story que `QA stage` fait passer en QA ; une story `scene` est jugée contre les points de vue de son plan, pas contre le système de design ; ce que le rapport QA n'a pas pu voir passe dans « Not verified » de la revue.
+- [ ] `plan_names_scene_viewpoints` — les gabarits de plan, complet et court, ont une section, remplie seulement pour une story `scene`, qui nomme les points de vue à capturer et ce que chacun doit montrer (cadrage, échelle, lumière).
 - [ ] `rules_speak_of_surfaces` — `method/AGENTS.md`, le gabarit de revue, l'implementer, `/po-help` et le `README` parlent de surface là où ils parlaient d'écran pour la QA.
 
-**Notes pour l'agent** : `tests/qa-gate.test.sh` fige des phrases du gabarit de revue, de l'implementer et de la ligne `/po-qa` de `method/AGENTS.md` ; `tests/qa-fleet.test.sh` fige `/po-help` et le `README`. Tous sont dans les `Owns`.
+**Notes pour l'agent** : `tests/qa-gate.test.sh` fige des phrases du gabarit de revue, de l'implementer et de la ligne `/po-qa` de `method/AGENTS.md` ; `tests/qa-fleet.test.sh` fige `/po-help` et le `README`. Tous sont dans les `Owns`. `tests/plan.test.sh`, `tests/planner.test.sh` et `tests/flow.test.sh` lisent les gabarits de plan : n'y changer aucune section existante.
 
 ### s81-scenario-driver — Le pilote par scénarios pour une CLI, une API ou une bibliothèque
 **En tant que** développeur **je veux** que la QA d'une story `command` ou `endpoint` lance de vrais scénarios et garde leurs transcriptions **afin qu'**une CLI ou une API soient regardées comme un utilisateur les utiliserait, et pas seulement par leurs tests.
@@ -1256,6 +1257,8 @@ Objectif : Polype pilote un projet mobile, une CLI, une API ou une bibliothèque
 - [ ] `scenarios_cover_failure_paths` — le pilote couvre une entrée invalide et le message d'erreur qu'un utilisateur lit, pas seulement le chemin nominal.
 - [ ] `scenarios_start_the_service_itself` — pour une API, le pilote dit comment démarrer le service sur un port libre de la machine, l'interroger, puis l'arrêter, et ne touche à aucun service partagé.
 - [ ] `scenarios_leave_the_tree_clean` — ce qu'un scénario produit hors de sa transcription (build, fichiers de sortie) va sous le répertoire temporaire, et le worktree est propre à la fin.
+
+**Notes pour l'agent** : en mode `qa`, `po-bounds` ne laisse passer que les verbes git qui lisent, répertoire temporaire compris ; un scénario qui aurait besoin d'un dépôt git de test ne peut pas le construire, et le pilote le dit.
 
 ### s82-mobile-web-driver — Le mobile vérifié par son rendu web d'abord
 **En tant que** développeur **je veux** que la QA d'un écran mobile passe par le rendu web de la pile dans le navigateur, en largeur de téléphone **afin que** clout soit vérifiable dès maintenant sans émulateur.
@@ -1320,20 +1323,17 @@ Objectif : Polype pilote un projet mobile, une CLI, une API ou une bibliothèque
 - [ ] `cli_api_profiles_pass_the_lint` — `boilerplates/rust-cli/profile.md` et `boilerplates/hono-api/profile.md` suivent le gabarit, écrits chacun depuis un gabarit de départ public et sous licence libre à un commit nommé, et `bin/po-lint` les accepte.
 - [ ] `cli_api_profiles_use_scenarios` — leurs plateformes sont `cli` et `api`, leur pilote `scenarios`, et chacun dit comment lancer le binaire ou le service pour un scénario.
 
-### s87-godot-scene-driver — La 3D et l'XR : profil Godot, points de vue du plan et captures de scène
-**En tant que** développeur **je veux** un profil Godot, un plan qui nomme les points de vue d'une scène et un pilote qui les capture sans fenêtre **afin qu'**une story `scene` arrive en revue avec des captures regardées.
+### s87-godot-scene-driver — La 3D et l'XR : profil Godot et captures de scène
+**En tant que** développeur **je veux** un profil Godot et un pilote qui capture sans fenêtre les points de vue que le plan nomme **afin qu'**une story `scene` arrive en revue avec des captures regardées.
 
 - **Complexité** : 3
-- **Dépend de** : s79
+- **Dépend de** : s80
 - **Surface** : —
-- **Owns** : `boilerplates/godot/`, `method/skills/qa-drivers/scene.md`, `method/templates/plan.md`, `tests/godot-scene-driver.test.sh`
+- **Owns** : `boilerplates/godot/`, `method/skills/qa-drivers/scene.md`, `tests/godot-scene-driver.test.sh`
 
 **Critères d'acceptation**
-- [ ] `plan_names_scene_viewpoints` — le gabarit de plan a une section, remplie seulement pour une story `scene`, qui nomme les points de vue à capturer et ce que chacun doit montrer (cadrage, échelle, lumière).
 - [ ] `godot_profile_passes_the_lint` — `boilerplates/godot/profile.md` suit le gabarit, écrit depuis un gabarit de départ public et sous licence libre à un commit nommé, plateforme `xr`, pilote `scene`, et `bin/po-lint` l'accepte.
 - [ ] `scene_driver_captures_without_a_window` — `qa-drivers/scene.md` fait rendre la scène sans fenêtre (ou dans un navigateur pour WebXR), capturer chaque point de vue du plan, et dit ce que seul un casque montrerait (confort, échelle, suivi des mains) comme non vu.
-
-**Notes pour l'agent** : `tests/plan.test.sh`, `tests/planner.test.sh` et `tests/flow.test.sh` lisent le gabarit de plan ; ne changer aucune section existante.
 
 ### s88-ros-simulation-driver — La robotique : profil ROS 2 et simulation
 **En tant que** développeur **je veux** un profil ROS 2 avec Gazebo et un pilote qui vérifie un comportement en simulation **afin qu'**une story `behaviour` arrive en revue avec des journaux et des enregistrements de topics.
@@ -1366,12 +1366,12 @@ Objectif : Polype pilote un projet mobile, une CLI, une API ou une bibliothèque
 - **Complexité** : 2
 - **Dépend de** : s80
 - **Surface** : —
-- **Owns** : `method/skills/diagnostic/`, `method/agents/planner.md`, `method/commands/po-flow.md`, `tests/diagnostic-skill.test.sh`
+- **Owns** : `method/skills/diagnostic/`, `method/agents/planner.md`, `method/commands/po-flow.md`, `method/templates/plan-flow.md`, `method/templates/stories.md`, `method/skills/agentic-stories/`, `tests/diagnostic-skill.test.sh`
 
 **Critères d'acceptation**
 - [ ] `no_fix_without_a_root_cause` — la skill `diagnostic` demande de reproduire le défaut, d'écrire la cause racine avec la preuve qui la montre, puis seulement de planifier le correctif et le test qui l'aurait attrapé.
 - [ ] `stop_after_three_failed_hypotheses` — après trois hypothèses écartées, la recherche s'arrête et le dit, au lieu de proposer un correctif au hasard.
-- [ ] `defect_stories_get_the_diagnostic` — une story qui corrige un défaut se reconnaît à sa ligne `Corrige` ; le planner précharge `diagnostic` et l'applique à une telle story, et `/po-flow` la passe en voie complète pour qu'un planner la prenne.
+- [ ] `defect_stories_get_the_diagnostic` — une story qui corrige un défaut se reconnaît à sa ligne `Corrige`, que le gabarit de stories et `agentic-stories` définissent ; le planner précharge `diagnostic` et l'applique à une telle story, et `/po-flow` comme le planner la passent en voie complète ; les textes qui comptaient « cinq signaux » (`/po-flow`, le planner, le gabarit de plan court) donnent la liste à jour.
 
 ### s91-accessibility — L'accessibilité au-delà du contraste
 **En tant que** développeur **je veux** que la doctrine de design et la QA vérifient le focus, les étiquettes, les textes alternatifs et les erreurs **afin qu'**un écran soit utilisable au clavier et avec un lecteur d'écran.
