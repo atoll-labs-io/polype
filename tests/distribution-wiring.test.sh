@@ -131,7 +131,33 @@ test_parity_matrix_reflects_the_distribution() {
   grep -qF 'partiel' <<< "$(status_of H03)" || fail 'H03 must stay partial: the Codex emission is deferred'
   grep -qF 'method/' <<< "$(status_of H03)" || fail 'H03 does not name the single source'
   grep -qF 'ADR-0005' <<< "$(status_of H03)" || fail 'H03 does not say what defers the Codex emission'
-  grep -qF 'partiel' <<< "$(status_of H04)" || fail 'H04 must stay partial: the per-story model setting is missing'
-  grep -qF 'method/agents/' <<< "$(status_of H04)" || fail 'H04 does not name where the models are pinned'
-  grep -qF 'par story' <<< "$(status_of H04)" || fail 'H04 does not say what is still missing'
+}
+
+# The Polype cell (fourth column) of the matrix row whose id is $1.
+polype_of() { awk -F'|' -v id=" $1 " '$2 == id {print $5; exit}' "$MATRIX"; }
+
+test_readme_describes_the_pre_commit() {
+  require_file "$README"
+
+  contains "$README" 'refuse, sur toutes les branches'
+  contains "$README" "fichier d'environnement, clé privée ou jeton connu"
+  contains "$README" "un commit de code dont le plan n'est pas validé"
+  contains "$METHOD/hooks/po-gate.sh" 'on every branch'
+  ! grep -qF "Un hook de pre-commit refuse un commit de code" "$README" || fail 'README still states the narrow pre-commit rule'
+}
+
+test_parity_h04_matches_the_model_rule() {
+  require_file "$MATRIX"
+
+  local cell status
+  cell=$(polype_of H04)
+  status=$(status_of H04)
+  grep -qF '`Model strong`' <<< "$cell" || fail 'H04 does not name Model strong'
+  grep -qF '`Model light`' <<< "$cell" || fail 'H04 does not name Model light'
+  grep -qF 'complexité' <<< "$cell" || fail 'H04 does not tie the model to complexity'
+  grep -qF 'ADR-0032' <<< "$cell" || fail 'H04 does not cite ADR-0032'
+  ! grep -qF 'Identique' <<< "$cell" || fail 'H04 still says the models are identical'
+  grep -qF 'fait' <<< "$status" || fail "H04 is not done: $status"
+  grep -qF 'method/commands/po-execute.md' <<< "$status" || fail 'H04 does not name where the rule lives'
+  ! grep -qF 'partiel' <<< "$status" || fail "H04 is still partial: $status"
 }

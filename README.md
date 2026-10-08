@@ -32,7 +32,7 @@ Une story traverse ces étapes, aucune sautée, aucune inversée :
 | Revue | `/po-review` | une relecture en contexte frais, avec un verdict |
 | Ship | `/po-ship` | un squash sur la branche cible |
 
-Trois gates mécaniques bornent la traversée : pas de code sans plan marqué validé, pas de revue qui s'appuie sur un relevé de vérification périmé, pas de ship sans verdict explicite. Un hook de pre-commit refuse un commit de code sur une branche de story dont le plan n'est pas validé. Seul un défaut critique bloque le ship ; un majeur est tracé et repris plus tard.
+Trois gates mécaniques bornent la traversée : pas de code sans plan marqué validé, pas de revue qui s'appuie sur un relevé de vérification périmé, pas de ship sans verdict explicite. Un hook de pre-commit refuse, sur toutes les branches, un commit qui ajoute un secret — fichier d'environnement, clé privée ou jeton connu — et, sur une branche de story, un commit de code dont le plan n'est pas validé. Seul un défaut critique bloque le ship ; un majeur est tracé et repris plus tard.
 
 `/po-flow` fait recherche et plan en une passe pour une petite story, `/po-orchestrator` enchaîne le cycle complet, `/po-status` dit où en est chaque story. `/po-orchestrator` et la flotte lancent eux-mêmes la QA d'une story avec écran ; une revue bloquée par la QA repart vers `/po-qa` sans consommer de fix run.
 
