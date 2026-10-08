@@ -901,7 +901,7 @@ Objectif : qu'une gate ne puisse plus être contournée par un commit tardif, un
 
 - **Complexité** : 3 — risque : la valeur `model` passée à l'outil Agent ; un nom que l'outil refuse fait échouer la lane, donc la commande doit dire quoi faire d'un refus.
 - **Dépend de** : s56, s57
-- **Owns** : `method/agents/implementer.md`, `method/templates/agents-local.md`, `method/commands/po-drive.md`, `method/commands/po-orchestrator.md`, `method/commands/po-flow.md`, `method/commands/po-execute.md`, `method/commands/po-review.md`, `method/commands/po-qa.md`, `method/commands/po-stories-review.md`, `method/commands/po-setup.md`, `tests/model-routing.test.sh`
+- **Owns** : `method/agents/implementer.md`, `method/templates/agents-local.md`, `method/commands/po-drive.md`, `method/commands/po-orchestrator.md`, `method/commands/po-flow.md`, `method/commands/po-execute.md`, `method/commands/po-review.md`, `method/commands/po-qa.md`, `method/commands/po-stories-review.md`, `method/commands/po-setup.md`, `tests/execute.test.sh`, `tests/model-routing.test.sh`
 - **Décision** : ADR-0032
 
 **Critères d'acceptation**
