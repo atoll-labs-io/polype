@@ -1,11 +1,11 @@
 ---
 adr: 0039
 title: po-bounds lit une commande Bash avec un lexer awk qui écarte les textes cités et les corps de heredoc
-status: accepted
+status: superseded
 date: 2026-10-08
 scope: story s62-bounds-scan
 supersedes: []
-superseded-by: []
+superseded-by: [ADR-0050]
 ---
 
 # ADR-0039 — po-bounds lit une commande Bash avec un lexer awk qui écarte les textes cités et les corps de heredoc

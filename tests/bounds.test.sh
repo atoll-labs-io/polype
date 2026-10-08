@@ -466,3 +466,39 @@ test_reviewer_bounds_fail_closed() {
   expect "$(TMPDIR=/ rev_status Write file_path "$TMPROOT/x")" 2 "TMPDIR is /"
   expect "$(TMPDIR="$TMPROOT/missing" rev_status Write file_path "$TMPROOT/x")" 2 "TMPDIR does not exist"
 }
+
+# s71 — a heredoc read as bash will read it; a quoted git past a wrapper's option (ADR-0050).
+
+test_unquoted_heredoc_is_expanded_before_reading() {
+  lane
+  expect "$(bash_status $'bash <<EOF\necho \\`git push\\`\nEOF')" 2 "escaped backquotes in a body bash reads"
+  expect "$(bash_status $'sh -s <<EOF\nx=\\$(git stash)\nEOF')" 2 "an escaped substitution in a body sh reads"
+  expect "$(bash_status $'bash <<EOF\necho \'$(git push)\'\nEOF')" 2 "a substitution the outer bash runs"
+  expect "$(bash_status $'bash <<EOF\necho \\\\\\`git push\\\\\\`\nEOF')" 0 "doubly escaped backquotes stay text"
+  expect "$(bash_status $'bash <<\'EOF\'\necho \\`git push\\`\nEOF')" 0 "a quoted body is read as typed"
+  expect "$(bash_status "cat > $WT/docs/x.md <<EOF"$'\nsee \\`git push\\`\nEOF')" 0 "plain text in an unquoted heredoc"
+}
+
+test_quoted_git_after_a_wrapper_option_is_caught() {
+  lane
+  local c
+  for c in 'env -u X "git" push' 'sudo -u x "git" push' "nice -n 5 'git' push" 'sudo -u x "bash" -c "git push"'; do
+    expect "$(bash_status "$c")" 2 "$c"
+  done
+  for c in 'sudo -u x grep "git" docs' 'env -u X grep -n "git" docs'; do
+    expect "$(qa_status Bash command "$c")" 0 "qa: $c"
+  done
+}
+
+test_accepted_gaps_are_written_in_an_adr() {
+  local adr="$ROOT/docs/decisions/ADR-0050-po-bounds-lit-un-heredoc-comme-bash-le-lira.md"
+  local old="$ROOT/docs/decisions/ADR-0039-po-bounds-lit-les-commandes-hors-guillemets-et-heredocs.md"
+  local p
+  require_file "$adr"
+  for p in 'supersedes: [ADR-0039]' '**Lecture des heredocs**' '**Refus du pipe vers un shell**' \
+           '**Interprètes reconnus**' 'un script écrit puis lancé' '`bash <(…)`' 'un alias git' '`GIT_DIR=…`'; do
+    contains "$adr" "$p"
+  done
+  contains "$old" 'superseded-by: [ADR-0050]'
+  contains "$old" 'status: superseded'
+}

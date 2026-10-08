@@ -27,11 +27,13 @@
 #                              word starting with GIT_DIR= or GIT_WORK_TREE= are refused, and so is
 #                              git outside both zones.
 #
-# Bash commands are read the way bash splits them (ADR-0039): text inside quotes or in a
+# Bash commands are read the way bash splits them (ADR-0050): text inside quotes or in a
 # here-document body is never taken for a git call, but the substitutions bash would run there are,
-# and so are a quoted command word (env "git"), the quoted arguments of sh -c, eval or watch, and a
-# here-document a shell reads. A shell fed by a pipe or handed a substitution, nested backquotes and
-# any command the lexer cannot read are refused.
+# and so are a quoted command word (env "git", even past a wrapper's option: env -u X "git"), the
+# quoted arguments of sh -c, eval or watch, and a here-document a shell reads. An unquoted one is
+# rendered as bash renders it (\$, \`, \\) before that reading, and its outer substitutions are
+# read too. A shell fed by a pipe or handed a substitution, nested backquotes and any command the
+# lexer cannot read are refused.
 #
 # Exit 0 allows the call, exit 2 refuses it with the reason on stderr. Claude Code lets any other
 # code through, so every failure ends in a refusal. Reads no setting; needs jq (ADR-0024).
@@ -287,7 +289,7 @@ QA_GIT_VERBS=" status diff log show rev-parse ls-files ls-tree cat-file merge-ba
 
 # Prints the simple commands of the Bash command read on stdin, one per line, words separated by
 # \037, each word prefixed with u (no quoted part) or q (some part quoted); a line !<reason> means
-# the command cannot be read (ADR-0039). POSIX awk only: BWK awk and mawk must run it too.
+# the command cannot be read (ADR-0050). POSIX awk only: BWK awk and mawk must run it too.
 lex_command() {
   awk '
     function fail(r) { if (!failed) print "!" r; failed = 1 }
@@ -306,14 +308,24 @@ lex_command() {
       nw[f]++; W[f, nw[f]] = wv[f]; Q[f, nw[f]] = wq[f]; S[f, nw[f]] = ws[f]
       wv[f] = ""; wq[f] = 0; ws[f] = 0; inw[f] = 0
     }
-    # The word that names the command, past assignments, options, counts and wrappers (env, time…).
-    function cmdpos(f,   k, v, b) {
+    # Fills CP with the positions that may name the command, past assignments, options, counts and
+    # wrappers (env, time…), and returns the first. The word after an option of a wrapper may be
+    # the value of that option or the command: both readings count (ADR-0050).
+    function cmdpos(f,   k, v, b, wr, po, first) {
+      split("", CP); wr = 0; po = 0; first = 0
       for (k = 1; k <= nw[f]; k++) {
         v = W[f, k]; b = v; sub(/.*\//, "", b)
-        if (v ~ /^[A-Za-z_][A-Za-z0-9_]*=/ || v ~ /^-/ || v ~ /^[0-9][0-9.]*[smhd]?$/ || (b in WRAP)) continue
-        return k
+        if (v ~ /^[A-Za-z_][A-Za-z0-9_]*=/) { po = 0; continue }
+        if (v ~ /^-/ || v ~ /^[0-9][0-9.]*[smhd]?$/ || (b in WRAP)) {
+          if (b in WRAP) wr = 1
+          po = wr && v ~ /^-/ && v !~ /=/
+          continue
+        }
+        CP[k] = 1; if (!first) first = k
+        if (po) { po = 0; continue }
+        return first
       }
-      return 0
+      return first
     }
     # Words are typed c (the command word), q (some part quoted) or u. An interpreter (sh -c, eval,
     # watch) gets its quoted words read as commands; a shell gets its here-documents read as commands,
@@ -325,10 +337,10 @@ lex_command() {
         cp = cmdpos(f); line = ""; ip = 0; si = 0; hc = 0; sb = 0
         for (k = 1; k <= nw[f]; k++) {
           v = W[f, k]; gsub(/\n/, " ", v)
-          line = line (k > 1 ? US : "") (k == cp ? "c" : Q[f, k] ? "q" : "u") v
+          line = line (k > 1 ? US : "") ((k in CP) ? "c" : Q[f, k] ? "q" : "u") v
           b = W[f, k]; sub(/.*\//, "", b)
-          if ((!Q[f, k] || k == cp) && (b in INTERP)) ip = 1
-          if (k == cp && (b in SHELLS)) si = 1
+          if ((!Q[f, k] || (k in CP)) && (b in INTERP)) ip = 1
+          if ((k in CP) && (b in SHELLS)) si = 1
           if (si && k > cp && W[f, k] ~ /^-[A-Za-z]*c[A-Za-z]*$/) hc = 1
           if (S[f, k]) sb = 1
         }
@@ -373,7 +385,8 @@ lex_command() {
     }
     # At the start of a line, skips the queued here-document bodies. An unquoted delimiter hands
     # its body to an hd frame, which reads only the substitutions bash would run.
-    # A body a shell reads on its stdin is queued whole, to be read as commands.
+    # A body a shell reads on its stdin is queued, rendered as bash renders it when the delimiter is
+    # unquoted, to be read as commands; an unquoted one also goes through the hd frame.
     function heredocs(   k, m, ln, body) {
       while (qh <= qn) {
         if (!(i in lineat)) { fail("a here-document after a broken line"); return }
@@ -385,13 +398,22 @@ lex_command() {
           body = body ln "\n"
         }
         if (m > nlines) { fail("unterminated here-document (no " qd[qh] " line)"); return }
-        if (qi[qh]) work[++wn] = body
+        if (qi[qh]) work[++wn] = qq[qh] ? body : unesc(body)
         qh++
-        if (qi[qh - 1] || qq[qh - 1] || m == k) { i = LS[m + 1]; continue }
+        if (qq[qh - 1] || m == k) { i = LS[m + 1]; continue }
         push("hd"); hdon = 1; hdend = LS[m]; hdnext = LS[m + 1]
         return
       }
       qh = 1; qn = 0
+    }
+    # Renders an unquoted here-document body as bash does: \newline vanishes, \\, \$ and \` lose
+    # their backslash. \\ goes first, through US, and is rejoined by split: backslashes in a gsub
+    # replacement differ between awks.
+    function unesc(b,   P, np, x, r) {
+      gsub(/\\\\/, US, b); gsub(/\\\n/, "", b); gsub(/\\\$/, "$", b); gsub(/\\`/, "`", b)
+      np = split(b, P, US); r = P[1]
+      for (x = 2; x <= np; x++) r = r "\\" P[x]
+      return r
     }
     function lex(str,   c, c2, c3, T, j, k, p, nl) {
       s = str; gsub(US, " ", s)
