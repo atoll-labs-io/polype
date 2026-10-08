@@ -6,7 +6,7 @@ date: 2026-10-08
 tags: [adr, polype, review, hooks, bounds]
 scope: story s76-bounds-guard-against-mistakes
 supersedes: [ADR-0047, ADR-0051]
-superseded-by: []
+superseded-by: [ADR-0053]
 ---
 
 # ADR-0052 — po-bounds est un garde-fou contre les erreurs, pas une barrière

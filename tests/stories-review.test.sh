@@ -31,7 +31,7 @@ test_stories_review_checks_coverage_first() {
 
 test_stories_review_checks_owns_overlap() {
   require_file "$SKILL"
-  contains "$SKILL" 'Two stories with no dependency between them that share an `Owns` path are flagged as critical: run side by side, they would edit the same files.'
+  contains "$SKILL" 'Two stories with no dependency between them whose `Owns` entries overlap are flagged as critical: run side by side, they would edit the same files.'
   section_of "$TEMPLATE" 'Checks' | grep -qF 'Owns' || fail "the template checks do not mention Owns"
 }
 

@@ -610,6 +610,25 @@ test_redirections_are_not_git_paths() {
   done
 }
 
+test_refusal_messages_are_readable() {
+  reviewer_lane
+  local c err adr53 adr52
+  for c in "git -C $TMPROOT/probe log > >(cat)" "git -C $TMPROOT/probe log > \$(echo x)/y"; do
+    expect "$(rev_bash "$c")" 2 "$c"
+    err="$(printf '%s' "$(hook_input Bash command "$c")" | bash "$BOUNDS" reviewer 2>&1 >/dev/null || true)"
+    case "$err" in *$'\036'*) fail "the refusal still holds a raw separator: $c" ;; esac
+    grep -qF 'redirects to <substitution>' <<< "$err" || fail "no readable placeholder in the refusal of: $c"
+  done
+  expect "$(rev_bash "git -C $TMPROOT/probe log >/dev/fd/1")" 0 "log >/dev/fd/1"
+  expect "$(rev_bash "git -C $TMPROOT/probe log 2>/dev/fd/2")" 0 "log 2>/dev/fd/2"
+  expect "$(rev_bash "git -C $TMPROOT/probe log >/dev/fd/3")" 2 "log >/dev/fd/3"
+  adr53="$(ls "$ROOT"/docs/decisions/ADR-0053-*.md)"
+  adr52="$(ls "$ROOT"/docs/decisions/ADR-0052-*.md)"
+  frontmatter "$adr53" | grep -E '^supersedes:' | grep -qF 'ADR-0052' || fail "ADR-0053 does not supersede ADR-0052"
+  frontmatter "$adr52" | grep -E '^superseded-by:' | grep -qF 'ADR-0053' || fail "ADR-0052 does not name ADR-0053"
+  frontmatter "$adr52" | grep -qx 'status: accepted' || fail "ADR-0052 is no longer accepted"
+}
+
 test_bounds_threat_model_is_written() {
   local adr fm f p
   adr="$(ls "$ROOT"/docs/decisions/ADR-0052-*.md)"
