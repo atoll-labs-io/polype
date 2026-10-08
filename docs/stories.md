@@ -913,3 +913,133 @@ Objectif : qu'une gate ne puisse plus être contournée par un commit tardif, un
 - [ ] `setup_offers_the_defaults` — `/po-setup` propose `Model strong: opus`, `Model light: sonnet`, `Light up to: 2`, sans ajouter de question numérotée (`tests/setup-modes.test.sh` fige les cinq questions).
 
 **Notes pour l'agent** : la règle vient de l'utilisateur, le 2026-10-08 : la prise de décision et le plan se font toujours sur un modèle fort, et le niveau ne s'adapte qu'à l'exécution. La complexité lue est celle que la recherche a re-notée quand elle existe, sinon celle de `docs/stories.md`. Un refus du modèle par l'outil Agent arrête la lane et le dit ; on ne retombe jamais en silence sur un autre modèle. Polype lui-même règle `Model strong: opus`, `Model light: sonnet`, `Light up to: 2` dans son `AGENTS.local.md` une fois la story livrée, à la main.
+
+## M7 — Durcissement
+
+Objectif : fermer les faiblesses que les revues de M6, s58 et s59 ont laissées en majeur, et les mineurs qui reviennent d'une revue à l'autre. Chaque story cite le rapport d'où vient le constat. Validé par l'utilisateur le 2026-10-08.
+
+### s60-gate-parsing — Les gates qui ne laissent plus passer un cas mal formé
+**En tant que** développeur **je veux** que `po-gate` refuse ce qu'il ne sait pas lire et voie ce qu'il ratait **afin qu'**une gate ne s'ouvre jamais par défaut de lecture.
+
+- **Complexité** : 3
+- **Dépend de** : aucune
+- **Owns** : `method/hooks/po-gate.sh`, `tests/floor-guard.test.sh`, `tests/gate.test.sh`, `tests/run-ledger.test.sh`, `tests/qa-gate.test.sh`
+- **Corrige** : majeurs de `docs/reviews/s48-floor-guard.md` (×2), `s49-secret-scan.md`, `s56-evidence-runner.md` (M1), mineur m2 de `s52-qa-wiring.md`
+
+**Critères d'acceptation**
+- [ ] `floor_guard_flags_a_test_renamed_out_of_the_test_tree` — un fichier de test renommé vers un chemin qui n'est plus un test (hors arborescence de tests, ou suffixe que le lanceur ignore) est signalé comme un test supprimé.
+- [ ] `floor_guard_says_2_on_an_unreadable_diff` — un diff que le garde ne sait pas lire donne la sortie 2 ; un test neutralise cette règle et échoue.
+- [ ] `secret_scan_finds_a_pem_key_after_an_escaped_newline` — une clé PEM qui suit un `\n` littéral dans une chaîne d'une ligne est refusée.
+- [ ] `verif_current_refuses_a_malformed_checks_row` — une ligne de `## Checks` qui n'a pas ses trois cellules, ou dont le libellé ressemble à un séparateur, fait refuser le relevé en nommant la ligne.
+- [ ] `qa_current_requires_a_committed_report` — `po-gate qa-current` refuse un rapport QA à jour mais non committé.
+
+**Notes pour l'agent** : chaque constat est décrit, avec sa reproduction, dans le rapport de revue cité. La ligne PEM est un cas particulier de la règle de frontière gauche : l'exception porte sur la ligne `private-key` seule.
+
+### s61-bounds-owns — Des `Owns` qui ne s'élargissent pas et qui acceptent des globs
+**En tant que** développeur **je veux** que les bornes d'une story soient lues là où la story a commencé, et que leur syntaxe soit définie **afin que** l'implementer ne puisse pas élargir ses propres bornes, et qu'un projet réel puisse écrire ses `Owns` sans être bloqué.
+
+- **Complexité** : 3
+- **Dépend de** : aucune
+- **Owns** : `method/hooks/po-bounds.sh`, `tests/bounds.test.sh`, `method/templates/stories.md`, `method/skills/agentic-stories/`, `tests/stories.test.sh`
+- **Corrige** : majeurs de `docs/reviews/s50-implementer-bounds.md` (×2)
+
+**Critères d'acceptation**
+- [ ] `owns_are_read_where_the_story_started` — `po-bounds` lit les `Owns` dans le `docs/stories.md` du point de départ de la branche (sa base de fusion avec la branche d'où elle part), pas dans `HEAD` : un commit de la story qui élargit ses `Owns` n'élargit pas ses bornes.
+- [ ] `owns_accept_globs` — une entrée `Owns` avec `*` (un segment) ou `**` (plusieurs) borne les chemins qui y correspondent.
+- [ ] `owns_syntax_is_written_once` — le gabarit de stories et `agentic-stories` disent la syntaxe d'une entrée : un chemin entre backticks, un dossier finissant par `/`, ou un glob.
+- [ ] `bounds_refuse_an_entry_they_cannot_read` — une entrée hors syntaxe est refusée en la nommant, jamais ignorée.
+
+**Notes pour l'agent** : ADR-0024 lit les `Owns` dans `HEAD` ; changer ce point demande une ADR qui la remplace, numérotée par la flotte. La revue de s50 donne la reproduction de l'auto-élargissement et du projet nautile bloqué par ses globs.
+
+### s62-bounds-scan — Un texte cité n'est plus une commande
+**En tant que** développeur **je veux** que `po-bounds` ne prenne pas pour une commande git le texte qu'une commande écrit dans un fichier **afin que** l'implementer cesse d'être bloqué quand il écrit de la documentation qui cite ces commandes.
+
+- **Complexité** : 3
+- **Dépend de** : s61
+- **Owns** : `method/hooks/po-bounds.sh`, `tests/bounds.test.sh`
+- **Corrige** : faux positifs relevés par les implementers de s49, s52 et s56 ; majeur de `docs/reviews/s51-qa-agent.md`
+
+**Critères d'acceptation**
+- [ ] `bounds_ignore_heredoc_bodies` — le corps d'un heredoc n'est pas lu comme une commande ; la commande qui l'ouvre l'est.
+- [ ] `bounds_ignore_quoted_arguments` — une chaîne entre guillemets passée en argument (`grep "git checkout"`, `printf '…git commit…'`) n'est pas lue comme une commande.
+- [ ] `bounds_still_catch_real_verbs` — `git checkout`, `git stash`, `git push` et un commit hors `story/<id>` restent refusés, y compris après `&&`, `;` ou dans `$(…)`.
+- [ ] `qa_allowlist_refuses_writing_forms` — en mode `qa`, `git symbolic-ref` avec deux arguments et toute option `--output` sont refusés.
+
+**Notes pour l'agent** : ADR-0024 a choisi une analyse par mots en acceptant les faux positifs ; cette story la remplace pour les heredocs et les arguments cités, ce qui demande une ADR. Rester en bash, `jq` et `awk`.
+
+### s63-review-texts — Ce que la revue tient pour acquis
+**En tant que** développeur **je veux** que la revue tienne les ADR de la story pour son propre périmètre, et que ses textes ne se contredisent pas **afin que** chaque revue cesse de relever le même faux écart, et qu'une lentille puisse ouvrir ce dont elle a besoin.
+
+- **Complexité** : 2
+- **Dépend de** : aucune
+- **Owns** : `method/skills/review-antihallu/`, `method/skills/review-lenses/`, `tests/ownership.test.sh`, `tests/review-lenses.test.sh`
+- **Corrige** : mineur « ADR hors Owns » relevé par huit revues de M6 ; majeur de `docs/reviews/s53-review-lenses.md` ; mineur m2 de `s56-evidence-runner.md`
+
+**Critères d'acceptation**
+- [ ] `story_adrs_are_in_scope_by_construction` — le contrôle d'ownership tient pour dans le périmètre une ADR que le diff ajoute sous `<ADR directory>` et que le plan de la story annonce.
+- [ ] `a_lens_opens_what_the_diff_calls` — une lentille juge ce que le diff change, et ouvre ce que ce code appelle pour confirmer un constat.
+- [ ] `the_manual_record_check_names_the_runs` — la phrase qui décrit le contrôle du relevé sans hook cite les lignes `## Runs`, plus seulement la comparaison d'arbre.
+
+### s64-qa-routing — Le retour en QA partout, et seulement quand il le faut
+**En tant que** développeur **je veux** qu'une revue soit traitée comme bloquée par la QA seulement quand elle est bloquée, et que toutes les commandes la renvoient au même endroit **afin qu'**aucune revue ne parte en QA par erreur, ni en fix run inutile.
+
+- **Complexité** : 3
+- **Dépend de** : aucune
+- **Owns** : `method/commands/po-review.md`, `method/commands/po-orchestrator.md`, `method/commands/po-drive.md`, `method/commands/po-flow.md`, `method/commands/po-execute.md`, `method/commands/po-status.md`, `tests/qa-fleet.test.sh`
+- **Corrige** : majeur et mineur de `docs/reviews/s57-qa-in-the-fleet.md` ; limite notée dans ADR-0034
+
+**Critères d'acceptation**
+- [ ] `qa_blocked_needs_a_blocked_status` — une revue n'est « bloquée par la QA » que si elle porte `Review status: blocked` et que son `Next action:` nomme `/po-qa`.
+- [ ] `flow_and_execute_send_qa_blocks_to_qa` — `/po-flow` et `/po-execute` lancés à la main renvoient une revue bloquée par la QA vers `/po-qa`, pas vers un fix run.
+- [ ] `status_agrees_with_the_fleet_on_a_blocked_report` — pour un rapport QA `blocked`, `/po-status` dit qu'un humain décide, comme `/po-drive`.
+
+### s65-upgrade-path — Une mise à jour qui dit ce qui manque
+**En tant que** développeur **je veux** que l'installeur signale les réglages que le gabarit a gagnés et que mon projet n'a pas **afin qu'**une mise à jour de Polype ne bloque pas un projet en silence.
+
+- **Complexité** : 3
+- **Dépend de** : aucune
+- **Owns** : `bin/polype`, `docs/installation.md`, `tests/installer.test.sh`, `method/commands/po-plan.md`, `method/commands/po-design.md`, `method/commands/po-research.md`, `tests/model-routing.test.sh`
+- **Corrige** : majeurs de `docs/reviews/s59-model-by-complexity.md` (×2) et ses mineurs sur le sens de la règle et l'avertissement d'ADR-0036
+
+**Critères d'acceptation**
+- [ ] `update_lists_missing_settings` — `polype update` et `polype check` sur un projet listent chaque réglage du gabarit absent de son `AGENTS.local.md`, avec la valeur par défaut proposée, sans jamais modifier ce fichier.
+- [ ] `installation_doc_has_an_upgrade_section` — `docs/installation.md` dit quoi faire après une mise à jour : lire cette liste, ajouter les réglages.
+- [ ] `standalone_commands_state_the_session_model` — `/po-plan`, `/po-design` et `/po-research` disent qu'ils tournent sur le modèle de la session, à démarrer sur `Model strong` (ADR-0036).
+- [ ] `model_refusal_stops_everywhere` — les tests vérifient, pour chaque commande qui dispatche, la phrase d'arrêt sur refus de modèle et le sens de la règle de l'implementer (`Model light` jusqu'à `Light up to`, `Model strong` au-delà).
+
+### s66-eval-grading — Une eval qui ne compte pas un échec comme une réussite
+**En tant que** développeur **je veux** qu'un rapport bloqué soit noté comme tel, et que le contrôle de dérive soit éprouvé **afin que** le taux affiché par `po-eval` mesure ce que le reviewer a trouvé.
+
+- **Complexité** : 2
+- **Dépend de** : aucune
+- **Owns** : `bin/po-eval`, `tests/evals.test.sh`
+- **Corrige** : majeur et mineurs de `docs/reviews/s55-reviewer-evals.md`
+
+**Critères d'acceptation**
+- [ ] `a_blocked_report_is_graded_blocked` — un rapport `Review status: blocked` est noté `blocked` et ne compte jamais comme réussi.
+- [ ] `drift_check_is_tested_and_complete` — un test fait échouer le contrôle de dérive, qui signale aussi un fichier présent dans `method/` mais absent de la copie installée.
+- [ ] `evals_leave_nothing_in_tmp` — les tests ne laissent aucun dossier dans le répertoire temporaire du système.
+
+### s67-record-text — Le relevé d'un fix run
+**En tant que** développeur **je veux** que l'implementer sache quoi faire d'un relevé qui existe déjà, et que la commande suggérée par la gate se copie telle quelle **afin que** l'historique des lancements ne se perde pas et qu'une commande ne change pas en route.
+
+- **Complexité** : 1
+- **Dépend de** : s60
+- **Owns** : `method/agents/implementer.md`, `method/hooks/po-gate.sh`, `tests/run-ledger.test.sh`
+- **Corrige** : mineurs m3 et m4 de `docs/reviews/s56-evidence-runner.md`
+
+**Critères d'acceptation**
+- [ ] `fix_run_keeps_the_runs` — en fix run, l'implementer garde le relevé existant et ses lignes `## Runs`, et ne met à jour que `Tree:` et ses propres lignes.
+- [ ] `suggested_command_is_single_quoted` — la commande `po-run` que l'implementer lance et celle que la gate suggère placent la commande entre guillemets simples.
+
+### s68-docs-catch-up — La documentation rattrape la méthode
+**En tant que** développeur **je veux** que le README et la matrice de parité décrivent la méthode telle qu'elle est **afin qu'**un lecteur ne se fie pas à un comportement disparu.
+
+- **Complexité** : 1
+- **Dépend de** : aucune
+- **Owns** : `README.md`, `docs/parite-killer-saas.md`, `tests/distribution-wiring.test.sh`
+- **Corrige** : mineurs de `docs/reviews/s49-secret-scan.md` (README) et `s59-model-by-complexity.md` (H04)
+
+**Critères d'acceptation**
+- [ ] `readme_describes_the_pre_commit` — le README dit que le pre-commit refuse aussi les secrets, sur toutes les branches.
+- [ ] `parity_h04_matches_the_model_rule` — la ligne H04 dit que les rôles qui décident tournent sur `Model strong` et que l'implementer s'adapte à la complexité, avec son statut.
