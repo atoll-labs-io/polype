@@ -1404,3 +1404,95 @@ Objectif : Polype pilote un projet mobile, une CLI, une API ou une bibliothèque
 - [ ] `other_tree_lines_read_the_same_way` — les lignes `Tree:` du relevé et du rapport QA suivent la même règle de lecture que `Reviewed tree:`, et `/po-ship` (contrôle sans hook) comme `bin/po-eval` décrivent ou lisent ces lignes de la même façon.
 
 **Notes pour l'agent** : `first_hash` sert aux trois gates (`po-gate.sh:34`) ; la revue de s78, sur la branche `story/s78-platform-setting`, montre les deux formes fautives. Une gate est un garde-fou : n'élargir la lecture qu'à ces puces-là.
+
+## M8 bis — Les restes de M8
+
+Objectif : fermer les majeurs et les mineurs que les revues de M8 ont laissés ouverts, pour que Polype soit fini avant le premier vrai projet (clout). Cadré le 2026-10-08 à la demande de l'utilisateur (« on finit polype avant »).
+
+### s93-qa-contract-holds — Le contrat de QA tient sur toutes les surfaces
+**En tant que** développeur **je veux** que l'agent `qa` et le pilote par scénarios ne concluent jamais sans preuve et ne se bloquent pas sur leur propre preuve **afin qu'**une QA de CLI, d'API ou de bibliothèque aboutisse vraiment.
+
+- **Complexité** : 3
+- **Dépend de** : aucune
+- **Surface** : —
+- **Owns** : `method/agents/qa.md`, `method/skills/qa-drivers/SKILL.md`, `method/skills/qa-drivers/scenarios.md`, `tests/qa.test.sh`, `tests/qa-drivers.test.sh`, `tests/scenario-driver.test.sh`
+- **Corrige** : majeur 1 de `docs/reviews/s79-qa-drivers.md` ; majeurs et mineurs de `docs/reviews/s81-scenario-driver.md`
+
+**Critères d'acceptation**
+- [ ] `no_driver_row_blocks` — quand aucune ligne de la table des pilotes ne correspond à la surface et à la plateforme, ou que `Platform` manque ou vaut `—`, `qa` écrit `QA status: blocked` avec la cause, jamais `complete`.
+- [ ] `own_evidence_never_blocks` — la comparaison avant/après du pilote par scénarios met de côté `docs/qa/<id>/`, comme `qa.md` ; un script de travail se crée par Bash sous le répertoire temporaire, ce que le pilote dit ; un service qui ne répond pas dans le délai donne `blocked`.
+- [ ] `qa_declares_what_it_reads` — la ligne `Reads settings:` de `qa` cite `Install` et `Build`, `qa` garde l'état `git status` d'avant la visite, et cite le plan de la story parmi ses sources.
+- [ ] `scenario_rules_bite` — les règles du pilote par scénarios (blocage sur un nouveau chemin, dossier de travail, code de succès sur une entrée invalide) ont chacune un test qui échoue quand elle disparaît.
+
+### s94-scene-and-simulation-drivers — Les pilotes de scène et de simulation s'arrêtent proprement
+**En tant que** développeur **je veux** que les pilotes `scene` et `simulation` lisent les points de vue que le plan écrit vraiment et ne laissent aucun processus derrière eux **afin que** leurs QA produisent des preuves utilisables.
+
+- **Complexité** : 3
+- **Dépend de** : aucune
+- **Surface** : —
+- **Owns** : `method/skills/qa-drivers/scene.md`, `method/skills/qa-drivers/simulation.md`, `method/templates/plan.md`, `method/templates/plan-flow.md`, `boilerplates/godot/profile.md`, `tests/godot-scene-driver.test.sh`, `tests/ros-simulation-driver.test.sh`, `tests/surface-routing.test.sh`
+- **Corrige** : majeur et mineurs de `docs/reviews/s87-godot-scene-driver.md` et de `docs/reviews/s88-ros-simulation-driver.md`
+
+**Critères d'acceptation**
+- [ ] `viewpoint_lines_match_the_plan` — la section `## Scene viewpoints` des deux gabarits de plan et `scene.md` demandent les mêmes champs pour un point de vue (scène, position, cible, cadrage) ; une ligne sans scène vise la scène principale du projet.
+- [ ] `scene_capture_is_sized_and_scripted` — le pilote `scene` donne à l'écran virtuel la taille de la capture, indique la bonne façon de lire l'image depuis un script `--script`, et met de côté `docs/qa/<id>/` dans sa comparaison avant/après.
+- [ ] `simulation_leaves_nothing_running` — le pilote `simulation` déclenche avec `--once` ou `--times`, arrête chaque processus lancé pendant la visite, vérifie avec `ros2 node list --all`, calcule un débit comme nombre / durée, et met de côté `docs/qa/<id>/`.
+
+### s95-profiles-hold — Les profils disent vrai et leurs tests le prouvent
+**En tant que** développeur **je veux** que la commande de test de chaque profil échoue quand un test échoue, et qu'un test de profil hors réseau se voie **afin que** les gates ne fassent jamais confiance à un test rouge ni à une vérification sautée.
+
+- **Complexité** : 3
+- **Dépend de** : aucune
+- **Surface** : —
+- **Owns** : `boilerplates/native-ios/`, `boilerplates/native-android/`, `boilerplates/expo/`, `boilerplates/rust-cli/`, `bin/po-lint`, `tests/run.sh`, `tests/lib.sh`, `tests/native-profiles.test.sh`, `tests/expo-profile.test.sh`, `tests/flutter-profile.test.sh`, `tests/cli-api-profiles.test.sh`, `tests/next-forge-profile.test.sh`, `tests/platform-setting.test.sh`, `tests/profile.test.sh`
+- **Corrige** : majeur F1 et mineurs de `docs/reviews/s85-native-profiles.md` ; mineurs de `docs/reviews/s83-expo-profile.md`, `s86-cli-api-profiles.md` et `s78-platform-setting.md`
+
+**Critères d'acceptation**
+- [ ] `test_commands_fail_on_red` — la commande `Test` du profil iOS sort en erreur quand un test échoue, et celle d'Expo n'installe rien à la volée (`npx --no-install jest`).
+- [ ] `skipped_grounding_is_visible` — un test d'ancrage de profil qui n'a pas pu joindre sa source apparaît comme sauté dans la sortie de `tests/run.sh`, pas comme passé.
+- [ ] `lint_holds_its_profile_rules` — `po-lint` refuse un pilote `mobile-web` avec `Dev: —`, et ses règles de profil (valeur partielle de plateforme, `## Platform` sans ligne, ligne `| Platform |` cassée, pilote `—`) ont chacune un test.
+- [ ] `profile_slips_are_fixed` — les phrases fausses relevées par les revues des profils natifs et Rust sont corrigées d'après leur source.
+
+### s96-defect-and-routing-paths — Le diagnostic et le routage tiennent sur tous les chemins
+**En tant que** développeur **je veux** qu'une story de défaut passe par le diagnostic quel que soit le chemin qui la mène, et qu'une recherche sans cause trouvée aille à un humain **afin qu'**aucun correctif deviné ne parte.
+
+- **Complexité** : 3
+- **Dépend de** : aucune
+- **Surface** : —
+- **Owns** : `method/commands/po-research.md`, `method/commands/po-orchestrator.md`, `method/commands/po-drive.md`, `method/commands/po-execute.md`, `method/commands/po-flow.md`, `method/skills/diagnostic/`, `tests/research.test.sh`, `tests/drive.test.sh`, `tests/execute.test.sh`, `tests/model-routing.test.sh`, `tests/flow.test.sh`, `tests/diagnostic-skill.test.sh`
+- **Corrige** : majeurs 1 et 2 de `docs/reviews/s90-diagnostic-skill.md` ; mineur de `docs/reviews/s80-surface-routing.md` (po-flow)
+
+**Critères d'acceptation**
+- [ ] `every_path_runs_the_diagnostic` — `/po-research` et `/po-orchestrator` appliquent la skill `diagnostic` à une story qui porte une ligne `Fixes` ou `Corrige`, comme le planner de la flotte.
+- [ ] `no_root_cause_goes_to_a_human` — une recherche qui dit qu'aucune cause n'a été trouvée arrête la lane et la confie à un humain dans la table de reprise de `/po-drive` ; aucun plan n'est bâti dessus.
+- [ ] `implementer_model_follows_the_rescore` — en voie courte, le modèle de l'implementer suit la complexité notée par le planner dans le plan, et non seulement celle de la story.
+- [ ] `flow_names_the_qa_stage_exception` — `/po-flow` dit qu'un `QA stage` absent n'arrête qu'une story qui irait en QA.
+
+### s97-commands-and-texts — Les commandes et les textes rattrapent M8
+**En tant que** développeur **je veux** que `/po-retro`, `/po-setup`, `/po-help`, la relecture des stories et la documentation disent la méthode telle que M8 l'a laissée **afin qu'**un lecteur ne bute pas sur une consigne fausse.
+
+- **Complexité** : 2
+- **Dépend de** : aucune
+- **Surface** : —
+- **Owns** : `method/commands/po-retro.md`, `method/commands/po-setup.md`, `method/commands/po-help.md`, `method/skills/stories-review/`, `docs/parite-killer-saas.md`, `docs/stories.md`, `tests/po-retro.test.sh`, `tests/setup-modes.test.sh`, `tests/stories-review.test.sh`, `tests/accessibility.test.sh`, `tests/final-texts.test.sh`
+- **Corrige** : majeur et mineur de `docs/reviews/s89-po-retro.md` ; mineurs de `s78-platform-setting.md`, `s80-surface-routing.md`, `s83-expo-profile.md`, `s90-diagnostic-skill.md`, `s91-accessibility.md`, `s92-review-tree-gate.md`
+
+**Critères d'acceptation**
+- [ ] `retro_prefers_an_exact_milestone` — `/po-retro` choisit le jalon dont le titre correspond exactement avant de chercher par préfixe, et compte les majeurs ouverts depuis la dernière revue non bloquée.
+- [ ] `texts_follow_m8` — l'en-tête de l'étape 2 de `/po-setup` compte les bonnes questions ; `/po-help` donne la règle QA d'une story sans ligne `Surface` ; la ligne D15 de la matrice de parité ne compte plus « cinq signaux » ; le critère d'Expo dans `docs/stories.md` ne dit plus que le gabarit a une commande de test.
+- [ ] `stories_review_checks_owned_records` — `stories-review` signale une story qui corrige un défaut sans posséder `docs/defauts.md`, et une story dont l'ADR en remplace une autre sans posséder le fichier de celle-ci.
+- [ ] `keyboard_walk_test_bites` — le test de la visite au clavier vérifie une phrase que seul le nouveau paragraphe porte.
+
+### s98-bounds-messages — Les derniers messages de po-bounds
+**En tant que** développeur **je veux** que chaque refus de `po-bounds` soit lisible et que l'implementer puisse explorer un clone jetable **afin qu'**un refus dise toujours ce qu'il refuse, et que l'exploration d'une source ne soit plus bloquée pour rien.
+
+- **Complexité** : 2
+- **Dépend de** : aucune
+- **Surface** : —
+- **Owns** : `method/hooks/po-bounds.sh`, `tests/bounds.test.sh`, `docs/decisions/ADR-0052-po-bounds-est-un-garde-fou-contre-les-erreurs.md`, `docs/decisions/ADR-0053-dev-fd-1-et-2-valent-stdout-et-stderr.md`
+- **Corrige** : mineur m1 de `docs/reviews/s77-last-review-leftovers.md` ; mineur m3 de `docs/reviews/s76-bounds-guard-against-mistakes.md` ; refus de `git checkout` relevés par les lanes de s84 et s85
+
+**Critères d'acceptation**
+- [ ] `every_refusal_is_readable` — aucun refus de `po-bounds` n'affiche l'octet de marquage brut, y compris pour une substitution placée dans le nom d'une option.
+- [ ] `named_fd_redirections_are_read` — `{fd}>cible` est lu comme une redirection.
+- [ ] `implementer_explores_a_throwaway_clone` — en mode `implementer`, un dépôt jetable sous le répertoire temporaire accepte les verbes git de lecture et de `checkout`, et rien n'en sort vers le worktree ; une ADR qui remplace en partie ADR-0052 le dit.
