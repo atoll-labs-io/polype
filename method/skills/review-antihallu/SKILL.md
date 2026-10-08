@@ -13,18 +13,19 @@ The `Owns` line of the story in `docs/stories.md` lists the paths it may change,
 - **Outside `Owns` → major.** Name the path and the `Owns` line it missed, so the choice is visible: drop the change, or widen the story's scope on purpose.
 - **Inside another running story's `Owns` → critical.** The path belongs to a story whose worktree appears in `git worktree list` and whose `story/<id>` branch is not merged into `Target branch`. Two lanes are writing the same file, and at ship one of the two edits disappears.
 
-Three cases the bare comparison gets wrong:
+Four cases the bare comparison gets wrong:
 
 - **The story's own pipeline evidence is in scope by construction** — `docs/research/<id>.md`, `docs/plans/<id>.md`, `docs/verif/<id>.md`, `docs/reviews/<id>.md`, `docs/designs/<id>/`, `docs/qa/<id>/`. No `Owns` lists them, and none has to.
+- **An ADR the diff adds under `<ADR directory>` and the story's plan names** is in scope by construction too: "adds" is status `A` in `git diff --name-status <Target branch>...story/<id>`, and "names" is the plan's text giving its file name or its `ADR-NNNN` number. An ADR the plan does not name falls back to the other cases; an existing ADR the diff modifies is never covered.
 - **A path a written rule of `AGENTS.md` requires** is not a breach by the implementer but a gap in the story's `Owns`: quote the rule, report it **minor**, and leave the code alone.
 - **A story with no `Owns` line at all** is reported as unverifiable scope. The check did not run; saying nothing would pass it off as clean.
 
 ## Six steps, all of them, in this order
 
-**1. Reuse what is already proven.** Run `po-gate verif-current <id>`; without the hook, `git diff --quiet <Tree> HEAD -- . ':(exclude)docs'` from the worktree root does the same comparison.
+**1. Reuse what is already proven.** Run `po-gate verif-current <id>`; without the hook, do both checks of `verif-current` by hand from the worktree root: `git diff --quiet <Tree> HEAD -- . ':(exclude)docs'` for the tree, then, for each row of `## Checks`, look in `## Runs` for a row with the same label and command, on a tree whose code outside `docs/` equals `<Tree>`, and require that the last such row exited 0.
 - With `Verification mode: record`, a record that passes — status complete, all exit codes 0 — proves the unit suite and the type check for this exact code. Do not rerun them; write in the report what you relied on, and read its "Not proven here" section.
 - With `Verification mode: rerun`, or a record that is missing, incomplete, outdated or shows a non-zero exit code: run both yourself and say why.
-- For a story with a screen, when `QA stage` is `screens`: run `po-gate qa-current <id>` as well. It fails — no report, `QA status: blocked`, or a `Tree:` the code has moved away from — → the review is blocked, the gate's message as `Failure cause:` and `/po-qa <id>` as `Next action:`. It passes → the code is the one walked, so each **verified** finding of the report is still open and becomes a finding of this review, graded on this skill's scale; probable and unverified ones go to `## Not verified` unless you confirm them. With `QA stage: —`, or no screen, there is no QA to require.
+- For a story with a screen, when `QA stage` is `screens`: run `po-gate qa-current <id>` as well. It fails — no report, `QA status: blocked`, or a `Tree:` the code has moved away from, or a report that is current but not committed — → the review is blocked, the gate's message as `Failure cause:` and `/po-qa <id>` as `Next action:`. The one exception is the report that is current but not committed: its `Next action:` is the evidence commit the gate names, `git commit -m "<id>: QA evidence" -- docs/qa/<id>/`, not a new walk, and it does not name `/po-qa`. It passes → the code is the one walked, so each **verified** finding of the report is still open and becomes a finding of this review, graded on this skill's scale; probable and unverified ones go to `## Not verified` unless you confirm them. With `QA stage: —`, or no screen, there is no QA to require.
 
 A sentence saying the tests pass is an opinion; a record whose tree equals the commit is evidence. No record, no evidence.
 

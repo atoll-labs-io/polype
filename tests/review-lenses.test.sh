@@ -94,3 +94,8 @@ test_one_reviewer_one_verdict() {
     || fail "the lenses section must sit between step 6 and ## Severity"
   holds "$(section_of "$ANTIHALLU" 'After the six steps: the lenses')" 'review-lenses' 'the lenses section'
 }
+
+test_a_lens_opens_what_the_diff_calls() {
+  holds "$(section_of "$SKILL" 'Which lenses run')" 'A lens judges only what the diff changes, and opens what that code calls to confirm a finding' 'the lens reach bullet'
+  ! grep -qF 'never at the rest of the repository' "$SKILL" || fail "the old lens reach line is still there"
+}

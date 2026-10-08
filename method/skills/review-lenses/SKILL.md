@@ -18,7 +18,7 @@ Take the list of changed paths the scope check already produced — `git diff --
 | Performance | server-side code: routes, handlers, services, repositories, jobs, queries | a query or call inside a loop; an `await` inside a loop; a read with no limit |
 
 - A lens whose trigger is absent from the diff does not run, and not running it is not a finding.
-- A lens looks at the diff only, never at the rest of the repository.
+- A lens judges only what the diff changes, and opens what that code calls to confirm a finding: the policy an endpoint relies on, the changelog of a bumped dependency. A finding is still about a line of the diff, never about code the diff leaves alone.
 - Each lens that ran goes on the `Lenses run:` line of the report, with the path or content that set it off; when none ran, the line says `none`.
 
 ## Grading

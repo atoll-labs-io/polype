@@ -86,3 +86,25 @@ test_review_template_has_an_ownership_section() {
     grep -qF -- "- [ ] $case" <<< "$own" || fail "the ownership section has no box for: $case"
   done
 }
+
+test_story_adrs_are_in_scope_by_construction() {
+  local scope; scope=$(section_of "$SKILL" "$SCOPE")
+  holds "$scope" '**An ADR the diff adds under `<ADR directory>` and the story'"'"'s plan names** is in scope by construction too' 'the scope section'
+  holds "$scope" '--name-status' 'the scope section'
+  holds "$scope" 'ADR-NNNN' 'the scope section'
+}
+
+test_the_manual_record_check_names_the_runs() {
+  local step1; step1=$(awk '/^\*\*1\. / {on=1} /^\*\*2\. / {exit} on' "$SKILL")
+  holds "$step1" '## Runs' 'step 1'
+  holds "$step1" 'same label and command' 'step 1'
+  holds "$step1" 'the last such row' 'step 1'
+  ! grep -qF 'does the same comparison' "$SKILL" || fail "the old 'does the same comparison' claim is still there"
+}
+
+test_qa_current_failure_names_an_uncommitted_report() {
+  local step1; step1=$(awk '/^\*\*1\. / {on=1} /^\*\*2\. / {exit} on' "$SKILL")
+  holds "$step1" 'current but not committed' 'step 1'
+  holds "$step1" 'git commit -m "<id>: QA evidence" -- docs/qa/<id>/' 'step 1'
+  holds "$step1" 'not a new walk' 'step 1'
+}
