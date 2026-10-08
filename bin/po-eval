@@ -8,7 +8,8 @@
 #        po-eval --build <case> <dir>              builds that case's repository in <dir>, prints its worktree
 #
 # A run passes when the report's last `Max severity:` and `Ship allowed:` lines equal the case's
-# expectations, read as strictly as po-gate reads them. No model grades another model here.
+# expectations, read as strictly as po-gate reads them. A report whose `Review status:` is
+# `blocked` is graded `blocked` and never passes. No model grades another model here.
 set -euo pipefail
 
 POLYPE_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
@@ -65,6 +66,10 @@ drift_check() {
       cmp -s "$cfg/skills/$skill/$rel" "$POLYPE_ROOT/method/skills/$skill/$rel" \
         || { echo "po-eval: $cfg/skills/$skill/$rel differs from method/skills/$skill/$rel" >&2; drift=1; }
     done < <(cd "$cfg/skills/$skill" && find . -type f | sed 's|^\./||')
+    while IFS= read -r rel; do
+      [ -f "$cfg/skills/$skill/$rel" ] \
+        || { echo "po-eval: $cfg/skills/$skill/$rel is missing (method/skills/$skill/$rel exists)" >&2; drift=1; }
+    done < <(cd "$POLYPE_ROOT/method/skills/$skill" && find . -type f | sed 's|^\./||')
   done
   [ "$drift" -eq 0 ] && return 0
   echo "po-eval: a user-level copy would shadow the method under test; run bin/polype update --global" >&2
@@ -87,9 +92,10 @@ launch_message() {
   fi
 }
 
-# Prints `<severity>/<ship>`, or `no verdict` when either last line is missing or malformed.
+# Prints `blocked` for a blocked report, else `<severity>/<ship>`, or `no verdict` when either last line is missing or malformed.
 grade() {
   local sev ship
+  if grep -qE '^Review status:[[:space:]]*blocked[[:space:]]*$' "$1"; then echo blocked; return; fi
   sev="$(grep -E '^Max severity:' "$1" | tail -n 1 || true)"
   ship="$(grep -E '^Ship allowed:' "$1" | tail -n 1 || true)"
   if [[ "$sev" =~ ^Max\ severity:[[:space:]]*(critical|major|minor|none)[[:space:]]*$ ]]; then sev="${BASH_REMATCH[1]}"; else sev=""; fi
