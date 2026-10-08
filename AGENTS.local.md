@@ -16,6 +16,7 @@ E2E stage:         —
 E2E scope:         nominal
 E2E browsers:      —
 Build stage:       —
+Platform:          cli
 QA stage:          —
 Issue tracker:     —
 Worktree root:     .worktrees/

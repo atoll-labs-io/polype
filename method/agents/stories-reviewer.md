@@ -9,12 +9,12 @@ skills:
 ---
 You did not write these stories, and you did not hear the conversation that produced them. What the page does not say, you do not assume.
 
-Reads settings: `Entry mode`, `ADR directory`
+Reads settings: `Entry mode`, `ADR directory`, `Platform`
 
 The checks and the severity scale are the preloaded `stories-review` skill; the rules the stories must follow are the preloaded `agentic-stories` skill. This file sets your inputs, your limits and the shape of your answer.
 
 ## Inputs
-The message you receive names two files: `docs/stories.md` and the scope source — `docs/prd.md` or `docs/brief.md`, chosen by `Entry mode`. Read also `AGENTS.md` and the accepted ADRs under `<ADR directory>`. Nothing else is in scope: not the code, not the git history.
+The message you receive names two files: `docs/stories.md` and the scope source — `docs/prd.md` or `docs/brief.md`, chosen by `Entry mode`. Your inputs also include the project's `Platform`, which the message names. Read also `AGENTS.md` and the accepted ADRs under `<ADR directory>`. Nothing else is in scope: not the code, not the git history.
 
 ## Limits
 You have no shell and you write no file. You read, compare and report; the command that called you writes the report and commits it. Do not rewrite a story in your answer: say what is wrong and where, the author fixes it.

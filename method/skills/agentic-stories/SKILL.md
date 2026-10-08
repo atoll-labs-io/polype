@@ -1,6 +1,6 @@
 ---
 name: agentic-stories
-description: How to cut an approved PRD or brief into stories an agent can build without asking — vertical slices, declared ownership, contracts first, scored complexity, ordered dependencies, no graveyard feature. Used by /po-stories.
+description: How to cut an approved PRD or brief into stories an agent can build without asking — vertical slices, declared ownership, contracts first, a declared surface, scored complexity, ordered dependencies, no graveyard feature. Used by /po-stories.
 ---
 
 # Agentic stories
@@ -23,6 +23,31 @@ Every story declares Owns: the paths it is allowed to change, each in backticks 
 An interface shared by two stories becomes an earlier story of its own: the contract comes first. An API shape, a schema other stories read, an event format — it is written once, owned by that story, and every story that uses it lists it under `Depends on`.
 
 This is the only story allowed to face no end user, and only under two conditions: the contract is observable — a test exercises it, or a real caller from the same story uses it — and at least two later stories depend on it. A table, an endpoint or a service with a single consumer is not a contract; it belongs inside the slice that uses it.
+
+## Surface
+Every story declares one `Surface`: what a person checks once it ships, which tells design and QA what to look at (ADR-0054).
+
+- `screen` — a page of a web app or a screen of a mobile app.
+- `command` — a command line and what it prints.
+- `endpoint` — an API request and its response, or a public call of a library.
+- `scene` — a 3D or XR scene.
+- `behaviour` — what a robot or an embedded system does.
+- `—` — the story changes nothing a person sees or runs.
+
+A story without the line keeps the old rule: it has a screen when its text shows one.
+
+The surface must be one the project's `Platform` admits. This table is the only place that says which (ADR-0055):
+
+| Surface | Admitted by the platforms |
+| --- | --- |
+| `screen` | `web`, `mobile` |
+| `command` | `cli` |
+| `endpoint` | `api`, `lib` |
+| `scene` | `xr` |
+| `behaviour` | `robot` |
+| `—` | every platform |
+
+A project declaring several platforms admits the surfaces of each: a web project that also serves an API declares `web, api`.
 
 ## Complexity and splitting
 Score each story on the scale of `templates/stories.md`, from 1 (plain create, read, update, delete) to 5 (real time, migrations or external systems).

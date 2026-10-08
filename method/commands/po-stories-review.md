@@ -10,7 +10,7 @@ allowed-tools:
 ---
 # /po-stories-review
 
-Reads settings: `Entry mode`, `Target branch`, `Model strong`
+Reads settings: `Entry mode`, `Target branch`, `Model strong`, `Platform`
 
 Whoever cut the stories is the worst placed to see what they left out. This command hands `docs/stories.md` and its scope source to the `stories-reviewer` subagent, in a fresh context, and writes `docs/reviews/stories.md` on `Target branch` from its answer. It never edits the stories.
 
@@ -24,11 +24,12 @@ Whoever cut the stories is the worst placed to see what they left out. This comm
    - `—` → stop: "`Entry mode` is not set: run /po-setup or set it in AGENTS.local.md." Do not pick whichever file exists.
 5. Run from the repository root, on `Target branch`. Another branch → stop and say so; do not switch.
 6. `Model strong` missing → stop and name it.
+7. `Platform` missing → stop and name it.
 
 ## Delegation
 Agent tool, `subagent_type: stories-reviewer`, `model:` set to `Model strong`, description "Review stories", prompt filled in:
 
-> Review `docs/stories.md` in <absolute repository root>, against the scope source `<docs/prd.md | docs/brief.md>` (Entry mode: <value>). How to review is settled by your agent file and the stories-review skill. Start with the coverage table. Shape your answer like templates/stories-review.md, report every finding now, and end with the lines `Max severity:` and `Stories ready:`.
+> Review `docs/stories.md` in <absolute repository root>, against the scope source `<docs/prd.md | docs/brief.md>` (Entry mode: <value>, Platform: <value>). How to review is settled by your agent file and the stories-review skill. Start with the coverage table. Shape your answer like templates/stories-review.md, report every finding now, and end with the lines `Max severity:` and `Stories ready:`.
 
 `Model strong` at `—` passes no `model` at all: the stories-reviewer runs on the session's model. If the Agent tool rejects the model name, stop and report the setting and its value: write no `docs/reviews/stories.md`, make no commit, and never retry with another model or with none, because the setting is at fault, not the stories.
 

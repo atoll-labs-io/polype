@@ -34,13 +34,15 @@ These become the suggested answers. A command you did not find in a file stays `
 4. Who draws the screens, `Design source`: `internal` (an agent skill draws them in the repository), `external` (they come from a tool outside it) or not decided yet. Only the source is asked here.
 5. The project commands, `Dev` included, with your suggestions from step 1.
 
+Before the catalogue offer and question 5, make one separate AskUserQuestion call for `Platform`: what the project builds, one or more of `web`, `mobile`, `cli`, `api`, `lib`, `xr`, `robot`. Offer the likeliest ones as options and let the free answer name any of the seven; write the answer separated by commas.
+
 Once the `Design source` answer is known, make one separate AskUserQuestion call for its detail: the `Design skill` when the answer is `internal`, the `Design tool` when it is `external`; the other one stays `—`. When the source is not decided yet, skip this call: both stay `—`.
 
-Once the `Dev` answer is known, make one separate AskUserQuestion call for `QA stage`: `screens` (/po-qa walks the screens a story touches) or `—`. Suggest `screens` only when `Dev` is not `—`. When `Dev` is `—`, skip this call: `QA stage` stays `—`, since QA cannot start the application.
+Once the `Dev` and `Platform` answers are known, make one separate AskUserQuestion call for `QA stage`: `screens` (/po-qa walks the screens a story touches), `surfaces` (/po-qa checks every story whose `Surface` is not `—`) or `—`. Suggest `screens` only when `Dev` is not `—`. When `Dev` is `—` and `Platform` names a platform without a screen — `cli`, `api`, `lib` or `robot` — ask anyway, offering `surfaces` or `—`; otherwise skip this call: `QA stage` stays `—`, since QA cannot start the application.
 
-When step 1 found no base, offer the catalogue before question 5, in one AskUserQuestion: each profile of Polype's catalogue (`boilerplates/*/profile.md` in Polype's repository, when it is at hand) with its name and origin, plus the answer "no profile". A chosen profile's `## Commands` block becomes the suggestions of question 5, copied verbatim. When the catalogue cannot be reached, say so and carry on without a profile. A repository that already has a base gets no offer.
+When step 1 found no base, offer the catalogue before question 5, in one AskUserQuestion: each profile of Polype's catalogue (`boilerplates/*/profile.md` in Polype's repository, when it is at hand) whose `- Platform:` line names one of the project's platforms, with its name and origin, plus the answer "no profile". A chosen profile's `## Commands` block becomes the suggestions of question 5, copied verbatim. No profile fits those platforms → say so and carry on without one. When the catalogue cannot be reached, say so and carry on without a profile. A repository that already has a base gets no offer.
 
-Nothing else is asked beyond these five questions, that design follow-up, the `QA stage` follow-up and the catalogue offer; every other setting keeps the template's value, `Story track` and `Flow threshold` included, and so do the model defaults: `Model strong: opus`, `Model light: sonnet`, `Light up to: 2`.
+Nothing else is asked beyond these five questions, the `Platform` follow-up, that design follow-up, the `QA stage` follow-up and the catalogue offer; every other setting keeps the template's value, `Story track` and `Flow threshold` included, and so do the model defaults: `Model strong: opus`, `Model light: sonnet`, `Light up to: 2`.
 
 A `Design source` left at `—` is not a choice: every design command stops on it and asks for the source again. Setup never fills it on the user's behalf.
 

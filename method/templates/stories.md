@@ -9,6 +9,7 @@ Each story is a slice a user can actually use, described precisely enough that a
 
 - **Complexity**: <1–5>
 - **Depends on**: <ids, or none>
+- **Surface**: <what a person checks once the story ships: `screen` · `command` · `endpoint` · `scene` · `behaviour`, one the project's `Platform` admits by the table of the `agentic-stories` skill, or `—` when nothing is seen or run>
 - **Owns**: <paths this story is allowed to change, each in backticks and separated by commas: a file path, a folder ending in `/`, or a glob where `*` stays inside one path segment and `**` spans any number of segments; any other text on the line is refused; stories whose entries overlap, by the overlap rule of check 8 of the `stories-review` skill, never run at the same time>
 
 ### Acceptance criteria

@@ -9,6 +9,10 @@
 
 Package version 6.0.2, commit dated 2026-05-28. A Bun and Turborepo monorepo of Next.js applications sharing one package per concern.
 
+## Platform
+
+- Platform: web
+
 ## Commands
 
 ```

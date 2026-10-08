@@ -184,8 +184,10 @@ check_fail_closed() {
 # --- rule: profiles -----------------------------------------------------------
 # Every boilerplate profile follows the profile template: its sections, the
 # command names of its Commands fence and the capability names of its table all
-# come from the template, so no list is repeated here. The boilerplates/ folder
-# sits beside method/; without it there is nothing to check.
+# come from the template, and each value of its `- Platform:` line is one of the
+# backticked lowercase words of the `| Platform |` row of the settings template
+# (ADR-0055), so no list is repeated here. The boilerplates/ folder sits beside
+# method/; without it there is nothing to check.
 
 PROFILE_TEMPLATE="$METHOD/templates/profile.md"
 BOILERPLATES="$METHOD/../boilerplates"
@@ -196,6 +198,14 @@ profile_commands() {
     /^## / {sec = ($0 == "## Commands"); next}
     sec && /^```/ {fence = !fence; next}
     sec && fence && NF {n = $0; sub(/:.*/, "", n); sub(/^[[:space:]]+/, "", n); print NR "\t" n}
+  ' "$1"
+}
+
+# `<line><TAB><value>` of the first `- Platform:` line under `## Platform`.
+profile_platform_line() {
+  awk '
+    /^## / {sec = ($0 == "## Platform"); next}
+    sec && /^- Platform:/ {v = $0; sub(/^- Platform:[[:space:]]*/, "", v); print NR "\t" v; exit}
   ' "$1"
 }
 
@@ -213,7 +223,7 @@ profile_capabilities() {
 }
 
 check_profiles() {
-  local sections commands capabilities f rel heading line name cmdline
+  local sections commands capabilities platforms f rel heading line name cmdline platline value
   if [ ! -f "$PROFILE_TEMPLATE" ]; then
     report "templates/profile.md" 1 profile "the profile template is missing"
     return
@@ -222,6 +232,9 @@ check_profiles() {
   sections=$(grep '^## ' "$PROFILE_TEMPLATE")
   commands=$(profile_commands "$PROFILE_TEMPLATE" | cut -f2)
   capabilities=$(profile_capabilities "$PROFILE_TEMPLATE" | cut -f2)
+  platforms=$(grep -m1 '^| Platform |' "$TEMPLATE" 2>/dev/null | grep -o '`[a-z][a-z]*`' | tr -d '`' || true)
+  [ -n "$platforms" ] \
+    || report "templates/agents-local.md" 1 profile "no Platform values in the settings table"
 
   for f in "$BOILERPLATES"/*/profile.md; do
     [ -f "$f" ] || continue
@@ -241,6 +254,21 @@ check_profiles() {
         profile_commands "$f" | cut -f2 | grep -qxF -- "$name" \
           || report "$rel" "$cmdline" profile "command '$name' is missing"
       done <<< "$commands"
+    fi
+
+    platline=$(grep -n -m1 -x '## Platform' "$f" | cut -d: -f1)
+    if [ -n "$platline" ]; then
+      line=""
+      IFS=$'\t' read -r line value < <(profile_platform_line "$f") || true
+      if [ -z "${line:-}" ]; then
+        report "$rel" "$platline" profile "no '- Platform:' line under '## Platform'"
+      else
+        while IFS= read -r name; do
+          name=$(sed 's/^[[:space:]]*//; s/[[:space:]]*$//' <<< "$name")
+          grep -qxF -- "$name" <<< "$platforms" \
+            || report "$rel" "$line" profile "platform '$name' is not a value of the Platform setting"
+        done < <(tr ',' '\n' <<< "$value")
+      fi
     fi
 
     while IFS=$'\t' read -r line name; do
