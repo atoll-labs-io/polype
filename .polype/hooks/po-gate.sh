@@ -6,7 +6,8 @@
 #                                 `Reviewed tree:` still matches HEAD outside docs/
 #   po-gate verif-current <id>    0 when the verification record is complete, matches HEAD, and every check its
 #                                 `## Checks` table declares has a passing `po-run` row on the recorded code
-#   po-gate qa-current <id>       0 when the QA report's last `QA status:` says complete and its `Tree:` matches HEAD
+#   po-gate qa-current <id>       0 when the committed QA report's last `QA status:` says complete and its `Tree:`
+#                                 matches HEAD
 #   po-gate pre-commit            non-zero, on every branch, when a staged environment file or an added line holding
 #                                 a private key or a known token is staged; and on a code commit to story/<id>
 #                                 whose plan is not approved
@@ -66,12 +67,14 @@ verif_current() {
   runs_cover_checks "$1" "$record" "$tree"
 }
 
-# One line per declared check (C, label, command) and per run row (R, label, command, exit, tree), fields split by \037.
+# One line per declared check (C, label, command), per unreadable Checks row (E, line number, row) and per run row
+# (R, label, command, exit, tree), fields split by \037.
 # Run rows are read from both ends so a `|` inside a command cannot shift the exit, tree or time cells.
 record_rows() {
   awk '
     function trim(s) { sub(/^[[:space:]]+/, "", s); sub(/[[:space:]]+$/, "", s); return s }
     function unquote(s) { s = trim(s); if (length(s) >= 2 && substr(s, 1, 1) == "`" && substr(s, length(s), 1) == "`") s = substr(s, 2, length(s) - 2); return s }
+    function separator(   i) { for (i = 1; i <= n; i++) if (cell[i] !~ /^[[:space:]]*:?-+:?[[:space:]]*$/) return 0; return 1 }
     function middle(from, to,   i, s) { s = cell[from]; for (i = from + 1; i <= to; i++) s = s "|" cell[i]; return s }
     /^## / { section = $0; rows = 0; next }
     section != "## Checks" && section != "## Runs" { next }
@@ -79,9 +82,12 @@ record_rows() {
     {
       line = trim($0); sub(/^\|/, "", line); sub(/\|$/, "", line)
       n = split(line, cell, "|"); rows++
-      if (rows == 1 || line ~ /^[[:space:]]*:?-+/) next
+      if (rows == 1) next
+      if (section == "## Runs" && line ~ /^[[:space:]]*:?-+/) next
     }
-    section == "## Checks" && n >= 3 {
+    section == "## Checks" && rows == 2 && separator() { next }
+    section == "## Checks" && (n < 3 || trim(cell[1]) ~ /^:?-+/) { printf "E\037%d\037%s\n", NR, $0; next }
+    section == "## Checks" {
       label = trim(cell[1]); command = unquote(middle(2, n - 1))
       if (command != "—") printf "C\037%s\037%s\n", label, command
       next
@@ -100,6 +106,11 @@ runs_cover_checks() {
   local id="$1" record="$2" tree="$3" rows kind label command kind_r label_r command_r code run_tree last found
   rows="$(record_rows "$record")" || refuse "could not read the tables of the verification record of $id" || return 1
   while IFS=$'\037' read -r kind label command; do
+    [ "$kind" = E ] || continue
+    refuse "the Checks table of the verification record of $id has a row it cannot read (line $label): $command — rebuild it from templates/verification-record.md" \
+      || return 1
+  done <<< "$rows"
+  while IFS=$'\037' read -r kind label command; do
     [ "$kind" = C ] || continue
     found=0 last=""
     while IFS=$'\037' read -r kind_r label_r command_r code run_tree; do
@@ -116,7 +127,7 @@ runs_cover_checks() {
 
 # Like the review's verdict, only the last status line counts: a report may quote an earlier one.
 qa_current() {
-  local report status tree; report="$(top)/docs/qa/$1/report.md"
+  local report status tree repo dirty; repo="$(top)"; report="$repo/docs/qa/$1/report.md"
   [ -f "$report" ] || refuse "$1 has no QA report (docs/qa/$1/report.md) — /po-qa $1" || return 1
   status="$(grep -E '^QA status:' "$report" | tail -n 1 || true)"
   [[ "$status" =~ ^QA\ status:[[:space:]]*complete[[:space:]]*$ ]] \
@@ -126,13 +137,18 @@ qa_current() {
   tree_exists "$tree" \
     || refuse "tree $tree from the QA report of $1 does not exist in this repository — /po-qa $1" || return 1
   code_matches "$tree" \
-    || refuse "the code of $1 changed after its QA walk; the report no longer matches HEAD — /po-qa $1"
+    || refuse "the code of $1 changed after its QA walk; the report no longer matches HEAD — /po-qa $1" || return 1
+  { git -C "$repo" cat-file -e "HEAD:docs/qa/$1/report.md" 2>/dev/null \
+    && dirty="$(git -C "$repo" status --porcelain --untracked-files=all --ignored -- "docs/qa/$1/")" \
+    && [ -z "$dirty" ]; } \
+    || refuse "the QA report of $1 is current but docs/qa/$1/ is not committed — commit it alone: git commit -m \"$1: QA evidence\" -- docs/qa/$1/ (/po-qa $1)"
 }
 
 # --- secret scan ---------------------------------------------------------------
 # One entry per line: <rule>|<min length>|<POSIX ERE>, matched against every line a commit adds, on any branch.
-# A new format is one more line. The minimum length stands in for {n} (see the floor guard's patterns below), and a
-# match preceded by [A-Za-z0-9_] does not count, so `desk_live_...` is not a Stripe key.
+# A new format is one more line. The minimum length stands in for {n} (see the floor guard's patterns below). A match
+# that starts with [A-Za-z0-9_] does not count when the character before it is one too, so `desk_live_...` is not a
+# Stripe key; a match starting with any other character (the PEM header's dashes) counts after anything, `\n` included.
 SECRET_PATTERNS='private-key|0|-----BEGIN[A-Z ]*PRIVATE KEY
 aws-access-key|20|(AKIA|ASIA)[0-9A-Z]+
 github-token|40|gh[pousr]_[A-Za-z0-9]+
@@ -168,7 +184,7 @@ secret_scan() {
       rest = s; pos = 0
       while (match(rest, pat[i])) {
         before = pos + RSTART - 1 > 0 ? substr(s, pos + RSTART - 1, 1) : ""
-        if (before !~ /[A-Za-z0-9_]/ && RLENGTH >= plen[i]) return 1
+        if ((before !~ /[A-Za-z0-9_]/ || substr(rest, RSTART, 1) !~ /[A-Za-z0-9_]/) && RLENGTH >= plen[i]) return 1
         pos += RSTART + RLENGTH - 1; rest = substr(rest, RSTART + RLENGTH)
         if (RLENGTH == 0) return 0
       }
@@ -315,6 +331,12 @@ floor_guard() {
       if (thr) threshold(s, "+", line)
       if (testfile && s ~ /expect\(|assert/) assertion("+", line)
     }
+    function ext_of(p,   b, e) { b = p; sub(/.*\//, "", b); e = ""; if (b ~ /\./) { e = b; sub(/.*\./, "", e) }; return e }
+    function same_language(a, b,   i) {
+      if (a == "" || b == "") return 0
+      for (i = 1; i <= np; i++) if (index(pext[i], " " a " ") && index(pext[i], " " b " ")) return 1
+      return 0
+    }
     function open_file(p,   b) {
       file = p; b = p; sub(/.*\//, "", b)
       ext = ""; if (b ~ /\./) { ext = b; sub(/.*\./, "", ext) }
@@ -333,7 +355,15 @@ floor_guard() {
       }
       ntp = split(ENVIRON["FLOOR_TEST_PATHS"], tp, "\n")
       ns = split(ENVIRON["FLOOR_STATUS"], st, "\n")
-      for (i = 1; i <= ns; i++) if (st[i] ~ /^D\t/ && is_test(substr(st[i], 3))) flag(substr(st[i], 3), 0, "test-file-deleted", "deleted by the story")
+      for (i = 1; i <= ns; i++) {
+        if (st[i] ~ /^D\t/ && is_test(substr(st[i], 3))) flag(substr(st[i], 3), 0, "test-file-deleted", "deleted by the story")
+        if (st[i] ~ /^R[0-9]*\t/) {
+          split(st[i], rn, "\t")
+          # The guard reads no runner config: an extension change counts as ignored unless one language list holds both.
+          if (is_test(rn[2]) && (!is_test(rn[3]) || (ext_of(rn[2]) != ext_of(rn[3]) && !same_language(ext_of(rn[2]), ext_of(rn[3])))))
+            flag(rn[2], 0, "test-file-deleted", "renamed to " rn[3])
+        }
+      }
     }
     remold > 0 || remnew > 0 {
       c = substr($0, 1, 1)
@@ -361,7 +391,7 @@ floor_guard() {
       next
     }
     END {
-      if (bad || (NR > 0 && blocks == 0 && headers == 0)) exit 3
+      if (bad || remold > 0 || remnew > 0 || (NR > 0 && blocks == 0 && headers == 0)) exit 3
       for (i = 1; i <= na; i++) {
         f = aord[i]
         if (arem[f] > aadd[f]) flag(f, apos[f], "assertions-dropped", arem[f] " removed, " (aadd[f] + 0) " added")
