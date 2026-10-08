@@ -16,6 +16,8 @@ Story: $ARGUMENTS
 
 Output of this command: a worktree and one file, `docs/research/<id>.md`. Nothing is planned here and no source file is touched.
 
+Run as a command, this research is written in this context on the session's model, which no command can choose (ADR-0036); start the session on `Model strong`. `/po-drive` passes `Model strong` to the planner it dispatches instead.
+
 ## Checks first
 - No `AGENTS.local.md` → stop and point to `/po-setup`.
 - Match $ARGUMENTS to one id of `docs/stories.md`. None or several → list the ids and stop.

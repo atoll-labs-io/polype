@@ -191,6 +191,25 @@ ignore_worktrees_and_env() {
   done
 }
 
+# Named, never written: the project chooses its own values (ADR-0043).
+missing_settings() {
+  [ "$mode" = global ] && return 0
+  [ -f "$project/AGENTS.local.md" ] || return 0
+  awk '
+    function trim(s) { sub(/^[[:space:]]+/, "", s); sub(/[[:space:]]+$/, "", s); return s }
+    FNR == NR {
+      if (/^```/) { fence = !fence; next }
+      if (fence && NF && index($0, ":")) {
+        i = index($0, ":")
+        n++; name[n] = trim(substr($0, 1, i - 1)); value[n] = trim(substr($0, i + 1))
+      }
+      next
+    }
+    index($0, ":") { have[trim(substr($0, 1, index($0, ":") - 1))] = 1 }
+    END { for (k = 1; k <= n; k++) if (!(name[k] in have)) print "missing setting: " name[k] ": " value[k] }
+  ' "$method/templates/agents-local.md" "$project/AGENTS.local.md"
+}
+
 set_hooks_path() {
   [ "$hooks" = yes ] || return 0
   local current
@@ -208,6 +227,7 @@ wire_the_project() {
   assemble_agents_md
   ignore_worktrees_and_env
   set_hooks_path
+  missing_settings >&2
 }
 
 stamp_version() { printf '%s\n' "$POLYPE_VERSION" > "$version_file"; }
@@ -355,6 +375,7 @@ cmd_check() {
   else
     status=1
   fi
+  missing_settings
   exit "$status"
 }
 

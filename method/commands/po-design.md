@@ -10,6 +10,8 @@ Story: $ARGUMENTS
 
 The plan and the code of a story with a screen should start from a screen someone already decided. This command decides it, from the recorded system, and writes it down in the story's worktree. It writes no source file.
 
+Run as a command, this design is decided in this context on the session's model, which no command can choose (ADR-0036); start the session on `Model strong`. `/po-drive` passes `Model strong` to the designer it dispatches instead.
+
 ## Checks
 1. No `AGENTS.local.md` → stop and point to `/po-setup`.
 2. Match $ARGUMENTS to one id of `docs/stories.md`; none or several → list the ids and stop.

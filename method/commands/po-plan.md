@@ -17,6 +17,8 @@ Story: $ARGUMENTS
 
 You produce `docs/plans/<id>.md` and its approval; source files are out of reach for this command.
 
+Run as a command, this plan is written in this context on the session's model, which no command can choose (ADR-0036); start the session on `Model strong`. `/po-drive` passes `Model strong` to the planner it dispatches instead.
+
 ## Checks first
 - No `AGENTS.local.md` → stop and point to `/po-setup`.
 - Match $ARGUMENTS to one id of `docs/stories.md`; none or several → list the ids and stop.

@@ -16,7 +16,7 @@ polype remove  --global                reprend la pose globale
 polype init    <projet> [--hooks]      active un projet servi par la pose globale
 polype install <projet> [--hooks]      pose tout dans un seul projet, sans rien de global
 polype update  <projet> [--hooks]      rafraîchit ce qui n'a pas bougé, signale ce qui a été modifié
-polype check   <projet>                version installée et fichiers qui ont dérivé
+polype check   <projet>                version, fichiers qui ont dérivé, réglages manquants
 polype remove  <projet>                reprend ce qui a été posé
 polype help                            l'aide ci-dessus
 ```
@@ -81,10 +81,19 @@ bonne forme pour un dépôt partagé dont on ne contrôle pas le `~/.claude` des
 
 Le frontmatter du subagent `implementer` déclare un hook PreToolUse sur `Edit`, `Write` et `Bash`
 qui appelle `.polype/hooks/po-bounds.sh implementer`. Le script refuse une écriture hors de
-`docs/` et hors de l'`Owns` committé de la story dont le worktree `story/<id>` contient le chemin,
-ainsi que `git switch`, `checkout`, `stash`, `push`, `worktree add` et un `git commit` hors d'une
-branche `story/<id>`. La revue garde son propre contrôle d'ownership : le hook ne voit ni les
-redirections du shell ni un `cp`.
+`docs/` et hors de l'`Owns` committé de la story dont le worktree `story/<id>` contient le chemin.
+Côté git, il refuse :
+- partout : `git switch`, `checkout`, `stash`, `push` et `worktree add` ;
+- partout aussi, depuis s62 : `git update-ref`, et `git branch` avec `-f`, `--force`, `-D`, `-M` ou
+  `-C`, seuls ou groupés (`-fD`) ;
+- hors d'un worktree sur une branche `story/*` : `commit`, `reset`, `merge`, `rebase`,
+  `cherry-pick`, `revert`, `am` et `pull`.
+
+Ce qu'il ne voit pas (ADR-0039) : un texte entre guillemets, ou le corps d'un heredoc à délimiteur
+cité, n'est pas lu comme une commande — c'est voulu, une citation n'est pas un ordre. Ne sont pas lus
+non plus une variable `$VAR` qui contient `git`, un alias git, `GIT_DIR=… git reset`,
+`git --git-dir=… reset` ni `git fetch . HEAD:main`. Il ne voit pas davantage les redirections du
+shell ni un `cp`. Pour tout cela, la revue garde son propre contrôle d'ownership.
 
 Le script a besoin de `jq` ; sans lui, il refuse tout.
 
@@ -174,6 +183,29 @@ place** ceux qui ont été modifiés à la main et les nomme sur `stderr`. Un fi
 garde l'empreinte de la version posée, donc `check` continue de le signaler tant qu'il diffère. Sur
 un projet où Polype n'a jamais été installé, `update` se comporte comme `install`.
 
+## Après une mise à jour
+
+Le gabarit des réglages gagne des lignes au fil des versions ; l'`AGENTS.local.md` d'un projet, lui,
+ne bouge pas. `install`, `init` et `update` sur un projet nomment donc, sur `stderr`, chaque réglage
+du gabarit que l'`AGENTS.local.md` du projet ne déclare pas, avec la valeur du gabarit, une ligne par
+réglage :
+
+```
+missing setting: <Nom>: <valeur>
+```
+
+L'installeur n'écrit jamais ce fichier (ADR-0043) : c'est au projet de choisir ses valeurs. Un projet
+servi par la pose globale voit cette liste quand `polype init <projet>` tourne après
+`polype install --global`. `polype check <projet>` la redonne à la demande.
+
+Pour chaque ligne : lis le tableau des valeurs de `.polype/templates/agents-local.md`, garde la
+valeur proposée ou choisis-en une autre, puis ajoute chaque ligne à `AGENTS.local.md`, dans le bloc
+où le gabarit la range. Ensuite relance `polype init <projet>` ou `polype update <projet>` pour que
+`AGENTS.md` porte les nouvelles lignes, et committe `AGENTS.local.md` et `AGENTS.md` sur la branche
+cible. D'ici là, une commande qui lit un réglage absent s'arrête en le nommant ; les réglages de
+modèle de s59 (`Model strong`, `Model light`, `Light up to`) arrêtent ainsi toutes les commandes qui
+délèguent à un subagent.
+
 ## Lire un rapport `check`
 
 `check` affiche la version installée, et dit si cet installeur en livre une autre. Il liste ensuite
@@ -182,7 +214,8 @@ un projet où Polype n'a jamais été installé, `update` se comporte comme `ins
 pas vide, ou si le fichier `version` manque ; **0** quand tout est intact — il dit alors combien de
 fichiers sont installés et ne nomme rien. Sans `manifest`, il sort 1 : rien n'est installé. En
 `--global`, les chemins sont relatifs à `~/.claude`, charge utile (`polype/bin/`, `polype/method/`)
-comprise.
+comprise. Sur un projet, `check` liste enfin les mêmes lignes `missing setting:` que la mise à jour ;
+elles ne changent pas son code de sortie.
 
 ## Ce que `remove` garde
 

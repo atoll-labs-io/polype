@@ -146,3 +146,45 @@ test_installer_state_files_are_not_their_own_ghosts() {
   require_file "$P/.polype/version"
   require_file "$P/.polype/checksums"
 }
+
+# s65 — an upgrade names the settings the template gained and the project lacks, and writes none.
+
+test_update_lists_missing_settings() {
+  project
+  grep -v -e '^Model strong:' -e '^Test:' "$METHOD/templates/agents-local.md" > "$P/AGENTS.local.md"
+  local before after out listed status=0
+  before="$(cksum < "$P/AGENTS.local.md")"
+  polype install "$P"
+  out="$(bash "$POLYPE" update "$P" 2>&1)" || fail "update failed: $out"
+  listed="$(grep '^missing setting:' <<< "$out" || true)"
+  [ "$listed" = "missing setting: Model strong: opus
+missing setting: Test: —" ] || fail "update listed: $listed"
+  out="$(bash "$POLYPE" check "$P" 2>/dev/null)" || status=$?
+  [ "$status" -eq 0 ] || fail "missing settings must not change check's exit status, got $status"
+  listed="$(grep '^missing setting:' <<< "$out" || true)"
+  [ "$listed" = "missing setting: Model strong: opus
+missing setting: Test: —" ] || fail "check listed: $listed"
+  after="$(cksum < "$P/AGENTS.local.md")"
+  [ "$before" = "$after" ] || fail "the installer wrote AGENTS.local.md"
+}
+
+test_installation_doc_has_an_upgrade_section() {
+  local section
+  section="$(awk '/^## Après une mise à jour$/ {on=1; next} /^## / {on=0} on' "$ROOT/docs/installation.md")"
+  [ -n "$section" ] || fail "docs/installation.md has no ## Après une mise à jour section"
+  local phrase
+  for phrase in 'missing setting: <Nom>: <valeur>' 'ajoute chaque ligne à `AGENTS.local.md`' \
+      '`polype check <projet>`' 'relance `polype init <projet>` ou `polype update <projet>`'; do
+    grep -qF -- "$phrase" <<< "$section" || fail "the upgrade section does not say: $phrase"
+  done
+}
+
+test_installation_doc_lists_the_hook_refusals() {
+  local section phrase
+  section="$(awk "/^### Le hook des bornes de l'implementer\$/ {on=1; next} /^## / {on=0} on" "$ROOT/docs/installation.md")"
+  [ -n "$section" ] || fail "docs/installation.md has no bounds-hook section"
+  for phrase in 'git update-ref' '-D' '--force' 'cherry-pick' 'pull' 'story/*' 'ADR-0039' \
+      'git fetch . HEAD:main' 'GIT_DIR='; do
+    grep -qF -- "$phrase" <<< "$section" || fail "the bounds-hook section does not say: $phrase"
+  done
+}

@@ -10,11 +10,14 @@ dispatches_on_strong() {
     || fail "${1#"$ROOT"/} does not dispatch $2 on \`Model strong\` on the same line"
 }
 
-# Fails unless one line naming the implementer dispatch also names `Light up to`.
+# Fails unless one line naming the implementer dispatch gives light up to the threshold, strong above.
 implementer_adapts_in() {
-  grep -E -- '`subagent_type: implementer`|Delegate to `implementer`' "$1" | grep -qF '`Light up to`' \
-    || fail "${1#"$ROOT"/} does not tie the implementer's model to \`Light up to\`"
+  grep -E -- '`subagent_type: implementer`|Delegate to `implementer`' "$1" \
+    | grep -qF '`Model light` up to `Light up to`, `Model strong` above' \
+    || fail "${1#"$ROOT"/} does not give the implementer \`Model light\` up to \`Light up to\`, \`Model strong\` above"
 }
+
+section_of() { awk -v h="## $2" '$0 == h {on=1; next} /^## / {on=0} on' "$1"; }
 
 test_settings_declare_the_model_routing() {
   local name row
@@ -59,8 +62,6 @@ test_only_the_implementer_adapts() {
   contains "$exec" 'A model setting at `—` passes no `model` at all'
   contains "$exec" 'Never retry with another model or with none'
   contains "$exec" '`subagent_type: implementer`, `model` as `## Model` settles'
-  for f in po-drive po-orchestrator po-flow; do implementer_adapts_in "$CMDS/$f.md"; done
-  grep -F 'fix-run sentence' "$CMDS/po-drive.md" | grep -qF '`Light up to`' || fail "drive fix runs drop the model rule"
   for f in po-orchestrator po-flow; do
     contains "$CMDS/$f.md" "run on the session's model, which no command can choose (ADR-0036)"
   done
@@ -82,4 +83,35 @@ test_setup_offers_the_defaults() {
   grep -qE '^Model strong:[[:space:]]+opus$' "$TEMPLATE" || fail "template default for Model strong is not opus"
   grep -qE '^Model light:[[:space:]]+sonnet$' "$TEMPLATE" || fail "template default for Model light is not sonnet"
   grep -qE '^Light up to:[[:space:]]+2$' "$TEMPLATE" || fail "template default for Light up to is not 2"
+}
+
+# s65 — the standalone deciders say which model they run on; a refused model name stops every dispatcher.
+
+test_standalone_commands_state_the_session_model() {
+  local f
+  for f in po-research po-plan po-design; do
+    contains "$CMDS/$f.md" 'which no command can choose (ADR-0036); start the session on `Model strong`'
+  done
+}
+
+test_model_refusal_stops_everywhere() {
+  local f
+  section_of "$CMDS/po-execute.md" Model \
+    | grep -qF 'If the Agent tool rejects the model name, stop and report the setting and its value.' \
+    || fail "po-execute ## Model does not stop on a refused model name"
+  for f in po-review po-qa po-stories-review; do
+    section_of "$CMDS/$f.md" Delegation \
+      | grep -qF 'If the Agent tool rejects the model name, stop and report the setting and its value' \
+      || fail "$f ## Delegation does not stop on a refused model name"
+  done
+  contains "$CMDS/po-drive.md" 'If the Agent tool rejects a model name, that lane stops, named in the report with the setting and its value'
+  for f in po-flow po-orchestrator; do
+    grep -E -- '`subagent_type: implementer`|Delegate to `implementer`' "$CMDS/$f.md" \
+      | grep -qF "\`/po-execute\`'s \`## Model\`" || fail "$f does not defer the implementer's model to /po-execute's ## Model"
+  done
+  contains "$CMDS/po-flow.md" 'delegate as `/po-review` does'
+  contains "$CMDS/po-orchestrator.md" 'Delegate to `reviewer` the way `/po-review` does'
+  for f in po-drive po-flow po-orchestrator; do implementer_adapts_in "$CMDS/$f.md"; done
+  grep -F 'fix-run sentence' "$CMDS/po-drive.md" \
+    | grep -qF '`Model light` up to `Light up to`, `Model strong` above' || fail "drive fix runs drop the model rule"
 }
