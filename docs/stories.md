@@ -867,7 +867,7 @@ Objectif : qu'une gate ne puisse plus être contournée par un commit tardif, un
 
 - **Complexité** : 3 — risque : la table de reprise de `/po-drive`, où une ligne mal ordonnée renvoie une lane au mauvais stade.
 - **Dépend de** : s52
-- **Owns** : `method/commands/po-orchestrator.md`, `method/commands/po-drive.md`, `method/commands/po-status.md`, `method/commands/po-help.md`, `README.md`, `tests/drive.test.sh`, `tests/fleet-design.test.sh`, `tests/qa-fleet.test.sh`
+- **Owns** : `method/commands/po-orchestrator.md`, `method/commands/po-drive.md`, `method/commands/po-status.md`, `method/commands/po-help.md`, `method/commands/po-review.md`, `README.md`, `tests/drive.test.sh`, `tests/fleet-design.test.sh`, `tests/review.test.sh`, `tests/qa-fleet.test.sh`
 
 **Critères d'acceptation**
 - [ ] `orchestrator_runs_qa_for_a_screen` — `/po-orchestrator` lance `/po-qa` entre l'exécution et la revue pour une story avec écran quand `QA stage` vaut `screens`.
@@ -875,8 +875,9 @@ Objectif : qu'une gate ne puisse plus être contournée par un commit tardif, un
 - [ ] `drive_resumes_on_qa_current` — la table de reprise de `/po-drive` décide d'une QA manquante ou périmée avec `po-gate qa-current`, comme les autres lignes décident avec `po-gate`.
 - [ ] `status_reports_qa` — `/po-status` dit, par story avec écran, si son rapport QA existe et s'il correspond au code.
 - [ ] `help_and_readme_show_qa` — l'aide et le `README.md` montrent l'étape.
+- [ ] `qa_blocked_review_goes_back_to_qa` — une revue bloquée parce que `po-gate qa-current` échoue renvoie à `/po-qa <id>`, pas à un fix run : `/po-review` le dit dans sa conclusion, `/po-orchestrator` et la reprise de `/po-drive` relancent la QA puis la revue, et ce retour ne consomme aucune unité de `Max attempts`.
 
-**Notes pour l'agent** : `tests/drive.test.sh` et `tests/fleet-design.test.sh` figent l'ordre des subagents de la vague : les mettre à jour avec le texte, pas les contourner. Une story sans écran garde la vague à quatre subagents.
+**Notes pour l'agent** : `tests/drive.test.sh` et `tests/fleet-design.test.sh` figent l'ordre des subagents de la vague : les mettre à jour avec le texte, pas les contourner. Une story sans écran garde la vague à quatre subagents. Le dernier critère vient du majeur M1 de `docs/reviews/s52-qa-wiring.md` : `/po-review` et l'orchestrateur envoient aujourd'hui toute revue bloquée en fix run, que l'implementer ne peut pas résoudre puisqu'il ne remplace pas la QA. Une revue bloquée se reconnaît comme bloquée par la QA à sa ligne `Next action:` qui nomme `/po-qa`. Le mineur m2 de cette même revue (un rapport à jour mais non committé passe `qa-current`) reste ouvert : `po-gate.sh` n'est pas dans les `Owns` de cette story.
 
 ## Correctifs hors jalon
 
@@ -894,3 +895,21 @@ Objectif : qu'une gate ne puisse plus être contournée par un commit tardif, un
 - [ ] `design_still_writes_no_source_file` — la consigne qui interdit au designer et à `/po-design` d'écrire un fichier source reste en place.
 
 **Notes pour l'agent** : ne nommer aucun navigateur ni serveur MCP particulier (`tests/qa.test.sh` vérifie qu'aucun `mcp__`, `playwright` ou `chrome` n'apparaît dans `method/`). Les tests qui lisent le frontmatter du designer (`tests/fleet-design.test.sh`) se mettent à jour avec le texte. Passer le défaut n° 33 à « corrigé par s58 ».
+
+### s59-model-by-complexity — Le modèle de chaque subagent choisi selon la story
+**En tant que** développeur **je veux** que les subagents d'une story simple tournent sur un modèle plus léger, et que la revue reste sur le modèle le plus fort **afin de** ne pas dépenser le modèle le plus cher sur chaque lane, sans rien perdre sur ce qui juge.
+
+- **Complexité** : 3 — risque : la valeur `model` passée à l'outil Agent ; un nom que l'outil refuse fait échouer la lane, donc la commande doit dire quoi faire d'un refus.
+- **Dépend de** : s56, s57
+- **Owns** : `method/agents/implementer.md`, `method/templates/agents-local.md`, `method/commands/po-drive.md`, `method/commands/po-orchestrator.md`, `method/commands/po-flow.md`, `method/commands/po-execute.md`, `method/commands/po-review.md`, `method/commands/po-setup.md`, `tests/model-routing.test.sh`
+- **Décision** : ADR-0032 (proposée)
+
+**Critères d'acceptation**
+- [ ] `settings_declare_the_model_routing` — le gabarit de réglages déclare `Model light`, `Model strong` et `Light up to`, documentés : `Model light` et `Model strong` prennent un nom de modèle accepté par l'outil Agent ou `—` (le modèle de la session), `Light up to` est la complexité la plus haute qui tourne sur `Model light`.
+- [ ] `implementer_no_longer_pins_a_model` — le frontmatter de l'implementer passe de `model: opus` à `model: inherit`.
+- [ ] `lanes_pick_the_model_from_the_complexity` — `/po-drive`, `/po-orchestrator`, `/po-flow` et `/po-execute` passent à l'outil Agent `Model light` pour le planner, le designer, l'implementer et la QA d'une story dont la complexité ne dépasse pas `Light up to`, et `Model strong` au-delà ; une valeur `—` ne passe aucun modèle.
+- [ ] `review_always_runs_on_the_strong_model` — `/po-review`, `/po-drive`, `/po-orchestrator` et `/po-flow` dispatchent le reviewer sur `Model strong`, quelle que soit la complexité.
+- [ ] `drive_reports_the_model_of_each_lane` — le rapport de `/po-drive` dit, par lane et par étape, le modèle utilisé.
+- [ ] `setup_offers_the_defaults` — `/po-setup` propose `Model light: sonnet`, `Model strong: opus`, `Light up to: 2`, sans ajouter de question numérotée (`tests/setup-modes.test.sh` fige les cinq questions).
+
+**Notes pour l'agent** : la complexité lue est celle que la recherche a re-notée quand elle existe, sinon celle de `docs/stories.md`. Un refus du modèle par l'outil Agent arrête la lane et le dit ; on ne retombe jamais en silence sur un autre modèle. Les `stories-reviewer` et la revue gardent le modèle fort : c'est là que les erreurs des autres agents sont attrapées. Polype lui-même règle `Model light: sonnet`, `Model strong: opus`, `Light up to: 2` dans son `AGENTS.local.md` une fois la story livrée, à la main.
