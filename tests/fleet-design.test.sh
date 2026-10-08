@@ -47,10 +47,10 @@ test_drive_inserts_design_between_plan_and_execute() {
   local wave; wave=$(section_of "$DRIVE" 'A wave')
   [ -n "$wave" ] || fail "po-drive.md has no '## A wave' section"
 
-  # The four subagents of a lane, in the order the lane runs them.
+  # The five subagents of a lane, in the order the lane runs them.
   local order; order=$(grep -o 'subagent_type: [a-z]*' <<< "$wave" | sed 's/subagent_type: //' | tr '\n' ' ')
-  [ "$order" = "planner designer implementer reviewer " ] \
-    || fail "expected planner then designer then implementer then reviewer, found: $order"
+  [ "$order" = "planner designer implementer qa reviewer " ] \
+    || fail "expected planner then designer then implementer then qa then reviewer, found: $order"
 
   # The stage is a dispatch, with the same two arguments as every other lane stage.
   holds "$wave" '**The design stage**, for a story whose text shows a screen: `subagent_type: designer`' 'the wave section'

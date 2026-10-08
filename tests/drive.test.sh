@@ -41,10 +41,10 @@ test_drive_dispatches_lanes_in_one_message() {
   holds "$wave" 'You prepare each lane'"'"'s worktree yourself' 'the wave section'
   holds "$wave" 'git worktree add -b story/<id>' 'the wave section'
 
-  # The four subagents of a lane, in that order, each under the contract of its own file.
+  # The five subagents of a lane, in that order, each under the contract of its own file.
   local order; order=$(grep -o 'subagent_type: [a-z]*' <<< "$wave" | sed 's/subagent_type: //' | tr '\n' ' ')
-  [ "$order" = "planner designer implementer reviewer " ] \
-    || fail "expected planner then designer then implementer then reviewer, found: $order"
+  [ "$order" = "planner designer implementer qa reviewer " ] \
+    || fail "expected planner then designer then implementer then qa then reviewer, found: $order"
   holds "$wave" 'the prompt `/po-execute` fixes' 'the wave section'
   holds "$wave" 'the prompt `/po-review` fixes' 'the wave section'
   holds "$wave" 'A plan without that line never reaches an implementer' 'the wave section'

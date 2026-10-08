@@ -28,12 +28,12 @@ Reads settings: none
    - `/po-design <story>` — pour une story avec écran : dérive l'écran du design system dans `docs/designs/<id>/`.
 2. `/po-plan <story>` — découpe en tâches testables, puis approbation.
 3. `/po-execute <story>` — l'implementer code, trace ses vérifications, commite.
-   - `/po-qa <story>` — pour une story avec écran : un agent parcourt en navigateur les écrans touchés et laisse ses preuves dans `docs/qa/<id>/`, sans rien corriger.
+   - `/po-qa <story>` — pour une story avec écran : un agent parcourt en navigateur les écrans touchés et laisse ses preuves dans `docs/qa/<id>/`, sans rien corriger. `/po-orchestrator` et `/po-drive` la lancent eux-mêmes quand `QA stage` vaut `screens`.
 4. `/po-review <story>` — relecture par un autre contexte, tests mis à l'épreuve, verdict.
 5. `/po-ship <story>` — verdict vérifié, contrôles lourds une fois, squash, nettoyage.
 
 ## Outils
-- `/po-orchestrator <story>` — choisit la piste (complète ou courte), ajoute le design pour une story avec écran, enchaîne les étapes et ne s'arrête que pour tes décisions.
+- `/po-orchestrator <story>` — choisit la piste (complète ou courte), ajoute le design et la QA pour une story avec écran, enchaîne les étapes et ne s'arrête que pour tes décisions.
 - `/po-drive` — la flotte : fait avancer en parallèle toutes les stories prêtes, une lane par story, et ship une par une.
   - `/po-drive status` — le même état en lecture seule : ce qui est en vol, ce qui attend et pourquoi ; ne prépare aucun worktree et ne lance rien.
 - `/po-status` — l'état du cadrage, puis de chaque story (piste comprise) et la commande suivante.

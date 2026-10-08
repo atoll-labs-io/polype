@@ -28,12 +28,13 @@ Une story traverse ces étapes, aucune sautée, aucune inversée :
 | Design (story avec écran) | `/po-design` | l'écran dérivé du design system |
 | Plan | `/po-plan` | des tâches testables, approuvées avant tout code |
 | Exécution | `/po-execute` | le code, ses tests, un relevé de vérification, un commit |
+| QA (story avec écran, `QA stage: screens`) | `/po-qa` | les écrans parcourus en navigateur, preuves dans `docs/qa/<id>/` |
 | Revue | `/po-review` | une relecture en contexte frais, avec un verdict |
 | Ship | `/po-ship` | un squash sur la branche cible |
 
 Trois gates mécaniques bornent la traversée : pas de code sans plan marqué validé, pas de revue qui s'appuie sur un relevé de vérification périmé, pas de ship sans verdict explicite. Un hook de pre-commit refuse un commit de code sur une branche de story dont le plan n'est pas validé. Seul un défaut critique bloque le ship ; un majeur est tracé et repris plus tard.
 
-`/po-flow` fait recherche et plan en une passe pour une petite story, `/po-orchestrator` enchaîne le cycle complet, `/po-status` dit où en est chaque story.
+`/po-flow` fait recherche et plan en une passe pour une petite story, `/po-orchestrator` enchaîne le cycle complet, `/po-status` dit où en est chaque story. `/po-orchestrator` et la flotte lancent eux-mêmes la QA d'une story avec écran ; une revue bloquée par la QA repart vers `/po-qa` sans consommer de fix run.
 
 ## La flotte
 

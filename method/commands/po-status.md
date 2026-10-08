@@ -8,7 +8,7 @@ allowed-tools:
 ---
 # /po-status
 
-Reads settings: `Target branch`, `Worktree root`, `Merge mode`, `Plan validation`, `Entry mode`, `Story track`, `Flow threshold`, `Parallel`, `Max attempts`, `ADR directory`
+Reads settings: `Target branch`, `Worktree root`, `Merge mode`, `Plan validation`, `Entry mode`, `Story track`, `Flow threshold`, `Parallel`, `Max attempts`, `ADR directory`, `QA stage`
 
 Everything comes from files and git; nothing is guessed. Bash is used read-only: no commit, checkout, merge or file change. `git fetch` is allowed when a remote exists, so that stories merged through a pull request are seen.
 
@@ -26,6 +26,7 @@ Everything comes from files and git; nothing is guessed. Bash is used read-only:
    - design: `docs/designs/<id>/design.md` present or not;
    - plan: none · draft · approved (`validated: yes` in the frontmatter), and ticked boxes over total;
    - record: present or not, and whether `po-gate verif-current <id>` passes;
+   - QA: for a story with a screen when `QA stage` is `screens`, `docs/qa/<id>/report.md` present or not, its last `QA status:`, and whether `po-gate qa-current <id>` passes; `—` for any other story; `QA stage` unset → shown as unset for a screen story, never guessed;
    - review: last `Ship allowed:` value — yes · no · none — and its `Fix loop:`, plus whether `po-gate ship-allowed <id>` passes; a `yes` whose `Reviewed tree:` no longer matches the code is shown as stale, next `/po-review <id>`;
    - shipped: a commit whose subject starts with `<id>:` on `Target branch` or `origin/<Target branch>` → shipped; an open pull request from `story/<id>` → waiting for merge;
    - dependencies: if one of them is not shipped, the story shows "waiting for <ids>" instead of a next command.
@@ -35,7 +36,7 @@ Everything comes from files and git; nothing is guessed. Bash is used read-only:
    - **blocked stories**, with the reason and what unblocks it: a dependency not shipped and which one; an `Owns` collision, with the path that collided and the lane holding it; `Max attempts` reached, which no fix run may pass and which waits for a human; an orphan worktree — another branch, a detached HEAD, or `story/<id>` checked out at another path — reported as it was found, never repaired here.
 
    `Parallel` or `Max attempts` unreadable → say which one and print no fleet section; neither is replaced by a guess, and the rest of the report stands.
-5. **Output.** The framing line first, then a line with shipped / in progress / not started counts, then a table: story (complexity) · track · research · design · plan · record · review · shipped · next. "Next" follows the cycle: research → design (`/po-design <id>`, a story with a screen) → plan → approve plan (`/po-plan` again) → execute → review (blocked → `/po-execute` fix run) → ship, or "waiting for merge". A story expected on the flow track with no plan yet gets `/po-flow <id>` while it has no worktree; once a worktree exists without a plan, `/po-flow` has escalated, and it gets `/po-research <id>`. One line per shipped story.
+5. **Output.** The framing line first, then a line with shipped / in progress / not started counts, then a table: story (complexity) · track · research · design · plan · record · qa · review · shipped · next. "Next" follows the cycle: research → design (`/po-design <id>`, a story with a screen) → plan → approve plan (`/po-plan` again) → execute → QA (`/po-qa <id>`, a screen story under `QA stage: screens` whose `po-gate qa-current <id>` fails) → review (blocked → `/po-execute` fix run, or `/po-qa <id>` when its `Next action:` names `/po-qa`) → ship, or "waiting for merge". A story expected on the flow track with no plan yet gets `/po-flow <id>` while it has no worktree; once a worktree exists without a plan, `/po-flow` has escalated, and it gets `/po-research <id>`. One line per shipped story.
 6. **Decisions.** With the `ADR directory` folder present: how many ADRs, and the most recent.
 
 Finish with the single most useful command, for example "Next: /po-plan s02-refund-order".
