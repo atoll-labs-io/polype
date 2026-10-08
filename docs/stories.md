@@ -1062,3 +1062,65 @@ Objectif : fermer les faiblesses que les revues de M6, s58 et s59 ont laissées 
 **Critères d'acceptation**
 - [ ] `overlap_rule_covers_globs` — `/po-drive`, la relecture des stories et le contrôle d'ownership de la revue disent la même règle : deux entrées se chevauchent quand un chemin peut correspondre aux deux (un dossier `x/` couvre tout ce qui est dessous, `*` un segment, `**` plusieurs) ; dans le doute, elles se chevauchent.
 - [ ] `overlap_examples_are_written_once` — la règle donne des exemples, dont `crates/*/Cargo.toml` contre `crates/core/` (chevauchement) et `src/a/*.ts` contre `src/b/` (disjoints), à un seul endroit que les autres citent.
+
+## M7 bis — Les derniers trous
+
+Objectif : fermer ce que les revues de M7 ont laissé ouvert, dont le reviewer qui a encore Bash sans borne. Validé par l'utilisateur le 2026-10-08.
+
+### s70-reviewer-bounds — Le reviewer tenu par un hook
+**En tant que** développeur **je veux** que le reviewer ne puisse ni pousser, ni committer, ni écrire hors de la story qu'il relit **afin qu'**une sonde qui s'échappe ne touche jamais le dépôt principal.
+
+- **Complexité** : 4 — risque : le reviewer modifie le code pour ses preuves de morsure puis le restaure ; le hook doit laisser passer ce va-et-vient dans le worktree de la story et rien d'autre.
+- **Dépend de** : aucune
+- **Owns** : `method/hooks/po-bounds.sh`, `method/agents/reviewer.md`, `tests/bounds.test.sh`
+- **Corrige** : incident de la revue de s62 (boucle 1), consigné dans `docs/reviews/s62-bounds-scan.md` : un heredoc de sonde mal fermé a lancé six `git push` dans le checkout principal
+
+**Critères d'acceptation**
+- [ ] `reviewer_declares_a_pretooluse_hook` — le frontmatter du reviewer appelle `po-bounds.sh reviewer` sur Edit, Write et Bash, et un échec de lancement du script donne le code 2.
+- [ ] `reviewer_writes_only_in_its_story_or_temp` — en mode `reviewer`, Write et Edit ne passent que dans le worktree de la story relue ou sous le répertoire temporaire du système.
+- [ ] `reviewer_git_is_read_only_outside_restores` — en mode `reviewer`, seuls passent les verbes git qui lisent, plus la restauration d'un fichier du worktree de la story (`git checkout -- <chemin>`, `git restore <chemin>`) ; `push`, `commit`, `reset`, `stash`, `branch`, `merge` et toute commande git hors de ce worktree ou d'un dépôt jetable du répertoire temporaire sont refusés.
+- [ ] `reviewer_bounds_fail_closed` — story introuvable ou entrée illisible : refus.
+
+**Notes pour l'agent** : relire comment `review-antihallu` fait la preuve de morsure (modifier, lancer un test, restaurer, `git diff --exit-code`) et comment les revues de M6 et M7 ont sondé dans des dépôts jetables sous `/tmp`, pour ne bloquer aucun de ces gestes. Une ADR fixe le mode `reviewer`.
+
+### s71-bounds-heredoc-expansion — Un heredoc lu comme bash le lira
+**En tant que** développeur **je veux** que `po-bounds` lise le corps d'un heredoc non cité passé à un shell après l'expansion que bash lui fait subir **afin qu'**un `` \`git push\` `` ne passe plus à travers.
+
+- **Complexité** : 3
+- **Dépend de** : s70
+- **Owns** : `method/hooks/po-bounds.sh`, `tests/bounds.test.sh`
+- **Corrige** : majeur M1 et mineur m1 de `docs/reviews/s62-bounds-scan.md` (boucle 1)
+
+**Critères d'acceptation**
+- [ ] `unquoted_heredoc_is_expanded_before_reading` — dans le corps d'un heredoc à délimiteur non cité lu par un shell, `` \` ``, `\$` et `\\` sont rendus comme bash les rend avant que le corps soit relu ; `` echo \`git push\` `` y est refusé.
+- [ ] `quoted_git_after_a_wrapper_option_is_caught` — `env -u X "git" push` et `sudo -u x "git" push` sont refusés.
+- [ ] `accepted_gaps_are_written_in_an_adr` — une ADR qui remplace ADR-0039 décrit ce que le lecteur fait réellement (lecture des heredocs d'un shell, refus du pipe vers un shell, interprètes reconnus) et liste les trous acceptés (script écrit puis lancé, `bash <(…)`, `GIT_DIR=…`, alias git).
+
+### s72-overlap-direction — La règle de chevauchement dans le bon sens, partout
+**En tant que** développeur **je veux** que la revue compare un chemin du diff exactement aux entrées `Owns`, et que tous les textes de la méthode citent la même règle de chevauchement **afin que** le doute ne laisse jamais passer un chemin hors périmètre.
+
+- **Complexité** : 2
+- **Dépend de** : aucune
+- **Owns** : `method/skills/review-antihallu/`, `method/skills/stories-review/`, `method/commands/po-drive.md`, `method/commands/po-stories.md`, `method/commands/po-status.md`, `method/AGENTS.md`, `method/templates/stories.md`, `method/templates/stories-review.md`, `tests/owns-overlap.test.sh`
+- **Corrige** : majeur et mineurs de `docs/reviews/s69-owns-overlap-globs.md`
+
+**Critères d'acceptation**
+- [ ] `diff_paths_match_owns_exactly` — dans `review-antihallu`, un chemin du diff est comparé exactement aux entrées de sa story (« hors `Owns` » si aucune ne le couvre) ; « dans le doute, ça se chevauche » ne vaut que pour la comparaison avec une autre story et entre entrées.
+- [ ] `drive_reports_name_the_entries` — le rapport et la réponse `status` de `/po-drive` nomment, pour un conflit, les deux entrées et un chemin qui correspond aux deux, comme sa règle de l'ensemble prêt.
+- [ ] `every_overlap_text_cites_the_rule` — `method/AGENTS.md`, `/po-stories`, `/po-status`, le gabarit de stories et celui de leur relecture citent la règle de chevauchement au lieu de dire « partager un chemin ».
+- [ ] `how_to_decide_reads_as_a_sentence` — la phrase « How to decide » de `stories-review` est grammaticale.
+
+### s73-text-leftovers — Les restes de texte
+**En tant que** développeur **je veux** que les derniers textes en retard sur la méthode soient alignés **afin qu'**un lecteur ne suive pas une consigne périmée.
+
+- **Complexité** : 1
+- **Dépend de** : aucune
+- **Owns** : `method/skills/testing-doctrine/`, `docs/decisions/ADR-0024-po-bounds-trouve-la-story-par-son-worktree.md`, `docs/decisions/ADR-0029-po-qa-committe-les-preuves-qa.md`, `docs/decisions/ADR-0037-qa-current-exige-une-preuve-qa-committee.md`, `AGENTS.local.md`, `tests/leftovers.test.sh`
+- **Corrige** : mineurs de `docs/reviews/s67-record-text.md`, `s60-gate-parsing.md` (m5), `s61-bounds-owns.md`, `s65-upgrade-path.md`
+
+**Critères d'acceptation**
+- [ ] `testing_doctrine_single_quotes_po_run` — la doctrine de test montre `po-run … -- '<command>'` entre guillemets simples, comme l'implementer et la gate.
+- [ ] `replaced_adrs_point_to_their_successor` — le frontmatter d'ADR-0024, d'ADR-0029 et d'ADR-0037 renvoie (`superseded-by`) aux ADR qui en remplacent une partie, sans toucher à leur corps ; leur statut reste `accepted` puisque le remplacement est partiel.
+- [ ] `polype_declares_every_template_setting` — l'`AGENTS.local.md` de Polype déclare `QA stage: —` et `Dev: —`, et `polype check .` n'y signale plus aucun réglage manquant.
+
+**Notes pour l'agent** : vérifier les noms exacts des fichiers d'ADR dans `docs/decisions/` avant d'écrire ; une ADR acceptée ne se modifie jamais dans son corps, seul son frontmatter de liens change.
