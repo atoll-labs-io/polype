@@ -964,6 +964,7 @@ Objectif : fermer les faiblesses que les revues de M6, s58 et s59 ont laissées 
 - [ ] `bounds_ignore_quoted_arguments` — une chaîne entre guillemets passée en argument (`grep "git checkout"`, `printf '…git commit…'`) n'est pas lue comme une commande.
 - [ ] `bounds_still_catch_real_verbs` — `git checkout`, `git stash`, `git push` et un commit hors `story/<id>` restent refusés, y compris après `&&`, `;` ou dans `$(…)`.
 - [ ] `qa_allowlist_refuses_writing_forms` — en mode `qa`, `git symbolic-ref` avec deux arguments et toute option `--output` sont refusés.
+- [ ] `bounds_refuse_moving_a_branch` — en mode `implementer`, `git branch -f`, `git branch -D`, `git update-ref` et `git reset` sur une autre branche que `story/<id>` sont refusés : déplacer la branche de départ élargirait les bornes lues au point de départ (ADR-0038).
 
 **Notes pour l'agent** : ADR-0024 a choisi une analyse par mots en acceptant les faux positifs ; cette story la remplace pour les heredocs et les arguments cités, ce qui demande une ADR. Rester en bash, `jq` et `awk`.
 
@@ -979,6 +980,7 @@ Objectif : fermer les faiblesses que les revues de M6, s58 et s59 ont laissées 
 - [ ] `story_adrs_are_in_scope_by_construction` — le contrôle d'ownership tient pour dans le périmètre une ADR que le diff ajoute sous `<ADR directory>` et que le plan de la story annonce.
 - [ ] `a_lens_opens_what_the_diff_calls` — une lentille juge ce que le diff change, et ouvre ce que ce code appelle pour confirmer un constat.
 - [ ] `the_manual_record_check_names_the_runs` — la phrase qui décrit le contrôle du relevé sans hook cite les lignes `## Runs`, plus seulement la comparaison d'arbre.
+- [ ] `qa_current_failure_names_an_uncommitted_report` — la liste des causes d'échec de `qa-current` dans `review-antihallu` cite le rapport à jour mais non committé, dont la suite est le commit des preuves et non une nouvelle visite.
 
 ### s64-qa-routing — Le retour en QA partout, et seulement quand il le faut
 **En tant que** développeur **je veux** qu'une revue soit traitée comme bloquée par la QA seulement quand elle est bloquée, et que toutes les commandes la renvoient au même endroit **afin qu'**aucune revue ne parte en QA par erreur, ni en fix run inutile.
@@ -1028,12 +1030,13 @@ Objectif : fermer les faiblesses que les revues de M6, s58 et s59 ont laissées 
 
 - **Complexité** : 1
 - **Dépend de** : s60
-- **Owns** : `method/agents/implementer.md`, `method/hooks/po-gate.sh`, `tests/run-ledger.test.sh`
-- **Corrige** : mineurs m3 et m4 de `docs/reviews/s56-evidence-runner.md`
+- **Owns** : `method/agents/implementer.md`, `method/hooks/po-gate.sh`, `tests/run-ledger.test.sh`, `tests/qa-gate.test.sh`
+- **Corrige** : mineurs m3 et m4 de `docs/reviews/s56-evidence-runner.md` ; majeur M1 et mineur m3 de `docs/reviews/s60-gate-parsing.md`
 
 **Critères d'acceptation**
 - [ ] `fix_run_keeps_the_runs` — en fix run, l'implementer garde le relevé existant et ses lignes `## Runs`, et ne met à jour que `Tree:` et ses propres lignes.
 - [ ] `suggested_command_is_single_quoted` — la commande `po-run` que l'implementer lance et celle que la gate suggère placent la commande entre guillemets simples.
+- [ ] `qa_current_ignores_ignored_files` — `qa-current` ne compte plus un fichier ignoré par git sous `docs/qa/<id>/` (le commit des preuves ne peut pas l'inclure), et le test de rapport committé mord sur la vérification qu'il garde.
 
 ### s68-docs-catch-up — La documentation rattrape la méthode
 **En tant que** développeur **je veux** que le README et la matrice de parité décrivent la méthode telle qu'elle est **afin qu'**un lecteur ne se fie pas à un comportement disparu.
@@ -1046,3 +1049,15 @@ Objectif : fermer les faiblesses que les revues de M6, s58 et s59 ont laissées 
 **Critères d'acceptation**
 - [ ] `readme_describes_the_pre_commit` — le README dit que le pre-commit refuse aussi les secrets, sur toutes les branches.
 - [ ] `parity_h04_matches_the_model_rule` — la ligne H04 dit que les rôles qui décident tournent sur `Model strong` et que l'implementer s'adapte à la complexité, avec son statut.
+
+### s69-owns-overlap-globs — Les contrôles de chevauchement comprennent les globs
+**En tant que** développeur **je veux** que la flotte, la relecture des stories et la revue comparent des `Owns` qui contiennent des globs **afin que** deux lanes qui touchent les mêmes chemins ne partent jamais ensemble.
+
+- **Complexité** : 2
+- **Dépend de** : s63, s64
+- **Owns** : `method/commands/po-drive.md`, `method/skills/stories-review/`, `method/skills/review-antihallu/`, `method/templates/review.md`, `tests/owns-overlap.test.sh`
+- **Corrige** : majeur de `docs/reviews/s61-bounds-owns.md`
+
+**Critères d'acceptation**
+- [ ] `overlap_rule_covers_globs` — `/po-drive`, la relecture des stories et le contrôle d'ownership de la revue disent la même règle : deux entrées se chevauchent quand un chemin peut correspondre aux deux (un dossier `x/` couvre tout ce qui est dessous, `*` un segment, `**` plusieurs) ; dans le doute, elles se chevauchent.
+- [ ] `overlap_examples_are_written_once` — la règle donne des exemples, dont `crates/*/Cargo.toml` contre `crates/core/` (chevauchement) et `src/a/*.ts` contre `src/b/` (disjoints), à un seul endroit que les autres citent.

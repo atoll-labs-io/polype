@@ -74,3 +74,4 @@ Tranché le 2026-10-07 après la revue du découpage de M6 : ces idées restent 
 
 Comme pour Killer SaaS, une invocation dont la forme est imposée par l'outil n'est pas du texte d'auteur :
 - `date -u +%Y-%m-%dT%H:%M:%SZ` (horodatage ISO-8601 UTC), dans `method/hooks/po-run.sh` ; gstack écrit la même dans `ios-qa/SKILL.md`. Relevé au ship de s56, le 2026-10-08.
+- Suites de guillemets (`' ' ' ' …`) que `bin/ks-overlap` prend pour des mots, dans `method/hooks/po-bounds.sh` (lignes de découpage des arguments) ; gstack en a de semblables dans `careful/bin/check-careful.sh`. Ce sont des caractères, pas du texte. Relevé au ship de s61, le 2026-10-08.
