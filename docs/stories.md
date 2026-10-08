@@ -1094,7 +1094,7 @@ Objectif : fermer ce que les revues de M7 ont laissé ouvert, dont le reviewer q
 **Critères d'acceptation**
 - [ ] `unquoted_heredoc_is_expanded_before_reading` — dans le corps d'un heredoc à délimiteur non cité lu par un shell, `` \` ``, `\$` et `\\` sont rendus comme bash les rend avant que le corps soit relu ; `` echo \`git push\` `` y est refusé.
 - [ ] `quoted_git_after_a_wrapper_option_is_caught` — `env -u X "git" push` et `sudo -u x "git" push` sont refusés.
-- [ ] `accepted_gaps_are_written_in_an_adr` — une ADR qui remplace ADR-0039 décrit ce que le lecteur fait réellement (lecture des heredocs d'un shell, refus du pipe vers un shell, interprètes reconnus) et liste les trous acceptés (script écrit puis lancé, `bash <(…)`, `GIT_DIR=…`, alias git).
+- [ ] `accepted_gaps_are_written_in_an_adr` — une ADR qui remplace ADR-0039 décrit ce que le lecteur fait réellement (lecture des heredocs d'un shell, refus du pipe vers un shell, interprètes reconnus) et liste les trous acceptés (script écrit puis lancé, `source <(…)`, `GIT_DIR=…`, alias git ; `bash <(…)` était déjà refusé, corrigé après le plan de s71).
 
 ### s72-overlap-direction — La règle de chevauchement dans le bon sens, partout
 **En tant que** développeur **je veux** que la revue compare un chemin du diff exactement aux entrées `Owns`, et que tous les textes de la méthode citent la même règle de chevauchement **afin que** le doute ne laisse jamais passer un chemin hors périmètre.
@@ -1124,3 +1124,35 @@ Objectif : fermer ce que les revues de M7 ont laissé ouvert, dont le reviewer q
 - [ ] `polype_declares_every_template_setting` — l'`AGENTS.local.md` de Polype déclare `QA stage: —` et `Dev: —`, et `polype check .` n'y signale plus aucun réglage manquant.
 
 **Notes pour l'agent** : vérifier les noms exacts des fichiers d'ADR dans `docs/decisions/` avant d'écrire ; une ADR acceptée ne se modifie jamais dans son corps, seul son frontmatter de liens change.
+
+### s74-reviewer-bounds-bypasses — Les contournements du reviewer fermés
+**En tant que** développeur **je veux** que `po-bounds` en mode `reviewer` juge la commande git que git exécutera vraiment **afin qu'**aucune sonde ne puisse écrire dans le dépôt principal par un détour.
+
+- **Complexité** : 4 — risque : chaque correction doit laisser passer les sondes légitimes des revues (dépôt jetable sous le répertoire temporaire, preuve de morsure dans le worktree).
+- **Dépend de** : aucune
+- **Owns** : `method/hooks/po-bounds.sh`, `method/agents/reviewer.md`, `tests/bounds.test.sh`
+- **Corrige** : majeurs M1, M2, M3 et mineur m2 de `docs/reviews/s70-reviewer-bounds.md`
+
+**Critères d'acceptation**
+- [ ] `chained_git_dirs_are_folded` — tous les `-C` d'une commande git sont enchaînés comme git les enchaîne avant que la zone soit décidée ; `git -C <checkout principal> -C . commit` lancé depuis un dépôt jetable est refusé.
+- [ ] `config_worktree_override_is_refused` — en mode `reviewer`, `-c core.worktree=…` (et toute valeur `-c` qui fixe `core.worktree`) est refusé, comme `--work-tree`.
+- [ ] `temp_zone_verbs_keep_their_paths_in_temp` — dans un dépôt jetable, un verbe qui prend un chemin de destination (`worktree add`, `clone`, `init`) n'est accepté que si ce chemin est lui aussi sous le répertoire temporaire.
+- [ ] `reviewer_knows_how_to_check_merged` — `method/agents/reviewer.md` dit comment vérifier qu'une branche n'est pas fusionnée sans `git branch --merged` (`git merge-base --is-ancestor`, `git log`).
+
+**Notes pour l'agent** : relire ADR-0047 et ADR-0050 ; une ADR nouvelle remplace ADR-0047 si une de ses règles change, sinon aucune ADR. Les sondes se construisent comme données d'entrée du hook, jamais comme commandes lancées.
+
+### s75-post-m7-texts — Les textes rattrapent M7 bis
+**En tant que** développeur **je veux** que la documentation, les règles et les ADR décrivent la méthode telle que M7 bis l'a laissée **afin qu'**un lecteur ne suive pas une consigne périmée.
+
+- **Complexité** : 2
+- **Dépend de** : aucune
+- **Owns** : `docs/installation.md`, `tests/installer.test.sh`, `method/AGENTS.md`, `tests/structure.test.sh`, `method/skills/agentic-stories/`, `method/templates/adr.md`, `method/commands/po-architect.md`, `docs/decisions/ADR-0037-qa-current-exige-une-preuve-qa-committee.md`, `docs/decisions/ADR-0038-po-bounds-lit-les-owns-au-point-de-depart-de-la-story.md`, `docs/decisions/ADR-0039-po-bounds-lit-les-commandes-hors-guillemets-et-heredocs.md`, `docs/decisions/ADR-0041-le-retour-en-qa-exige-une-revue-bloquee-et-reconnait-la-preuve-non-committee.md`, `tests/post-m7-texts.test.sh`
+- **Corrige** : mineurs de `docs/reviews/s70-reviewer-bounds.md` (m1, m3), `s71-bounds-heredoc-expansion.md` (m2), `s72-overlap-direction.md`, `s73-text-leftovers.md`
+
+**Critères d'acceptation**
+- [ ] `installation_describes_the_reviewer_mode` — `docs/installation.md` décrit le mode `reviewer` de `po-bounds`, dit qu'un projet dont `.polype/hooks/po-bounds.sh` date d'avant s70 bloque toute revue jusqu'à `polype init`, et renvoie à ADR-0050 au lieu d'ADR-0039.
+- [ ] `rules_name_every_bounded_agent` — la section « Installed files » de `method/AGENTS.md` dit que `po-bounds` tient l'implementer, qa et le reviewer.
+- [ ] `agentic_stories_cites_the_overlap_rule` — `agentic-stories` cite la règle de chevauchement de la vérification 8 de `stories-review` au lieu de dire seulement « share a path ».
+- [ ] `partial_supersession_is_written_and_linked` — le gabarit d'ADR et `/po-architect` décrivent le remplacement partiel (l'ancienne ADR garde `accepted` et nomme son successeur, le successeur la nomme dans `supersedes`) ; ADR-0037, ADR-0038, ADR-0039 et ADR-0041 nomment dans `supersedes` l'ADR qu'elles remplacent en partie, sans toucher à leur corps.
+
+**Notes pour l'agent** : une ADR acceptée ne se modifie que dans son frontmatter de liens ; vérifier chaque lien dans le corps du successeur avant de l'écrire (ADR-0038 et ADR-0039 → ADR-0024, ADR-0037 → ADR-0029, ADR-0041 → ADR-0037).
