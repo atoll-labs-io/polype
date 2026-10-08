@@ -9,7 +9,7 @@
 3119553877 7482 .claude/commands/po-orchestrator.md
 2429450646 3549 .claude/commands/po-plan.md
 1596722680 3973 .claude/commands/po-prd.md
-3987112113 3588 .claude/commands/po-qa.md
+2852557641 3725 .claude/commands/po-qa.md
 2082241604 3872 .claude/commands/po-research.md
 1196631900 4567 .claude/commands/po-review.md
 2213502290 5959 .claude/commands/po-setup.md
@@ -20,7 +20,7 @@
 2598334128 5909 .claude/agents/designer.md
 2384624903 5884 .claude/agents/implementer.md
 3161811081 6124 .claude/agents/planner.md
-1012510216 4083 .claude/agents/qa.md
+3290207871 5000 .claude/agents/qa.md
 4149968655 5855 .claude/agents/reviewer.md
 1590527754 2303 .claude/agents/stories-reviewer.md
 3121947975 5613 .claude/skills/agentic-stories/SKILL.md
@@ -28,12 +28,14 @@
 3290389435 1595 .claude/skills/codebase-analysis/SKILL.md
 573463234 3096 .claude/skills/design-doctrine/SKILL.md
 3649530943 6774 .claude/skills/interrogation/SKILL.md
+2323248751 1144 .claude/skills/qa-drivers/browser.md
+662276980 2731 .claude/skills/qa-drivers/SKILL.md
 1471385283 8304 .claude/skills/review-antihallu/SKILL.md
 1311165776 4774 .claude/skills/review-lenses/SKILL.md
 1992924500 5561 .claude/skills/stories-review/SKILL.md
 1573348266 4964 .claude/skills/testing-doctrine/SKILL.md
 2557896153 831 .polype/templates/adr.md
-2584030973 5300 .polype/templates/agents-local.md
+3577821036 5349 .polype/templates/agents-local.md
 3260360512 2097 .polype/templates/architecture.md
 2304942730 1973 .polype/templates/brief.md
 1271924568 923 .polype/templates/design-brief.md
@@ -42,8 +44,8 @@
 729708485 1787 .polype/templates/plan-flow.md
 3841718358 945 .polype/templates/plan.md
 4291076552 1959 .polype/templates/prd.md
-2151965945 2640 .polype/templates/profile.md
-41570290 1363 .polype/templates/qa.md
+1280284064 2968 .polype/templates/profile.md
+2153717428 1663 .polype/templates/qa.md
 581826735 883 .polype/templates/research.md
 1913837916 2656 .polype/templates/review.md
 3314498754 1554 .polype/templates/stories.md

@@ -28,6 +28,8 @@
 .claude/skills/codebase-analysis/SKILL.md
 .claude/skills/design-doctrine/SKILL.md
 .claude/skills/interrogation/SKILL.md
+.claude/skills/qa-drivers/browser.md
+.claude/skills/qa-drivers/SKILL.md
 .claude/skills/review-antihallu/SKILL.md
 .claude/skills/review-lenses/SKILL.md
 .claude/skills/stories-review/SKILL.md
