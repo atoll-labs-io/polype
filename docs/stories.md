@@ -1187,3 +1187,185 @@ Objectif : fermer ce que les revues de M7 ont laissé ouvert, dont le reviewer q
 - [ ] `reviewer_knows_the_hook_is_a_guard` — `method/agents/reviewer.md` dit que `po-bounds` arrête les erreurs (ADR-0052) et qu'un contournement délibéré déjà listé par ADR-0052 n'est pas un constat ; un contournement nouveau se signale en renvoyant à l'ADR plutôt qu'en demandant un correctif.
 - [ ] `adr_links_are_the_only_edit` — la Loi 6 de `method/AGENTS.md` dit qu'une ADR acceptée ne change que dans ses liens de frontmatter, et le gabarit d'ADR garde ses commentaires hors des lignes `supersedes:` et `superseded-by:`.
 - [ ] `overlap_wording_is_light` — la phrase de `/po-status` sur un conflit d'`Owns` se lit d'un trait, et la vérification 8 de `stories-review` dit « overlap » au lieu de « share an `Owns` path ».
+
+## M8 — Toutes les plateformes
+
+Objectif : Polype pilote un projet mobile, une CLI, une API ou une bibliothèque, une scène 3D ou XR et un robot comme il pilote un site web, avec la même QA avant revue (ADR-0054) ; plus une rétro, une procédure de diagnostic et l'accessibilité élargie, retenues de l'étude gstack et agent-skills. Validé par l'utilisateur le 2026-10-08.
+
+### s78-platform-setting — Le projet déclare ses plateformes, la story sa surface
+**En tant que** développeur **je veux** que le projet déclare ses plateformes et que chaque story déclare sa surface **afin que** la suite du cycle sache comment la dessiner et la vérifier sans deviner.
+
+- **Complexité** : 3
+- **Dépend de** : aucune
+- **Surface** : —
+- **Owns** : `method/templates/agents-local.md`, `method/commands/po-setup.md`, `method/templates/stories.md`, `method/skills/agentic-stories/`, `method/commands/po-stories.md`, `AGENTS.local.md`, `tests/platform-setting.test.sh`
+
+**Critères d'acceptation**
+- [ ] `platform_is_a_setting` — le gabarit `agents-local.md` déclare `Platform`, une liste parmi `web`, `mobile`, `cli`, `api`, `lib`, `xr`, `robot`, et `QA stage` accepte `screens`, `surfaces` ou `—` avec leur sens d'ADR-0054.
+- [ ] `setup_asks_the_platform` — `/po-setup` demande la ou les plateformes et n'offre que les profils de boilerplate dont la plateforme est dans la liste.
+- [ ] `stories_declare_a_surface` — le gabarit de stories et `agentic-stories` font écrire une ligne `Surface` (`screen`, `command`, `endpoint`, `scene`, `behaviour` ou `—`) à chaque story, et `/po-stories` la remplit d'après le réglage `Platform`.
+- [ ] `polype_declares_its_platform` — l'`AGENTS.local.md` de Polype déclare `Platform: cli` et `polype check .` ne signale aucun réglage manquant.
+
+### s79-qa-drivers — La QA vérifie une surface avec le pilote qui lui va
+**En tant que** développeur **je veux** que l'agent `qa` choisisse son pilote d'après la surface de la story et la plateforme du projet **afin qu'**une CLI, une scène ou un robot soient vérifiés avant la revue comme un écran l'est.
+
+- **Complexité** : 4
+- **Dépend de** : s78
+- **Surface** : —
+- **Owns** : `method/agents/qa.md`, `method/commands/po-qa.md`, `method/templates/qa.md`, `method/skills/qa-drivers/SKILL.md`, `method/skills/qa-drivers/browser.md`, `method/templates/profile.md`, `bin/po-lint`, `boilerplates/next-forge/profile.md`, `tests/qa.test.sh`, `tests/profile.test.sh`, `tests/next-forge-profile.test.sh`, `tests/qa-drivers.test.sh`
+
+**Critères d'acceptation**
+- [ ] `qa_picks_the_driver_of_the_surface` — `qa` précharge `qa-drivers`, dont le `SKILL.md` dit quel fichier de pilote vaut pour chaque surface et plateforme (table d'ADR-0054) ; un fichier de pilote absent arrête la QA avec `QA status: blocked` et la cause.
+- [ ] `browser_driver_is_the_first_one` — `qa-drivers/browser.md` renvoie à la section de `design-doctrine` qui pilote déjà un navigateur, sans la recopier.
+- [ ] `qa_report_names_its_driver` — le gabarit de rapport QA porte le pilote utilisé et la forme de la preuve (captures, transcriptions, journaux) ; une story que seul un matériel réel ou un simulateur iOS vérifierait le dit dans le rapport.
+- [ ] `profiles_declare_platform_and_driver` — le gabarit de profil a les sections `## Platform` et `## QA driver`, `bin/po-lint` les exige, et le profil next-forge les remplit (`web`, navigateur).
+
+### s80-surface-routing — La flotte route une story d'après sa surface
+**En tant que** développeur **je veux** que `/po-drive`, `/po-orchestrator`, `/po-status` et la revue lisent la ligne `Surface` **afin que** le design et la QA s'appliquent aux bonnes stories sans deviner depuis le texte.
+
+- **Complexité** : 4
+- **Dépend de** : s78
+- **Surface** : —
+- **Owns** : `method/commands/po-drive.md`, `method/commands/po-orchestrator.md`, `method/commands/po-status.md`, `method/commands/po-review.md`, `method/skills/review-antihallu/`, `method/agents/reviewer.md`, `method/AGENTS.md`, `tests/qa-fleet.test.sh`, `tests/fleet-design.test.sh`, `tests/wiring.test.sh`, `tests/design-handoff.test.sh`, `tests/surface-routing.test.sh`
+
+**Critères d'acceptation**
+- [ ] `design_follows_a_screen_surface` — le design s'applique à une story de surface `screen`, et à une story sans ligne `Surface` dont le texte montre un écran (ADR-0054).
+- [ ] `qa_follows_the_qa_stage` — sous `QA stage: screens`, seules les stories `screen` passent en QA ; sous `surfaces`, toute story dont la surface n'est pas `—` ; la table de reprise de `/po-drive`, `/po-orchestrator` et `/po-status` disent la même chose.
+- [ ] `review_requires_qa_for_a_surface` — `review-antihallu` et le reviewer exigent `po-gate qa-current` pour toute story que le réglage `QA stage` fait passer en QA, et une story `scene` est jugée contre son plan, pas contre le système de design.
+- [ ] `rules_speak_of_surfaces` — les tables de cycle de `method/AGENTS.md` parlent de surface là où elles parlaient d'écran pour la QA.
+
+### s81-scenario-driver — Le pilote par scénarios pour une CLI, une API ou une bibliothèque
+**En tant que** développeur **je veux** que la QA d'une story `command` ou `endpoint` lance de vrais scénarios et garde leurs transcriptions **afin qu'**une CLI ou une API soient regardées comme un utilisateur les utiliserait, et pas seulement par leurs tests.
+
+- **Complexité** : 3
+- **Dépend de** : s79
+- **Surface** : —
+- **Owns** : `method/skills/qa-drivers/scenarios.md`, `tests/scenario-driver.test.sh`
+
+**Critères d'acceptation**
+- [ ] `scenarios_run_each_visible_criterion` — `qa-drivers/scenarios.md` fait lancer, pour chaque critère qu'un utilisateur constate, la commande, la requête ou l'appel public, et garder dans `docs/qa/<id>/` l'entrée, la sortie et le code de retour, sans secret.
+- [ ] `scenarios_cover_failure_paths` — le pilote couvre une entrée invalide et le message d'erreur qu'un utilisateur lit, pas seulement le chemin nominal.
+- [ ] `scenarios_start_the_service_itself` — pour une API, le pilote dit comment démarrer le service sur un port libre de la machine, l'interroger, puis l'arrêter, et ne touche à aucun service partagé.
+
+### s82-mobile-web-driver — Le mobile vérifié par son rendu web d'abord
+**En tant que** développeur **je veux** que la QA d'un écran mobile passe par le rendu web de la pile dans le navigateur, en largeur de téléphone **afin que** clout soit vérifiable dès maintenant sans émulateur.
+
+- **Complexité** : 3
+- **Dépend de** : s79
+- **Surface** : —
+- **Owns** : `method/skills/qa-drivers/mobile-web.md`, `method/skills/design-doctrine/`, `tests/mobile-web-driver.test.sh`
+
+**Critères d'acceptation**
+- [ ] `mobile_web_driver_sets_a_phone_viewport` — `qa-drivers/mobile-web.md` fait lancer le rendu web de la pile (la commande vient du profil), ouvrir l'écran en largeur de téléphone (au moins 360 et 412 pixels de large) et en mode portrait, et capturer chaque état.
+- [ ] `mobile_rules_are_in_the_doctrine` — `design-doctrine` donne les règles mobiles qu'un écran tient : zones tactiles d'au moins 44 sur 44 points, zones sûres (encoche, barre de geste), clavier qui ne masque pas le champ actif, pas de survol comme seul moyen d'agir.
+- [ ] `native_only_behaviour_is_named` — le pilote liste ce que le rendu web ne montre pas (permissions natives, notifications, caméra, gestes système) et le rapport QA le reporte comme non vérifié.
+
+### s83-expo-profile — Le profil Expo
+**En tant que** développeur **je veux** un profil de boilerplate pour Expo (React Native) **afin que** `/po-setup` et `/po-architect` partent de faits vérifiés sur cette pile.
+
+- **Complexité** : 2
+- **Dépend de** : s82
+- **Surface** : —
+- **Owns** : `boilerplates/expo/`, `tests/expo-profile.test.sh`
+
+**Critères d'acceptation**
+- [ ] `expo_profile_passes_the_lint` — `boilerplates/expo/profile.md` suit le gabarit de profil, écrit depuis le gabarit de départ officiel d'Expo à un commit nommé, et `bin/po-lint` l'accepte.
+- [ ] `expo_profile_names_its_web_render` — sa plateforme est `mobile`, son pilote `mobile-web`, et il donne la commande qui sert le rendu web de l'app et celle des tests.
+
+### s84-flutter-profile — Le profil Flutter
+**En tant que** développeur **je veux** un profil de boilerplate pour Flutter **afin que** `/po-setup` et `/po-architect` partent de faits vérifiés sur cette pile.
+
+- **Complexité** : 2
+- **Dépend de** : s82
+- **Surface** : —
+- **Owns** : `boilerplates/flutter/`, `tests/flutter-profile.test.sh`
+
+**Critères d'acceptation**
+- [ ] `flutter_profile_passes_the_lint` — `boilerplates/flutter/profile.md` suit le gabarit de profil, écrit depuis le gabarit d'application officiel de Flutter à un commit nommé, et `bin/po-lint` l'accepte.
+- [ ] `flutter_profile_names_its_web_render` — sa plateforme est `mobile`, son pilote `mobile-web`, et il donne la commande qui sert le rendu web (`flutter run -d web-server` ou équivalent) et celle des tests.
+
+### s85-native-profiles — Les profils natifs iOS et Android
+**En tant que** développeur **je veux** un profil pour une app iOS en Swift et un pour une app Android en Kotlin **afin qu'**un projet natif parte de faits vérifiés, même si sa QA ne passe pas par un rendu web.
+
+- **Complexité** : 2
+- **Dépend de** : s82
+- **Surface** : —
+- **Owns** : `boilerplates/native-ios/`, `boilerplates/native-android/`, `tests/native-profiles.test.sh`
+
+**Critères d'acceptation**
+- [ ] `native_profiles_pass_the_lint` — `boilerplates/native-ios/profile.md` et `boilerplates/native-android/profile.md` suivent le gabarit, écrits chacun depuis un gabarit de départ public et sous licence libre à un commit nommé, et `bin/po-lint` les accepte.
+- [ ] `native_profiles_say_what_qa_cannot_do` — leur plateforme est `mobile` ; chacun dit que le pilote web ne s'applique pas, que le simulateur iOS demande un Mac et l'émulateur Android un lot suivant, et donc que leur QA d'écran est `blocked` jusque-là.
+
+### s86-cli-api-profiles — Les profils CLI en Rust et API en Hono
+**En tant que** développeur **je veux** un profil de CLI en Rust (clap) et un profil d'API en TypeScript (Hono) **afin qu'**un projet sans écran parte de faits vérifiés et d'un pilote de QA par scénarios.
+
+- **Complexité** : 2
+- **Dépend de** : s81
+- **Surface** : —
+- **Owns** : `boilerplates/rust-cli/`, `boilerplates/hono-api/`, `tests/cli-api-profiles.test.sh`
+
+**Critères d'acceptation**
+- [ ] `cli_api_profiles_pass_the_lint` — `boilerplates/rust-cli/profile.md` et `boilerplates/hono-api/profile.md` suivent le gabarit, écrits chacun depuis un gabarit de départ public et sous licence libre à un commit nommé, et `bin/po-lint` les accepte.
+- [ ] `cli_api_profiles_use_scenarios` — leurs plateformes sont `cli` et `api`, leur pilote `scenarios`, et chacun dit comment lancer le binaire ou le service pour un scénario.
+
+### s87-godot-scene-driver — La 3D et l'XR : profil Godot et captures de scène
+**En tant que** développeur **je veux** un profil Godot et un pilote qui capture une scène sans fenêtre **afin qu'**une story `scene` arrive en revue avec des captures regardées.
+
+- **Complexité** : 3
+- **Dépend de** : s79
+- **Surface** : —
+- **Owns** : `boilerplates/godot/`, `method/skills/qa-drivers/scene.md`, `tests/godot-scene-driver.test.sh`
+
+**Critères d'acceptation**
+- [ ] `godot_profile_passes_the_lint` — `boilerplates/godot/profile.md` suit le gabarit, écrit depuis un gabarit de départ public et sous licence libre à un commit nommé, plateforme `xr`, pilote `scene`, et `bin/po-lint` l'accepte.
+- [ ] `scene_driver_captures_without_a_window` — `qa-drivers/scene.md` fait rendre la scène sans fenêtre (ou dans un navigateur pour WebXR), capturer des points de vue nommés dans le plan, et dit ce que seul un casque montrerait (confort, échelle, suivi des mains) comme non vérifié.
+
+### s88-ros-simulation-driver — La robotique : profil ROS 2 et simulation
+**En tant que** développeur **je veux** un profil ROS 2 avec Gazebo et un pilote qui vérifie un comportement en simulation **afin qu'**une story `behaviour` arrive en revue avec des journaux et des enregistrements de topics.
+
+- **Complexité** : 3
+- **Dépend de** : s79
+- **Surface** : —
+- **Owns** : `boilerplates/ros2-gazebo/`, `method/skills/qa-drivers/simulation.md`, `tests/ros-simulation-driver.test.sh`
+
+**Critères d'acceptation**
+- [ ] `ros_profile_passes_the_lint` — `boilerplates/ros2-gazebo/profile.md` suit le gabarit, écrit depuis un gabarit de départ public et sous licence libre à un commit nommé, plateforme `robot`, pilote `simulation`, et `bin/po-lint` l'accepte.
+- [ ] `simulation_driver_records_behaviour` — `qa-drivers/simulation.md` fait lancer la simulation sans fenêtre, déclencher le comportement de chaque critère, garder les journaux et un enregistrement des topics utiles, puis tout arrêter ; ce que seul le matériel réel montrerait est reporté comme non vérifié.
+
+### s89-po-retro — Une rétro tirée des fichiers
+**En tant que** développeur **je veux** une commande `/po-retro` qui résume un jalon depuis les revues et les relevés **afin de** voir où le cycle coûte, sans métrique inventée.
+
+- **Complexité** : 3
+- **Dépend de** : aucune
+- **Surface** : —
+- **Owns** : `method/commands/po-retro.md`, `method/commands/po-help.md`, `tests/po-retro.test.sh`
+
+**Critères d'acceptation**
+- [ ] `retro_reads_only_recorded_facts` — `/po-retro` lit `docs/stories.md`, `docs/reviews/*` et `docs/verif/*` pour un jalon ou une plage de stories, et rapporte les sévérités par story, les boucles de correction, les revues bloquées et leur cause, et les majeurs encore ouverts ; il ne compte ni lignes ni commits.
+- [ ] `retro_writes_nothing` — la commande n'a ni Write ni Edit, et sa sortie dit d'où vient chaque chiffre.
+- [ ] `help_lists_the_retro` — `/po-help` présente `/po-retro`.
+
+### s90-diagnostic-skill — Une procédure de diagnostic pour les défauts
+**En tant que** développeur **je veux** une skill de diagnostic que le planner suit pour une story qui corrige un défaut **afin qu'**aucun correctif ne parte sans cause trouvée.
+
+- **Complexité** : 2
+- **Dépend de** : aucune
+- **Surface** : —
+- **Owns** : `method/skills/diagnostic/`, `method/agents/planner.md`, `tests/diagnostic-skill.test.sh`
+
+**Critères d'acceptation**
+- [ ] `no_fix_without_a_root_cause` — la skill `diagnostic` demande de reproduire le défaut, d'écrire la cause racine avec la preuve qui la montre, puis seulement de planifier le correctif et le test qui l'aurait attrapé.
+- [ ] `stop_after_three_failed_hypotheses` — après trois hypothèses écartées, la recherche s'arrête et le dit, au lieu de proposer un correctif au hasard.
+- [ ] `planner_preloads_diagnostic` — le planner précharge `diagnostic` et l'applique quand la story corrige un défaut.
+
+### s91-accessibility — L'accessibilité au-delà du contraste
+**En tant que** développeur **je veux** que la doctrine de design et la QA vérifient le focus, les étiquettes, les textes alternatifs et les erreurs **afin qu'**un écran soit utilisable au clavier et avec un lecteur d'écran.
+
+- **Complexité** : 2
+- **Dépend de** : s82
+- **Surface** : —
+- **Owns** : `method/skills/design-doctrine/`, `tests/accessibility.test.sh`
+
+**Critères d'acceptation**
+- [ ] `doctrine_covers_more_than_contrast` — `design-doctrine` demande un focus visible et un ordre de tabulation logique, une étiquette pour chaque champ et chaque bouton sans texte, un texte alternatif pour chaque image porteuse de sens, et une erreur jamais signalée par la seule couleur.
+- [ ] `qa_walks_with_the_keyboard` — la section qui pilote un navigateur fait parcourir chaque écran au clavier seul et relever ce qui n'est pas atteignable.
