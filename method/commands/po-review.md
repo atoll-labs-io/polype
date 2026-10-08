@@ -10,7 +10,7 @@ allowed-tools:
 ---
 # /po-review
 
-Reads settings: `Target branch`, `Worktree root`, `Verification mode`, `Test budget`
+Reads settings: `Target branch`, `Worktree root`, `Verification mode`, `Test budget`, `Model strong`
 
 Story: $ARGUMENTS
 
@@ -21,13 +21,16 @@ No Agent tool available → say so and stop.
 ## Preconditions
 - `AGENTS.local.md` exists; otherwise point to `/po-setup`.
 - $ARGUMENTS matches one id; otherwise list the ids and stop.
+- `Model strong` missing → stop and name it.
 - The worktree is registered for this story, checked the way `/po-execute` does it (shared git directory found through `<repository root>/.git`, folder or file; then `<shared>/worktrees/<id>/gitdir` and `<shared>/worktrees/<id>/HEAD`). Otherwise stop; do not switch branches.
 - Read the previous `docs/reviews/<id>.md` if there is one: its `Fix loop:` value plus one is this review's loop number (0 when there is none). When that previous review was blocked on QA — its `Next action:` names `/po-qa` — this review keeps the same `Fix loop:` value instead, because a QA return is not a fix run (ADR-0034). A third blocked review in a row is not requested: stop and hand the open findings to a human. Reviews blocked on QA do not count toward those three.
 
 ## Delegation
-Agent tool, `subagent_type: reviewer`, description "Review <id>", prompt filled in:
+Agent tool, `subagent_type: reviewer`, `model:` set to `Model strong` whatever the story's complexity, description "Review <id>", prompt filled in:
 
 > Story <id>. Worktree: <absolute path>. How to review is settled by your agent file and the review-antihallu skill; below are the details of this story. The scope is `git diff <Target branch>...story/<id>`, no wider. Shape your answer like templates/review.md with `Fix loop: <n>`. Report every finding now — none kept for later. Settings and project commands come from AGENTS.local.md, used verbatim; when a command is `—`, your report says the project has none and you do not substitute your own. Start every shell command with `cd <absolute path> &&` or use `git -C <absolute path>`. End with the lines `Max severity:` and `Ship allowed:`.
+
+`Model strong` at `—` passes no `model` at all: the reviewer runs on the session's model. If the Agent tool rejects the model name, stop and report the setting and its value: write no `docs/reviews/<id>.md` and never retry with another model or with none, because the setting is at fault, not the story.
 
 ## Recording
 Write the subagent's answer, whole, to `docs/reviews/<id>.md` in the worktree. It must contain `Review status:`, `Fix loop:` and the `Reviewed tree:` hash the reviewer took before reading — `/po-ship` refuses a verdict whose tree no longer matches the code outside `docs/` — and end with `Max severity: …` then `Ship allowed: yes|no` — `/po-ship` reads the last of these.

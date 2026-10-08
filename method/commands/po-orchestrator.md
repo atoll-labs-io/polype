@@ -12,14 +12,16 @@ allowed-tools:
 ---
 # /po-orchestrator
 
-Reads settings: `Target branch`, `Worktree root`, `Plan validation`, `Ship confirmation`, `Merge mode`, `Test budget`, `Story track`, `Flow threshold`, `Entry mode`, `Design source`, `QA stage`
+Reads settings: `Target branch`, `Worktree root`, `Plan validation`, `Ship confirmation`, `Merge mode`, `Test budget`, `Story track`, `Flow threshold`, `Entry mode`, `Design source`, `QA stage`, `Model strong`, `Model light`, `Light up to`
 
 Story: $ARGUMENTS
 
 You sequence the stages; each one keeps the contract written in its own command file (`/po-research`, `/po-design`, `/po-plan`, `/po-execute`, `/po-qa`, `/po-review`, `/po-ship`, `/po-flow`) — read those files and follow them. You write no code and do not take over work that belongs to a subagent. Where a human must decide, you call AskUserQuestion; a question in your text output is not a checkpoint.
 
+The research, design and plan this command writes in its own context run on the session's model, which no command can choose (ADR-0036); start the session on `Model strong` for them. Only the subagents this command launches get a model passed to them.
+
 ## Stage 0 — Can this start?
-`AGENTS.local.md` and `docs/stories.md` exist, and $ARGUMENTS matches one id. Otherwise stop and name what is missing; never create a story to keep going.
+`AGENTS.local.md` and `docs/stories.md` exist, and $ARGUMENTS matches one id. Otherwise stop and name what is missing; never create a story to keep going. `Model strong`, `Model light` or `Light up to` absent from `AGENTS.local.md`: a model setting missing → stop and name it.
 
 Then check the framing on `Target branch`, following `Entry mode`:
 - `replace` or `adapt` → `docs/prd.md` with `status: approved` in its frontmatter; missing or not approved → stop and point to `/po-prd`.
@@ -52,7 +54,7 @@ Write `docs/plans/<id>.md` under the `/po-plan` contract if it does not exist. W
 - `autonomous` → check the plan against every acceptance criterion, write `validated: yes`, and state that no human reviewed it.
 
 ## Stage 5 — Execute
-Delegate to `implementer` the way `/po-execute` does — as a fix run when the latest review blocks the story on findings; a review blocked on QA never triggers the fix run. Never implement in this context.
+Delegate to `implementer` the way `/po-execute` does, its model chosen by `/po-execute`'s `## Model`: `Model light` up to `Light up to`, `Model strong` above, fix runs included — as a fix run when the latest review blocks the story on findings; a review blocked on QA never triggers the fix run. Never implement in this context.
 
 When `docs/designs/<id>/` exists, append this sentence to the prompt of `/po-execute`:
 > This story has a design: docs/designs/<id>/ is expected uncommitted work, like the research and the plan. Read design.md before the screen tasks, build the screen it settles, and commit the folder with the story.
@@ -60,10 +62,10 @@ When `docs/designs/<id>/` exists, append this sentence to the prompt of `/po-exe
 ## Stage 6 — QA
 Only for a story whose text shows a screen when `QA stage` is `screens`; skip it otherwise. `QA stage` missing for such a story → stop and name the setting.
 
-Apply `/po-qa` as written: its preconditions, the `qa` subagent, then the evidence commit that this context makes. Run it after every execution, first run and fix run alike, since each one leaves a tree the previous walk never saw. No report → stop with the reason the subagent gave. `QA status: blocked` → commit the report as evidence, then stop for a human with its cause: no review is requested on a walk that did not happen.
+Apply `/po-qa` as written: its preconditions, the `qa` subagent with `model:` set to `Model strong`, then the evidence commit that this context makes. Run it after every execution, first run and fix run alike, since each one leaves a tree the previous walk never saw. No report → stop with the reason the subagent gave. `QA status: blocked` → commit the report as evidence, then stop for a human with its cause: no review is requested on a walk that did not happen.
 
 ## Stage 7 — Review
-Delegate to `reviewer` the way `/po-review` does and record `docs/reviews/<id>.md` with its `Fix loop:`. A missing or incomplete verdict is recorded as blocked: `Max severity: critical`, `Ship allowed: no`.
+Delegate to `reviewer` the way `/po-review` does, `model:` set to `Model strong`, and record `docs/reviews/<id>.md` with its `Fix loop:`. A missing or incomplete verdict is recorded as blocked: `Max severity: critical`, `Ship allowed: no`.
 
 Blocked on QA — the review's `Next action:` names `/po-qa` → back to stage 6, then stage 7 again at the same `Fix loop:`; that return is not a fix run and spends none of the two (ADR-0034). A second review blocked on QA while `story/<id>` already holds two `<id>: QA evidence` commits since the last implementer commit → stop for a human.
 

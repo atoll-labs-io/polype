@@ -12,11 +12,13 @@ allowed-tools:
 ---
 # /po-flow
 
-Reads settings: `Target branch`, `Worktree root`, `Install`, `Story track`, `Flow threshold`, `Plan validation`, `Test budget`, `Verification mode`, `Full suite`, `Merge mode`, `Ship confirmation`
+Reads settings: `Target branch`, `Worktree root`, `Install`, `Story track`, `Flow threshold`, `Plan validation`, `Test budget`, `Verification mode`, `Full suite`, `Merge mode`, `Ship confirmation`, `Model strong`, `Model light`, `Light up to`
 
 Story: $ARGUMENTS
 
 A small story should not pay for six contexts. Here this context does the research and the plan together, then coordinates the rest; the `implementer` writes the code and the `reviewer` judges it, each in its own context. Three contexts in all. This command writes the worktree and the plan, never a source file.
+
+The research and plan this command writes in its own context run on the session's model, which no command can choose (ADR-0036); start the session on `Model strong` for them. Only the implementer and the reviewer get a model passed to them.
 
 ## Checks
 1. No `AGENTS.local.md` → stop and point to `/po-setup`.
@@ -29,7 +31,7 @@ Read `Story track` before anything else.
 - `flow` → the short track is accepted for any story.
 - `auto` → accepted only when the story's complexity, as written in `docs/stories.md`, is at most `Flow threshold`. Above it, refuse and point to `/po-research <id>`. A story that states no complexity cannot be compared with the threshold: refuse it too, and say the story needs a complexity or the full track.
 
-A missing setting is a stop, never a guess.
+A missing setting is a stop, never a guess: a model setting missing → stop and name it.
 
 ## Escalation signals
 Five signals send a story to the full track:
@@ -70,10 +72,10 @@ Without `validated: yes`, nothing below starts.
 ## Execute, review, ship
 Each stage follows its own command file, word for word; this section only names the differences.
 
-1. **Execute** — delegate as `/po-execute` does: its preconditions, then the Agent tool with `subagent_type: implementer` and the prompt of `/po-execute`, with this sentence appended:
+1. **Execute** — delegate as `/po-execute` does: its preconditions, then the Agent tool with `subagent_type: implementer`, its model chosen by `/po-execute`'s `## Model` (`Model light` up to `Light up to`, `Model strong` above), and the prompt of `/po-execute`, with this sentence appended:
    > This story is on the short track: there is no docs/research/<id>.md. The `## Verified facts` section of the plan takes its place.
-2. **Review** — delegate as `/po-review` does: Agent tool with `subagent_type: reviewer` and the prompt of `/po-review`, `Fix loop:` counted the same way, with the same short-track sentence appended. Record the answer in `docs/reviews/<id>.md` as `/po-review` says; an answer without both verdict lines is recorded as blocked.
-3. **Fix loops** — `Ship allowed: no` → a fix run of the implementer, then a new review. After two fix runs still blocked, stop and hand the open findings to a human.
+2. **Review** — delegate as `/po-review` does: Agent tool with `subagent_type: reviewer`, `model:` set to `Model strong`, and the prompt of `/po-review`, `Fix loop:` counted the same way, with the same short-track sentence appended. Record the answer in `docs/reviews/<id>.md` as `/po-review` says; an answer without both verdict lines is recorded as blocked.
+3. **Fix loops** — `Ship allowed: no` → a fix run of the implementer, on the same model rule as its first run, then a new review on `Model strong`. After two fix runs still blocked, stop and hand the open findings to a human.
 4. **Ship** — `Ship allowed: yes` → apply `/po-ship` from its Step 0: the verdict gate, the expensive checks once, the squash merge per `Merge mode` and `Ship confirmation`, cleanup only after proof.
 
 ## Nothing is relaxed

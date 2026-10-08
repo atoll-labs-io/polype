@@ -10,7 +10,7 @@ allowed-tools:
 ---
 # /po-qa
 
-Reads settings: `Worktree root`, `Dev`
+Reads settings: `Worktree root`, `Dev`, `Model strong`
 
 Story: $ARGUMENTS
 
@@ -25,13 +25,16 @@ No Agent tool available → say so and stop.
 4. `docs/verif/<id>.md` missing in the worktree → there is no built code to walk yet: point to `/po-execute <id>` and stop.
 5. `Dev` is `—` → stop: the project has no command to start it; ask for `Dev` in `AGENTS.local.md`.
 6. The story shows no screen → stop and say so: there is nothing to walk.
+7. `Model strong` missing → stop and name it.
 
 ## Delegation
-Call the Agent tool with `subagent_type: qa`, description "QA <id>", and this prompt, filled in:
+Call the Agent tool with `subagent_type: qa`, `model:` set to `Model strong` whatever the story's complexity, description "QA <id>", and this prompt, filled in:
 
 > Story <id>. Worktree: <absolute path>. How to work is settled by your agent file. Start every shell command with `cd <absolute path> &&` or use `git -C <absolute path>`. Settings and project commands are in AGENTS.local.md; run `Dev` exactly as written.
 
 Wait for the subagent to finish.
+
+`Model strong` at `—` passes no `model` at all: the qa subagent runs on the session's model. If the Agent tool rejects the model name, stop and report the setting and its value: no `docs/qa/<id>/report.md`, no evidence commit, and never a retry with another model or with none, because the setting is at fault, not the story.
 
 ## The evidence commit
 The review finds the walk only on the story branch, so the report and its captures are committed there, alone. Do this only when `docs/qa/<id>/report.md` exists in the worktree and holds a `QA status:` line, `complete` or `blocked` alike: a blocked walk is evidence too.

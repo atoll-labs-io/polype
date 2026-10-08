@@ -2,7 +2,7 @@
 name: implementer
 description: Builds one approved story inside its worktree, following the plan task by task, records the checks it ran and commits the story. Called by /po-execute.
 tools: Read, Write, Edit, Bash, Grep, Glob
-model: opus
+model: inherit
 skills:
   - testing-doctrine
 hooks:

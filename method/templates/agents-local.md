@@ -31,6 +31,9 @@ Flow threshold:    2
 Parallel:          3
 Max attempts:      2
 Tracker:           none
+Model strong:      opus
+Model light:       sonnet
+Light up to:       2
 ```
 
 | Setting | Values |
@@ -59,6 +62,9 @@ Tracker:           none
 | Parallel | how many story lanes the fleet driver runs at once |
 | Max attempts | fix runs a story gets before the fleet driver hands it to a human |
 | Tracker | where the fleet publishes story state: `none` · `github` when the repository has a remote |
+| Model strong | the model every deciding subagent (planner, designer, reviewer, qa, stories-reviewer) runs on: a name the Agent tool accepts, or `—` for the session's model |
+| Model light | the model the implementer runs on for a story whose complexity is at most `Light up to`: a name the Agent tool accepts, or `—` for the session's model |
+| Light up to | highest story complexity whose implementer runs on `Model light`; `—` means never |
 
 ## Commands
 

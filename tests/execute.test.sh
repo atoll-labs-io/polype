@@ -31,7 +31,6 @@ test_execute_handles_a_repository_root_that_is_itself_a_worktree() {
 test_implementer_preloads_testing_doctrine() {
   require_file "$AGENT"
   frontmatter "$AGENT" | grep -qx '  - testing-doctrine' || fail "implementer must preload testing-doctrine"
-  frontmatter "$AGENT" | grep -qx 'model: opus' || fail "implementer is pinned to opus"
 }
 
 test_implementer_makes_one_commit_after_record() {

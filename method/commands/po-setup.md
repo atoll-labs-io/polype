@@ -40,7 +40,7 @@ Once the `Dev` answer is known, make one separate AskUserQuestion call for `QA s
 
 When step 1 found no base, offer the catalogue before question 5, in one AskUserQuestion: each profile of Polype's catalogue (`boilerplates/*/profile.md` in Polype's repository, when it is at hand) with its name and origin, plus the answer "no profile". A chosen profile's `## Commands` block becomes the suggestions of question 5, copied verbatim. When the catalogue cannot be reached, say so and carry on without a profile. A repository that already has a base gets no offer.
 
-Nothing else is asked beyond these five questions, that design follow-up, the `QA stage` follow-up and the catalogue offer; every other setting keeps the template's value, `Story track` and `Flow threshold` included.
+Nothing else is asked beyond these five questions, that design follow-up, the `QA stage` follow-up and the catalogue offer; every other setting keeps the template's value, `Story track` and `Flow threshold` included, and so do the model defaults: `Model strong: opus`, `Model light: sonnet`, `Light up to: 2`.
 
 A `Design source` left at `—` is not a choice: every design command stops on it and asks for the source again. Setup never fills it on the user's behalf.
 
@@ -50,4 +50,4 @@ A `Design source` left at `—` is not a choice: every design command stops on i
 3. Rerun the installer if it is available, so `AGENTS.md` includes the new settings; otherwise say that `AGENTS.md` will catch up at the next install.
 4. On `Target branch`, commit `AGENTS.local.md`, `.gitignore`, `AGENTS.md`, `CLAUDE.md`, `.claude/` and `.polype/` together as `chore: set up polype`. Worktrees are created from this branch: without this commit they would have neither the rules, nor the templates, nor the gate.
 
-Finish with: "Polype is set up. Write stories in docs/stories.md, then run /po-research <story>." When a profile was chosen, add that the person brings the boilerplate into the repository at its `Commit profiled` and commits it before running `/po-architect`.
+Finish with: "Polype is set up. Write stories in docs/stories.md, then run /po-research <story>." When a profile was chosen, add that the person brings the boilerplate into the repository at its `Commit profiled` and commits it before running `/po-architect`. Close by listing the model defaults written — `Model strong: opus`, `Model light: sonnet`, `Light up to: 2` — and say they are changed in `AGENTS.local.md`.

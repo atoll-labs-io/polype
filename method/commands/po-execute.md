@@ -9,7 +9,7 @@ allowed-tools:
 ---
 # /po-execute
 
-Reads settings: `Worktree root`, `Test budget`, `Full suite`
+Reads settings: `Worktree root`, `Test budget`, `Full suite`, `Model strong`, `Model light`, `Light up to`
 
 Story: $ARGUMENTS
 
@@ -25,9 +25,19 @@ No Agent tool available → say so and stop.
 5. Its frontmatter holds `validated: yes`; otherwise stop with "The plan for <id> is not approved yet. Review it, then run /po-plan <id>."
 6. `docs/reviews/<id>.md` exists in the worktree with `Ship allowed: no` as its last verdict → this is a **fix run**; the review's findings come before anything else.
 7. Glob `docs/designs/<id>/*` in the worktree: any match means the story **has a design**, even when no orchestrator runs it.
+8. `Model strong`, `Model light` and `Light up to` are set in `AGENTS.local.md`; a model setting missing → stop and name it.
+
+## Model
+This section is the single statement of the implementer's model; `/po-drive`, `/po-orchestrator` and `/po-flow` point to it.
+
+- **Rule.** The implementer gets `Model light` when the story's complexity is at most `Light up to`, `Model strong` above it.
+- **Complexity read.** The score after `→` on the first line of `## Complexity` in `docs/research/<id>.md`. No research file → the `Complexité`/`Complexity` of the story in `docs/stories.md`. Neither gives a score → `Model strong`.
+- **`—`.** A model setting at `—` passes no `model` at all: the subagent runs on the session's model. `Light up to: —` means the implementer never takes `Model light`.
+- **Fix run.** A fix run follows the same rule as the first run of the same story.
+- **Refusal.** If the Agent tool rejects the model name, stop and report the setting and its value. Never retry with another model or with none: the setting is at fault, not the story.
 
 ## Delegation
-Call the Agent tool with `subagent_type: implementer`, description "Implement <id>", and this prompt, filled in:
+Call the Agent tool with `subagent_type: implementer`, `model` as `## Model` settles, description "Implement <id>", and this prompt, filled in:
 
 > Story <id>. Worktree: <absolute path>. Plan: docs/plans/<id>.md. How to work is settled by your agent file; below are the details of this story. Worktree and branch already exist — create no worktree or branch, never checkout or stash. Start every shell command with `cd <absolute path> &&` or use `git -C <absolute path>`. Settings and project commands are in AGENTS.local.md; run the commands exactly as written, and treat `—` as "this project has none".
 
@@ -42,6 +52,6 @@ When the story has a design, append:
 Wait for the subagent to finish.
 
 ## Report
-From the subagent's answer: tasks completed, files changed, tests added or removed, the contents of `docs/verif/<id>.md` (commands, exit codes, tree), deviations from the plan and blockers. A summary, not a transcript.
+From the subagent's answer: tasks completed, files changed, tests added or removed, the contents of `docs/verif/<id>.md` (commands, exit codes, tree), deviations from the plan and blockers, and the model passed to the implementer (or `session` when `—` passed none). A summary, not a transcript.
 
 Finish with: "Implementation finished. Next: /po-review <id>"
