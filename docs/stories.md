@@ -1179,7 +1179,7 @@ Objectif : fermer ce que les revues de M7 ont laissé ouvert, dont le reviewer q
 
 - **Complexité** : 2
 - **Dépend de** : aucune
-- **Owns** : `method/hooks/po-bounds.sh`, `tests/bounds.test.sh`, `method/agents/reviewer.md`, `method/templates/adr.md`, `method/AGENTS.md`, `method/commands/po-status.md`, `method/skills/stories-review/`, `tests/stories-review.test.sh`, `tests/final-leftovers.test.sh`
+- **Owns** : `method/hooks/po-bounds.sh`, `tests/bounds.test.sh`, `method/agents/reviewer.md`, `method/templates/adr.md`, `method/AGENTS.md`, `method/commands/po-status.md`, `method/skills/stories-review/`, `tests/stories-review.test.sh`, `tests/final-leftovers.test.sh`, `docs/decisions/ADR-0052-po-bounds-est-un-garde-fou-contre-les-erreurs.md`
 - **Corrige** : mineurs de `docs/reviews/s76-bounds-guard-against-mistakes.md` (m1, m2), de `s75-post-m7-texts.md` (gabarit d'ADR, Loi 6) et de `s72-overlap-direction.md` (`po-status`, vérification 8)
 
 **Critères d'acceptation**
