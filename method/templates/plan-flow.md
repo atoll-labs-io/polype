@@ -31,7 +31,7 @@ Written by `/po-flow`. On the short track this one file stands in for both the r
 2. [ ] <task>
 
 ## Scene viewpoints
-<Only for a story whose `Surface` is `scene`; write `—` for any other. One line per viewpoint to capture: where it looks from, what it must show, and its framing, scale and light. The QA captures these viewpoints and the review judges the scene against them.>
+<Only for a story whose `Surface` is `scene`; write `—` for any other. One line per viewpoint to capture, giving its scene, its position, its target, what it must show, and its framing, scale and light. A line that names no scene aims at the project's main scene. The QA captures these viewpoints and the review judges the scene against them.>
 
 ## Run interdicts
 <One line each: files that must end with an empty diff, commands not to run, nearby work out of scope. Only what a reviewer can verify.>

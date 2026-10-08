@@ -30,7 +30,7 @@ Dev:               —
 
 `godot` is the editor binary of Godot `4.7.2`. `--import` fills the `.godot/` cache of the project; the template's CI tolerates it failing (`|| exit 0`). No test framework ships, so `Test` stays `—`; CI lints the scripts with `gdlint components`. `Build` writes the `Linux` preset into `build/linux/` and needs the export templates of the same engine version. Running the game opens a window and serves no address, hence `Dev: —`.
 
-Engine command: `xvfb-run -a godot --path <copy> --display-driver x11 --rendering-driver opengl3 --xr-mode off --resolution 1920x1080 --script <capture script>`. This is the line the `scene` driver reads. `--headless` draws nothing and is never used for a capture.
+Engine command: `xvfb-run -a -s "-screen 0 1920x1080x24" godot --path <copy> --display-driver x11 --rendering-driver opengl3 --xr-mode off --resolution 1920x1080 --script <capture script>`. This is the line the `scene` driver reads. `--headless` draws nothing and is never used for a capture.
 
 ## Code map
 
