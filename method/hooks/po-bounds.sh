@@ -16,6 +16,16 @@
 #                              (ADR-0026); an unknown verb, or none, is refused, and so are any
 #                              --output and a symbolic-ref given a target or a writing option.
 #                              Edit is refused.
+#   po-bounds.sh reviewer      two zones (ADR-0047). A story worktree (as for the implementer, its
+#                              story holding an Owns line at the fork point): Write/Edit anywhere but
+#                              .git; git reading verbs of the qa allowlist only, plus git checkout --
+#                              <path> and git restore [-q|-W|--worktree] [--] <path>. The temp dir,
+#                              physical ${TMPDIR:-/tmp}, refused when it is / or missing: Write/Edit
+#                              anywhere under it, git any verb but push, in no repository or in one
+#                              whose common git dir and top level lie under it too. Everywhere: git
+#                              push and send-pack, --git-dir, --work-tree and an unquoted or quoted
+#                              word starting with GIT_DIR= or GIT_WORK_TREE= are refused, and so is
+#                              git outside both zones.
 #
 # Bash commands are read the way bash splits them (ADR-0039): text inside quotes or in a
 # here-document body is never taken for a git call, but the substitutions bash would run there are,
@@ -32,16 +42,47 @@ deny() { echo "po-bounds: $*" >&2; exit 2; }
 # An unbound variable or any stray status must not become a non-blocking error.
 trap 'rc=$?; [ "$rc" -eq 0 ] || [ "$rc" -eq 2 ] || { echo "po-bounds: internal failure ($rc)" >&2; exit 2; }' EXIT
 
-# Sets TOP and STORY from an existing directory, or denies with "$1".
-story_of_dir() {
-  local dir="$2" gitdir common branch
-  TOP="$(git -C "$dir" rev-parse --show-toplevel 2>/dev/null)" || deny "$1"
-  gitdir="$(git -C "$dir" rev-parse --absolute-git-dir 2>/dev/null)" || deny "$1"
-  common="$(git -C "$dir" rev-parse --path-format=absolute --git-common-dir 2>/dev/null)" || deny "$1"
-  [ "$gitdir" != "$common" ] || deny "$1"
-  branch="$(git -C "$dir" symbolic-ref --short -q HEAD 2>/dev/null)" || deny "$1"
-  case "$branch" in story/?*) ;; *) deny "$1" ;; esac
+# Sets TOP and STORY from an existing directory inside a linked story/<id> worktree, or returns 1.
+try_story_of_dir() {
+  local dir="$1" gitdir common branch
+  TOP="$(git -C "$dir" rev-parse --show-toplevel 2>/dev/null)" || return 1
+  gitdir="$(git -C "$dir" rev-parse --absolute-git-dir 2>/dev/null)" || return 1
+  common="$(git -C "$dir" rev-parse --path-format=absolute --git-common-dir 2>/dev/null)" || return 1
+  [ "$gitdir" != "$common" ] || return 1
+  branch="$(git -C "$dir" symbolic-ref --short -q HEAD 2>/dev/null)" || return 1
+  case "$branch" in story/?*) ;; *) return 1 ;; esac
   STORY="${branch#story/}"
+}
+
+# Sets TOP and STORY from an existing directory, or denies with "$1".
+story_of_dir() { try_story_of_dir "$2" || deny "$1"; }
+
+# Sets TMP_ROOT to the physical ${TMPDIR:-/tmp}, or empty when it is relative, missing or /.
+temp_root() {
+  local t="${TMPDIR:-/tmp}"
+  TMP_ROOT=""
+  case "$t" in /*) ;; *) return 0 ;; esac
+  TMP_ROOT="$(cd -P "$t" 2>/dev/null && pwd -P)" || TMP_ROOT=""
+  [ "$TMP_ROOT" != / ] || TMP_ROOT=""
+}
+
+under_temp() { [ -n "$TMP_ROOT" ] && { [ "$1" = "$TMP_ROOT" ] || [[ "$1" == "$TMP_ROOT"/* ]]; }; }
+
+# Whether existing directory $1 lies under TMP_ROOT, in no repository or in one whose common git dir
+# and top level lie there too: a linked worktree of a real repository placed in the temp dir does not.
+in_temp_zone() {
+  local phys common top
+  phys="$(cd -P "$1" 2>/dev/null && pwd -P)" || return 1
+  under_temp "$phys" || return 1
+  if common="$(git -C "$phys" rev-parse --path-format=absolute --git-common-dir 2>/dev/null)"; then
+    common="$(cd -P "$common" 2>/dev/null && pwd -P)" || return 1
+    under_temp "$common" || return 1
+  fi
+  if top="$(git -C "$phys" rev-parse --show-toplevel 2>/dev/null)"; then
+    top="$(cd -P "$top" 2>/dev/null && pwd -P)" || return 1
+    under_temp "$top" || return 1
+  fi
+  return 0
 }
 
 # Sets RESOLVED (physical absolute path, the target may not exist yet) and NEAREST (its deepest
@@ -222,6 +263,22 @@ check_write_qa() {
   rel="${RESOLVED#"$TOP"/}"
   case "$rel" in "docs/qa/$STORY/"?*) exit 0 ;; esac
   deny "$RESOLVED is outside docs/qa/$STORY/, the only folder mode qa writes to"
+}
+
+# The reviewer is not bound to Owns: the bite proof may disable a rule in any file of the worktree.
+check_write_reviewer() {
+  local path="$1" rel
+  resolve_path "$path"
+  if try_story_of_dir "$NEAREST"; then
+    case "$RESOLVED" in "$TOP"/*) ;; *) deny "$path is not inside a file of worktree $TOP" ;; esac
+    rel="${RESOLVED#"$TOP"/}"
+    case "$rel" in .git|.git/*) deny "$path lies in the .git of worktree $TOP" ;; esac
+    owns_line "$TOP" "$STORY"
+    exit 0
+  fi
+  temp_root
+  if under_temp "$RESOLVED" && in_temp_zone "$NEAREST"; then exit 0; fi
+  deny "$path is outside a story worktree and outside the temp dir (${TMP_ROOT:-no usable temp dir})"
 }
 
 join_dir() { case "$2" in /*) printf '%s' "$2" ;; *) printf '%s' "${1%/}/$2" ;; esac; }
@@ -454,6 +511,52 @@ lex_command() {
   '
 }
 
+# The reading checks of mode qa, on the git call whose verb $1 sits at word $2 of vals.
+check_git_read() {
+  local verb="$1" j="$2" k nonopt
+  for ((k = j + 1; k < n; k++)); do
+    case "${vals[k]}" in
+      --output|--output=*) deny "git $verb --output writes a file, which mode $mode never does: $cmd" ;;
+    esac
+  done
+  if [ "$verb" = worktree ]; then
+    [ "${vals[j+1]-}" = list ] || deny "git worktree ${vals[j+1]-} is forbidden in mode $mode, only worktree list reads: $cmd"
+  else
+    # An empty verb never matches: the list holds single spaces only.
+    case "$QA_GIT_VERBS" in
+      *" $verb "*) ;;
+      *) deny "git ${verb:-without a verb} is forbidden in mode $mode, which runs reading verbs only: $cmd" ;;
+    esac
+  fi
+  if [ "$verb" = symbolic-ref ]; then
+    nonopt=0
+    for ((k = j + 1; k < n; k++)); do
+      case "${vals[k]}" in
+        -q|--quiet|--short|--recurse|--no-recurse) ;;
+        -*) deny "git symbolic-ref ${vals[k]} is forbidden in mode $mode, which only reads a ref: $cmd" ;;
+        *) nonopt=$((nonopt + 1)) ;;
+      esac
+    done
+    [ "$nonopt" -le 1 ] || deny "git symbolic-ref with a target writes a ref, forbidden in mode $mode: $cmd"
+  fi
+}
+
+# git restore [-q|--quiet|-W|--worktree] [--] <path>..., the verb at word $1 of vals.
+check_restore() {
+  local j="$1" k a paths=0 sep=no
+  for ((k = j + 1; k < n; k++)); do
+    a="${vals[k]}"
+    if [ "$sep" = yes ]; then paths=$((paths + 1)); continue; fi
+    case "$a" in
+      --) sep=yes ;;
+      -q|--quiet|-W|--worktree) ;;
+      -*) deny "git restore $a is forbidden to the reviewer, which only restores worktree files: $cmd" ;;
+      *) paths=$((paths + 1)) ;;
+    esac
+  done
+  [ "$paths" -gt 0 ] || deny "git restore without a path is forbidden to the reviewer: $cmd"
+}
+
 check_bash() {
   local cmd="$1" cur="$2" mode="$3" lexed line i j k n w a verb gdir dir nonopt re
   local -a words=() vals=()
@@ -462,12 +565,21 @@ check_bash() {
     case "$line" in '!'*) deny "po-bounds cannot read this command: ${line#!}: $cmd" ;; esac
   done <<< "$lexed"
   re='^-[A-Za-z]*[fDMC][A-Za-z]*$'
+  [ "$mode" != reviewer ] || temp_root
   while IFS= read -r line; do
     [ -n "$line" ] || continue
     words=(); vals=()
     IFS=$'\037' read -ra words <<< "$line"
     n=${#words[@]}
     for ((k = 0; k < n; k++)); do vals[k]="${words[k]#?}"; done
+    if [ "$mode" = reviewer ]; then
+      # A quoted value is still an assignment (GIT_DIR="/x" git log), so q words count too.
+      for ((k = 0; k < n; k++)); do
+        case "${words[k]:0:1}:${vals[k]}" in
+          [uq]:GIT_DIR=*|[uq]:GIT_WORK_TREE=*) deny "${vals[k]%%=*} points git elsewhere, forbidden to the reviewer: $cmd" ;;
+        esac
+      done
+    fi
     i=0
     while [ "$i" -lt "$n" ]; do
       w="${vals[i]}"
@@ -481,6 +593,12 @@ check_bash() {
         while [ "$j" -lt "$n" ]; do
           case "${vals[j]}" in
             -C) gdir="${vals[j+1]-}"; j=$((j + 2)) ;;
+            --git-dir=*|--work-tree=*)
+              [ "$mode" != reviewer ] || deny "git ${vals[j]%%=*} points git elsewhere, forbidden to the reviewer: $cmd"
+              j=$((j + 1)) ;;
+            --git-dir|--work-tree)
+              [ "$mode" != reviewer ] || deny "git ${vals[j]} points git elsewhere, forbidden to the reviewer: $cmd"
+              j=$((j + 2)) ;;
             -c|--git-dir|--work-tree|--namespace) j=$((j + 2)) ;;
             -*) j=$((j + 1)) ;;
             *) break ;;
@@ -488,30 +606,23 @@ check_bash() {
         done
         verb="${vals[j]-}"
         if [ "$mode" = qa ]; then
-          for ((k = j + 1; k < n; k++)); do
-            case "${vals[k]}" in
-              --output|--output=*) deny "git $verb --output writes a file, which mode qa never does: $cmd" ;;
+          check_git_read "$verb" "$j"
+        elif [ "$mode" = reviewer ]; then
+          case "$verb" in push|send-pack) deny "git $verb is forbidden to the reviewer, everywhere: $cmd" ;; esac
+          dir="$cur"
+          [ -z "$gdir" ] || dir="$(join_dir "$cur" "$gdir")"
+          [ -n "$dir" ] && [ -d "$dir" ] || deny "git ${verb:-without a verb} runs in a directory that does not exist (${dir:-none}): $cmd"
+          if try_story_of_dir "$dir"; then
+            owns_line "$TOP" "$STORY"
+            case "$verb" in
+              checkout)
+                [ "${vals[j+1]-}" = -- ] && [ $((j + 2)) -lt "$n" ] \
+                  || deny "git checkout is forbidden to the reviewer except git checkout -- <path>: $cmd" ;;
+              restore) check_restore "$j" ;;
+              *) check_git_read "$verb" "$j" ;;
             esac
-          done
-          if [ "$verb" = worktree ]; then
-            [ "${vals[j+1]-}" = list ] || deny "git worktree ${vals[j+1]-} is forbidden in mode qa, only worktree list reads: $cmd"
-          else
-            # An empty verb never matches: the list holds single spaces only.
-            case "$QA_GIT_VERBS" in
-              *" $verb "*) ;;
-              *) deny "git ${verb:-without a verb} is forbidden in mode qa, which runs reading verbs only: $cmd" ;;
-            esac
-          fi
-          if [ "$verb" = symbolic-ref ]; then
-            nonopt=0
-            for ((k = j + 1; k < n; k++)); do
-              case "${vals[k]}" in
-                -q|--quiet|--short|--recurse|--no-recurse) ;;
-                -*) deny "git symbolic-ref ${vals[k]} is forbidden in mode qa, which only reads a ref: $cmd" ;;
-                *) nonopt=$((nonopt + 1)) ;;
-              esac
-            done
-            [ "$nonopt" -le 1 ] || deny "git symbolic-ref with a target writes a ref, forbidden in mode qa: $cmd"
+          elif ! in_temp_zone "$dir"; then
+            deny "git ${verb:-without a verb} runs in $dir, outside a story worktree and outside a throwaway repo of the temp dir (${TMP_ROOT:-no usable temp dir}): $cmd"
           fi
         else
           case "$verb" in
@@ -546,8 +657,8 @@ check_bash() {
 
 mode="${1-}"
 case "$mode" in
-  implementer|qa) ;;
-  *) deny "unknown mode '${mode}' (expected: implementer or qa)" ;;
+  implementer|qa|reviewer) ;;
+  *) deny "unknown mode '${mode}' (expected: implementer, qa or reviewer)" ;;
 esac
 
 command -v jq > /dev/null 2>&1 || deny "jq is required and was not found; every call is refused without it"
@@ -564,7 +675,11 @@ case "$mode:$tool" in
     path="$(jq -er '.tool_input.file_path | strings' <<< "$input" 2>/dev/null)" || deny "unreadable hook input: no file_path"
     check_write_qa "$path"
     ;;
-  implementer:Bash|qa:Bash)
+  reviewer:Write|reviewer:Edit)
+    path="$(jq -er '.tool_input.file_path | strings' <<< "$input" 2>/dev/null)" || deny "unreadable hook input: no file_path"
+    check_write_reviewer "$path"
+    ;;
+  implementer:Bash|qa:Bash|reviewer:Bash)
     cmd="$(jq -er '.tool_input.command | strings' <<< "$input" 2>/dev/null)" || deny "unreadable hook input: no command"
     cwd="$(jq -r '.cwd // empty | strings' <<< "$input" 2>/dev/null)" || deny "unreadable hook input"
     check_bash "$cmd" "$cwd" "$mode"

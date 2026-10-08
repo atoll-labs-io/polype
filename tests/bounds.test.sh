@@ -370,3 +370,99 @@ test_bounds_refuse_moving_a_branch() {
     expect "$(bash_status "$c")" 0 "$c"
   done
 }
+
+# s70 — the reviewer held by po-bounds in mode reviewer (ADR-0047).
+REVIEWER="$METHOD/agents/reviewer.md"
+
+# The temp root is a separate mktemp -d: inside $SCRATCH it would sit in the scratch repo.
+reviewer_lane() {
+  lane
+  TMPROOT="$(mktemp -d)"
+  trap 'rm -rf "$SCRATCH" "$TMPROOT"' EXIT
+  export TMPDIR="$TMPROOT"
+  git init -q "$TMPROOT/probe"
+  git -C "$SCRATCH" worktree add -q --detach "$TMPROOT/main-wt"
+}
+
+rev_status() { status_with "$(hook_input "$1" "$2" "$3")" reviewer; }
+rev_bash() { rev_status Bash command "$1"; }
+
+test_reviewer_declares_a_pretooluse_hook() {
+  reviewer_lane
+  local fm matcher tool cmd pd allowed s
+  fm="$(frontmatter "$REVIEWER")"
+  grep -q '^  PreToolUse:' <<< "$fm" || fail "no PreToolUse hook in the reviewer's frontmatter"
+  matcher="$(grep -m1 'matcher:' <<< "$fm")"
+  for tool in Edit Write Bash; do
+    grep -q "$tool" <<< "$matcher" || fail "the matcher does not cover $tool"
+  done
+  cmd="$(hook_command "$REVIEWER")"
+  grep -qF '.polype/hooks/po-bounds.sh reviewer' <<< "$cmd" || fail "the hook does not call po-bounds.sh reviewer: $cmd"
+  pd="$SCRATCH/project"
+  mkdir -p "$pd/.polype/hooks"
+  allowed="$(hook_input Edit file_path "$WT/src/app.sh")"
+  run() { s=0; printf '%s' "$allowed" | CLAUDE_PROJECT_DIR="$pd" sh -c "$cmd" >/dev/null 2>&1 || s=$?; printf '%s' "$s"; }
+  expect "$(run)" 2 "reviewer hook, no script laid down"
+  cp "$BOUNDS" "$pd/.polype/hooks/po-bounds.sh"
+  chmod -x "$pd/.polype/hooks/po-bounds.sh"
+  expect "$(run)" 2 "reviewer hook, script without the exec bit"
+  chmod +x "$pd/.polype/hooks/po-bounds.sh"
+  expect "$(run)" 0 "reviewer hook, executable script, Edit in the story worktree"
+  contains "$REVIEWER" 'A po-bounds refusal is a stop'
+}
+
+test_reviewer_writes_only_in_its_story_or_temp() {
+  reviewer_lane
+  ln -s "$SCRATCH" "$TMPROOT/link"
+  expect "$(rev_status Edit file_path "$WT/src/other.sh")" 0 "Edit outside Owns, in the story worktree"
+  expect "$(rev_status Write file_path "$WT/src/app.sh")" 0 "Write in the story worktree"
+  expect "$(rev_status Write file_path "$TMPROOT/notes/deep/x.md")" 0 "Write under the temp dir, missing folders"
+  expect "$(rev_status Edit file_path "$TMPROOT/probe/f")" 0 "Edit in a throwaway repo"
+  expect "$(rev_status Edit file_path "$SCRATCH/src/app.sh")" 2 "main checkout"
+  expect "$(rev_status Write file_path "$TMPROOT/main-wt/x")" 2 "a worktree of the real repo in the temp dir"
+  expect "$(rev_status Edit file_path "$WT/.git")" 2 ".git of the story worktree"
+  expect "$(rev_status Write file_path "$TMPROOT/../x")" 2 "escape from the temp dir"
+  expect "$(rev_status Write file_path "$TMPROOT/link/src/x")" 2 "symlink from the temp dir to the main checkout"
+}
+
+test_reviewer_git_is_read_only_outside_restores() {
+  reviewer_lane
+  local c
+  for c in "git -C $WT status" "cd $WT && git diff --exit-code src/app.sh" "git -C $WT checkout -- src/app.sh" \
+           "git -C $WT restore src/app.sh" "git -C $WT restore --worktree -- src/app.sh" "git -C $WT worktree list" \
+           "git -C $TMPROOT/probe commit -m x" "cd $TMPROOT/probe && git branch x && git reset --hard" \
+           "cd $TMPROOT && git init other"; do
+    expect "$(rev_bash "$c")" 0 "$c"
+  done
+  for c in push "commit -m x" "reset --hard" stash "branch x" "merge main" "checkout main" "checkout -b x" \
+           "checkout --" restore "restore --staged src/app.sh" "restore --source=main src/app.sh" "diff --output=x"; do
+    expect "$(rev_bash "git -C $WT $c")" 2 "in the story worktree: git $c"
+  done
+  for c in "git status" "git -C $SCRATCH log" "git -C $TMPROOT/probe push" "git -C $TMPROOT/main-wt commit -m x" \
+           "GIT_DIR=$SCRATCH/.git git -C $TMPROOT/probe log" "git --git-dir=$SCRATCH/.git -C $TMPROOT/probe log" \
+           'cd "$(mktemp -d)" && git init'; do
+    expect "$(rev_bash "$c")" 2 "$c"
+  done
+  c="cat > $TMPROOT/probe/notes.sh <<'END'
+echo probe
+END
+git push"
+  expect "$(rev_bash "$c")" 2 "a here-document closed, then git push (the s62 incident)"
+}
+
+test_reviewer_bounds_fail_closed() {
+  reviewer_lane
+  local ghost="$SCRATCH/.worktrees/s99-ghost"
+  expect "$(rev_status Edit file_path "$ghost/src/app.sh")" 2 "story not in stories.md"
+  expect "$(rev_bash "git -C $ghost status")" 2 "git in a story not in stories.md"
+  expect "$(rev_status Edit file_path "$SCRATCH/.worktrees/s02-bare/src/app.sh")" 2 "story without Owns"
+  expect "$(status_with 'not json' reviewer)" 2 "input that is not JSON"
+  expect "$(status_with '' reviewer)" 2 "empty input"
+  expect "$(rev_status Edit content x)" 2 "Edit without file_path"
+  expect "$(rev_status Bash description x)" 2 "Bash without command"
+  expect "$(rev_status Edit file_path src/app.sh)" 2 "relative path"
+  expect "$(rev_status NotebookEdit file_path "$WT/src/app.sh")" 2 "unknown tool"
+  expect "$(status_with "$(jq -n '{tool_name: "Bash", tool_input: {command: "git status"}}')" reviewer)" 2 "Bash without cwd"
+  expect "$(TMPDIR=/ rev_status Write file_path "$TMPROOT/x")" 2 "TMPDIR is /"
+  expect "$(TMPDIR="$TMPROOT/missing" rev_status Write file_path "$TMPROOT/x")" 2 "TMPDIR does not exist"
+}
