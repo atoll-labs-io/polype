@@ -116,6 +116,27 @@ test_verif_current_requires_a_passing_run_per_check() {
   ! accepted || fail "a record without a Checks table was accepted"
 }
 
+# s60 — a Checks row the gate cannot read refuses the record and names the row, rather than vanishing.
+test_verif_current_refuses_a_malformed_checks_row() {
+  story_sandbox
+  local err
+  mkdir -p docs/verif
+  printf '# Verification — s01-a\n\nTree: pending\n\n## Checks\n| Check | Command |\n| --- | --- |\n| Unit suite | `exit 0` |\n\nVerification status: complete\n' > "$REC"
+  unit 0 'exit 0'; seal
+  err="$(bash "$GATE" verif-current s01-a 2>&1)" && fail "a two-cell Checks row was accepted"
+  grep -qF 'has a row it cannot read' <<< "$err" && grep -qF 'Unit suite' <<< "$err" \
+    || fail "the two-cell refusal does not name the row: $err"
+
+  printf '# Verification — s01-a\n\nTree: pending\n\n## Checks\n| Check | Command | Note |\n| --- | --- | --- |\n| -- Unit suite | `exit 0` | |\n\nVerification status: complete\n' > "$REC"
+  unit 0 'exit 0'; seal
+  err="$(bash "$GATE" verif-current s01-a 2>&1)" && fail "a Checks row labelled like a separator was accepted"
+  grep -qF 'has a row it cannot read' <<< "$err" && grep -qF -- '-- Unit suite' <<< "$err" \
+    || fail "the dash-label refusal does not name the row: $err"
+
+  fresh_record; unit 0; seal
+  accepted || fail "the template's own Checks table was refused"
+}
+
 test_implementer_runs_checks_through_po_run() {
   local agent="$METHOD/agents/implementer.md"
   contains "$agent" 'po-run.sh --story'

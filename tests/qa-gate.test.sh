@@ -51,12 +51,27 @@ test_qa_current_reads_the_last_status() {
 test_qa_current_needs_a_full_tree_hash() {
   sandbox
   local tree; tree="$(git rev-parse 'HEAD^{tree}')"
-  printf 'QA status: complete\n' > docs/qa/s01-a/report.md
+  printf 'QA status: complete\n' > docs/qa/s01-a/report.md && git add -A && git commit -qm qa
   ! passes qa-current s01-a || fail "report without Tree: accepted"
-  printf 'Tree: %s\nQA status: complete\n' "${tree:0:12}" > docs/qa/s01-a/report.md
+  printf 'Tree: %s\nQA status: complete\n' "${tree:0:12}" > docs/qa/s01-a/report.md && git add -A && git commit -qm qa
   ! passes qa-current s01-a || fail "abbreviated tree accepted"
-  printf 'Tree: %s\nQA status: complete\n' "$(printf 'f%.0s' {1..40})" > docs/qa/s01-a/report.md
+  printf 'Tree: %s\nQA status: complete\n' "$(printf 'f%.0s' {1..40})" > docs/qa/s01-a/report.md && git add -A && git commit -qm qa
   ! passes qa-current s01-a || fail "unknown tree accepted"
+}
+
+# s60 — a current report counts only once docs/qa/<id>/ is in HEAD, captures included (ADR-0037).
+test_qa_current_requires_a_committed_report() {
+  sandbox
+  local err
+  { echo '# QA — s01-a'; echo "Tree: $(git rev-parse 'HEAD^{tree}')"; echo 'QA status: complete'; } > docs/qa/s01-a/report.md
+  err="$(bash "$GATE" qa-current s01-a 2>&1)" && fail "an untracked report was accepted"
+  grep -qF 'not committed' <<< "$err" || fail "the refusal does not say 'not committed': $err"
+  git add -A
+  ! passes qa-current s01-a || fail "a staged but uncommitted report was accepted"
+  git commit -qm qa
+  passes qa-current s01-a || fail "a committed current report was refused"
+  echo 'png' > docs/qa/s01-a/capture-2.png
+  ! passes qa-current s01-a || fail "an uncommitted capture beside the report was accepted"
 }
 
 test_rules_list_qa_in_the_story_cycle() {

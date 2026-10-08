@@ -105,6 +105,56 @@ test_floor_guard_flags_weakened_tests() {
   not_flagged 'app/test_rewrite.py'
 }
 
+# s60 — a rename the runner no longer sees is a deletion; a rename within one language stays silent.
+test_floor_guard_flags_a_test_renamed_out_of_the_test_tree() {
+  floor_repo
+  lines tests/a.test.ts 'expect(1).toBe(1);'
+  lines src/b.test.ts 'expect(2).toBe(2);'
+  lines spec/c.spec.js 'expect(3).toBe(3);'
+  commit tests
+  git checkout -qb story/s01-a
+  mkdir -p attic
+  git mv tests/a.test.ts attic/a.ts
+  git mv src/b.test.ts src/b.test.ts.off
+  git mv spec/c.spec.js spec/c.spec.ts
+  commit story
+  guard s01-a main
+  [ "$code" -eq 1 ] || fail "exit $code, stdout '$out'"
+  flagged 'tests/a.test.ts:0: test-file-deleted: renamed to attic/a.ts'
+  flagged 'src/b.test.ts:0: test-file-deleted: renamed to src/b.test.ts.off'
+  not_flagged 'spec/c.spec'
+}
+
+# s60 — a diff whose hunks do not add up, or that is not a diff at all, is unverifiable, never clean.
+test_floor_guard_says_2_on_an_unreadable_diff() {
+  floor_repo
+  git checkout -qb story/s01-a
+  lines src/a.ts 'export const a = 1;'
+  commit story
+  local real_git shim_dir mode
+  real_git="$(command -v git)"
+  shim_dir="$SCRATCH/.git/shim"
+  mkdir -p "$shim_dir"
+  for mode in header garbage; do
+    cat > "$shim_dir/git" <<EOF
+#!/usr/bin/env bash
+case " \$* " in
+  *" -U0 "*) ;;
+  *) exec "$real_git" "\$@" ;;
+esac
+if [ "$mode" = header ]; then
+  "$real_git" "\$@" | sed 's/^@@ .* @@/@@ -1 +1,9 @@/'
+else
+  "$real_git" "\$@" >/dev/null && echo garbage
+fi
+EOF
+    chmod +x "$shim_dir/git"
+    code=0; out=$(PATH="$shim_dir:$PATH" bash "$GATE" floor-guard s01-a main 2>"$SCRATCH/.git/guard.err") || code=$?
+    [ "$code" -eq 2 ] && [ -z "$out" ] || fail "$mode: exit $code, stdout '$out'"
+    grep -qF 'cannot verify the floor of' "$SCRATCH/.git/guard.err" || fail "$mode: no exit-2 message"
+  done
+}
+
 test_floor_guard_flags_empty_catch_and_lowered_thresholds() {
   floor_repo
   lines vitest.config.ts 'export default {' '  test: {' '    coverage: {' \

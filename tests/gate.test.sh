@@ -207,6 +207,15 @@ test_pre_commit_refuses_obvious_keys() {
   passes pre-commit || fail "a publishable key or a near-miss identifier was refused"
 }
 
+# s60 — in a one-line JSON string the PEM header follows the `n` of a literal `\n`; it must still count.
+test_secret_scan_finds_a_pem_key_after_an_escaped_newline() {
+  sandbox
+  local d='-----' header
+  header="${d}BEGIN PRIV""ATE KEY${d}"
+  printf '"tls": "%sEND CERTIFICATE%s\\n%s\\nMIIE"\n' "$d" "$d" "$header" > src/tls.json && git add src/tls.json
+  refused_naming 'src/tls.json:1: private-key' 'a PEM key after \n'
+}
+
 test_secret_scan_runs_on_every_branch() {
   sandbox
   echo 'K=v' > .env && git add .env
