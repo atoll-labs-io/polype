@@ -1002,13 +1002,14 @@ Objectif : fermer les faiblesses que les revues de M6, s58 et s59 ont laissées 
 **En tant que** développeur **je veux** que l'installeur signale les réglages que le gabarit a gagnés et que mon projet n'a pas **afin qu'**une mise à jour de Polype ne bloque pas un projet en silence.
 
 - **Complexité** : 3
-- **Dépend de** : aucune
+- **Dépend de** : s62
 - **Owns** : `bin/polype`, `docs/installation.md`, `tests/installer.test.sh`, `method/commands/po-plan.md`, `method/commands/po-design.md`, `method/commands/po-research.md`, `tests/model-routing.test.sh`
 - **Corrige** : majeurs de `docs/reviews/s59-model-by-complexity.md` (×2) et ses mineurs sur le sens de la règle et l'avertissement d'ADR-0036
 
 **Critères d'acceptation**
 - [ ] `update_lists_missing_settings` — `polype update` et `polype check` sur un projet listent chaque réglage du gabarit absent de son `AGENTS.local.md`, avec la valeur par défaut proposée, sans jamais modifier ce fichier.
 - [ ] `installation_doc_has_an_upgrade_section` — `docs/installation.md` dit quoi faire après une mise à jour : lire cette liste, ajouter les réglages.
+- [ ] `installation_doc_lists_the_hook_refusals` — la section de `docs/installation.md` sur le hook des bornes liste les commandes git que `po-bounds` refuse depuis s62 (déplacer une branche, `update-ref`, les commandes qui écrivent hors d'un worktree `story/*`) et ce qu'il ne voit pas (ADR-0039).
 - [ ] `standalone_commands_state_the_session_model` — `/po-plan`, `/po-design` et `/po-research` disent qu'ils tournent sur le modèle de la session, à démarrer sur `Model strong` (ADR-0036).
 - [ ] `model_refusal_stops_everywhere` — les tests vérifient, pour chaque commande qui dispatche, la phrase d'arrêt sur refus de modèle et le sens de la règle de l'implementer (`Model light` jusqu'à `Light up to`, `Model strong` au-delà).
 
