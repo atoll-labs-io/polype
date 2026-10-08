@@ -1173,3 +1173,17 @@ Objectif : fermer ce que les revues de M7 ont laissé ouvert, dont le reviewer q
 - [ ] `test_variables_are_local` — dans `tests/post-m7-texts.test.sh`, la variable de boucle est déclarée `local`.
 
 **Notes pour l'agent** : ne pas fermer de nouveau contournement délibéré dans cette story ; le but est de les nommer. Une ADR acceptée ne change que dans son frontmatter de liens.
+
+### s77-last-review-leftovers — Les derniers restes des revues
+**En tant que** développeur **je veux** que les mineurs encore ouverts des revues de M7 bis soient fermés **afin que** Polype parte vers d'autres plateformes sans dette connue.
+
+- **Complexité** : 2
+- **Dépend de** : aucune
+- **Owns** : `method/hooks/po-bounds.sh`, `tests/bounds.test.sh`, `method/agents/reviewer.md`, `method/templates/adr.md`, `method/AGENTS.md`, `method/commands/po-status.md`, `method/skills/stories-review/`, `tests/stories-review.test.sh`, `tests/final-leftovers.test.sh`
+- **Corrige** : mineurs de `docs/reviews/s76-bounds-guard-against-mistakes.md` (m1, m2), de `s75-post-m7-texts.md` (gabarit d'ADR, Loi 6) et de `s72-overlap-direction.md` (`po-status`, vérification 8)
+
+**Critères d'acceptation**
+- [ ] `refusal_messages_are_readable` — un refus de `po-bounds` sur une cible de redirection n'affiche jamais l'octet de marquage brut, et `/dev/fd/1` et `/dev/fd/2` sont traités comme `/dev/stdout` et `/dev/stderr`.
+- [ ] `reviewer_knows_the_hook_is_a_guard` — `method/agents/reviewer.md` dit que `po-bounds` arrête les erreurs (ADR-0052) et qu'un contournement délibéré déjà listé par ADR-0052 n'est pas un constat ; un contournement nouveau se signale en renvoyant à l'ADR plutôt qu'en demandant un correctif.
+- [ ] `adr_links_are_the_only_edit` — la Loi 6 de `method/AGENTS.md` dit qu'une ADR acceptée ne change que dans ses liens de frontmatter, et le gabarit d'ADR garde ses commentaires hors des lignes `supersedes:` et `superseded-by:`.
+- [ ] `overlap_wording_is_light` — la phrase de `/po-status` sur un conflit d'`Owns` se lit d'un trait, et la vérification 8 de `stories-review` dit « overlap » au lieu de « share an `Owns` path ».
