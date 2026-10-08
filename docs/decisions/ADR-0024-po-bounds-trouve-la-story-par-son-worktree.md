@@ -6,7 +6,7 @@ date: 2026-10-07
 tags: [adr, polype, hooks, bounds]
 scope: story s50-implementer-bounds
 supersedes: []
-superseded-by: []
+superseded-by: [ADR-0038, ADR-0039]
 ---
 
 # ADR-0024 — po-bounds trouve la story par le worktree visé, lit son Owns committé et son entrée avec jq

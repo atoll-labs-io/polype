@@ -6,7 +6,7 @@ date: 2026-10-08
 tags: [adr, polype, qa, gates, cycle]
 scope: story s52-qa-wiring
 supersedes: []
-superseded-by: []
+superseded-by: [ADR-0037]
 ---
 
 # ADR-0029 — /po-qa committe seul docs/qa/<id>/, et la revue n'exige la QA que sous QA stage screens

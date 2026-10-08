@@ -16,6 +16,7 @@ E2E stage:         —
 E2E scope:         nominal
 E2E browsers:      —
 Build stage:       —
+QA stage:          —
 Issue tracker:     —
 Worktree root:     .worktrees/
 ADR directory:     docs/decisions/
@@ -42,6 +43,7 @@ Test:              bash tests/run.sh
 Typecheck:         —
 E2E:               —
 Build:             —
+Dev:               —
 ```
 
 `Test` runs every `tests/*.test.sh`; a focused run passes file names relative to `tests/`, e.g. `bash tests/run.sh plan.test.sh`.
