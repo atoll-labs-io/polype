@@ -48,7 +48,7 @@ Stories are written in `docs/stories.md`, following `templates/stories.md`.
 
 `/po-drive` is one driver: it opens one lane per ready story and advances those lanes at the same time, a lane being that story's worktree and the subagents working in it. `/po-drive status` derives the same state and launches nothing — what is in flight, what waits, and for which reason.
 
-Two limits keep the parallelism honest. **Ships stay serial**: a lane whose review passed lands on `Target branch` alone, the next one lands after it, in the order the reviews passed. **`Owns` bounds a lane**: the `Owns` line of a story fixes the paths its lane may change, and two stories sharing one of those paths never run at once — the second waits for the first to ship.
+Two limits keep the parallelism honest. **Ships stay serial**: a lane whose review passed lands on `Target branch` alone, the next one lands after it, in the order the reviews passed. **`Owns` bounds a lane**: the `Owns` line of a story fixes the paths its lane may change, and two stories sharing one of those paths never run at once — the second waits for the first to ship. Two stories share a path when an `Owns` entry of one overlaps an entry of the other, by the overlap rule of check 8 of the `stories-review` skill.
 
 ## Law 2 — Whoever writes the code does not judge it
 
