@@ -5,7 +5,7 @@ status: accepted
 date: 2026-10-08
 scope: story s90-diagnostic-skill
 supersedes: []
-superseded-by: []
+superseded-by: [ADR-0070]
 ---
 
 # ADR-0068 — Une story de défaut porte une ligne `Fixes` et passe par le diagnostic

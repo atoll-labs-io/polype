@@ -37,7 +37,7 @@ If it exists: confirm with `git -C <path> rev-parse --abbrev-ref HEAD` that it i
 Report the absolute path, the branch, the start point and the names (never the contents) of the environment files copied. From here on, work only inside that path.
 
 ## The investigation
-Read the story, `AGENTS.md`, `docs/architecture.md` when it exists, and the accepted ADRs. Use the `codebase-analysis` skill on the part of the code the story touches.
+Read the story, `AGENTS.md`, `docs/architecture.md` when it exists, and the accepted ADRs. Use the `codebase-analysis` skill on the part of the code the story touches. A story carrying a `Fixes` line (`Corrige` in a French stories file) fixes a defect: run this investigation under the `diagnostic` skill, which writes the root cause first and stops after three discarded hypotheses.
 
 1. Restate the story and its acceptance criteria.
 2. Find the files it will touch and describe what they do today.
@@ -50,5 +50,7 @@ Read the story, `AGENTS.md`, `docs/architecture.md` when it exists, and the acce
 Fill `templates/research.md` into `docs/research/<id>.md`, **200 lines at most**: the planner, the implementer and the reviewer will all read it. Every fact carries its `path:line`. Keep decisions and doubts, drop narration.
 
 Leave it uncommitted; the implementer commits it with the code.
+
+When the research opens with `Root cause: not found`, finish instead with: "No root cause found for <id>: the story goes to a human, and no plan is written on this research."
 
 Finish with: "Research written to docs/research/<id>.md in <path>. Next: /po-plan <id>"

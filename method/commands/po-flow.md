@@ -31,7 +31,7 @@ Read `Story track` before anything else.
 - `flow` → the short track is accepted for any story.
 - `auto` → accepted only when the story's complexity, as written in `docs/stories.md`, is at most `Flow threshold`. Above it, refuse and point to `/po-research <id>`. A story that states no complexity cannot be compared with the threshold: refuse it too, and say the story needs a complexity or the full track.
 
-A missing setting is a stop, never a guess: a model setting missing → stop and name it.
+A missing setting is a stop, never a guess, `QA stage` excepted: missing, it stops only a story that would go to QA (see `## Escalation signals`). A model setting missing → stop and name it.
 
 ## Escalation signals
 These signals send a story to the full track:
