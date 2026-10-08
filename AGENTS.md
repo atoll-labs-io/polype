@@ -163,6 +163,9 @@ Flow threshold:    2
 Parallel:          2
 Max attempts:      2
 Tracker:           none
+Model strong:      opus
+Model light:       sonnet
+Light up to:       2
 ```
 
 ## Commands
