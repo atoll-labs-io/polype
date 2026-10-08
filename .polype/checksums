@@ -14,14 +14,14 @@
 1196631900 4567 .claude/commands/po-review.md
 2920311324 5263 .claude/commands/po-setup.md
 361324870 4809 .claude/commands/po-ship.md
-2489577754 5670 .claude/commands/po-status.md
+507627628 5673 .claude/commands/po-status.md
 2631012322 3756 .claude/commands/po-stories.md
 2375098024 3321 .claude/commands/po-stories-review.md
 2598334128 5909 .claude/agents/designer.md
 2384624903 5884 .claude/agents/implementer.md
 3161811081 6124 .claude/agents/planner.md
 1012510216 4083 .claude/agents/qa.md
-3951933702 5568 .claude/agents/reviewer.md
+4149968655 5855 .claude/agents/reviewer.md
 4162979073 2215 .claude/agents/stories-reviewer.md
 865819796 4567 .claude/skills/agentic-stories/SKILL.md
 1897128106 6149 .claude/skills/capability-bricks/SKILL.md
@@ -30,9 +30,9 @@
 3649530943 6774 .claude/skills/interrogation/SKILL.md
 1471385283 8304 .claude/skills/review-antihallu/SKILL.md
 1311165776 4774 .claude/skills/review-lenses/SKILL.md
-340585121 5033 .claude/skills/stories-review/SKILL.md
+615687097 5036 .claude/skills/stories-review/SKILL.md
 1573348266 4964 .claude/skills/testing-doctrine/SKILL.md
-1666085348 787 .polype/templates/adr.md
+2557896153 831 .polype/templates/adr.md
 1046058577 4779 .polype/templates/agents-local.md
 3260360512 2097 .polype/templates/architecture.md
 2304942730 1973 .polype/templates/brief.md
@@ -49,7 +49,7 @@
 2647573231 1313 .polype/templates/stories.md
 2457356057 1737 .polype/templates/stories-review.md
 2968085624 1577 .polype/templates/verification-record.md
-4080856919 36741 .polype/hooks/po-bounds.sh
+1159141412 36916 .polype/hooks/po-bounds.sh
 2030658851 24483 .polype/hooks/po-gate.sh
 2080428839 3445 .polype/hooks/po-run.sh
 118128939 189 .polype/hooks/pre-commit

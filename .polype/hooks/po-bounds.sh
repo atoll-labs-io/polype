@@ -25,8 +25,8 @@
 #                              whose common git dir and top level lie under it too, and every path the
 #                              call names after its verb (a word, --opt=value, -o<value>) resolving
 #                              under it as well; so does each redirection target of that call, read
-#                              from the shell's dir, unless it is /dev/null, /dev/stdout or
-#                              /dev/stderr. A git call runs where the cds and every chained -C
+#                              from the shell's dir, unless it is /dev/null, /dev/stdout,
+#                              /dev/stderr, /dev/fd/1 or /dev/fd/2 (ADR-0053). A git call runs where the cds and every chained -C
 #                              lead; a word holding a substitution, $ or a leading ~, a bare cd and
 #                              cd -<x> make that directory unknown, and git there is refused.
 #                              Everywhere: git push and send-pack, --git-dir, --work-tree, a -c or
@@ -295,6 +295,8 @@ check_write_reviewer() {
 }
 
 join_dir() { case "$2" in /*) printf '%s' "$2" ;; *) printf '%s' "${1%/}/$2" ;; esac; }
+
+readable() { local m=$'\036'; printf '%s' "${1//$m/<substitution>}"; }
 
 # Prints the directory reached from $1 by cd $2 or git -C $2; empty means unknown. A word bash
 # would expand (substitution, $, ~) is unknown, and so is a relative step from an unknown dir.
@@ -628,7 +630,7 @@ check_temp_paths() {
     esac
     for cand in ${cands[@]+"${cands[@]}"}; do
       case "$cand" in
-        *$'\036'*|*'$'*|'~'*) deny "git ${vals[j]} names $a, a path the reviewer cannot read: $cmd" ;;
+        *$'\036'*|*'$'*|'~'*) deny "git ${vals[j]} names $(readable "$a"), a path the reviewer cannot read: $cmd" ;;
       esac
       resolve_path "$(join_dir "$base" "$cand")"
       under_temp "$RESOLVED" || deny "git ${vals[j]} names $a, which lies outside the temp dir ($TMP_ROOT): $cmd"
@@ -637,13 +639,13 @@ check_temp_paths() {
 }
 
 # In a throwaway repo, every redirection target of the git call, read from the shell's dir $1, must
-# resolve under the temp dir too, or be /dev/null, /dev/stdout or /dev/stderr.
+# resolve under the temp dir too, or be /dev/null, /dev/stdout, /dev/stderr, /dev/fd/1 or /dev/fd/2.
 check_redirects() {
   local r
   for r in ${redirs[@]+"${redirs[@]}"}; do
     case "$r" in
-      /dev/null|/dev/stdout|/dev/stderr) continue ;;
-      *$'\036'*|*'$'*|'~'*) deny "git ${vals[j]-} redirects to $r, a path the reviewer cannot read: $cmd" ;;
+      /dev/null|/dev/stdout|/dev/stderr|/dev/fd/1|/dev/fd/2) continue ;;
+      *$'\036'*|*'$'*|'~'*) deny "git ${vals[j]-} redirects to $(readable "$r"), a path the reviewer cannot read: $cmd" ;;
       /*) ;;
       *) [ -n "$1" ] || deny "git ${vals[j]-} redirects to $r from an unknown directory: $cmd" ;;
     esac

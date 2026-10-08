@@ -4,8 +4,9 @@ title: <decision in a few words>
 status: accepted          # proposed | accepted | superseded (an ADR replaced only in part stays accepted)
 date: <YYYY-MM-DD>
 scope: <framing | story <id>>
-supersedes: []           # ADRs this one replaces, wholly or in part
-superseded-by: []        # ADRs replacing this one, wholly or in part
+# supersedes: ADRs this one replaces, wholly or in part; superseded-by: ADRs replacing this one, wholly or in part. Keep both lines free of comments.
+supersedes: []
+superseded-by: []
 ---
 
 # ADR-<NNNN> — <decision in a few words>
