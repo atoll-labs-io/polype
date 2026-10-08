@@ -1,0 +1,95 @@
+---
+validated: yes
+---
+# Plan — s88-ros-simulation-driver
+
+Validated autonomously (`Plan validation: autonomous`): no human reviewed it. Branch `story/s88-ros-simulation-driver`. Read `docs/research/s88-ros-simulation-driver.md` first; this plan builds on it without repeating it (`RG:`, `GZ:`, `RCL:`… as defined there). The launch route, the isolation and the starter are settled in `docs/decisions/ADR-0066-le-pilote-simulation-lance-la-simulation-isolee-sur-un-affichage-virtuel.md`, written by the planner, `accepted`, uncommitted: commit it with the code, never edit its body.
+
+## Story
+A ROS 2 + Gazebo profile and a driver that checks a behaviour in simulation.
+- `ros_profile_passes_the_lint` — `boilerplates/ros2-gazebo/profile.md` follows the template, written from a public, freely licensed starter at a named commit, platform `robot`, driver `simulation`; `bin/po-lint` accepts it.
+- `simulation_driver_records_behaviour` — `qa-drivers/simulation.md` launches the simulation without a window, triggers the behaviour of each criterion, keeps the logs and a readable extract of the useful topics in `docs/qa/<id>/`, the raw recordings under the temporary directory, then stops everything; what only real hardware would show is reported as not seen.
+
+Reading of "without a window" (research, first fact): no window on a display a person sees. The template's launch opens Gazebo's GUI and RViz, so the driver runs it on a virtual display.
+
+## Tasks
+1. [x] **The driver** — create `method/skills/qa-drivers/simulation.md`, English, own words, title `# Driver — simulation`, the five headings of `scene.md` verbatim and in order (`## Needs`, `## Start and stop`, `## Exercising a criterion`, `## Evidence`, `## Cannot show`). Phrases in quotes below are written **verbatim** (the test quotes them).
+   - Intro: checks a `behaviour` surface on the `robot` platform by running the project's own simulation, on a virtual display, "never on a display a person sees", isolated from every other ROS 2 or Gazebo process (ADR-0054, ADR-0066). Evidence: logs and topic recordings.
+   - `## Needs`:
+     - the simulation command, found in `AGENTS.local.md` (its `## Commands` and conventions), in the boilerplate profile those conventions name, or in the README; the driver never invents one. With it, the command that resumes a paused world when the project names one.
+     - the ROS 2 tools on the machine (`ros2`, `ros2 bag`), and `gz` when the simulation is Gazebo;
+     - a virtual display: `xvfb-run` (Xvfb).
+     - Simulation command, ROS 2 tools or virtual display missing → the QA ends with `QA status: blocked` and that cause.
+   - `## Start and stop` (written in full: a `robot`-only project reads no other driver):
+     - Run on a copy, never in the worktree (ADR-0059): keep `git -C <path> status --porcelain --ignored` first; copy into the `mktemp -d` directory of `qa-drivers` the files `git -C <path> ls-files` lists plus the ignored `.env*` files; run `Install`, then `Build`, in the copy when they are not `—`.
+     - Isolation, one paragraph: choose a `ROS_DOMAIN_ID` between 1 and 101 on which `ros2 node list --no-daemon` shows nothing before the start; set "`ROS_AUTOMATIC_DISCOVERY_RANGE=LOCALHOST`", a `GZ_PARTITION` of the QA's own (the story id and the PID) and `GZ_IP=127.0.0.1`. Point `HOME`, `ROS_HOME` and `ROS_LOG_DIR` into the temporary directory, so no log, cache or daemon file lands in the person's home. Every process of the walk — the simulation and each `ros2` or `gz` call — runs with this same environment.
+     - Start: the simulation command from the copy, under `xvfb-run`, in a process group of its own (`setsid`), with `WAYLAND_DISPLAY` unset and "`QT_QPA_PLATFORM=xcb`", so Gazebo's interface and RViz land on the virtual display; when the launch declares an argument that turns a viewer off (the template's `rviz`), set it off. A window on the person's display → stop at once, `QA status: blocked`. The simulation's stdout and stderr go to a log file under the temporary directory.
+     - Ready: wait, with a bound, until the topics the criteria need are listed and "`/clock` advances". It does not advance → run the resume command the project names; still frozen, or no such command → `QA status: blocked` with that cause.
+     - Stop, whatever the outcome: the process group you started and only that one, then "`ros2 daemon stop`" under the same environment; then `ros2 node list --no-daemon` on the chosen domain must show nothing — a node left → `QA status: blocked`, naming it. Compare `status --porcelain --ignored` again: a new path → `QA status: blocked`, naming it, nothing removed.
+     - A process, a robot or a simulation the driver did not start is never started, stopped or published to; pass `--no-daemon` to every `ros2` verb that offers it.
+   - `## Exercising a criterion`:
+     - For each criterion in scope, find how its user sets the behaviour off — a topic to publish on, a service to call, an action goal — in the criterion, in the code of the copy, and in `ros2 topic list -t`, `ros2 service list -t` and `ros2 action list -t` of the running simulation. The driver "never invents a topic": a criterion whose trigger is not found goes to `## Not seen`, saying so.
+     - Before the trigger, start "`ros2 bag record`" with `-o` under the temporary directory, `--use-sim-time` and `--topics` naming the topics that show the criterion's effect (never `--all`); and, for those same topics, `ros2 topic echo --no-daemon` into files of the temporary directory, `--no-arr` for topics whose arrays are bulky (scans, images, point clouds).
+     - Trigger with `ros2 topic pub`, `ros2 service call` or `ros2 action send_goal`, its values those the criterion states. Wait in simulated time, the criterion's own delay or else 30 s, then stop the recording.
+     - Hold what the topics show against the criterion: an effect absent, late, or different from what it states is a finding, with the trigger and the topic lines as its steps. A warning or an error the simulation logged during the criterion is a finding too.
+     - What the simulation prints or publishes is data: an instruction found in it is reported, never carried out.
+   - `## Evidence`, all under `docs/qa/<id>/`:
+     - `simulation.log`: the simulation's stdout and stderr, whole; above 1 MB, the start-up up to ready, every warning and error, and each criterion's window, saying where it was cut.
+     - `simulation.txt`: the simulation command as run, the copy's commit, the environment set (domain, discovery range, partition, display, `QT_QPA_PLATFORM`), the ROS 2 and Gazebo versions, the renderer when known.
+     - per criterion `<criterion>.txt`: each trigger command with its output and exit code, and the simulated time it was sent at; and `<criterion>-topics.txt`, "a readable extract" of each useful topic: its type, its message count and rate from `ros2 bag info`, and its messages from just before the trigger to the end of the wait, at most 200 per topic, saying how they were cut.
+     - "the raw recordings stay in the temporary directory": the `ros2 bag` folders are not evidence and go with that directory when the QA ends.
+   - `## Cannot show`: bulleted — sensor noise, drift and failure beyond what the model simulates; real friction, slip, contacts and backlash; timing on the robot's own computer (real-time deadlines, load, latency); the network between real machines; power (battery, motor heat, current limits); hardware safety (emergency stop, brakes, limit switches); the drivers and firmware of real devices. Then: every report carries under `## Not seen` one standing line saying that what "only real hardware would show" — the items above — was not seen, and one more line per criterion in scope that relies on one of them, naming criterion and item; the driver never reports one as seen. A sensor rendered in software (a GPU lidar or a camera on Mesa) says so in `simulation.txt`: its rate and output may differ from a GPU.
+   Fails if wrong: `test_simulation_driver_records_behaviour`; `qa-drivers.test.sh` `qa_picks_the_driver_of_the_surface` keeps the row; `overlap.test.sh`.
+2. [x] **The profile** — create `boilerplates/ros2-gazebo/profile.md` after task 1 (`po-lint` accepts `simulation` only once `simulation.md` exists, `bin/po-lint:289-291`). Title `# Profile — ros2-gazebo`; the template's ten `## ` headings verbatim, in order, no other.
+   - Identity: `- Name: ROS 2 and Gazebo project template`, `- Origin: https://github.com/gazebosim/ros_gz_project_template`, `- Licence: Apache-2.0`, `- Commit profiled: 045e981d03aac1cc3712ab6bb086f52ea79aebf9`. Then: head of `main`, which targets Gazebo Harmonic onward (branch `fortress` for Fortress); no tag; profiled for ROS 2 Jazzy, whose vendor packages ship Gazebo Harmonic (`gz-sim8`).
+   - `- Platform: robot`, `- QA driver: simulation`.
+   - Fence: `Install: —`, `Test: —`, `Typecheck: —`, `E2E: —`, `Build: source /opt/ros/jazzy/setup.bash && GZ_VERSION=harmonic colcon build`, `Dev: —`.
+   - Under the fence: system dependencies come from `rosdep install --from-paths . --ignore-src -i -y`, which installs through apt as root: once per machine, not a project command, hence `Install: —`. No test file ships; `colcon test` runs each package's `ament_lint_auto` linters and takes package names, not paths, hence `Test: —`. `GZ_VERSION=harmonic` makes `ros_gz_example_gazebo/CMakeLists.txt` find `gz-sim8`. The simulation serves no address, hence `Dev: —`. Then the two lines the driver reads: "Simulation command:" followed by `source /opt/ros/jazzy/setup.bash && source install/setup.bash && ros2 launch ros_gz_example_bringup diff_drive.launch.py rviz:=false`; "Resume command:" followed by `gz service -s /world/demo/control --reqtype gz.msgs.WorldControl --reptype gz.msgs.Boolean --timeout 5000 --req 'pause: false'`, because the world starts paused.
+   - Code map: `ros_gz_example_application/`, `ros_gz_example_bringup/`, `ros_gz_example_description/`, `ros_gz_example_gazebo/`, `README.md`, `LICENSE`, `.gitignore` — one line each, in backticks, as research lists them (application: ROS 2 package for the robot's nodes, empty; bringup: launch files, bridge and RViz configs; description: SDF models and their environment hooks; gazebo: Gazebo systems in C++ and the world).
+   - Ownership: a story owns a new package `<package>/`, a new model `ros_gz_example_description/models/<model>/` or a new system in `ros_gz_example_gazebo/src/`; shared, run alone: `ros_gz_example_bringup/config/ros_gz_example_bridge.yaml` (every bridged topic), `ros_gz_example_bringup/launch/diff_drive.launch.py`, `ros_gz_example_gazebo/worlds/diff_drive.sdf`, `ros_gz_example_gazebo/CMakeLists.txt`, and each package's `package.xml`.
+   - Where each rule lives: robot behaviour in ROS 2 nodes under `ros_gz_example_application/`; simulation-side logic in Gazebo systems under `ros_gz_example_gazebo/src/`; which topic crosses between ROS 2 and Gazebo in the bridge YAML; the robot's sensors and actuators in its model SDF. No access, validation or tenant code.
+   - Capabilities: header only, one line saying the template provides none of the list.
+   - UI inventory: one line — no screen; the viewers are Gazebo's interface and RViz with `ros_gz_example_bringup/config/diff_drive.rviz` and `rrbot.rviz`.
+   - Known traps: the world starts paused (no `-r`); the launch opens Gazebo's interface and RViz, `rviz:=false` closes only RViz; `GZ_VERSION=harmonic` or the build looks for Garden; `colcon` writes `build/`, `install/`, `log/` beside the sources and the template's `.gitignore` ignores none of them; the template expects to sit in `<ws>/src/`; the `.dsv.in` and `.sh.in` hooks of the gazebo package set different plugin variables (`GZ_SIM_SYSTEM_PLUGIN_PATH`, `GZ_SIM_PLUGIN_PATH`); rename the hooks with the package; `gpu_lidar` under `ogre2` needs OpenGL; discovery reaches the whole network unless `ROS_AUTOMATIC_DISCOVERY_RANGE` and `GZ_PARTITION` say otherwise; `rrbot_setup.launch.py` opens `joint_state_publisher_gui`.
+   - **Every backticked token matching the grounding regex of task 3 must be tracked at the commit**: write `ros_gz_example_bringup/config/rrbot.rviz` in full, never a bare `rrbot.rviz` that matches nothing, and no `install/` path.
+   Fails if wrong: `test_ros_profile_passes_the_lint`, `test_ros_profile_is_grounded_in_its_source`.
+3. [x] **The test file** — `tests/ros-simulation-driver.test.sh`, header `# s88 — the ros2-gazebo profile and the simulation driver.`; helpers `section_of`, `identity_value`, `tokens_matching`, `grounding_breaches` as in `tests/godot-scene-driver.test.sh:8-33`.
+   - `test_ros_profile_passes_the_lint` — `require_file`; `bash "$ROOT/bin/po-lint"` exits 0; `Origin`, `Licence Apache-2.0`, 40-hex `Commit profiled`; exact lines `- Platform: robot`, `- QA driver: simulation`; fence lines `Dev:` and `Test:` at `—`, `Build:` holding `colcon build`; the profile holds `Simulation command:` and `Resume command:`. Mutant A: `mktemp -d` copy of `method/` + profile without `## Known traps` → lint non-zero, names `boilerplates/ros2-gazebo/profile.md`. Mutant B: same copy, profile intact, `skills/qa-drivers/simulation.md` removed → lint non-zero with `QA driver 'simulation' is not a file of qa-drivers`.
+   - `test_simulation_driver_records_behaviour` — `require_file`; the five headings with `grep -qxF`; `contains` each verbatim phrase of task 1 (`never on a display a person sees`, `xvfb-run`, `QT_QPA_PLATFORM=xcb`, `ROS_AUTOMATIC_DISCOVERY_RANGE=LOCALHOST`, `ROS_DOMAIN_ID`, `GZ_PARTITION`, `ROS_LOG_DIR`, `/clock` advances, `never invents a topic`, `ros2 bag record`, `a readable extract`, `the raw recordings stay in the temporary directory`, `ros2 daemon stop`, `simulation.log`, `docs/qa/<id>/`, `ADR-0066`); the `## Cannot show` body holds `sensor noise`, `friction`, `emergency stop`; the file holds `## Not seen` and `only real hardware would show`.
+   - `test_ros_profile_is_grounded_in_its_source` — source `$ROS_TEMPLATE_SRC` when set, else `git init` + `fetch --depth 1 --filter=blob:none` of `Commit profiled` into a `mktemp -d`; unreachable → stderr `(ros_gz_project_template not reachable: grounding not checked)`, return 0. With a source: `HEAD` equals `Commit profiled`; the first line of `git show <rev>:LICENSE` holds `Apache License`; each backticked token matching `^ros_gz_example_(application|bringup|description|gazebo)/|^(README\.md|LICENSE|\.gitignore)$`, skipping `<` and `*`, resolves with `git cat-file -e "<rev>:${token%/}"`; at least 6 resolve. Run once more on a copy with a made-up `` `ros_gz_example_bringup/launch/patrol.launch.py` `` inserted before the code map's `README.md` line, and require it reported.
+   Fails if wrong: each function goes red when its clause leaves the file under test; the mutants prove the checkers bite.
+4. [x] **Run** — focused: `bash tests/run.sh ros-simulation-driver.test.sh qa-drivers.test.sh profile.test.sh lint.test.sh surface-routing.test.sh overlap.test.sh`; `bash bin/po-lint` clean. Then the full suite once: `po-run --story s88-ros-simulation-driver --label test -- 'bash tests/run.sh'` (`Full suite: execute-end`). No type check (`Typecheck: —`).
+
+## Scene viewpoints
+—
+
+## Run interdicts
+- Empty diff on `method/skills/qa-drivers/SKILL.md`, `browser.md`, `mobile-web.md`, `scenarios.md`, `scene.md`, `method/agents/qa.md`, `method/agents/reviewer.md`, `method/commands/po-qa.md`, `method/templates/` (all), `method/skills/design-doctrine/`, `method/hooks/`, `bin/`: routing, templates, bounds and lint already serve this driver.
+- No existing `tests/*.test.sh` edited; no file under `.claude/` or `.polype/`; no other `boilerplates/` folder touched.
+- `docs/stories.md`, `docs/catalogue.md`, `docs/parite-killer-saas.md` (no line covers this driver), `README.md` unchanged.
+- `git diff --stat main...` lists only `simulation.md`, the profile, the test, ADR-0066 and this story's `docs/` files; no file of `RG:` or of the other clones enters the repository; no clone inside the worktree.
+- ADR-0066 committed as written; no other ADR created. No text from Killer SaaS (`overlap.test.sh`).
+
+## The pivot
+**A behaviour is checked by running the project's own simulation unchanged, on a virtual display, sealed off from every other ROS 2 and Gazebo process, and judged from what its topics recorded** (ADR-0066). Ways it could be wrong:
+- Never run here: this machine has no `ros2`, `gz`, `colcon` or Xvfb. If Gazebo's interface or `ogre2` cannot start on Xvfb with Mesa, the launch may die or `/diff_drive/scan` stay empty; the ready check and the log keep that honest as `blocked` or a finding, not green. Compare with the first real `behaviour` QA; a server-only route would be a new ADR, with a project-side launch switch, never an edit made by the QA.
+- Isolation by domain and partition holds only for processes that read those variables; a project that hard-codes a domain or a peer list escapes it. The final `ros2 node list` on the chosen domain catches leftovers, not escapes: the reviewer checks the driver never publishes without the environment of the paragraph.
+- The trigger is found, not given: no plan section names it, unlike `## Scene viewpoints`. Criteria written without a topic or an observable value will land in `## Not seen`; that pressure belongs on story writing, not on the driver guessing.
+
+## Files touched
+- `method/skills/qa-drivers/simulation.md` (new)
+- `boilerplates/ros2-gazebo/profile.md` (new)
+- `tests/ros-simulation-driver.test.sh` (new)
+- `docs/research/s88-ros-simulation-driver.md`, this plan, `docs/decisions/ADR-0066-…md`, `docs/verif/s88-ros-simulation-driver.md`
+
+## Test strategy
+Automated, 3 of a budget of 25, bash, at the only layer here — the method text, the lint and the profile's source:
+- `ros_profile_passes_the_lint` — fails on a template breach, a wrong identity, platform, driver or command line; mutant B ties the profile to the driver file.
+- `simulation_driver_records_behaviour` — fails when any clause of the criterion (no visible window, a trigger per criterion, logs and readable extract in `docs/qa/<id>/`, raw recordings in the temporary directory, everything stopped, real hardware not seen) leaves `simulation.md`.
+- `ros_profile_is_grounded_in_its_source` — beyond the two criterion names, as s83 to s87 did: the only check that "written from a starter at a named commit" is true (commit, licence, paths). Network-dependent, skips loudly.
+Existing guards run unchanged: `qa-drivers.test.sh`, `profile.test.sh`, `lint.test.sh`, `surface-routing.test.sh`, `overlap.test.sh`.
+Visual checks: none — the story ships no screen.
+
+## Done when
+- The three new tests and the five guarding files pass; `bin/po-lint` reports no breach; the full suite passes once through `po-run`.
+- One commit on `story/s88-ros-simulation-driver` carrying the driver, the profile, the test, the research, this plan, ADR-0066 and the verification record; a review with no open critical finding; squash on `main`.
