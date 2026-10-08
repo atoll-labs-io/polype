@@ -896,20 +896,20 @@ Objectif : qu'une gate ne puisse plus être contournée par un commit tardif, un
 
 **Notes pour l'agent** : ne nommer aucun navigateur ni serveur MCP particulier (`tests/qa.test.sh` vérifie qu'aucun `mcp__`, `playwright` ou `chrome` n'apparaît dans `method/`). Les tests qui lisent le frontmatter du designer (`tests/fleet-design.test.sh`) se mettent à jour avec le texte. Passer le défaut n° 33 à « corrigé par s58 ».
 
-### s59-model-by-complexity — Le modèle de chaque subagent choisi selon la story
-**En tant que** développeur **je veux** que les subagents d'une story simple tournent sur un modèle plus léger, et que la revue reste sur le modèle le plus fort **afin de** ne pas dépenser le modèle le plus cher sur chaque lane, sans rien perdre sur ce qui juge.
+### s59-model-by-complexity — Décider sur le modèle fort, exécuter sur un modèle adapté
+**En tant que** développeur **je veux** que tout ce qui décide (plan, design, revue, QA) tourne toujours sur le modèle le plus fort, et que seule l'écriture du code s'adapte à la complexité de la story **afin de** ne pas dépenser le modèle le plus cher sur l'exécution d'un plan simple, sans jamais affaiblir une décision.
 
 - **Complexité** : 3 — risque : la valeur `model` passée à l'outil Agent ; un nom que l'outil refuse fait échouer la lane, donc la commande doit dire quoi faire d'un refus.
 - **Dépend de** : s56, s57
-- **Owns** : `method/agents/implementer.md`, `method/templates/agents-local.md`, `method/commands/po-drive.md`, `method/commands/po-orchestrator.md`, `method/commands/po-flow.md`, `method/commands/po-execute.md`, `method/commands/po-review.md`, `method/commands/po-setup.md`, `tests/model-routing.test.sh`
-- **Décision** : ADR-0032 (proposée)
+- **Owns** : `method/agents/implementer.md`, `method/templates/agents-local.md`, `method/commands/po-drive.md`, `method/commands/po-orchestrator.md`, `method/commands/po-flow.md`, `method/commands/po-execute.md`, `method/commands/po-review.md`, `method/commands/po-qa.md`, `method/commands/po-stories-review.md`, `method/commands/po-setup.md`, `tests/model-routing.test.sh`
+- **Décision** : ADR-0032
 
 **Critères d'acceptation**
-- [ ] `settings_declare_the_model_routing` — le gabarit de réglages déclare `Model light`, `Model strong` et `Light up to`, documentés : `Model light` et `Model strong` prennent un nom de modèle accepté par l'outil Agent ou `—` (le modèle de la session), `Light up to` est la complexité la plus haute qui tourne sur `Model light`.
+- [ ] `settings_declare_the_model_routing` — le gabarit de réglages déclare `Model strong`, `Model light` et `Light up to`, documentés : `Model strong` et `Model light` prennent un nom de modèle accepté par l'outil Agent ou `—` (le modèle de la session), `Light up to` est la complexité la plus haute dont l'implementer tourne sur `Model light`.
 - [ ] `implementer_no_longer_pins_a_model` — le frontmatter de l'implementer passe de `model: opus` à `model: inherit`.
-- [ ] `lanes_pick_the_model_from_the_complexity` — `/po-drive`, `/po-orchestrator`, `/po-flow` et `/po-execute` passent à l'outil Agent `Model light` pour le planner, le designer, l'implementer et la QA d'une story dont la complexité ne dépasse pas `Light up to`, et `Model strong` au-delà ; une valeur `—` ne passe aucun modèle.
-- [ ] `review_always_runs_on_the_strong_model` — `/po-review`, `/po-drive`, `/po-orchestrator` et `/po-flow` dispatchent le reviewer sur `Model strong`, quelle que soit la complexité.
+- [ ] `deciders_always_run_on_the_strong_model` — le planner, le designer, le reviewer, l'agent QA et le stories-reviewer sont dispatchés sur `Model strong` par chaque commande qui les lance (`/po-drive`, `/po-orchestrator`, `/po-flow`, `/po-review`, `/po-qa`, `/po-stories-review`), quelle que soit la complexité.
+- [ ] `only_the_implementer_adapts` — `/po-drive`, `/po-orchestrator`, `/po-flow` et `/po-execute` dispatchent l'implementer sur `Model light` quand la complexité de la story ne dépasse pas `Light up to`, sur `Model strong` au-delà ; une valeur `—` ne passe aucun modèle. Un fix run garde la règle.
 - [ ] `drive_reports_the_model_of_each_lane` — le rapport de `/po-drive` dit, par lane et par étape, le modèle utilisé.
-- [ ] `setup_offers_the_defaults` — `/po-setup` propose `Model light: sonnet`, `Model strong: opus`, `Light up to: 2`, sans ajouter de question numérotée (`tests/setup-modes.test.sh` fige les cinq questions).
+- [ ] `setup_offers_the_defaults` — `/po-setup` propose `Model strong: opus`, `Model light: sonnet`, `Light up to: 2`, sans ajouter de question numérotée (`tests/setup-modes.test.sh` fige les cinq questions).
 
-**Notes pour l'agent** : la complexité lue est celle que la recherche a re-notée quand elle existe, sinon celle de `docs/stories.md`. Un refus du modèle par l'outil Agent arrête la lane et le dit ; on ne retombe jamais en silence sur un autre modèle. Les `stories-reviewer` et la revue gardent le modèle fort : c'est là que les erreurs des autres agents sont attrapées. Polype lui-même règle `Model light: sonnet`, `Model strong: opus`, `Light up to: 2` dans son `AGENTS.local.md` une fois la story livrée, à la main.
+**Notes pour l'agent** : la règle vient de l'utilisateur, le 2026-10-08 : la prise de décision et le plan se font toujours sur un modèle fort, et le niveau ne s'adapte qu'à l'exécution. La complexité lue est celle que la recherche a re-notée quand elle existe, sinon celle de `docs/stories.md`. Un refus du modèle par l'outil Agent arrête la lane et le dit ; on ne retombe jamais en silence sur un autre modèle. Polype lui-même règle `Model strong: opus`, `Model light: sonnet`, `Light up to: 2` dans son `AGENTS.local.md` une fois la story livrée, à la main.
