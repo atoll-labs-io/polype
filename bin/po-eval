@@ -1,0 +1,168 @@
+#!/usr/bin/env bash
+# po-eval — runs the reviewer agent on stories with one planted flaw and reads a pass rate per
+# case from its two verdict lines. Each run costs a paid `claude -p` call: nothing is called
+# before the run count is printed and confirmed, and tests/run.sh never runs this.
+#
+# Usage: po-eval [--repeat N] [--model M] [case…]   every case by default, N=3
+#        po-eval --list                            one case name per line
+#        po-eval --build <case> <dir>              builds that case's repository in <dir>, prints its worktree
+#
+# A run passes when the report's last `Max severity:` and `Ship allowed:` lines equal the case's
+# expectations, read as strictly as po-gate reads them. No model grades another model here.
+set -euo pipefail
+
+POLYPE_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+CASES="$POLYPE_ROOT/evals/cases"
+[ -d "$CASES" ] || { echo "po-eval runs from a Polype checkout; evals/ is not installed" >&2; exit 2; }
+# shellcheck source=../evals/lib.sh
+source "$POLYPE_ROOT/evals/lib.sh"
+
+usage() {
+  cat >&2 <<'USAGE'
+usage: po-eval [--repeat N] [--model M] [case…]
+       po-eval --list
+       po-eval --build <case> <dir>
+USAGE
+  exit 2
+}
+
+all_cases() { find "$CASES" -maxdepth 1 -name '*.sh' -printf '%f\n' | sed 's/\.sh$//' | sort; }
+
+load_case() {
+  local name="$1" file="$CASES/$1.sh" base var
+  [ -f "$file" ] || { echo "po-eval: unknown case: $name" >&2; usage; }
+  for var in $(compgen -v CASE_ || true); do unset "$var"; done
+  unset -f story plan plant 2>/dev/null || true
+  base="$(sed -n 's/^CASE_BASE=//p' "$file" | head -n 1)"
+  if [ -n "$base" ]; then
+    [ -f "$CASES/$base.sh" ] || { echo "po-eval: $name: base case $base does not exist" >&2; exit 2; }
+    # shellcheck source=/dev/null
+    source "$CASES/$base.sh"
+  fi
+  # shellcheck source=/dev/null
+  source "$file"
+  for var in CASE_KIND CASE_DEFECT CASE_EXPECT_SEVERITY CASE_EXPECT_SHIP CASE_STORY_ID; do
+    [ -n "${!var-}" ] || { echo "po-eval: $name does not declare $var" >&2; exit 2; }
+  done
+  [ -n "${CASE_PRESSURE+set}" ] || { echo "po-eval: $name does not declare CASE_PRESSURE" >&2; exit 2; }
+  for var in story plan plant; do
+    declare -F "$var" >/dev/null || { echo "po-eval: $name defines no $var function" >&2; exit 2; }
+  done
+}
+
+# Claude Code may let a user-level agent or skill of the same name win over the project's copy.
+drift_check() {
+  local cfg="${CLAUDE_CONFIG_DIR:-$HOME/.claude}" skill rel drift=0
+  if [ -f "$cfg/agents/reviewer.md" ] && ! cmp -s "$cfg/agents/reviewer.md" "$POLYPE_ROOT/method/agents/reviewer.md"; then
+    echo "po-eval: $cfg/agents/reviewer.md differs from method/agents/reviewer.md" >&2; drift=1
+  fi
+  for skill in $(awk 'NR==1 && $0=="---" {on=1; next} on && $0=="---" {exit}
+                      on && /^skills:/ {list=1; next}
+                      on && list && /^  - / {sub(/^  - /, ""); print; next}
+                      on && list {list=0}' "$POLYPE_ROOT/method/agents/reviewer.md"); do
+    [ -d "$cfg/skills/$skill" ] || continue
+    while IFS= read -r rel; do
+      cmp -s "$cfg/skills/$skill/$rel" "$POLYPE_ROOT/method/skills/$skill/$rel" \
+        || { echo "po-eval: $cfg/skills/$skill/$rel differs from method/skills/$skill/$rel" >&2; drift=1; }
+    done < <(cd "$cfg/skills/$skill" && find . -type f | sed 's|^\./||')
+  done
+  [ "$drift" -eq 0 ] && return 0
+  echo "po-eval: a user-level copy would shadow the method under test; run bin/polype update --global" >&2
+  exit 2
+}
+
+launch_message() {
+  local id="$1" wt="$2" line
+  line="$(grep -m1 '^> Story <id>\.' "$POLYPE_ROOT/method/commands/po-review.md" || true)"
+  [ -n "$line" ] || { echo "po-eval: no '> Story <id>.' line in method/commands/po-review.md; the launch message moved" >&2; exit 2; }
+  line="${line#> }"
+  line="${line//<id>/"$id"}"
+  line="${line//<absolute path>/"$wt"}"
+  line="${line//<Target branch>/main}"
+  line="${line//<n>/0}"
+  if [ -n "$CASE_PRESSURE" ]; then
+    printf '%s\n\n%s\n' "$line" "$CASE_PRESSURE"
+  else
+    printf '%s\n' "$line"
+  fi
+}
+
+# Prints `<severity>/<ship>`, or `no verdict` when either last line is missing or malformed.
+grade() {
+  local sev ship
+  sev="$(grep -E '^Max severity:' "$1" | tail -n 1 || true)"
+  ship="$(grep -E '^Ship allowed:' "$1" | tail -n 1 || true)"
+  if [[ "$sev" =~ ^Max\ severity:[[:space:]]*(critical|major|minor|none)[[:space:]]*$ ]]; then sev="${BASH_REMATCH[1]}"; else sev=""; fi
+  if [[ "$ship" =~ ^Ship\ allowed:[[:space:]]*(yes|no)[[:space:]]*$ ]]; then ship="${BASH_REMATCH[1]}"; else ship=""; fi
+  if [ -n "$sev" ] && [ -n "$ship" ]; then echo "$sev/$ship"; else echo "no verdict"; fi
+}
+
+repeat=3 model="" list=no build=no
+selected=()
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --repeat) [ $# -ge 2 ] && [[ "$2" =~ ^[1-9][0-9]*$ ]] || usage; repeat="$2"; shift 2 ;;
+    --model) [ $# -ge 2 ] && [ -n "$2" ] || usage; model="$2"; shift 2 ;;
+    --list) list=yes; shift ;;
+    --build) [ $# -eq 3 ] || usage; build=yes; selected=("$2"); build_dir="$3"; shift 3 ;;
+    -*) echo "po-eval: unknown option $1" >&2; usage ;;
+    *) selected+=("$1"); shift ;;
+  esac
+done
+
+if [ "$list" = yes ]; then all_cases; exit 0; fi
+
+if [ "$build" = yes ]; then
+  load_case "${selected[0]}"
+  mkdir -p "$build_dir"
+  eval_build "$(cd "$build_dir" && pwd)"
+  exit 0
+fi
+
+[ ${#selected[@]} -gt 0 ] || mapfile -t selected < <(all_cases)
+for name in "${selected[@]}"; do (load_case "$name") || exit 2; done
+drift_check
+
+total=$(( ${#selected[@]} * repeat ))
+echo "${#selected[@]} cases × $repeat repetitions = $total runs of claude -p"
+printf 'Continue? [y/N] '
+answer=""
+read -r answer || true
+[ -t 0 ] || echo
+case "$answer" in
+  y|Y|yes|YES|Yes) ;;
+  *) echo "nothing run"; exit 1 ;;
+esac
+
+results="$(mktemp -d)"
+echo "results: $results"
+model_args=()
+[ -z "$model" ] || model_args=(--model "$model")
+
+for name in "${selected[@]}"; do
+  load_case "$name"
+  mkdir -p "$results/$name"
+  passed=0
+  labels=()
+  for n in $(seq 1 "$repeat"); do
+    repo="$(mktemp -d)"
+    # A separate process: inside `$(…) ||` bash would ignore set -e for the whole build.
+    wt="$("$POLYPE_ROOT/bin/po-eval" --build "$name" "$repo/repo" 2>"$results/$name/$n.build.log")" \
+      || { echo "po-eval: building $name failed, see $results/$name/$n.build.log" >&2; rm -rf "$repo"; exit 2; }
+    prompt="$(launch_message "$CASE_STORY_ID" "$wt")"
+    code=0
+    # stdin is closed: claude -p would otherwise read what is left of ours into the prompt.
+    (cd "$wt" && claude -p "$prompt" --agent reviewer --allowedTools "Read Grep Glob Bash Edit" \
+      --no-session-persistence ${model_args[@]+"${model_args[@]}"}) \
+      < /dev/null > "$results/$name/$n.md" 2> "$results/$name/$n.err" || code=$?
+    rm -rf "$repo"
+    if [ "$code" -ne 0 ]; then label="claude exit $code"; else label="$(grade "$results/$name/$n.md")"; fi
+    [ "$label" = "$CASE_EXPECT_SEVERITY/$CASE_EXPECT_SHIP" ] && passed=$((passed + 1))
+    labels+=("$label")
+  done
+  got="$(printf '%s\n' "${labels[@]}" | awk '!($0 in c) {o[++k] = $0} {c[$0]++}
+    END {for (i = 1; i <= k; i++) printf "%s%s ×%d", (i > 1 ? ", " : ""), o[i], c[o[i]]}')"
+  echo "$name: $passed/$repeat passed ($(( passed * 100 / repeat ))%) — expected $CASE_EXPECT_SEVERITY/$CASE_EXPECT_SHIP; got $got"
+done
+
+echo "results: $results"
