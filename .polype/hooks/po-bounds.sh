@@ -24,7 +24,9 @@
 #                              anywhere under it, git any verb but push, in no repository or in one
 #                              whose common git dir and top level lie under it too, and every path the
 #                              call names after its verb (a word, --opt=value, -o<value>) resolving
-#                              under it as well. A git call runs where the cds and every chained -C
+#                              under it as well; so does each redirection target of that call, read
+#                              from the shell's dir, unless it is /dev/null, /dev/stdout or
+#                              /dev/stderr. A git call runs where the cds and every chained -C
 #                              lead; a word holding a substitution, $ or a leading ~, a bare cd and
 #                              cd -<x> make that directory unknown, and git there is refused.
 #                              Everywhere: git push and send-pack, --git-dir, --work-tree, a -c or
@@ -39,7 +41,10 @@
 # quoted arguments of sh -c, eval or watch, and a here-document a shell reads. An unquoted one is
 # rendered as bash renders it (\$, \`, \\) before that reading, and its outer substitutions are
 # read too. A shell fed by a pipe or handed a substitution, nested backquotes and any command the
-# lexer cannot read are refused.
+# lexer cannot read are refused. A redirection, its fd number included, is not a word of the command.
+#
+# The hook guards against an agent's mistakes; it is no barrier against a deliberate bypass, and
+# the known ones are listed and accepted in ADR-0052.
 #
 # Exit 0 allows the call, exit 2 refuses it with the reason on stderr. Claude Code lets any other
 # code through, so every failure ends in a refusal. Reads no setting; needs jq (ADR-0024).
@@ -303,7 +308,8 @@ step_dir() {
 QA_GIT_VERBS=" status diff log show rev-parse ls-files ls-tree cat-file merge-base grep blame describe symbolic-ref shortlog "
 
 # Prints the simple commands of the Bash command read on stdin, one per line, words separated by
-# \037, each word prefixed with u (no quoted part) or q (some part quoted); a word that held a $(…),
+# \037, each word prefixed with c (the command word), q (some part quoted), u (neither) or r (the
+# target of a redirection; the operator and its fd number are dropped); a word that held a $(…),
 # `…`, $((…)), <(…) or >(…) carries a \036 byte where the substitution stood; a line !<reason> means
 # the command cannot be read (ADR-0050). POSIX awk only: BWK awk and mawk must run it too.
 lex_command() {
@@ -311,7 +317,7 @@ lex_command() {
     function fail(r) { if (!failed) print "!" r; failed = 1 }
     function push(type) {
       sp++; t[sp] = type; pd[sp] = 0; inw[sp] = 0; wv[sp] = ""; wq[sp] = 0; ws[sp] = 0
-      nw[sp] = 0; piped[sp] = 0; cid[sp] = ++cseq
+      nw[sp] = 0; piped[sp] = 0; cid[sp] = ++cseq; rd[sp] = 0
     }
     # A double quote writes into the word of the command around it.
     function owner() { return t[sp] == "dq" ? sp - 1 : sp }
@@ -319,10 +325,14 @@ lex_command() {
     function quoted(   f) { f = owner(); wq[f] = 1; inw[f] = 1 }
     function opensub(type,   f) { if (t[sp] != "hd") { f = owner(); inw[f] = 1; ws[f] = 1; wv[f] = wv[f] SM } push(type) }
     function inbq(   x) { for (x = sp; x >= 1; x--) if (t[x] == "bq") return 1; return 0 }
+    # rd: 1 after a redirection to a file, 2 after <& or >&, whose fd number or - is no word.
     function endword(f) {
       if (!inw[f]) return
-      nw[f]++; W[f, nw[f]] = wv[f]; Q[f, nw[f]] = wq[f]; S[f, nw[f]] = ws[f]
-      wv[f] = ""; wq[f] = 0; ws[f] = 0; inw[f] = 0
+      if (rd[f] == 2 && !wq[f] && !ws[f] && wv[f] ~ /^([0-9]+-?|-)$/) {
+        wv[f] = ""; inw[f] = 0; rd[f] = 0; return
+      }
+      nw[f]++; W[f, nw[f]] = wv[f]; Q[f, nw[f]] = wq[f]; S[f, nw[f]] = ws[f]; R[f, nw[f]] = (rd[f] > 0)
+      wv[f] = ""; wq[f] = 0; ws[f] = 0; inw[f] = 0; rd[f] = 0
     }
     # Fills CP with the positions that may name the command, past assignments, options, counts and
     # wrappers (env, time…), and returns the first. The word after an option of a wrapper may be
@@ -330,6 +340,7 @@ lex_command() {
     function cmdpos(f,   k, v, b, wr, po, first) {
       split("", CP); wr = 0; po = 0; first = 0
       for (k = 1; k <= nw[f]; k++) {
+        if (R[f, k]) continue
         v = W[f, k]; b = v; sub(/.*\//, "", b)
         if (v ~ /^[A-Za-z_][A-Za-z0-9_]*=/) { po = 0; continue }
         if (v ~ /^-/ || v ~ /^[0-9][0-9.]*[smhd]?$/ || (b in WRAP)) {
@@ -353,21 +364,21 @@ lex_command() {
         cp = cmdpos(f); line = ""; ip = 0; si = 0; hc = 0; sb = 0
         for (k = 1; k <= nw[f]; k++) {
           v = W[f, k]; gsub(/\n/, " ", v)
-          line = line (k > 1 ? US : "") ((k in CP) ? "c" : Q[f, k] ? "q" : "u") v
+          line = line (k > 1 ? US : "") (R[f, k] ? "r" : (k in CP) ? "c" : Q[f, k] ? "q" : "u") v
           b = W[f, k]; sub(/.*\//, "", b)
-          if ((!Q[f, k] || (k in CP)) && (b in INTERP)) ip = 1
-          if ((k in CP) && (b in SHELLS)) si = 1
+          if (!R[f, k] && (!Q[f, k] || (k in CP)) && (b in INTERP)) ip = 1
+          if (!R[f, k] && (k in CP) && (b in SHELLS)) si = 1
           if (si && k > cp && W[f, k] ~ /^-[A-Za-z]*c[A-Za-z]*$/) hc = 1
           if (S[f, k]) sb = 1
         }
         print line
         if (ip && sb) fail("a substitution handed to an interpreter")
         if (si && piped[f] && !hc) fail("a shell reading its commands from a pipe")
-        if (ip) for (k = 1; k <= nw[f]; k++) if (Q[f, k]) work[++wn] = W[f, k]
+        if (ip) for (k = 1; k <= nw[f]; k++) if (Q[f, k] && !R[f, k]) work[++wn] = W[f, k]
         if (si) for (x = 1; x <= qn; x++) if (qc[x] == cid[f]) qi[x] = 1
       }
       if (!(nw[f] == 0 && code == 2)) piped[f] = (code == 1)
-      nw[f] = 0; cid[f] = ++cseq
+      nw[f] = 0; cid[f] = ++cseq; rd[f] = 0
     }
     # Reads the delimiter after << or <<- and queues the here-document.
     function opener(tabs,   d, q, c, j) {
@@ -483,6 +494,7 @@ lex_command() {
         else if (c2 == "||") { endcmd(sp, 0); i += 2 }
         else if (c2 == "|&") { endcmd(sp, 1); i += 2 }
         else if (c == "|") { endcmd(sp, 1); i++ }
+        else if (c2 == "&>" && T != "ar") { endword(sp); rd[sp] = 1; i += (c3 == "&>>") ? 3 : 2 }
         else if (c == ";" || c == "&") { endcmd(sp, 0); i++ }
         else if (c == "(") { endcmd(sp, 2); pd[sp]++; i++ }
         else if (c == ")") {
@@ -520,7 +532,13 @@ lex_command() {
           endword(sp); i += 2
           if (substr(s, i, 1) == "-") { i++; opener(1) } else opener(0)
         }
-        else if (c == "<" || c == ">") { endword(sp); i++ }
+        else if (c == "<" || c == ">") {
+          if (inw[sp] && !wq[sp] && !ws[sp] && wv[sp] ~ /^[0-9]+$/) { wv[sp] = ""; inw[sp] = 0 }
+          else endword(sp)
+          if (c2 == ">>" || c2 == ">|" || c2 == "<>") { rd[sp] = 1; i += 2 }
+          else if (c2 == ">&" || c2 == "<&") { rd[sp] = 2; i += 2 }
+          else { rd[sp] = 1; i++ }
+        }
         else { app(c); i++ }
       }
       if (failed) return
@@ -618,6 +636,22 @@ check_temp_paths() {
   done
 }
 
+# In a throwaway repo, every redirection target of the git call, read from the shell's dir $1, must
+# resolve under the temp dir too, or be /dev/null, /dev/stdout or /dev/stderr.
+check_redirects() {
+  local r
+  for r in ${redirs[@]+"${redirs[@]}"}; do
+    case "$r" in
+      /dev/null|/dev/stdout|/dev/stderr) continue ;;
+      *$'\036'*|*'$'*|'~'*) deny "git ${vals[j]-} redirects to $r, a path the reviewer cannot read: $cmd" ;;
+      /*) ;;
+      *) [ -n "$1" ] || deny "git ${vals[j]-} redirects to $r from an unknown directory: $cmd" ;;
+    esac
+    resolve_path "$(join_dir "$1" "$r")"
+    under_temp "$RESOLVED" || deny "git ${vals[j]-} redirects to $r, which lies outside the temp dir ($TMP_ROOT): $cmd"
+  done
+}
+
 # Refuses a command-line config entry ($1: key[=value]) that sets core.worktree. tr, not ${key,,}:
 # macOS ships bash 3.2.
 check_config_key() {
@@ -628,7 +662,7 @@ check_config_key() {
 
 check_bash() {
   local cmd="$1" cur="$2" mode="$3" lexed line i j k n w a verb dir nonopt re
-  local -a words=() vals=()
+  local -a words=() vals=() all=() redirs=()
   lexed="$(printf '%s' "$cmd" | lex_command)" || deny "po-bounds cannot read this command: the lexer failed: $cmd"
   while IFS= read -r line; do
     case "$line" in '!'*) deny "po-bounds cannot read this command: ${line#!}: $cmd" ;; esac
@@ -637,8 +671,11 @@ check_bash() {
   [ "$mode" != reviewer ] || temp_root
   while IFS= read -r line; do
     [ -n "$line" ] || continue
-    words=(); vals=()
-    IFS=$'\037' read -ra words <<< "$line"
+    all=(); words=(); vals=(); redirs=()
+    IFS=$'\037' read -ra all <<< "$line"
+    for a in ${all[@]+"${all[@]}"}; do
+      case "$a" in r*) redirs+=("${a#r}") ;; *) words+=("$a") ;; esac
+    done
     n=${#words[@]}
     for ((k = 0; k < n; k++)); do vals[k]="${words[k]#?}"; done
     if [ "$mode" = reviewer ]; then
@@ -702,6 +739,7 @@ check_bash() {
             esac
           elif in_temp_zone "$dir"; then
             check_temp_paths "$dir" "$j"
+            check_redirects "$cur"
           else
             deny "git ${verb:-without a verb} runs in $dir, outside a story worktree and outside a throwaway repo of the temp dir (${TMP_ROOT:-no usable temp dir}): $cmd"
           fi
