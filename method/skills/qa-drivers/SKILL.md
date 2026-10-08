@@ -20,6 +20,8 @@ The surface is the story's `Surface` line in `docs/stories.md`. A story with no 
 
 When `Platform` holds several values, every row whose surface and platform both match applies, in the order of the table, each one run in full: a `screen` story on `web, mobile` runs `browser.md`, then `mobile-web.md`.
 
+No row matches the story's surface on the project's platform, or `Platform` is missing or `—` → the QA ends with `QA status: blocked`, and the report names the surface and the platform. With no driver, nothing was checked.
+
 ## Where a driver file is read
 A driver file lives in the base directory announced for this skill when it was loaded, that is the folder holding this `SKILL.md`, whether the method was laid down for the whole machine or inside the project. It is never looked for at a fixed path such as `.claude/skills/`. When no base directory was announced, or that folder holds no file of the name the table gives, the QA ends with `QA status: blocked` and the report names the missing file.
 
@@ -31,7 +33,7 @@ A driver file lives in the base directory announced for this skill when it was l
 - what it cannot show.
 
 ## Outside the evidence
-A driver may produce things that are not evidence: a build, a recording, a scratch file. They go into a directory of their own, created through Bash with `mktemp -d` under `${TMPDIR:-/tmp}`, and that directory is removed when the QA ends. It is the single exception to the rule that nothing is written outside `docs/qa/<id>/`.
+A driver may produce things that are not evidence: a build, a recording, a scratch file. They go into a directory of their own, created through Bash with `mktemp -d` under `${TMPDIR:-/tmp}`, and that directory is removed when the QA ends. Every file inside it is written through Bash as well, since the Write tool reaches only `docs/qa/<id>/`. It is the single exception to the rule that nothing is written outside `docs/qa/<id>/`.
 
 ## Out of reach
 What only real hardware, an iOS simulator or a headset would show is listed under `## Not seen` of the report, with that reason. A driver never claims it saw it.

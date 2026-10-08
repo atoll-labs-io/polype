@@ -9,16 +9,16 @@ Checks a `command` surface on the `cli` platform, and an `endpoint` surface on t
 ## Start and stop
 Every scenario runs on a copy, never in the worktree (ADR-0059). Inside the `mktemp -d` directory of `qa-drivers`, copy the files that `git -C <path> ls-files` lists, plus the ignored environment files that `git -C <path> ls-files --others --ignored --exclude-standard -- '.env*'` lists. Run `Install`, then `Build`, in that copy when they are not `—`. Each scenario then works from a scratch folder under the same directory, so a build, an output file or a log never lands in the worktree.
 
-Before the copy, keep the output of `git -C <path> status --porcelain --ignored`. After the walk, run it again: a path the first output did not list → `QA status: blocked`, naming that path, and nothing is removed.
+Before the copy, keep the output of `git -C <path> status --porcelain --ignored`. After the walk, run it again: a path outside `docs/qa/<id>/` that the first output did not list → `QA status: blocked`, naming that path, and nothing is removed. One blind spot remains: a directory git already ignores is shown as a single line, so a file written inside it does not show up; the copy of ADR-0059 is what keeps such writes out of the worktree.
 
-For an API, choose a port of `127.0.0.1` on which nothing answers before the start, and pass it to the start command through the variable or option that command documents. Launch it in the background in a process group of its own (`setsid`), keep its PID in the temporary directory, and wait until it answers on that port. It answers on another port, or its command gives no way to set one → stop it and end with `QA status: blocked` and that cause.
+For an API, choose a port of `127.0.0.1` on which nothing answers before the start, and pass it to the start command through the variable or option that command documents. Launch it in the background in a process group of its own (`setsid`), keep its PID in the temporary directory, and wait until it answers on that port. Nothing answers there within 60 seconds → stop it and end with `QA status: blocked` and that cause. It prints that it listens on another port, or its command gives no way to set one → stop it and end with `QA status: blocked` and that cause.
 
 When the walk ends, whatever its outcome, stop the process group you started, and only that one, then check that nothing answers on the port any more.
 
 Requests go nowhere but the address of the service you started: a process, a port, a database or a remote service you did not start is never started, stopped, restarted or written to. A criterion that shows only through one of them goes to `## Not seen` with that reason.
 
 ## Exercising a criterion
-For each criterion in scope, do what its user would do: run the command with its arguments on `cli`; send the request with `curl` on `api`; on `lib`, write a short script under the temporary directory calling the public interface, run it, and quote it whole in the transcript.
+For each criterion in scope, do what its user would do: run the command with its arguments on `cli`; send the request with `curl` on `api`; on `lib`, write a short script through Bash (a heredoc) under the temporary directory calling the public interface, run it, and quote it whole in the transcript. The Write tool is refused there by `po-bounds`, so it is never the first try.
 
 Each criterion also gets at least one invalid input its user could plausibly give — a missing argument, an unknown option, a malformed body, a value of the wrong type — and its transcript keeps the error message its user reads. A stack trace, an empty answer, a success code on bad input, or a message that does not say what was wrong is a finding.
 
