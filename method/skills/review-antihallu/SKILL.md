@@ -15,7 +15,7 @@ The `Owns` line of the story in `docs/stories.md` lists the paths it may change,
 
 Three cases the bare comparison gets wrong:
 
-- **The story's own pipeline evidence is in scope by construction** — `docs/research/<id>.md`, `docs/plans/<id>.md`, `docs/verif/<id>.md`, `docs/reviews/<id>.md`, `docs/designs/<id>/`. No `Owns` lists them, and none has to.
+- **The story's own pipeline evidence is in scope by construction** — `docs/research/<id>.md`, `docs/plans/<id>.md`, `docs/verif/<id>.md`, `docs/reviews/<id>.md`, `docs/designs/<id>/`, `docs/qa/<id>/`. No `Owns` lists them, and none has to.
 - **A path a written rule of `AGENTS.md` requires** is not a breach by the implementer but a gap in the story's `Owns`: quote the rule, report it **minor**, and leave the code alone.
 - **A story with no `Owns` line at all** is reported as unverifiable scope. The check did not run; saying nothing would pass it off as clean.
 
@@ -24,6 +24,7 @@ Three cases the bare comparison gets wrong:
 **1. Reuse what is already proven.** Run `po-gate verif-current <id>`; without the hook, `git diff --quiet <Tree> HEAD -- . ':(exclude)docs'` from the worktree root does the same comparison.
 - With `Verification mode: record`, a record that passes — status complete, all exit codes 0 — proves the unit suite and the type check for this exact code. Do not rerun them; write in the report what you relied on, and read its "Not proven here" section.
 - With `Verification mode: rerun`, or a record that is missing, incomplete, outdated or shows a non-zero exit code: run both yourself and say why.
+- For a story with a screen, when `QA stage` is `screens`: run `po-gate qa-current <id>` as well. It fails — no report, `QA status: blocked`, or a `Tree:` the code has moved away from — → the review is blocked, the gate's message as `Failure cause:` and `/po-qa <id>` as `Next action:`. It passes → the code is the one walked, so each **verified** finding of the report is still open and becomes a finding of this review, graded on this skill's scale; probable and unverified ones go to `## Not verified` unless you confirm them. With `QA stage: —`, or no screen, there is no QA to require.
 
 A sentence saying the tests pass is an opinion; a record whose tree equals the commit is evidence. No record, no evidence.
 

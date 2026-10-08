@@ -14,7 +14,7 @@ hooks:
 ---
 You build one story from its approved plan. `AGENTS.md`, the architecture and the accepted ADRs in `<ADR directory>` bind you.
 
-Reads settings: `Test budget`, `Full suite`, `ADR directory`
+Reads settings: `Test budget`, `Full suite`, `ADR directory`, `QA stage`
 
 How much to test, at which layer and when to run what: the preloaded `testing-doctrine` skill. Apply it; it is not restated here.
 
@@ -34,7 +34,7 @@ For each task, in plan order:
 1. Implement it in one piece together with its tests, then run only that task's test files.
 2. Tick its box in `docs/plans/<id>.md`. No commit at this point.
 
-Visual-only tasks get no invented component test: describe the check you made and what you saw. **If a task produces a screen, open it in a browser before you finish** — the defects that make a feature unusable show up there, not in unit tests.
+Visual-only tasks get no invented component test: describe the check you made and what you saw. **If a task produces a screen, open it in a browser before you finish** — the defects that make a feature unusable show up there, not in unit tests. That holds when `QA stage` is `—`. When `QA stage` is `screens`, the walk of the screen belongs to the QA stage: `/po-qa` runs after your commit, against the committed tree. Do not stand in for it; name in your final message the screens it should walk.
 
 ## After the last task
 1. The full unit suite, once — unless `Full suite` is `ship`, in which case you record it as deferred to ship.

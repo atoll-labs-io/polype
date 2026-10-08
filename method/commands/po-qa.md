@@ -1,11 +1,12 @@
 ---
-description: Hands one story's screens to the qa subagent, which walks them in a browser and reports with captures. This command cannot edit files or run a shell, by construction.
+description: Hands one story's screens to the qa subagent, which walks them in a browser and reports with captures, then commits that evidence alone. This command cannot edit files; its shell serves that one commit.
 argument-hint: <story id or name>
 allowed-tools:
   - Read
   - Glob
   - Grep
   - Agent
+  - Bash
 ---
 # /po-qa
 
@@ -13,7 +14,7 @@ Reads settings: `Worktree root`, `Dev`
 
 Story: $ARGUMENTS
 
-This command has no Write, Edit or Bash tool. The `qa` subagent walks the story's screens and writes its report; it fixes nothing, and neither does this command. Never describe a walk the subagent did not report.
+This command has no Write or Edit tool. Bash serves exactly one use, the evidence commit below; any other shell command is out of bounds. The `qa` subagent walks the story's screens and writes its report; it fixes nothing, and neither does this command. Never describe a walk the subagent did not report.
 
 No Agent tool available → say so and stop.
 
@@ -32,5 +33,14 @@ Call the Agent tool with `subagent_type: qa`, description "QA <id>", and this pr
 
 Wait for the subagent to finish.
 
+## The evidence commit
+The review finds the walk only on the story branch, so the report and its captures are committed there, alone. Do this only when `docs/qa/<id>/report.md` exists in the worktree and holds a `QA status:` line, `complete` or `blocked` alike: a blocked walk is evidence too.
+1. `git -C <path> rev-parse --abbrev-ref HEAD` must print `story/<id>`; anything else → stop without committing and say so.
+2. `git -C <path> add -- docs/qa/<id>/`
+3. `git -C <path> commit -m "<id>: QA evidence" -- docs/qa/<id>/`
+
+The pathspec keeps every other staged or modified file out of this commit. Never pass `--no-verify`: the pre-commit hook's secret scan applies here too. A refused commit is reported with git's message, never worked around. No report → there is nothing to commit; say so.
+
 ## Report
 Relay the subagent's answer: what was walked, findings by severity and status, what was not seen, the tree and the report path. This command never writes a report: when the agent stops, there is none.
+End with the hash of the evidence commit, or the reason there is none.
