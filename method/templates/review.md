@@ -13,7 +13,7 @@ Reviewed tree: <40 hex — git rev-parse 'story/<id>^{tree}', taken before the r
 - Next action: <command or human action>
 
 ## Ownership
-Diff listed with `git diff --name-only <Target branch>...story/<id>`, each path held against the story's `Owns`.
+Diff listed with `git diff --name-only <Target branch>...story/<id>`, each path held against the story's `Owns` by the overlap rule of the `review-antihallu` skill.
 - [ ] Every path inside `Owns`
 - [ ] Outside `Owns` → major: <path — the `Owns` line it missed>
 - [ ] Inside another running story's `Owns` → critical: <path — the story holding it and its worktree>

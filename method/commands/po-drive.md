@@ -35,7 +35,9 @@ A story is **ready** when the three hold together:
 2. every story it depends on is shipped;
 3. its `Owns` paths are disjoint from those of the lanes already running **and** from those of the other stories of the batch you are about to launch.
 
-Take the ready stories in the order of `docs/stories.md` and stop at `Parallel` lanes, the lanes already running counted in. A story dropped for a conflict is named in the report with the path that collided and the lane holding it; it is the first candidate of the next wave. Nothing ready → report which dependency each story is waiting for and stop the wave.
+Overlap between two `Owns` entries is decided by one rule. Two `Owns` entries overlap when one path could match both: a folder `x/` covers every path beneath it, `*` matches within one path segment, `**` matches any number of segments; when in doubt, they overlap. See the examples of check 8 of the `stories-review` skill.
+
+Take the ready stories in the order of `docs/stories.md` and stop at `Parallel` lanes, the lanes already running counted in. A story dropped for a conflict is named in the report with the path that collided and the lane holding it, plus the two entries that overlapped and one path matching both; it is the first candidate of the next wave. Nothing ready → report which dependency each story is waiting for and stop the wave.
 
 ## Resuming
 A wave never sends a story back to stage one: a stop, a crash or a closed session leaves its work in place, and that work is what the lane starts from. For each story the ready set kept, and before any subagent is dispatched, derive the stage it reached from the files of `<Worktree root><id>` and from git — the derivation above, extended to say where the lane resumes:
