@@ -21,7 +21,7 @@
 2384624903 5884 .claude/agents/implementer.md
 3161811081 6124 .claude/agents/planner.md
 1012510216 4083 .claude/agents/qa.md
-1457686165 5128 .claude/agents/reviewer.md
+3951933702 5568 .claude/agents/reviewer.md
 4162979073 2215 .claude/agents/stories-reviewer.md
 1482214599 4486 .claude/skills/agentic-stories/SKILL.md
 1897128106 6149 .claude/skills/capability-bricks/SKILL.md
@@ -49,7 +49,7 @@
 2647573231 1313 .polype/templates/stories.md
 2457356057 1737 .polype/templates/stories-review.md
 2968085624 1577 .polype/templates/verification-record.md
-1768883187 31957 .polype/hooks/po-bounds.sh
+3582502747 34569 .polype/hooks/po-bounds.sh
 2030658851 24483 .polype/hooks/po-gate.sh
 2080428839 3445 .polype/hooks/po-run.sh
 118128939 189 .polype/hooks/pre-commit
