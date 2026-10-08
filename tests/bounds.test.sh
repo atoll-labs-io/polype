@@ -302,3 +302,71 @@ test_bounds_refuse_an_entry_they_cannot_read() {
 `src/app.sh`, `src/x` and more|and more
 CASES
 }
+
+# s62 — commands read the way bash splits them: quoted text and here-document bodies are not commands.
+
+test_bounds_ignore_heredoc_bodies() {
+  lane
+  expect "$(bash_status "cat > $WT/docs/x.md <<'EOF'"$'\ngit checkout main\ngit push\nEOF')" 0 "quoted heredoc citing git verbs"
+  expect "$(bash_status "cat > $WT/docs/x.md <<EOF"$'\nrun git checkout main, then git push\nEOF')" 0 "unquoted heredoc of plain text"
+  expect "$(bash_status "cd $WT && git commit -F - <<'EOF'"$'\nnotes: then git push\nEOF')" 0 "commit message in a heredoc"
+  expect "$(bash_status "git -C $SCRATCH commit -F - <<'EOF'"$'\nmsg\nEOF')" 2 "the heredoc opener is read"
+  expect "$(bash_status "cat > $WT/docs/x.md <<'EOF'"$'\ntext\nEOF\ngit push')" 2 "a command after the delimiter"
+  expect "$(bash_status "cat > $WT/docs/x.md <<EOF"$'\nsee $(git push)\nEOF')" 2 "a substitution in an unquoted heredoc"
+  expect "$(bash_status "cat > $WT/docs/x.md <<EOF"$'\ngit stash')" 2 "an unterminated heredoc"
+  expect "$(bash_status $'bash <<\'EOF\'\necho ok\nEOF')" 0 "a shell reading a harmless heredoc"
+  expect "$(bash_status $'bash <<\'EOF\'\ngit push\nEOF')" 2 "a heredoc fed to bash is read as commands"
+  expect "$(bash_status $'sh -s <<EOF\ngit checkout x\nEOF')" 2 "a heredoc fed to sh -s is read as commands"
+}
+
+test_bounds_ignore_quoted_arguments() {
+  lane
+  local c
+  for c in 'grep -rn "git checkout" docs' "printf 'run git commit then git push'" \
+           'echo "git stash" | wc -l' "cd $WT && git commit -m \"fix; git push\"" \
+           'ps aux | grep bash' 'echo x | bash -c "wc -l"' 'echo "git" push'; do
+    expect "$(bash_status "$c")" 0 "$c"
+  done
+  for c in 'bash -c "git push"' "sh -c 'git checkout x'" "eval 'git stash'" 'grep "unclosed' \
+           '"bash" -c "git push"' "watch 'git push'" "echo 'git push' | bash" $'cat <<\'EOF\' | sh\necho\nEOF' \
+           '(echo x) | bash' 'bash -c "$(cat notes.txt)"' 'echo `echo \`git push\``'; do
+    expect "$(bash_status "$c")" 2 "$c"
+  done
+}
+
+test_bounds_still_catch_real_verbs() {
+  lane
+  local c
+  for c in 'true && git checkout x' 'true; git stash' 'echo $(git push)' 'echo "$(git checkout x)"' \
+           'echo `git stash`' 'env git push' "cd $WT && true && git -C $SCRATCH commit -m x" \
+           '"git" push' '\git push' 'g"it" push' 'env "git" push' "command 'git' push" 'A=1 \git push' \
+           'time \git push'; do
+    expect "$(bash_status "$c")" 2 "$c"
+  done
+  expect "$(bash_status "cd $WT && echo ok && git commit -m x")" 0 "cd carried across simple commands"
+}
+
+test_qa_allowlist_refuses_writing_forms() {
+  lane
+  local c
+  for c in "git -C $WT symbolic-ref HEAD refs/heads/main" "git -C $WT symbolic-ref -d HEAD" \
+           "git -C $WT diff --output=src/x" "git -C $WT log --output x"; do
+    expect "$(qa_status Bash command "$c")" 2 "$c"
+  done
+  for c in "git -C $WT symbolic-ref --short HEAD" "git -C $WT diff main...story/s01-demo"; do
+    expect "$(qa_status Bash command "$c")" 0 "$c"
+  done
+}
+
+test_bounds_refuse_moving_a_branch() {
+  lane
+  local c
+  for c in "git -C $WT branch -f main HEAD" "git -C $WT branch -D story/s03-en" \
+           "git -C $WT update-ref refs/heads/main HEAD" "git -C $SCRATCH reset --hard HEAD" \
+           "git -C $SCRATCH merge story/s01-demo"; do
+    expect "$(bash_status "$c")" 2 "$c"
+  done
+  for c in "cd $WT && git reset --soft HEAD" "git -C $WT branch"; do
+    expect "$(bash_status "$c")" 0 "$c"
+  done
+}
