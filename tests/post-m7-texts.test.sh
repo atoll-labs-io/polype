@@ -2,7 +2,7 @@
 # s75 — texts lagging behind the method after M7.
 
 test_installation_describes_the_reviewer_mode() {
-  local doc="$ROOT/docs/installation.md" sub bounds
+  local doc="$ROOT/docs/installation.md" sub bounds p
   sub="$(awk '/^### Le mode reviewer$/ {on=1; next} /^##/ {on=0} on' "$doc")"
   [ -n "$sub" ] || fail "no reviewer-mode subsection"
   for p in 'po-bounds.sh reviewer' "d'avant s70" 'polype init <projet>' 'ADR-0047'; do
@@ -33,11 +33,30 @@ test_partial_supersession_is_written_and_linked() {
   for pair in 0037:0029 0038:0024 0039:0024 0041:0037; do
     succ="${pair%%:*}"; pred="${pair#*:}"
     f="$(ls "$ROOT"/docs/decisions/ADR-"$succ"-*.md)"
-    frontmatter "$f" | grep -qxF "supersedes: [ADR-$pred]" || fail "ADR-$succ lacks supersedes ADR-$pred"
+    frontmatter "$f" | grep -E '^supersedes:' | grep -qF "ADR-$pred" || fail "ADR-$succ lacks supersedes ADR-$pred"
     frontmatter "$(ls "$ROOT"/docs/decisions/ADR-"$pred"-*.md)" | grep -E '^superseded-by:' | grep -qF "ADR-$succ" \
       || fail "ADR-$pred does not name ADR-$succ"
   done
   for succ in 0037 0038 0041; do
     frontmatter "$(ls "$ROOT"/docs/decisions/ADR-"$succ"-*.md)" | grep -qx 'status: accepted' || fail "ADR-$succ not accepted"
   done
+}
+
+# s76 — a test's loop variable never leaks out of its function.
+test_test_variables_are_local() {
+  local bad
+  bad="$(awk '
+    /^test_[A-Za-z0-9_]*\(\) *\{/ { fn = $1; split("", L); next }
+    /^}/ { fn = ""; next }
+    fn != "" && /^[[:space:]]*local / {
+      line = $0; sub(/^[[:space:]]*local /, "", line)
+      nf = split(line, P, /[[:space:]]+/)
+      for (x = 1; x <= nf; x++) { v = P[x]; sub(/=.*/, "", v); if (v != "" && v !~ /^-/) L[v] = 1 }
+    }
+    fn != "" && /(^|[;[:space:]])for [A-Za-z_][A-Za-z0-9_]* in / {
+      line = $0; sub(/.*(^|[;[:space:]])for /, "", line); sub(/ in .*/, "", line)
+      if (!(line in L)) print fn ": " line
+    }
+  ' "$ROOT/tests/post-m7-texts.test.sh")"
+  [ -z "$bad" ] || fail "loop variables not declared local: $bad"
 }

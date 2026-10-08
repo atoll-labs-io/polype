@@ -91,8 +91,8 @@ Côté git, il refuse :
 
 Ce qu'il ne voit pas (ADR-0050) : un texte entre guillemets, ou le corps d'un heredoc à délimiteur
 cité, n'est pas lu comme une commande — c'est voulu, une citation n'est pas un ordre, sauf si un
-shell lit ce corps. Ne sont pas lus non plus une variable `$VAR` qui contient `git`, un alias git,
-et, pour `implementer` et `qa`, `GIT_DIR=… git reset`, `git --git-dir=… reset` ni
+shell lit ce corps. Il ne lit pas non plus une variable `$VAR` qui contient `git`, ni un alias git.
+Pour `implementer` et `qa`, il ne refuse pas `GIT_DIR=… git reset`, `git --git-dir=… reset` ou
 `git fetch . HEAD:main`. Il ne voit pas davantage les redirections du
 shell ni un `cp`. Pour tout cela, la revue garde son propre contrôle d'ownership.
 
@@ -112,11 +112,26 @@ condition.
 ### Le mode reviewer
 
 Le frontmatter du subagent `reviewer` appelle `.polype/hooks/po-bounds.sh reviewer` sur `Edit`,
-`Write` et `Bash` (ADR-0047). Le reviewer travaille dans deux zones. Dans le worktree de la story, il
-écrit hors de `.git` et n'a de git que les verbes de lecture, plus `git checkout -- <chemin>` et
-`git restore`. Dans un dépôt jetable sous `${TMPDIR:-/tmp}`, il peut lancer n'importe quel verbe sauf
-`push`. Partout, `push` est refusé, et une commande git hors de ces deux zones l'est aussi, le
-checkout principal compris.
+`Write` et `Bash` (ADR-0047, précisée par ADR-0051 et ADR-0052).
+Le hook est un garde-fou contre les erreurs d'un agent de bonne foi, pas une barrière contre un
+contournement délibéré : ADR-0052 liste les contournements connus, acceptés tels quels, et un
+nouveau s'y ajoute par une ADR.
+
+Le reviewer travaille dans deux zones. Dans le worktree de la story, il écrit hors de `.git` et n'a
+de git que les verbes de lecture, plus `git checkout -- <chemin>` et `git restore`. Dans un dépôt
+jetable sous `${TMPDIR:-/tmp}`, il écrit librement et lance tout verbe sauf `push` et `send-pack`,
+à condition que chaque chemin nommé après le verbe (un mot, `--opt=valeur`, `-o<valeur>`)
+se résolve sous le répertoire temporaire. Pour lire un dépôt hors de cette zone, il passe par une URL
+`file://<chemin>`.
+
+Une redirection n'est pas un chemin de git : `2>/dev/null` et `2>&1` passent. Dans le dépôt jetable,
+la cible d'une redirection vers un fichier, lue depuis le dossier du shell, doit elle aussi rester
+sous le répertoire temporaire.
+
+Partout, le hook refuse `push`, `send-pack`, `--git-dir`, `--work-tree`, `GIT_DIR=`,
+`GIT_WORK_TREE=`, `GIT_CONFIG_PARAMETERS=` et `GIT_CONFIG_COUNT=`, ainsi qu'un `core.worktree`
+posé par `-c` ou `--config-env`, quelle que soit sa casse. Il refuse aussi une commande git hors des
+deux zones, le checkout principal compris, ou lancée dans un dossier qu'il ne sait pas lire.
 
 Un projet dont le `.polype/hooks/po-bounds.sh` date d'avant s70 refuse chaque appel du reviewer
 (« mode inconnu ») et bloque donc toute revue : relance `polype init <projet>`, puis committe le

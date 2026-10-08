@@ -586,6 +586,50 @@ test_reviewer_rules_are_written_in_adr_0051() {
     contains "$adr" "$p"
   done
   fm="$(frontmatter "$old")"
-  grep -qx 'superseded-by: \[ADR-0051\]' <<< "$fm" || fail "ADR-0047 does not say superseded-by: [ADR-0051]"
+  grep -qx 'superseded-by: \[ADR-0051, ADR-0052\]' <<< "$fm" || fail "ADR-0047 does not say superseded-by: [ADR-0051, ADR-0052]"
   grep -qx 'status: accepted' <<< "$fm" || fail "ADR-0047 is no longer accepted"
+}
+
+# s76 — po-bounds guards against mistakes; a redirection is not a git path (ADR-0052).
+test_redirections_are_not_git_paths() {
+  reviewer_lane
+  local c
+  for c in "git -C $TMPROOT/probe log 2>/dev/null" \
+           "git -C $TMPROOT/probe log >/dev/null" \
+           "git -C $TMPROOT/probe log &>/dev/null" \
+           "git -C $TMPROOT/probe log 2>&1 | head" \
+           "git -C $TMPROOT/probe log > $TMPROOT/out.txt" \
+           "cd $TMPROOT/probe && git log > out.txt"; do
+    expect "$(rev_bash "$c")" 0 "$c"
+  done
+  expect "$(qa_status Bash command "git -C $WT symbolic-ref HEAD 2>/dev/null")" 0 "qa symbolic-ref HEAD 2>/dev/null"
+  for c in "git -C $TMPROOT/probe log > $SCRATCH/out.txt" \
+           "git -C $TMPROOT/probe log 2> $SCRATCH/err.txt" \
+           "git -C $TMPROOT/probe log > out.txt"; do
+    expect "$(rev_bash "$c")" 2 "$c"
+  done
+}
+
+test_bounds_threat_model_is_written() {
+  local adr fm f p
+  adr="$(ls "$ROOT"/docs/decisions/ADR-0052-*.md)"
+  require_file "$adr"
+  fm="$(frontmatter "$adr")"
+  grep -qx 'supersedes: \[ADR-0047, ADR-0051\]' <<< "$fm" || fail "ADR-0052 does not supersede ADR-0047 and ADR-0051"
+  grep -qx 'status: accepted' <<< "$fm" || fail "ADR-0052 is not accepted"
+  for p in 'garde-fou contre les erreurs' '-zf<chemin>' "la portée d'un \`cd\`" 'un alias git' \
+           "les hooks d'un dépôt jetable" '`GIT_CONFIG_GLOBAL`' 'une clé construite par substitution' 'bac à sable'; do
+    contains "$adr" "$p"
+  done
+  for f in 0047 0051; do
+    frontmatter "$(ls "$ROOT"/docs/decisions/ADR-$f-*.md)" | grep -E '^superseded-by:' | grep -qF 'ADR-0052' \
+      || fail "ADR-$f does not name ADR-0052 in superseded-by"
+  done
+  frontmatter "$(ls "$ROOT"/docs/decisions/ADR-0034-*.md)" | grep -E '^superseded-by:' | grep -qF 'ADR-0041' \
+    || fail "ADR-0034 does not name ADR-0041"
+  frontmatter "$(ls "$ROOT"/docs/decisions/ADR-0041-*.md)" | grep -E '^supersedes:' | grep -qF 'ADR-0034' \
+    || fail "ADR-0041 does not name ADR-0034"
+  for f in 0047 0051 0034; do
+    frontmatter "$(ls "$ROOT"/docs/decisions/ADR-$f-*.md)" | grep -qx 'status: accepted' || fail "ADR-$f is no longer accepted"
+  done
 }

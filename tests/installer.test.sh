@@ -188,3 +188,17 @@ test_installation_doc_lists_the_hook_refusals() {
     grep -qF -- "$phrase" <<< "$section" || fail "the bounds-hook section does not say: $phrase"
   done
 }
+
+# s76 — the reviewer-mode section matches the hook (ADR-0052).
+test_installation_matches_the_hook() {
+  local doc="$ROOT/docs/installation.md" sub p
+  sub="$(awk '/^### Le mode reviewer$/ {on=1; next} /^##/ {on=0} on' "$doc")"
+  [ -n "$sub" ] || fail "no reviewer-mode subsection"
+  for p in '(ADR-0047, précisée par ADR-0051 et ADR-0052)' 'garde-fou contre les erreurs' \
+           'tout verbe sauf `push` et `send-pack`' 'se résolve sous le répertoire temporaire' \
+           '`file://<chemin>`' "Une redirection n'est pas un chemin de git" '`core.worktree`' \
+           '`GIT_CONFIG_PARAMETERS=`'; do
+    grep -qF -- "$p" <<< "$sub" || fail "reviewer subsection lacks: $p"
+  done
+  ! grep -qF 'un alias git, et, pour' "$doc" || fail "the « et … ni » sentence is still there"
+}

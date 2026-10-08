@@ -6,7 +6,7 @@ date: 2026-10-08
 tags: [adr, polype, review, hooks, bounds]
 scope: story s74-reviewer-bounds-bypasses
 supersedes: [ADR-0047]
-superseded-by: []
+superseded-by: [ADR-0052]
 ---
 
 # ADR-0051 — Le reviewer juge la commande git que git exécutera

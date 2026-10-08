@@ -6,7 +6,7 @@ date: 2026-10-08
 tags: [adr, polype, qa, flotte, boucles]
 scope: story s57-qa-in-the-fleet
 supersedes: []
-superseded-by: []
+superseded-by: [ADR-0041]
 ---
 
 # ADR-0034 — Dans la flotte, le driver committe la preuve QA, et un retour en QA ne coûte aucune boucle
