@@ -17,4 +17,5 @@
 .polype/templates/verification-record.md
 .polype/hooks/po-bounds.sh
 .polype/hooks/po-gate.sh
+.polype/hooks/po-run.sh
 .polype/hooks/pre-commit

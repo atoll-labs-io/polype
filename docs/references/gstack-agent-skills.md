@@ -69,3 +69,8 @@ Tranché le 2026-10-07 après la revue du découpage de M6 : ces idées restent 
 - **L'infrastructure de gstack** : télémétrie, mise à jour auto au démarrage, daemon Chromium maison, CLI Bun compilée. On utilise l'outil navigateur de la session.
 - **Les marqueurs dans le code** (`// Regression: ISSUE-NNN`) : les majeurs ouverts vivent dans `docs/reviews/`.
 - **Les scorecards Core Web Vitals, budgets d'erreur, déploiements progressifs** : demandent des données de prod que le cycle d'une story n'a pas.
+
+## Exceptions techniques au contrôle de non-copie
+
+Comme pour Killer SaaS, une invocation dont la forme est imposée par l'outil n'est pas du texte d'auteur :
+- `date -u +%Y-%m-%dT%H:%M:%SZ` (horodatage ISO-8601 UTC), dans `method/hooks/po-run.sh` ; gstack écrit la même dans `ios-qa/SKILL.md`. Relevé au ship de s56, le 2026-10-08.

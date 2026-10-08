@@ -4,7 +4,8 @@
 #   po-gate plan-validated <id>   0 when the plan's frontmatter says `validated: yes`
 #   po-gate ship-allowed <id>     0 when the review's last `Ship allowed:` line says yes and its
 #                                 `Reviewed tree:` still matches HEAD outside docs/
-#   po-gate verif-current <id>    0 when the verification record is complete and matches HEAD
+#   po-gate verif-current <id>    0 when the verification record is complete, matches HEAD, and every check its
+#                                 `## Checks` table declares has a passing `po-run` row on the recorded code
 #   po-gate qa-current <id>       0 when the QA report's last `QA status:` says complete and its `Tree:` matches HEAD
 #   po-gate pre-commit            non-zero, on every branch, when a staged environment file or an added line holding
 #                                 a private key or a known token is staged; and on a code commit to story/<id>
@@ -59,7 +60,58 @@ verif_current() {
   tree_exists "$tree" \
     || refuse "tree $tree from the record of $1 does not exist in this repository" || return 1
   code_matches "$tree" \
-    || refuse "the code of $1 changed after its checks ran; the record no longer matches HEAD"
+    || refuse "the code of $1 changed after its checks ran; the record no longer matches HEAD" || return 1
+  grep -q '^## Checks$' "$record" \
+    || refuse "the verification record of $1 has no Checks table — rebuild it from templates/verification-record.md" || return 1
+  runs_cover_checks "$1" "$record" "$tree"
+}
+
+# One line per declared check (C, label, command) and per run row (R, label, command, exit, tree), fields split by \037.
+# Run rows are read from both ends so a `|` inside a command cannot shift the exit, tree or time cells.
+record_rows() {
+  awk '
+    function trim(s) { sub(/^[[:space:]]+/, "", s); sub(/[[:space:]]+$/, "", s); return s }
+    function unquote(s) { s = trim(s); if (length(s) >= 2 && substr(s, 1, 1) == "`" && substr(s, length(s), 1) == "`") s = substr(s, 2, length(s) - 2); return s }
+    function middle(from, to,   i, s) { s = cell[from]; for (i = from + 1; i <= to; i++) s = s "|" cell[i]; return s }
+    /^## / { section = $0; rows = 0; next }
+    section != "## Checks" && section != "## Runs" { next }
+    !/^[[:space:]]*\|/ { next }
+    {
+      line = trim($0); sub(/^\|/, "", line); sub(/\|$/, "", line)
+      n = split(line, cell, "|"); rows++
+      if (rows == 1 || line ~ /^[[:space:]]*:?-+/) next
+    }
+    section == "## Checks" && n >= 3 {
+      label = trim(cell[1]); command = unquote(middle(2, n - 1))
+      if (command != "—") printf "C\037%s\037%s\n", label, command
+      next
+    }
+    section == "## Runs" && n >= 5 {
+      label = trim(cell[1]); tree = trim(cell[n - 1]); code = trim(cell[n - 2]); command = unquote(middle(2, n - 3))
+      if (length(tree) == 40 && tree ~ /^[0-9a-f]+$/ && code ~ /^[0-9]+$/)
+        printf "R\037%s\037%s\037%s\037%s\n", label, command, code, tree
+    }
+  ' "$1"
+}
+
+# A declared check counts only through rows with its label and command whose tree holds the recorded code outside
+# docs/; the last of those decides, so a failure on the final code is not hidden by a success on earlier code.
+runs_cover_checks() {
+  local id="$1" record="$2" tree="$3" rows kind label command kind_r label_r command_r code run_tree last found
+  rows="$(record_rows "$record")" || refuse "could not read the tables of the verification record of $id" || return 1
+  while IFS=$'\037' read -r kind label command; do
+    [ "$kind" = C ] || continue
+    found=0 last=""
+    while IFS=$'\037' read -r kind_r label_r command_r code run_tree; do
+      [ "$kind_r" = R ] && [ "$label_r" = "$label" ] && [ "$command_r" = "$command" ] || continue
+      tree_exists "$run_tree" && git -C "$(top)" diff --quiet "$run_tree" "$tree" -- . ':(exclude)docs' || continue
+      found=1 last="$code"
+    done <<< "$rows"
+    [ "$found" -eq 1 ] \
+      || refuse "check '$label' of $id has no po-run row on the recorded code — po-run --story $id --label \"$label\" -- \"$command\"" \
+      || return 1
+    [ "$last" = 0 ] || refuse "check '$label' of $id last exited $last on the recorded code" || return 1
+  done <<< "$rows"
 }
 
 # Like the review's verdict, only the last status line counts: a report may quote an earlier one.

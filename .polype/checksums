@@ -14,7 +14,8 @@
 1905004690 2604 .polype/templates/review.md
 445940781 1035 .polype/templates/stories.md
 2219609083 1665 .polype/templates/stories-review.md
-593495646 1309 .polype/templates/verification-record.md
+2968085624 1577 .polype/templates/verification-record.md
 2956554443 8321 .polype/hooks/po-bounds.sh
-1021959810 19132 .polype/hooks/po-gate.sh
+1303716663 22149 .polype/hooks/po-gate.sh
+2080428839 3445 .polype/hooks/po-run.sh
 118128939 189 .polype/hooks/pre-commit
