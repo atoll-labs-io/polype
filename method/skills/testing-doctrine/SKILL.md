@@ -59,4 +59,6 @@ Running a deterministic check twice on the same code buys nothing, so each has o
 | Production build | at ship, only if routing or a manifest changed, the one breakage a type check misses | `Build stage` |
 | Formatting | on staged files, at commit time | — |
 
+The full unit suite and the type check are launched through `po-run --story <id> --label <check> -- "<command>"`, which writes their row in the verification record; their result is never written down by hand. The tests of a task run without it.
+
 When the reviewer disables a guard, it reruns only the test files that mention that guard. Running the entire suite to find out which file turns red is the slowest possible way to learn it.

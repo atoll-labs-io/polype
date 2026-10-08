@@ -53,6 +53,9 @@ test_implementer_keeps_secrets_out_and_pins_its_directory() {
 test_verification_record_has_tree_and_unfilled_status() {
   require_file "$REC"
   grep -q '^Tree: ' "$REC" || fail "record template needs a Tree: line"
-  [ "$(grep -v '^[[:space:]]*$' "$REC" | tail -n 1)" = "Verification status: <complete | incomplete>" ] \
-    || fail "record template must end with an unfilled status line"
+  grep -qx 'Verification status: <complete | incomplete>' "$REC" || fail "record template needs an unfilled status line"
+  grep -qx '## Checks' "$REC" || fail "record template needs a Checks table"
+  [ "$(grep '^## ' "$REC" | tail -n 1)" = '## Runs' ] || fail "## Runs must be the record template's last section"
+  sed -n '/^## Runs$/,$p' "$REC" | grep -qxF '| Check | Command | Exit | Tree | Time (UTC) |' \
+    || fail "the Runs section needs its table header"
 }

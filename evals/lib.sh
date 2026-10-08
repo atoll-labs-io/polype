@@ -203,14 +203,13 @@ $title — \`docs/stories.md\`, section \`$id\`.
 MD
 }
 
-# The only writer of docs/verif/<id>.md: the record states the real exit code of a real run.
+# The run row of docs/verif/<id>.md comes from `po-run`, so it states the real exit code of a real run;
+# the head of the record is written afterwards, in front of that row.
 eval_record() {
-  local wt="$1" id="$2" tree cmd out code=0 ran skipped failed passed status when
-  git -C "$wt" add -A
-  tree="$(git -C "$wt" write-tree)"
+  local wt="$1" id="$2" tree cmd out code=0 ran skipped failed passed status record
+  record="$wt/docs/verif/$id.md"
   cmd="$(sed -n 's/^Test:[[:space:]]*\(.*[^[:space:]]\)[[:space:]]*$/\1/p' "$wt/AGENTS.local.md" | head -n 1)"
-  when="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-  out="$(cd "$wt" && bash -c "$cmd" 2>&1)" || code=$?
+  out="$(cd "$wt" && bash .polype/hooks/po-run.sh --story "$id" --label "Unit suite" -- "$cmd" 2>&1)" || code=$?
   ran="$(sed -n 's/^Ran \([0-9]*\) tests\{0,1\}.*/\1/p' <<< "$out" | tail -n 1)"
   skipped="$( (grep -o 'skipped=[0-9]*' <<< "$out" || true) | tail -n 1 | cut -d= -f2)"
   failed="$( (grep -oE '(failures|errors)=[0-9]+' <<< "$out" || true) | cut -d= -f2 | awk '{s += $1} END {print s + 0}')"
@@ -218,24 +217,31 @@ eval_record() {
   passed=$((ran - skipped - failed))
   status=incomplete
   [ "$code" -eq 0 ] && status=complete
+  git -C "$wt" add -A
+  tree="$(git -C "$wt" write-tree)"
   mkdir -p "$wt/docs/verif"
-  cat > "$wt/docs/verif/$id.md" <<MD
+  {
+    cat <<MD
 # Verification — $id
 
 Tree: $tree
 
-| Check | Command | Outcome | Time (UTC) |
-| --- | --- | --- | --- |
-| Unit suite | \`$cmd\` | exit $code · $passed passed · $skipped skipped | $when |
-| Type check | — | no such command in this project | — |
-| End to end | — | no such command in this project | — |
-| Build | — | no such command in this project | — |
+## Checks
+| Check | Command | Note |
+| --- | --- | --- |
+| Unit suite | \`$cmd\` | $passed passed · $skipped skipped |
+| Type check | — | no such command in this project |
+| End to end | — | no such command in this project |
+| Build | — | no such command in this project |
 
 ## Not proven here
 The project has no type check, no end-to-end suite and no build; only the unit suite ran.
 
 Verification status: $status
+
 MD
+    cat "$record" 2>/dev/null || true
+  } > "$record.tmp" && mv "$record.tmp" "$record"
   git -C "$wt" add "docs/verif/$id.md"
   git -C "$wt" commit -q -m "$id: verification record"
 }

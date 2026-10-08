@@ -81,7 +81,8 @@ test_ship_allowed_fails_without_reviewed_tree() {
 
 record() {
   git add -A
-  printf 'Tree: %s\n\nVerification status: %s\n' "$(git write-tree)" "${1:-complete}" > docs/verif/s01-a.md
+  printf 'Tree: %s\n\n## Checks\n| Check | Command | Note |\n| --- | --- | --- |\n| Unit suite | — | none here |\n\nVerification status: %s\n' \
+    "$(git write-tree)" "${1:-complete}" > docs/verif/s01-a.md
   git add -A && git commit -qm story
 }
 

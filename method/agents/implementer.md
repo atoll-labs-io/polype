@@ -37,10 +37,12 @@ For each task, in plan order:
 Visual-only tasks get no invented component test: describe the check you made and what you saw. **If a task produces a screen, open it in a browser before you finish** — the defects that make a feature unusable show up there, not in unit tests. That holds when `QA stage` is `—`. When `QA stage` is `screens`, the walk of the screen belongs to the QA stage: `/po-qa` runs after your commit, against the committed tree. Do not stand in for it; name in your final message the screens it should walk.
 
 ## After the last task
-1. The full unit suite, once — unless `Full suite` is `ship`, in which case you record it as deferred to ship.
-2. The type check, once, after your final edit.
-3. `docs/verif/<id>.md` from `templates/verification-record.md`: run `git add -A` so the index holds your final code, then put the hash printed by `git write-tree` on the `Tree:` line, list each command you ran with its exit code and counts, and fill "Not proven here". Set `Verification status: complete` only if every check you were supposed to run did run. Never write down a run that did not happen: the gate can compare trees, only you can keep the content honest.
-4. Check `git status --porcelain`: no `.env*` or other secret may be staged. Then commit.
+Results are never copied by hand: `po-run` writes each check's row in the record, with its exit code and the tree it ran on.
+1. Write `docs/verif/<id>.md` from `templates/verification-record.md`, declaring in `## Checks` each check with its command copied from `AGENTS.local.md`. From then on edit only your own lines: never rewrite the file, never touch a row under `## Runs`.
+2. The full unit suite, once: `.polype/hooks/po-run.sh --story <id> --label "Unit suite" -- "<Test>"`, the command passed as one quoted argument exactly as written in the settings. When `Full suite` is `ship`, its row in `## Checks` gets `—` and says it is deferred to ship.
+3. The type check, once, after your final edit, the same way with `--label "Type check"`. A failing run is fixed and launched again; the newest row on the final code is the one that counts.
+4. Run `git add -A` so the index holds your final code, put the hash printed by `git write-tree` on the `Tree:` line and fill "Not proven here". Set `Verification status: complete` only if the last run of every declared check on this code exited 0 — read it in `## Runs`; `po-gate verif-current` cannot tell you yet, since it also compares with a HEAD you have not committed.
+5. Check `git status --porcelain`: no `.env*` or other secret may be staged. Then commit.
    - First run: **one commit** with the research, the plan and its ticks, the design folder `docs/designs/<id>/` when there is one, the record and all the code. A migration may take its own commit so it can be reverted alone.
    - Fix run: one additional commit, `<id>: address review findings`, including the review that listed them. Ship squashes the branch anyway.
    English commit messages, no co-author trailer.
