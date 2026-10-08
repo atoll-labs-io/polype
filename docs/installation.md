@@ -83,7 +83,11 @@ Le frontmatter du subagent `implementer` déclare un hook PreToolUse sur `Edit`,
 qui appelle `.polype/hooks/po-bounds.sh implementer`. Le script refuse une écriture hors de
 `docs/` et hors de l'`Owns` committé de la story dont le worktree `story/<id>` contient le chemin.
 Côté git, il refuse :
-- partout : `git switch`, `checkout`, `stash`, `push` et `worktree add` ;
+- partout : `git switch`, `stash`, `push` et `worktree add` ;
+- hors d'un dépôt jetable sous `${TMPDIR:-/tmp}` (même définition que pour le reviewer) :
+  `git checkout`. Dans ce dépôt jetable, chaque chemin nommé et chaque cible de redirection d'un
+  appel git doivent rester sous le répertoire temporaire, et un clone local lancé de là passe par
+  `file://` (ADR-0072) ;
 - partout aussi, depuis s62 : `git update-ref`, et `git branch` avec `-f`, `--force`, `-D`, `-M` ou
   `-C`, seuls ou groupés (`-fD`) ;
 - hors d'un worktree sur une branche `story/*` : `commit`, `reset`, `merge`, `rebase`,
@@ -94,7 +98,7 @@ cité, n'est pas lu comme une commande — c'est voulu, une citation n'est pas u
 shell lit ce corps. Il ne lit pas non plus une variable `$VAR` qui contient `git`, ni un alias git.
 Pour `implementer` et `qa`, il ne refuse pas `GIT_DIR=… git reset`, `git --git-dir=… reset` ou
 `git fetch . HEAD:main`. Il ne voit pas davantage les redirections du
-shell ni un `cp`. Pour tout cela, la revue garde son propre contrôle d'ownership.
+shell hors du dépôt jetable, ni un `cp`. Pour tout cela, la revue garde son propre contrôle d'ownership.
 
 Le script a besoin de `jq` ; sans lui, il refuse tout.
 

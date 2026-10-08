@@ -5,7 +5,7 @@ status: accepted
 date: 2026-10-08
 scope: story s71-bounds-heredoc-expansion
 supersedes: [ADR-0039]
-superseded-by: []
+superseded-by: [ADR-0072]
 ---
 
 # ADR-0050 — po-bounds lit un heredoc comme bash le lira

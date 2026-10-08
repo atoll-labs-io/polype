@@ -6,9 +6,13 @@ IMPLEMENTER="$METHOD/agents/implementer.md"
 QA_AGENT="$METHOD/agents/qa.md"
 
 # A repository with a committed docs/stories.md and one linked story/<id> worktree per story,
-# plus s99-ghost, whose story the file does not hold.
+# plus s99-ghost, whose story the file does not hold. TMPDIR points to a dir of its own, which does
+# not hold $SCRATCH: the scratch checkout is no throwaway repo of the temp dir (ADR-0072).
 lane() {
   scratch_repo
+  LANE_TMP="$(mktemp -d)"
+  trap 'rm -rf "$SCRATCH" "$LANE_TMP"' EXIT
+  export TMPDIR="$LANE_TMP"
   mkdir -p "$SCRATCH/docs"
   cat > "$SCRATCH/docs/stories.md" <<'EOF'
 # Stories
@@ -378,7 +382,7 @@ REVIEWER="$METHOD/agents/reviewer.md"
 reviewer_lane() {
   lane
   TMPROOT="$(mktemp -d)"
-  trap 'rm -rf "$SCRATCH" "$TMPROOT"' EXIT
+  trap 'rm -rf "$SCRATCH" "$TMPROOT" "$LANE_TMP"' EXIT
   export TMPDIR="$TMPROOT"
   git init -q "$TMPROOT/probe"
   git -C "$SCRATCH" worktree add -q --detach "$TMPROOT/main-wt"

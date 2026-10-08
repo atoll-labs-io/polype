@@ -6,10 +6,12 @@
 #                              whose linked story/<id> worktree holds it, read in docs/stories.md at
 #                              the story's fork point (ADR-0038); entries follow the syntax of the
 #                              stories template, anything else is refused.
-#                              Bash: no git switch, checkout, stash, push, worktree add or
-#                              update-ref, no git branch -f/--force/-D/-M/-C, and no commit, reset,
-#                              merge, rebase, cherry-pick, revert, am or pull outside a story/<id>
-#                              worktree.
+#                              Bash: no git switch, stash, push, worktree add or update-ref, no git
+#                              branch -f/--force/-D/-M/-C, and no commit, reset, merge, rebase,
+#                              cherry-pick, revert, am or pull outside a story/<id> worktree. git
+#                              checkout only in a throwaway repo of the temp dir (as for the reviewer),
+#                              where every path the call names and each redirection target must stay
+#                              under the temp dir too (ADR-0072).
 #   po-bounds.sh qa            Write: the path must lie in docs/qa/<id>/ of the story whose linked
 #                              story/<id> worktree holds it; the rest of docs/ is refused too.
 #                              Bash: every git call must use a reading verb of an allowlist
@@ -41,7 +43,7 @@
 # quoted arguments of sh -c, eval or watch, and a here-document a shell reads. An unquoted one is
 # rendered as bash renders it (\$, \`, \\) before that reading, and its outer substitutions are
 # read too. A shell fed by a pipe or handed a substitution, nested backquotes and any command the
-# lexer cannot read are refused. A redirection, its fd number included, is not a word of the command.
+# lexer cannot read are refused. A redirection, its fd number or {name} included, is not a word of the command.
 #
 # The hook guards against an agent's mistakes; it is no barrier against a deliberate bypass, and
 # the known ones are listed and accepted in ADR-0052.
@@ -50,7 +52,8 @@
 # code through, so every failure ends in a refusal. Reads no setting; needs jq (ADR-0024).
 set -uo pipefail
 
-deny() { echo "po-bounds: $*" >&2; exit 2; }
+# The lexer marks a substitution with \036; no refusal may print that byte (ADR-0072).
+deny() { local msg="$*" m=$'\036'; echo "po-bounds: ${msg//$m/<substitution>}" >&2; exit 2; }
 
 # An unbound variable or any stray status must not become a non-blocking error.
 trap 'rc=$?; [ "$rc" -eq 0 ] || [ "$rc" -eq 2 ] || { echo "po-bounds: internal failure ($rc)" >&2; exit 2; }' EXIT
@@ -535,7 +538,7 @@ lex_command() {
           if (substr(s, i, 1) == "-") { i++; opener(1) } else opener(0)
         }
         else if (c == "<" || c == ">") {
-          if (inw[sp] && !wq[sp] && !ws[sp] && wv[sp] ~ /^[0-9]+$/) { wv[sp] = ""; inw[sp] = 0 }
+          if (inw[sp] && !wq[sp] && !ws[sp] && (wv[sp] ~ /^[0-9]+$/ || wv[sp] ~ /^[{][A-Za-z_][A-Za-z0-9_]*[}]$/)) { wv[sp] = ""; inw[sp] = 0 }
           else endword(sp)
           if (c2 == ">>" || c2 == ">|" || c2 == "<>") { rd[sp] = 1; i += 2 }
           else if (c2 == ">&" || c2 == "<&") { rd[sp] = 2; i += 2 }
@@ -630,7 +633,7 @@ check_temp_paths() {
     esac
     for cand in ${cands[@]+"${cands[@]}"}; do
       case "$cand" in
-        *$'\036'*|*'$'*|'~'*) deny "git ${vals[j]} names $(readable "$a"), a path the reviewer cannot read: $cmd" ;;
+        *$'\036'*|*'$'*|'~'*) deny "git ${vals[j]} names $(readable "$a"), a path po-bounds cannot read: $cmd" ;;
       esac
       resolve_path "$(join_dir "$base" "$cand")"
       under_temp "$RESOLVED" || deny "git ${vals[j]} names $a, which lies outside the temp dir ($TMP_ROOT): $cmd"
@@ -645,7 +648,7 @@ check_redirects() {
   for r in ${redirs[@]+"${redirs[@]}"}; do
     case "$r" in
       /dev/null|/dev/stdout|/dev/stderr|/dev/fd/1|/dev/fd/2) continue ;;
-      *$'\036'*|*'$'*|'~'*) deny "git ${vals[j]-} redirects to $(readable "$r"), a path the reviewer cannot read: $cmd" ;;
+      *$'\036'*|*'$'*|'~'*) deny "git ${vals[j]-} redirects to $(readable "$r"), a path po-bounds cannot read: $cmd" ;;
       /*) ;;
       *) [ -n "$1" ] || deny "git ${vals[j]-} redirects to $r from an unknown directory: $cmd" ;;
     esac
@@ -663,14 +666,14 @@ check_config_key() {
 }
 
 check_bash() {
-  local cmd="$1" cur="$2" mode="$3" lexed line i j k n w a verb dir nonopt re
+  local cmd="$1" cur="$2" mode="$3" lexed line i j k n w a verb dir nonopt re throwaway
   local -a words=() vals=() all=() redirs=()
   lexed="$(printf '%s' "$cmd" | lex_command)" || deny "po-bounds cannot read this command: the lexer failed: $cmd"
   while IFS= read -r line; do
     case "$line" in '!'*) deny "po-bounds cannot read this command: ${line#!}: $cmd" ;; esac
   done <<< "$lexed"
   re='^-[A-Za-z]*[fDMC][A-Za-z]*$'
-  [ "$mode" != reviewer ] || temp_root
+  [ "$mode" = qa ] || temp_root
   while IFS= read -r line; do
     [ -n "$line" ] || continue
     all=(); words=(); vals=(); redirs=()
@@ -746,8 +749,16 @@ check_bash() {
             deny "git ${verb:-without a verb} runs in $dir, outside a story worktree and outside a throwaway repo of the temp dir (${TMP_ROOT:-no usable temp dir}): $cmd"
           fi
         else
+          # A story worktree is judged first: only a throwaway repo of the temp dir allows checkout.
+          throwaway=no
+          if [ -n "$dir" ] && [ -d "$dir" ] && ! try_story_of_dir "$dir" && in_temp_zone "$dir"; then
+            throwaway=yes
+          fi
           case "$verb" in
-            switch|checkout|stash|push) deny "git $verb is forbidden to the implementer: $cmd" ;;
+            switch|stash|push) deny "git $verb is forbidden to the implementer: $cmd" ;;
+            checkout)
+              [ "$throwaway" = yes ] \
+                || deny "git checkout is forbidden to the implementer outside a throwaway repo of the temp dir (${TMP_ROOT:-no usable temp dir}): $cmd" ;;
             worktree) [ "${vals[j+1]-}" != add ] || deny "git worktree add is forbidden to the implementer: $cmd" ;;
             update-ref) deny "git update-ref is forbidden to the implementer: $cmd" ;;
             branch)
@@ -765,6 +776,10 @@ check_bash() {
               story_of_dir "git $verb outside a story/<id> branch: $cmd" "$dir"
               ;;
           esac
+          if [ "$throwaway" = yes ]; then
+            check_temp_paths "$dir" "$j"
+            check_redirects "$cur"
+          fi
         fi
         i=$j
       fi

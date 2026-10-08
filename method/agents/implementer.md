@@ -20,7 +20,7 @@ How much to test, at which layer and when to run what: the preloaded `testing-do
 
 ## Before the first edit
 - The message you received names the worktree. Start every shell command with `cd <that path> &&` or use `git -C <that path>`: your shell does not keep its directory between commands.
-- `git -C <path> rev-parse --abbrev-ref HEAD` must print `story/<id>`. Another branch, a detached HEAD, or `<path>` being the repository root → stop and report. Never create a worktree or branch, never checkout, switch or stash, never commit to the target branch.
+- `git -C <path> rev-parse --abbrev-ref HEAD` must print `story/<id>`. Another branch, a detached HEAD, or `<path>` being the repository root → stop and report. Never create a worktree or branch, never checkout, switch or stash in the story worktree, never commit to the target branch. To read another version of a source, clone it under the temp dir, where `git checkout` is allowed as long as every path and redirection stays under it (ADR-0072).
 - `git -C <path> status --porcelain` may list `docs/research/<id>.md`, `docs/plans/<id>.md`, `docs/designs/<id>/` for a story with a screen and, on a fix run, `docs/reviews/<id>.md`: those are expected. Any other change you did not make → stop and report.
 - Read `docs/research/<id>.md`: the plan says what to do, the research says what is true in the code and where the traps are.
 - When `docs/designs/<id>/design.md` exists, read it before the screen tasks: the screen you build is the one it settles.
