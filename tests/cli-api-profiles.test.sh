@@ -17,10 +17,10 @@ tokens_matching() {
 # One line per fact of the profile that the checkout at <src> contradicts; kind is rust or hono.
 grounding_breaches() {
   local kind="$1" profile="$2" src="$3" base token resolved=0 min x
-  local commit head
+  local commit at_head tokens
   commit=$(identity_value "$profile" 'Commit profiled')
-  head=$(git -C "$src" rev-parse HEAD)
-  [ "$commit" = "$head" ] || echo "commit profiled $commit differs from the source HEAD $head"
+  at_head=$(git -C "$src" rev-parse HEAD)
+  [ "$commit" = "$at_head" ] || echo "commit profiled $commit differs from the source HEAD $at_head"
   if [ "$kind" = rust ]; then
     base="$src"; min=8
     head -1 "$src/LICENSE" | grep -q '^MIT License' || echo "the source licence is not MIT"

@@ -5,7 +5,7 @@ status: accepted
 date: 2026-10-08
 scope: story s85-native-profiles
 supersedes: []
-superseded-by: []
+superseded-by: [ADR-0069]
 ---
 
 # ADR-0064 — Les profils natifs partent de `nimblehq/ios-templates` et d'`android/architecture-templates`, sans `Dev` ni pilote de QA

@@ -68,7 +68,7 @@ This starter has no screen: it is a command-line program.
 ## Known traps
 
 - `Cargo.lock` is ignored by git, so a fresh clone resolves dependencies again and two clones may differ.
-- Every dependency of `utils` sits under the Linux-only target section of `utils/Cargo.toml`, `clap`, `log` and `serde` included: the workspace builds on Linux only.
+- `clap`, `log`, `serde` and `slog-journald` sit under the Linux-only target section of `utils/Cargo.toml`, the other dependencies of `utils` under `[dependencies]`; `utils` uses clap and serde, so the workspace builds on Linux only.
 - `cli_match` in `cli/src/lib.rs` parses the arguments twice, once with `Cli::parse()` and once with `Cli::command().get_matches()`.
 - The doc of the `--debug` flag in `cli/src/lib.rs` says "Set a custom config file", which is the wrong text.
 - The `hazard` subcommand prints one of two lines at random: never assert on its output.

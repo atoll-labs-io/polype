@@ -49,7 +49,7 @@ A JDK 17 and the Android SDK must be installed. The Gradle wrapper downloads Gra
 
 ## Ownership granularity
 
-A story owns one feature directory, `app/src/main/java/android/template/ui/<feature>/`, with its data and its tests. These paths are shared, and a story touching any of them runs alone: `app/build.gradle.kts`, `gradle/libs.versions.toml`, `app/src/main/java/android/template/data/local/database/AppDatabase.kt`, `app/src/main/java/android/template/ui/MainActivity.kt` and `app/src/main/java/android/template/ui/Navigation.kt`.
+A story owns one feature directory, `app/src/main/java/android/template/ui/<feature>/`, and its tests. The repository and the Room entity live in `app/src/main/java/android/template/data/`, outside that directory, and a story that changes them names those files in its `Owns`. These paths are shared, and a story touching any of them runs alone: `app/build.gradle.kts`, `gradle/libs.versions.toml`, `app/src/main/java/android/template/data/local/database/AppDatabase.kt`, `app/src/main/java/android/template/ui/MainActivity.kt` and `app/src/main/java/android/template/ui/Navigation.kt`.
 
 ## Where each rule lives
 
@@ -67,7 +67,7 @@ A Compose Material 3 theme in `app/src/main/java/android/template/ui/theme/`, an
 
 ## Known traps
 
-- `customizer.sh` deletes the `.git/` directory, `LICENSE`, `README.md` and `.github/`: run it on a fresh clone, then initialise git again.
+- `customizer.sh` deletes `.google/`, `.github/`, `CONTRIBUTING.md`, `LICENSE`, `README.md`, the `.git/` directory and itself, plus every `*.bak` file and the old `android/template` package directories: run it on a fresh clone, then initialise git again.
 - The script needs bash 4 and GNU-style `sed -i.bak`; the default bash and `sed` of macOS do not work.
 - The README names another project as the one distributed; the licence is Apache-2.0, the text of `LICENSE` decides.
 - Room exports its schema to a `schemas` directory of the module (set in `app/build.gradle.kts`): it appears after the first build.

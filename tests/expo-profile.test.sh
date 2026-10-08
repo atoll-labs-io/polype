@@ -64,7 +64,7 @@ test_expo_profile_names_its_web_render() {
   grep -qxF -- '- QA driver: mobile-web' "$EXPO" || fail "QA driver is not mobile-web"
   cmds=$(section_of "$EXPO" Commands)
   grep -qE '^Dev:[[:space:]]+npm run web$' <<< "$cmds" || fail "Dev is not 'npm run web'"
-  grep -qE '^Test:[[:space:]]+npx jest$' <<< "$cmds" || fail "Test is not 'npx jest'"
+  grep -qE '^Test:[[:space:]]+npx --no-install jest$' <<< "$cmds" || fail "Test is not 'npx --no-install jest'"
   grep -qF 'web render' <<< "$cmds" || fail "Commands does not say Dev serves the web render"
   grep -qF 'Waiting on' <<< "$cmds" || fail "Commands does not say which line prints the address"
   grep -qF 'accepts paths to test files' <<< "$cmds" || fail "Commands does not say Test accepts paths"

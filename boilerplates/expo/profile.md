@@ -21,14 +21,14 @@ The template directory `templates/expo-template-default/` on the `sdk-57` branch
 
 ```
 Install:           npm install
-Test:              npx jest
+Test:              npx --no-install jest
 Typecheck:         npx tsc --noEmit
 E2E:               —
 Build:             —
 Dev:               npm run web
 ```
 
-None of these was run here. `Test` needs `jest-expo` and `jest` installed as the Expo guide "Unit Testing with Jest", named by the README, describes; it accepts paths to test files and ends. Until a first story installs them, `npx jest` fails: the template ships no test runner. `npm test` would be the guide's `jest --watchAll`, which never returns, so it is not used. `Typecheck` assumes the `typescript` dependency provides `tsc`. `Build` is `—` because the template has no build script.
+None of these was run here. `Test` needs `jest-expo` and `jest` installed as the Expo guide "Unit Testing with Jest", named by the README, describes; it accepts paths to test files and ends. Until a first story installs `jest-expo` and `jest`, `npx --no-install jest` fails instead of fetching a jest without the preset: the template ships no test runner. `npm test` would be the guide's `jest --watchAll`, which never returns, so it is not used. `Typecheck` assumes the `typescript` dependency provides `tsc`. `Build` is `—` because the template has no build script.
 
 `Dev` runs `expo start --web` and serves the web render of the app on `http://localhost:8081` by default. Without a TTY, or with `CI` set, it prints `Waiting on <url>`, which is the address to read; it also tries to open a desktop browser.
 
@@ -78,5 +78,5 @@ This template provides none of the listed capabilities.
 - `npm run reset-project` moves the starter code to `example/`.
 - The template folder tracks a stray `.tgz` of an older version; it is not part of a generated project.
 - Licence: `0BSD` for the template, MIT for the repository around it.
-- `npm test` is the guide's watch mode; use `npx jest`.
+- `npm test` is the guide's watch mode; use `npx --no-install jest`.
 - `npm run lint` runs `expo lint`, which sets ESLint up on its first run.

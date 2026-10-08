@@ -188,6 +188,8 @@ check_fail_closed() {
 # backticked lowercase words of the `| Platform |` row of the settings template
 # (ADR-0055), so no list is repeated here. The value of its `- QA driver:` line
 # is `—` or the name of a driver file of method/skills/qa-drivers/ (ADR-0057).
+# A profile whose driver is `mobile-web` needs a `Dev` command other than `—`,
+# since that driver drives what `Dev` serves.
 # The boilerplates/ folder sits beside method/; without it there is nothing to check.
 
 PROFILE_TEMPLATE="$METHOD/templates/profile.md"
@@ -199,6 +201,19 @@ profile_commands() {
     /^## / {sec = ($0 == "## Commands"); next}
     sec && /^```/ {fence = !fence; next}
     sec && fence && NF {n = $0; sub(/:.*/, "", n); sub(/^[[:space:]]+/, "", n); print NR "\t" n}
+  ' "$1"
+}
+
+# Trimmed value of the command named $2 in the fence of `## Commands`.
+profile_command_value() {
+  awk -v want="$2" '
+    /^## / {sec = ($0 == "## Commands"); next}
+    sec && /^```/ {fence = !fence; next}
+    sec && fence && NF {
+      n = $0; sub(/:.*/, "", n); sub(/^[[:space:]]+/, "", n)
+      if (n != want) next
+      v = $0; sub(/^[^:]*:[[:space:]]*/, "", v); sub(/[[:space:]]+$/, "", v); print v; exit
+    }
   ' "$1"
 }
 
@@ -289,6 +304,8 @@ check_profiles() {
       elif [ "$value" != "—" ] && { [ "$value" = SKILL ] || [[ "$value" == */* ]] \
           || [ ! -f "$METHOD/skills/qa-drivers/$value.md" ]; }; then
         report "$rel" "$line" profile "QA driver '$value' is not a file of qa-drivers"
+      elif [ "$value" = mobile-web ] && [ "$(profile_command_value "$f" Dev)" = "—" ]; then
+        report "$rel" "$line" profile "QA driver 'mobile-web' needs a Dev command, and Dev is '—'"
       fi
     fi
 

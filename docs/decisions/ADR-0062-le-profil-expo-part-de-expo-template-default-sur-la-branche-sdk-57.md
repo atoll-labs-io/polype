@@ -5,7 +5,7 @@ status: accepted
 date: 2026-10-08
 scope: story s83-expo-profile
 supersedes: []
-superseded-by: []
+superseded-by: [ADR-0069]
 ---
 
 # ADR-0062 — Le profil Expo part de expo-template-default sur la branche sdk-57

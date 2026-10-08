@@ -16,10 +16,10 @@ tokens_matching() {
 
 # One line per fact of the profile that the checkout at <src> contradicts; kind is ios or android.
 native_breaches() {
-  local kind="$1" profile="$2" src="$3" token resolved=0 tokens commit head t
+  local kind="$1" profile="$2" src="$3" token resolved=0 tokens commit at_head t
   commit=$(identity_value "$profile" 'Commit profiled')
-  head=$(git -C "$src" rev-parse HEAD)
-  [ "$commit" = "$head" ] || echo "commit profiled $commit differs from the source HEAD $head"
+  at_head=$(git -C "$src" rev-parse HEAD)
+  [ "$commit" = "$at_head" ] || echo "commit profiled $commit differs from the source HEAD $at_head"
   if [ "$kind" = ios ]; then
     t="$src/template"
     head -1 "$src/LICENSE" | grep -q '^MIT License' || echo "the source licence is not MIT"

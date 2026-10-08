@@ -25,16 +25,16 @@ Until then the screen QA of a story on this profile is `blocked`: the qa subagen
 
 ```
 Install:           bundle install && bundle exec arkana
-Test:              bundle exec fastlane buildAndTest
+Test:              rm -rf fastlane/test_output && bundle exec fastlane buildAndTest && xcrun xcresulttool get test-results summary --path fastlane/test_output/*.xcresult | grep -Eq '"result" *: *"Passed"'
 Typecheck:         —
 E2E:               —
 Build:             —
 Dev:               —
 ```
 
-Every command needs a Mac with Xcode, and `mise install` run first so that Ruby, Tuist and xcbeautify match the versions the template pins.
+Every command needs a Mac with Xcode, and `mise install` run first, so that Ruby and Tuist match the versions `.mise.toml` pins; xcbeautify is `latest` there, not pinned.
 
-`Test` takes no paths: the lane runs the whole test plan on a simulator, and a focus is given by test identifier, not by file. The lane runs `scan` with `failBuild` set to false, so a red test still exits 0; until a story sets it to true in `fastlane/Helpers/Test.swift`, read the result bundle, not the exit code. The KIF UI tests are part of the test plan. Swift has no type check apart from compiling, which `Test` does, hence `Typecheck: —`.
+`Test` takes no paths: the lane runs the whole test plan on a simulator, and a focus is given by test identifier, not by file. The lane runs `scan` with `failBuild` set to false in `fastlane/Helpers/Test.swift`, so the lane alone exits 0 on a red test. `Test` therefore empties the ignored test output folder, runs the lane, then reads the result bundle with `xcresulttool` and exits non-zero unless its summary says `Passed` (ADR-0069). This command was not run on a Mac. The KIF UI tests are part of the test plan. Swift has no type check apart from compiling, which `Test` does, hence `Typecheck: —`.
 
 The build lanes sign through `match`, which needs the team's certificates repository, hence `Build: —`. Nothing is served, hence `Dev: —`. `swiftlint` is the linter the template documents; it is not a profile command.
 
@@ -76,7 +76,7 @@ SwiftUI screens under `{PROJECT_NAME}/Sources/Presentation/Modules/`: Landing, H
 - The maker deletes the root `AGENTS.md` and `CLAUDE.md`, `scripts`, `.github` and the git index while it generates. Generate in a scratch directory and copy the result into the project.
 - The maker is macOS only and uses BSD `sed` and `open -a Xcode`.
 - The README of the generated project still tells to run `tuist generate`, although the maker has already run it and deleted `Tuist/` and `Project.swift`.
-- `failBuild` is false in the test lane: a red test exits 0.
+- `failBuild` is false in the test lane, so the lane alone exits 0 on a red test; `Test` reads the result bundle after it, so never shorten it to the lane (ADR-0069).
 - `.env` is copied from `.env.example` and feeds Arkana, which generates the secrets code; run `bundle exec arkana` again after changing it.
 - A `GoogleService-Info.plist` is expected per environment for the Firebase SDK.
 - `NimbleExtension` is pinned to the `master` branch in `Package.swift`, so a resolve is not reproducible.
