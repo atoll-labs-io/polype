@@ -6,12 +6,22 @@
 #                              whose linked story/<id> worktree holds it, read in docs/stories.md at
 #                              the story's fork point (ADR-0038); entries follow the syntax of the
 #                              stories template, anything else is refused.
-#                              Bash: no git switch, checkout, stash, push or worktree add, and no
-#                              git commit outside a story/<id> worktree.
+#                              Bash: no git switch, checkout, stash, push, worktree add or
+#                              update-ref, no git branch -f/--force/-D/-M/-C, and no commit, reset,
+#                              merge, rebase, cherry-pick, revert, am or pull outside a story/<id>
+#                              worktree.
 #   po-bounds.sh qa            Write: the path must lie in docs/qa/<id>/ of the story whose linked
 #                              story/<id> worktree holds it; the rest of docs/ is refused too.
 #                              Bash: every git call must use a reading verb of an allowlist
-#                              (ADR-0026); an unknown verb, or none, is refused. Edit is refused.
+#                              (ADR-0026); an unknown verb, or none, is refused, and so are any
+#                              --output and a symbolic-ref given a target or a writing option.
+#                              Edit is refused.
+#
+# Bash commands are read the way bash splits them (ADR-0039): text inside quotes or in a
+# here-document body is never taken for a git call, but the substitutions bash would run there are,
+# and so are a quoted command word (env "git"), the quoted arguments of sh -c, eval or watch, and a
+# here-document a shell reads. A shell fed by a pipe or handed a substitution, nested backquotes and
+# any command the lexer cannot read are refused.
 #
 # Exit 0 allows the call, exit 2 refuses it with the reason on stderr. Claude Code lets any other
 # code through, so every failure ends in a refusal. Reads no setting; needs jq (ADR-0024).
@@ -218,59 +228,319 @@ join_dir() { case "$2" in /*) printf '%s' "$2" ;; *) printf '%s' "${1%/}/$2" ;; 
 
 QA_GIT_VERBS=" status diff log show rev-parse ls-files ls-tree cat-file merge-base grep blame describe symbolic-ref shortlog "
 
+# Prints the simple commands of the Bash command read on stdin, one per line, words separated by
+# \037, each word prefixed with u (no quoted part) or q (some part quoted); a line !<reason> means
+# the command cannot be read (ADR-0039). POSIX awk only: BWK awk and mawk must run it too.
+lex_command() {
+  awk '
+    function fail(r) { if (!failed) print "!" r; failed = 1 }
+    function push(type) {
+      sp++; t[sp] = type; pd[sp] = 0; inw[sp] = 0; wv[sp] = ""; wq[sp] = 0; ws[sp] = 0
+      nw[sp] = 0; piped[sp] = 0; cid[sp] = ++cseq
+    }
+    # A double quote writes into the word of the command around it.
+    function owner() { return t[sp] == "dq" ? sp - 1 : sp }
+    function app(ch,   f) { if (t[sp] == "hd") return; f = owner(); wv[f] = wv[f] ch; inw[f] = 1 }
+    function quoted(   f) { f = owner(); wq[f] = 1; inw[f] = 1 }
+    function opensub(type,   f) { if (t[sp] != "hd") { f = owner(); inw[f] = 1; ws[f] = 1 } push(type) }
+    function inbq(   x) { for (x = sp; x >= 1; x--) if (t[x] == "bq") return 1; return 0 }
+    function endword(f) {
+      if (!inw[f]) return
+      nw[f]++; W[f, nw[f]] = wv[f]; Q[f, nw[f]] = wq[f]; S[f, nw[f]] = ws[f]
+      wv[f] = ""; wq[f] = 0; ws[f] = 0; inw[f] = 0
+    }
+    # The word that names the command, past assignments, options, counts and wrappers (env, time…).
+    function cmdpos(f,   k, v, b) {
+      for (k = 1; k <= nw[f]; k++) {
+        v = W[f, k]; b = v; sub(/.*\//, "", b)
+        if (v ~ /^[A-Za-z_][A-Za-z0-9_]*=/ || v ~ /^-/ || v ~ /^[0-9][0-9.]*[smhd]?$/ || (b in WRAP)) continue
+        return k
+      }
+      return 0
+    }
+    # Words are typed c (the command word), q (some part quoted) or u. An interpreter (sh -c, eval,
+    # watch) gets its quoted words read as commands; a shell gets its here-documents read as commands,
+    # and is refused when it reads a pipe or is handed a substitution bash would expand.
+    # code: 1 the command feeds a pipe, 2 a newline or a parenthesis, 0 any other separator.
+    function endcmd(f, code,   k, cp, line, v, b, ip, si, hc, sb, x) {
+      endword(f)
+      if (nw[f] > 0) {
+        cp = cmdpos(f); line = ""; ip = 0; si = 0; hc = 0; sb = 0
+        for (k = 1; k <= nw[f]; k++) {
+          v = W[f, k]; gsub(/\n/, " ", v)
+          line = line (k > 1 ? US : "") (k == cp ? "c" : Q[f, k] ? "q" : "u") v
+          b = W[f, k]; sub(/.*\//, "", b)
+          if ((!Q[f, k] || k == cp) && (b in INTERP)) ip = 1
+          if (k == cp && (b in SHELLS)) si = 1
+          if (si && k > cp && W[f, k] ~ /^-[A-Za-z]*c[A-Za-z]*$/) hc = 1
+          if (S[f, k]) sb = 1
+        }
+        print line
+        if (ip && sb) fail("a substitution handed to an interpreter")
+        if (si && piped[f] && !hc) fail("a shell reading its commands from a pipe")
+        if (ip) for (k = 1; k <= nw[f]; k++) if (Q[f, k]) work[++wn] = W[f, k]
+        if (si) for (x = 1; x <= qn; x++) if (qc[x] == cid[f]) qi[x] = 1
+      }
+      if (!(nw[f] == 0 && code == 2)) piped[f] = (code == 1)
+      nw[f] = 0; cid[f] = ++cseq
+    }
+    # Reads the delimiter after << or <<- and queues the here-document.
+    function opener(tabs,   d, q, c, j) {
+      if (hdon) { fail("a here-document inside a here-document"); return }
+      while (substr(s, i, 1) == " " || substr(s, i, 1) == "\t") i++
+      d = ""; q = 0
+      while (i <= n) {
+        c = substr(s, i, 1)
+        if (index(" \t\n;&|()<>", c)) break
+        if (c == SQ) {
+          for (j = i + 1; j <= n && substr(s, j, 1) != SQ; j++) ;
+          if (j > n) { fail("unterminated quote"); return }
+          d = d substr(s, i + 1, j - i - 1); q = 1; i = j + 1
+        } else if (c == "\"") {
+          for (j = i + 1; j <= n; j++) {
+            c = substr(s, j, 1)
+            if (c == "\\") { j++; d = d substr(s, j, 1); continue }
+            if (c == "\"") break
+            d = d c
+          }
+          if (j > n) { fail("unterminated quote"); return }
+          q = 1; i = j + 1
+        } else if (c == "\\") {
+          d = d substr(s, i + 1, 1); q = 1; i += 2
+        } else {
+          d = d c; i++
+        }
+      }
+      if (d == "" && !q) { fail("a here-document without a delimiter"); return }
+      qn++; qd[qn] = d; qq[qn] = q; qt[qn] = tabs; qc[qn] = cid[sp]; qi[qn] = 0
+    }
+    # At the start of a line, skips the queued here-document bodies. An unquoted delimiter hands
+    # its body to an hd frame, which reads only the substitutions bash would run.
+    # A body a shell reads on its stdin is queued whole, to be read as commands.
+    function heredocs(   k, m, ln, body) {
+      while (qh <= qn) {
+        if (!(i in lineat)) { fail("a here-document after a broken line"); return }
+        k = lineat[i]; body = ""
+        for (m = k; m <= nlines; m++) {
+          ln = L[m]
+          if (qt[qh]) sub(/^\t+/, "", ln)
+          if (ln == qd[qh]) break
+          body = body ln "\n"
+        }
+        if (m > nlines) { fail("unterminated here-document (no " qd[qh] " line)"); return }
+        if (qi[qh]) work[++wn] = body
+        qh++
+        if (qi[qh - 1] || qq[qh - 1] || m == k) { i = LS[m + 1]; continue }
+        push("hd"); hdon = 1; hdend = LS[m]; hdnext = LS[m + 1]
+        return
+      }
+      qh = 1; qn = 0
+    }
+    function lex(str,   c, c2, c3, T, j, k, p, nl) {
+      s = str; gsub(US, " ", s)
+      if (substr(s, length(s), 1) != "\n") s = s "\n"
+      n = length(s)
+      nl = split(s, L, "\n"); nlines = nl - 1
+      split("", lineat); p = 1
+      for (k = 1; k <= nl; k++) { LS[k] = p; lineat[p] = k; p += length(L[k]) + 1 }
+      sp = 0; push("top"); qh = 1; qn = 0; hdon = 0
+      i = 1
+      while (i <= n && !failed) {
+        if (hdon && i >= hdend) {
+          if (t[sp] != "hd") { fail("an unterminated substitution in a here-document"); break }
+          sp--; hdon = 0; i = hdnext; heredocs(); continue
+        }
+        c = substr(s, i, 1); c2 = substr(s, i, 2); c3 = substr(s, i, 3); T = t[sp]
+        # Inside backquotes bash drops the backslash of \$ and reads \` as a nested substitution.
+        if (c == "\\" && inbq()) {
+          if (c2 == "\\`") { fail("nested backquotes"); break }
+          if (c2 == "\\$") { i++; continue }
+        }
+        if (T == "hd") {
+          if (c == "\\") i += 2
+          else if (c3 == "$((") { opensub("ar"); i += 3 }
+          else if (c2 == "$(") { opensub("sub"); i += 2 }
+          else if (c == "`") { opensub("bq"); i++ }
+          else i++
+          continue
+        }
+        if (T == "dq") {
+          if (c == "\"") { sp--; i++ }
+          else if (c == "\\") {
+            j = substr(s, i + 1, 1)
+            if (j == "\n") i += 2
+            else if (j != "" && index("$`\"\\", j)) { app(j); i += 2 }
+            else { app(c); i++ }
+          }
+          else if (c3 == "$((") { opensub("ar"); i += 3 }
+          else if (c2 == "$(") { opensub("sub"); i += 2 }
+          else if (c == "`") { opensub("bq"); i++ }
+          else { app(c); i++ }
+          continue
+        }
+        # A command frame: top, sub ($( <( >( ), bq (backquotes) or ar ($(( ), where << is a shift.
+        if (c == " " || c == "\t" || c == "\r") { endword(sp); i++ }
+        else if (c == "\n") { endcmd(sp, 2); i++; if (qh <= qn) heredocs() }
+        else if (c == "#" && !inw[sp] && T != "ar") {
+          for (j = i; j <= n && substr(s, j, 1) != "\n"; j++) ;
+          i = j
+        }
+        else if (c2 == "||") { endcmd(sp, 0); i += 2 }
+        else if (c2 == "|&") { endcmd(sp, 1); i += 2 }
+        else if (c == "|") { endcmd(sp, 1); i++ }
+        else if (c == ";" || c == "&") { endcmd(sp, 0); i++ }
+        else if (c == "(") { endcmd(sp, 2); pd[sp]++; i++ }
+        else if (c == ")") {
+          if (T == "sub" && pd[sp] == 0) { endcmd(sp, 0); sp--; i++ }
+          else if (T == "ar" && pd[sp] == 0 && c2 == "))") { endcmd(sp, 0); sp--; i += 2 }
+          else { if (pd[sp] > 0) pd[sp]--; endcmd(sp, 2); i++ }
+        }
+        else if (c == "`") {
+          if (T == "bq") { endcmd(sp, 0); sp--; i++ }
+          else { opensub("bq"); i++ }
+        }
+        else if (c == SQ) {
+          for (j = i + 1; j <= n && substr(s, j, 1) != SQ; j++) ;
+          if (j > n) { fail("unterminated quote"); break }
+          quoted(); app(substr(s, i + 1, j - i - 1)); i = j + 1
+        }
+        else if (c2 == "$" SQ) {
+          for (j = i + 2; j <= n && substr(s, j, 1) != SQ; j++) if (substr(s, j, 1) == "\\") j++
+          if (j > n) { fail("unterminated quote"); break }
+          quoted(); app(substr(s, i + 2, j - i - 2)); i = j + 1
+        }
+        else if (c == "\"") { quoted(); push("dq"); i++ }
+        else if (c == "\\") {
+          j = substr(s, i + 1, 1)
+          if (j == "\n") i += 2
+          else if (j == "") i++
+          else { quoted(); app(j); i += 2 }
+        }
+        else if (c3 == "$((") { opensub("ar"); i += 3 }
+        else if (c2 == "$(") { opensub("sub"); i += 2 }
+        else if (T == "ar" && (c == "<" || c == ">")) { app(c); i++ }
+        else if (c2 == "<(" || c2 == ">(") { opensub("sub"); i += 2 }
+        else if (c3 == "<<<") { endword(sp); i += 3 }
+        else if (c2 == "<<") {
+          endword(sp); i += 2
+          if (substr(s, i, 1) == "-") { i++; opener(1) } else opener(0)
+        }
+        else if (c == "<" || c == ">") { endword(sp); i++ }
+        else { app(c); i++ }
+      }
+      if (failed) return
+      if (sp > 1) {
+        if (t[sp] == "dq") fail("unterminated quote")
+        else if (t[sp] == "bq") fail("unterminated backquote")
+        else fail("unterminated substitution")
+        return
+      }
+      if (qh <= qn) { fail("a here-document without its body"); return }
+      endcmd(1, 0)
+    }
+    BEGIN {
+      US = sprintf("%c", 31); SQ = sprintf("%c", 39)
+      split("sh bash zsh dash ksh mksh ash fish", tmp, " ")
+      for (y in tmp) { INTERP[tmp[y]] = 1; SHELLS[tmp[y]] = 1 }
+      INTERP["eval"] = 1; INTERP["watch"] = 1; INTERP["su"] = 1
+      split("env command exec builtin time nice nohup timeout stdbuf sudo doas xargs setsid ionice ! { if then else elif do while until", tmp, " ")
+      for (y in tmp) WRAP[tmp[y]] = 1
+    }
+    { buf = buf $0 "\n" }
+    END {
+      lex(buf)
+      while (!failed && wk < wn) { wk++; lex(work[wk]) }
+    }
+  '
+}
+
 check_bash() {
-  local cmd="$1" cur="$2" mode="$3" text i j n w verb gdir dir
-  local -a words=()
-  text="${cmd//[\'\"\\]/}"
-  text="${text//\$(/ }"
-  text="${text//[;&|()\`\{\}]/ }"
-  text="${text//[$'\n\r\t']/ }"
-  read -ra words <<< "$text"
-  n=${#words[@]}
-  i=0
-  while [ "$i" -lt "$n" ]; do
-    w="${words[i]}"
-    if [ "$w" = cd ] && [ $((i + 1)) -lt "$n" ]; then
-      cur="$(join_dir "$cur" "${words[i+1]}")"
-      i=$((i + 2)); continue
-    fi
-    if [ "$w" = git ] || [[ "$w" == */git ]]; then
-      j=$((i + 1)); gdir=""
-      while [ "$j" -lt "$n" ]; do
-        case "${words[j]}" in
-          -C) gdir="${words[j+1]-}"; j=$((j + 2)) ;;
-          -c|--git-dir|--work-tree|--namespace) j=$((j + 2)) ;;
-          -*) j=$((j + 1)) ;;
-          *) break ;;
-        esac
-      done
-      verb="${words[j]-}"
-      if [ "$mode" = qa ]; then
-        if [ "$verb" = worktree ]; then
-          [ "${words[j+1]-}" = list ] || deny "git worktree ${words[j+1]-} is forbidden in mode qa, only worktree list reads: $cmd"
+  local cmd="$1" cur="$2" mode="$3" lexed line i j k n w a verb gdir dir nonopt re
+  local -a words=() vals=()
+  lexed="$(printf '%s' "$cmd" | lex_command)" || deny "po-bounds cannot read this command: the lexer failed: $cmd"
+  while IFS= read -r line; do
+    case "$line" in '!'*) deny "po-bounds cannot read this command: ${line#!}: $cmd" ;; esac
+  done <<< "$lexed"
+  re='^-[A-Za-z]*[fDMC][A-Za-z]*$'
+  while IFS= read -r line; do
+    [ -n "$line" ] || continue
+    words=(); vals=()
+    IFS=$'\037' read -ra words <<< "$line"
+    n=${#words[@]}
+    for ((k = 0; k < n; k++)); do vals[k]="${words[k]#?}"; done
+    i=0
+    while [ "$i" -lt "$n" ]; do
+      w="${vals[i]}"
+      if [ "$w" = cd ] && [ $((i + 1)) -lt "$n" ]; then
+        cur="$(join_dir "$cur" "${vals[i+1]}")"
+        i=$((i + 2)); continue
+      fi
+      # Quoted text is a git call only as the command word ("git", env \git, A=1 'git').
+      if { [ "$w" = git ] || [[ "$w" == */git ]]; } && [ "${words[i]:0:1}" != q ]; then
+        j=$((i + 1)); gdir=""
+        while [ "$j" -lt "$n" ]; do
+          case "${vals[j]}" in
+            -C) gdir="${vals[j+1]-}"; j=$((j + 2)) ;;
+            -c|--git-dir|--work-tree|--namespace) j=$((j + 2)) ;;
+            -*) j=$((j + 1)) ;;
+            *) break ;;
+          esac
+        done
+        verb="${vals[j]-}"
+        if [ "$mode" = qa ]; then
+          for ((k = j + 1; k < n; k++)); do
+            case "${vals[k]}" in
+              --output|--output=*) deny "git $verb --output writes a file, which mode qa never does: $cmd" ;;
+            esac
+          done
+          if [ "$verb" = worktree ]; then
+            [ "${vals[j+1]-}" = list ] || deny "git worktree ${vals[j+1]-} is forbidden in mode qa, only worktree list reads: $cmd"
+          else
+            # An empty verb never matches: the list holds single spaces only.
+            case "$QA_GIT_VERBS" in
+              *" $verb "*) ;;
+              *) deny "git ${verb:-without a verb} is forbidden in mode qa, which runs reading verbs only: $cmd" ;;
+            esac
+          fi
+          if [ "$verb" = symbolic-ref ]; then
+            nonopt=0
+            for ((k = j + 1; k < n; k++)); do
+              case "${vals[k]}" in
+                -q|--quiet|--short|--recurse|--no-recurse) ;;
+                -*) deny "git symbolic-ref ${vals[k]} is forbidden in mode qa, which only reads a ref: $cmd" ;;
+                *) nonopt=$((nonopt + 1)) ;;
+              esac
+            done
+            [ "$nonopt" -le 1 ] || deny "git symbolic-ref with a target writes a ref, forbidden in mode qa: $cmd"
+          fi
         else
-          # An empty verb never matches: the list holds single spaces only.
-          case "$QA_GIT_VERBS" in
-            *" $verb "*) ;;
-            *) deny "git ${verb:-without a verb} is forbidden in mode qa, which runs reading verbs only: $cmd" ;;
+          case "$verb" in
+            switch|checkout|stash|push) deny "git $verb is forbidden to the implementer: $cmd" ;;
+            worktree) [ "${vals[j+1]-}" != add ] || deny "git worktree add is forbidden to the implementer: $cmd" ;;
+            update-ref) deny "git update-ref is forbidden to the implementer: $cmd" ;;
+            branch)
+              for ((k = j + 1; k < n; k++)); do
+                a="${vals[k]}"
+                case "$a" in
+                  -f|--force|-D|-M|-C) deny "git branch $a moves or deletes a branch, forbidden to the implementer: $cmd" ;;
+                  --*) continue ;;
+                esac
+                [[ ! $a =~ $re ]] || deny "git branch $a moves or deletes a branch, forbidden to the implementer: $cmd"
+              done
+              ;;
+            commit|reset|merge|rebase|cherry-pick|revert|am|pull)
+              dir="$cur"
+              [ -z "$gdir" ] || dir="$(join_dir "$cur" "$gdir")"
+              [ -n "$dir" ] && [ -d "$dir" ] || deny "git $verb outside a story/<id> branch: $cmd"
+              story_of_dir "git $verb outside a story/<id> branch: $cmd" "$dir"
+              ;;
           esac
         fi
-      else
-        case "$verb" in
-          switch|checkout|stash|push) deny "git $verb is forbidden to the implementer: $cmd" ;;
-          worktree) [ "${words[j+1]-}" != add ] || deny "git worktree add is forbidden to the implementer: $cmd" ;;
-          commit)
-            dir="$cur"
-            [ -z "$gdir" ] || dir="$(join_dir "$cur" "$gdir")"
-            [ -n "$dir" ] && [ -d "$dir" ] || deny "git commit outside a story/<id> branch: $cmd"
-            story_of_dir "git commit outside a story/<id> branch: $cmd" "$dir"
-            ;;
-        esac
+        i=$j
       fi
-      i=$j
-    fi
-    i=$((i + 1))
-  done
+      i=$((i + 1))
+    done
+  done <<< "$lexed"
   exit 0
 }
 
