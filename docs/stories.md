@@ -1156,3 +1156,20 @@ Objectif : fermer ce que les revues de M7 ont laissé ouvert, dont le reviewer q
 - [ ] `partial_supersession_is_written_and_linked` — le gabarit d'ADR et `/po-architect` décrivent le remplacement partiel (l'ancienne ADR garde `accepted` et nomme son successeur, le successeur la nomme dans `supersedes`) ; ADR-0037, ADR-0038, ADR-0039 et ADR-0041 nomment dans `supersedes` l'ADR qu'elles remplacent en partie, sans toucher à leur corps.
 
 **Notes pour l'agent** : une ADR acceptée ne se modifie que dans son frontmatter de liens ; vérifier chaque lien dans le corps du successeur avant de l'écrire (ADR-0038 et ADR-0039 → ADR-0024, ADR-0037 → ADR-0029, ADR-0041 → ADR-0037).
+
+### s76-bounds-guard-against-mistakes — Le hook des bornes, un garde-fou contre les erreurs
+**En tant que** développeur **je veux** que `po-bounds` soit décrit et réglé comme un garde-fou contre les erreurs d'un agent, pas comme une barrière contre un agent qui chercherait à le contourner **afin d'**arrêter la course aux contournements et de ne plus refuser les gestes légitimes des revues.
+
+- **Complexité** : 3
+- **Dépend de** : aucune
+- **Owns** : `method/hooks/po-bounds.sh`, `tests/bounds.test.sh`, `docs/installation.md`, `tests/installer.test.sh`, `tests/post-m7-texts.test.sh`, `docs/decisions/ADR-0034-la-flotte-committe-la-preuve-qa-et-le-retour-en-qa-ne-coute-aucune-boucle.md`, `docs/decisions/ADR-0041-le-retour-en-qa-exige-une-revue-bloquee-et-reconnait-la-preuve-non-committee.md`, `docs/decisions/ADR-0047-le-reviewer-tenu-par-po-bounds-en-mode-reviewer.md`, `docs/decisions/ADR-0051-le-reviewer-juge-la-commande-git-que-git-executera.md`
+- **Corrige** : majeurs M1, M2, M3 de `docs/reviews/s74-reviewer-bounds-bypasses.md` ; majeur M1 et mineurs m1, m2, m4 de `docs/reviews/s75-post-m7-texts.md`
+- **Décision** : option A, choisie par l'utilisateur le 2026-10-08 — le hook arrête les accidents (une sonde mal fermée, une commande lancée dans le mauvais dossier), il ne prétend pas arrêter un contournement délibéré ; une isolation par bac à sable reste une piste pour plus tard.
+
+**Critères d'acceptation**
+- [ ] `bounds_threat_model_is_written` — une ADR qui remplace en partie ADR-0047 et ADR-0051 pose que `po-bounds` est un garde-fou contre les erreurs, liste les contournements délibérés connus et acceptés (dont les options courtes collées comme `config -zf<chemin>`, la portée d'un `cd`, les alias, les hooks d'un dépôt jetable, `GIT_CONFIG_GLOBAL`, une clé construite par substitution) et nomme le bac à sable comme piste écartée pour l'instant ; ADR-0047 et ADR-0051 la nomment dans `superseded-by`, et le lien inverse ADR-0034 ↔ ADR-0041 est posé.
+- [ ] `redirections_are_not_git_paths` — en mode `reviewer`, une redirection (`2>/dev/null`, `>/dev/null`, `2>&1`, `| head`) n'est plus lue comme un chemin de la commande git : `git -C <dépôt jetable> log 2>/dev/null` passe, tandis qu'une redirection vers un fichier du checkout principal reste refusée.
+- [ ] `installation_matches_the_hook` — la section « Le mode reviewer » de `docs/installation.md` cite ADR-0051 et la nouvelle ADR, dit la règle des chemins dans le dépôt jetable et les refus de `core.worktree`, et présente le hook comme un garde-fou contre les erreurs ; la phrase « et … ni » sur ce que le hook ne lit pas est réécrite.
+- [ ] `test_variables_are_local` — dans `tests/post-m7-texts.test.sh`, la variable de boucle est déclarée `local`.
+
+**Notes pour l'agent** : ne pas fermer de nouveau contournement délibéré dans cette story ; le but est de les nommer. Une ADR acceptée ne change que dans son frontmatter de liens.
