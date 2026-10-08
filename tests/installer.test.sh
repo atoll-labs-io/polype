@@ -183,7 +183,7 @@ test_installation_doc_lists_the_hook_refusals() {
   local section phrase
   section="$(awk "/^### Le hook des bornes de l'implementer\$/ {on=1; next} /^## / {on=0} on" "$ROOT/docs/installation.md")"
   [ -n "$section" ] || fail "docs/installation.md has no bounds-hook section"
-  for phrase in 'git update-ref' '-D' '--force' 'cherry-pick' 'pull' 'story/*' 'ADR-0039' \
+  for phrase in 'git update-ref' '-D' '--force' 'cherry-pick' 'pull' 'story/*' 'ADR-0050' \
       'git fetch . HEAD:main' 'GIT_DIR='; do
     grep -qF -- "$phrase" <<< "$section" || fail "the bounds-hook section does not say: $phrase"
   done

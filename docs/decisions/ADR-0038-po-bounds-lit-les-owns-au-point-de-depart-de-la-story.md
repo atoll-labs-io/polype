@@ -4,7 +4,7 @@ title: po-bounds lit les Owns au point de départ de la story et en définit la 
 status: accepted
 date: 2026-10-08
 scope: story s61-bounds-owns
-supersedes: []
+supersedes: [ADR-0024]
 superseded-by: []
 ---
 

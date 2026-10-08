@@ -4,7 +4,7 @@ title: po-bounds lit une commande Bash avec un lexer awk qui écarte les textes 
 status: superseded
 date: 2026-10-08
 scope: story s62-bounds-scan
-supersedes: []
+supersedes: [ADR-0024]
 superseded-by: [ADR-0050]
 ---
 

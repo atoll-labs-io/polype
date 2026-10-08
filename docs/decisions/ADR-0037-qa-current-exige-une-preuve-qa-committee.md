@@ -4,7 +4,7 @@ title: po-gate qa-current exige que docs/qa/<id>/ soit committé
 status: accepted
 date: 2026-10-08
 scope: story s60-gate-parsing
-supersedes: []
+supersedes: [ADR-0029]
 superseded-by: [ADR-0041, ADR-0044]
 ---
 

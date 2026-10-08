@@ -79,6 +79,6 @@ test_rules_list_every_installed_hook() {
     grep -qF -- "$name" <<< "$section" || fail "Installed files does not name the hook $name"
   done
   grep -qF -- '`po-gate` checks the gates of Law 3' <<< "$section" || fail "Installed files does not say what po-gate holds"
-  grep -qF -- 'called `po-bounds`, keeps the `implementer` and `qa` subagents inside their story'"'"'s bounds' <<< "$section" \
+  grep -qF -- 'called `po-bounds`, keeps the `implementer`, `qa` and `reviewer` subagents inside their bounds' <<< "$section" \
     || fail "Installed files does not say what po-bounds holds"
 }

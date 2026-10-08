@@ -18,7 +18,7 @@ Never a technical layer: "create the table", "add the endpoint" or "build the se
 When a slice feels too thin to matter, it is usually the right size; when it needs "and then" twice in its title, it is two stories.
 
 ## Owns and contracts first
-Every story declares Owns: the paths it is allowed to change, each in backticks and separated by commas. An entry is a file path, a folder ending in `/`, or a glob where `*` stays inside one path segment and `**` spans any number of segments; any other text on the line is refused. Agents run stories side by side, so two stories with no dependency between them never share a path; if they must, one depends on the other.
+Every story declares Owns: the paths it is allowed to change, each in backticks and separated by commas. An entry is a file path, a folder ending in `/`, or a glob where `*` stays inside one path segment and `**` spans any number of segments; any other text on the line is refused. Agents run stories side by side, so two stories with no dependency between them never hold overlapping `Owns` entries, by the overlap rule of check 8 of the `stories-review` skill; if they must, one depends on the other.
 
 An interface shared by two stories becomes an earlier story of its own: the contract comes first. An API shape, a schema other stories read, an event format — it is written once, owned by that story, and every story that uses it lists it under `Depends on`.
 

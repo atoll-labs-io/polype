@@ -4,7 +4,7 @@ title: Le retour en QA exige une revue bloquée, et la preuve non committée se 
 status: accepted
 date: 2026-10-08
 scope: story s64-qa-routing
-supersedes: []
+supersedes: [ADR-0037]
 superseded-by: []
 ---
 

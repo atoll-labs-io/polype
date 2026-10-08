@@ -89,10 +89,11 @@ Côté git, il refuse :
 - hors d'un worktree sur une branche `story/*` : `commit`, `reset`, `merge`, `rebase`,
   `cherry-pick`, `revert`, `am` et `pull`.
 
-Ce qu'il ne voit pas (ADR-0039) : un texte entre guillemets, ou le corps d'un heredoc à délimiteur
-cité, n'est pas lu comme une commande — c'est voulu, une citation n'est pas un ordre. Ne sont pas lus
-non plus une variable `$VAR` qui contient `git`, un alias git, `GIT_DIR=… git reset`,
-`git --git-dir=… reset` ni `git fetch . HEAD:main`. Il ne voit pas davantage les redirections du
+Ce qu'il ne voit pas (ADR-0050) : un texte entre guillemets, ou le corps d'un heredoc à délimiteur
+cité, n'est pas lu comme une commande — c'est voulu, une citation n'est pas un ordre, sauf si un
+shell lit ce corps. Ne sont pas lus non plus une variable `$VAR` qui contient `git`, un alias git,
+et, pour `implementer` et `qa`, `GIT_DIR=… git reset`, `git --git-dir=… reset` ni
+`git fetch . HEAD:main`. Il ne voit pas davantage les redirections du
 shell ni un `cp`. Pour tout cela, la revue garde son propre contrôle d'ownership.
 
 Le script a besoin de `jq` ; sans lui, il refuse tout.
@@ -107,6 +108,19 @@ et Claude Code n'exécute les hooks de leur frontmatter qu'une fois accepté le 
 du dossier — jamais dans une session `claude -p`, où les bornes ne sont **pas** tenues. Avec
 l'installation globale, les subagents de `~/.claude/agents/` exécutent leurs hooks sans cette
 condition.
+
+### Le mode reviewer
+
+Le frontmatter du subagent `reviewer` appelle `.polype/hooks/po-bounds.sh reviewer` sur `Edit`,
+`Write` et `Bash` (ADR-0047). Le reviewer travaille dans deux zones. Dans le worktree de la story, il
+écrit hors de `.git` et n'a de git que les verbes de lecture, plus `git checkout -- <chemin>` et
+`git restore`. Dans un dépôt jetable sous `${TMPDIR:-/tmp}`, il peut lancer n'importe quel verbe sauf
+`push`. Partout, `push` est refusé, et une commande git hors de ces deux zones l'est aussi, le
+checkout principal compris.
+
+Un projet dont le `.polype/hooks/po-bounds.sh` date d'avant s70 refuse chaque appel du reviewer
+(« mode inconnu ») et bloque donc toute revue : relance `polype init <projet>`, puis committe le
+script sur la branche cible.
 
 ## Suivre `~/.claude/polype/` avec chezmoi
 
