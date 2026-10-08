@@ -21,6 +21,7 @@ Diff listed with `git diff --name-only <Target branch>...story/<id>`, each path 
 
 ## Evidence reused
 - [ ] `po-gate verif-current <id>` → <passes, record reused | fails or missing → suite and type check run here, with results>
+- [ ] `po-gate qa-current <id>` (screen, `QA stage: screens`) → <passes, verified QA findings carried to Findings | fails → review blocked | not required: no screen or `QA stage: —`>
 
 ## Plan
 - [ ] Each task present; nothing outside the plan

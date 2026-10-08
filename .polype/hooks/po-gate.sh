@@ -5,6 +5,7 @@
 #   po-gate ship-allowed <id>     0 when the review's last `Ship allowed:` line says yes and its
 #                                 `Reviewed tree:` still matches HEAD outside docs/
 #   po-gate verif-current <id>    0 when the verification record is complete and matches HEAD
+#   po-gate qa-current <id>       0 when the QA report's last `QA status:` says complete and its `Tree:` matches HEAD
 #   po-gate pre-commit            non-zero, on every branch, when a staged environment file or an added line holding
 #                                 a private key or a known token is staged; and on a code commit to story/<id>
 #                                 whose plan is not approved
@@ -59,6 +60,21 @@ verif_current() {
     || refuse "tree $tree from the record of $1 does not exist in this repository" || return 1
   code_matches "$tree" \
     || refuse "the code of $1 changed after its checks ran; the record no longer matches HEAD"
+}
+
+# Like the review's verdict, only the last status line counts: a report may quote an earlier one.
+qa_current() {
+  local report status tree; report="$(top)/docs/qa/$1/report.md"
+  [ -f "$report" ] || refuse "$1 has no QA report (docs/qa/$1/report.md) — /po-qa $1" || return 1
+  status="$(grep -E '^QA status:' "$report" | tail -n 1 || true)"
+  [[ "$status" =~ ^QA\ status:[[:space:]]*complete[[:space:]]*$ ]] \
+    || refuse "the QA report of $1 is not complete (last status: ${status:-none}) — /po-qa $1" || return 1
+  tree="$(first_hash 'Tree' "$report")"
+  [ -n "$tree" ] || refuse "the QA report of $1 has no usable 'Tree:' hash — /po-qa $1" || return 1
+  tree_exists "$tree" \
+    || refuse "tree $tree from the QA report of $1 does not exist in this repository — /po-qa $1" || return 1
+  code_matches "$tree" \
+    || refuse "the code of $1 changed after its QA walk; the report no longer matches HEAD — /po-qa $1"
 }
 
 # --- secret scan ---------------------------------------------------------------
@@ -321,6 +337,7 @@ case "${1:-}" in
   plan-validated) plan_validated "${2:?story id required}" ;;
   ship-allowed)   ship_allowed "${2:?story id required}" ;;
   verif-current)  verif_current "${2:?story id required}" ;;
+  qa-current)     qa_current "${2:?story id required}" ;;
   pre-commit)     pre_commit ;;
   *) echo "po-gate: unknown subcommand '${1:-}' (see the header of this script)" >&2; exit 2 ;;
 esac

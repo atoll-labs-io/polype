@@ -34,6 +34,7 @@ A story walks these stages, none skipped, none reordered:
 | Design (stories with a screen) | `/po-design` | `docs/designs/<id>/` |
 | Plan | `/po-plan` | `docs/plans/<id>.md`, validated |
 | Execute | `/po-execute` | code, tests, `docs/verif/<id>.md`, one commit |
+| QA (stories with a screen, when `QA stage` is `screens`) | `/po-qa` | `docs/qa/<id>/`, report and captures, committed alone |
 | Review | `/po-review` | `docs/reviews/<id>.md` with a verdict |
 | Ship | `/po-ship` | one squash commit on `Target branch` |
 
@@ -60,8 +61,9 @@ Code is written by the `implementer` subagent, reviews are made by the `reviewer
 | Plan validated | the frontmatter of `docs/plans/<id>.md` holds `validated: yes` | `/po-execute`; code commits on `story/<id>` (pre-commit hook) |
 | Record current | `docs/verif/<id>.md` is marked complete and its `Tree:` matches the committed code outside `docs/` | whether the review may reuse the recorded run |
 | Ship allowed | the last `Ship allowed:` line of `docs/reviews/<id>.md` says `yes` **and** the review's `Reviewed tree:` matches the committed code outside `docs/` | `/po-ship` |
+| QA current | the last `QA status:` line of `docs/qa/<id>/report.md` says `complete` **and** its `Tree:` matches the committed code outside `docs/` | the review of a story with a screen, when `QA stage` is `screens` |
 
-A plan file that exists is not a validated plan. No record means nothing is proven. A review without its two verdict lines counts as blocked. So does a review without a usable `Reviewed tree:`: a verdict counts for the code it judged, not for commits added after it. `po-gate` (see "Installed files") checks all three.
+A plan file that exists is not a validated plan. No record means nothing is proven. A review without its two verdict lines counts as blocked. So does a review without a usable `Reviewed tree:`: a verdict counts for the code it judged, not for commits added after it. `po-gate` (see "Installed files") checks all four.
 
 Severity decides what a review blocks. **Critical** stops the ship. **Major** is logged in the report and handled in a later cycle; **minor** is style. After a blocked review, `/po-execute` runs again in fix mode, findings first; a story gets two fix loops, then a human decides.
 
@@ -76,7 +78,7 @@ Severity decides what a review blocks. **Critical** stops the ship. **Major** is
 
 A worktree has one occupant at a time. Every shell command a subagent runs inside it starts with `cd <absolute worktree path> &&` or uses `git -C <absolute worktree path>`, because a subagent's shell does not stay where it was.
 
-While a story is running, its worktree legitimately holds uncommitted work under `docs/`: the research, the design of a story with a screen (`docs/designs/<id>/`), the plan and, during a fix run, the review. Anything else uncommitted that the current agent did not create is a reason to stop.
+While a story is running, its worktree legitimately holds uncommitted work under `docs/`: the research, the design of a story with a screen (`docs/designs/<id>/`), the plan, the QA evidence (`docs/qa/<id>/`) between the walk and `/po-qa`'s commit and, during a fix run, the review. Anything else uncommitted that the current agent did not create is a reason to stop.
 
 ## Law 5 — Quick fixes stay small
 
@@ -87,10 +89,10 @@ State the scope before touching anything, change as little as possible, respect 
 ## Law 6 — Evidence lives next to the code
 
 All pipeline output is markdown under `docs/`, in git.
-- The framing files — `docs/prd.md` or `docs/brief.md`, `docs/stories.md`, `docs/reviews/stories.md`, `docs/architecture.md`, `docs/design-system.md` — are committed on `Target branch`. Research, design (`docs/designs/<id>/`), plan, record and review travel on `story/<id>`, so the story's commit and its pull request carry their own evidence.
+- The framing files — `docs/prd.md` or `docs/brief.md`, `docs/stories.md`, `docs/reviews/stories.md`, `docs/architecture.md`, `docs/design-system.md` — are committed on `Target branch`. Research, design (`docs/designs/<id>/`), plan, record, QA evidence (`docs/qa/<id>/`) and review travel on `story/<id>`, so the story's commit and its pull request carry their own evidence.
 - Keep research under ~200 lines, plans under ~250, reviews under ~150: every stage after yours reads them. Trim sentences, never tables that record decisions.
 - The plan's checkboxes are the progress bar; ticking one never triggers a commit.
-- A story is committed once by the implementer. A fix run adds one commit of its own; a migration may get its own commit so it can be reverted alone. Ship squashes everything into one commit on `Target branch`.
+- A story is committed once by the implementer. `/po-qa` commits `docs/qa/<id>/` alone, in a commit of its own, once its report is written. A fix run adds one commit of its own; a migration may get its own commit so it can be reverted alone. Ship squashes everything into one commit on `Target branch`.
 - Structural decisions are ADRs in `<ADR directory>NNNN-<slug>.md`, from `templates/adr.md`, listing the options turned down and why. An accepted ADR is never edited; a new ADR supersedes it.
 - **Secrets never enter git.** `.env*` files must be ignored. When the hooks are on (`core.hooksPath` at `.polype/hooks`), the pre-commit refuses, on every branch, a staged environment file other than `.env.example` and an added line holding a private key or a known token. Projects that do not turn the hooks on keep checking, before any commit, that `git status --porcelain` lists no environment file, and stop if it does.
 
