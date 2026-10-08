@@ -1,6 +1,6 @@
 # Profile — <boilerplate name>
 
-A profile describes one boilerplate once, so that setup, architecture, planning and execution all read the same facts about it. It lives at `boilerplates/<name>/profile.md`. `bin/po-lint` checks it against this template: every `## ` heading below must be present, the command names must stay as they are, and each capability must come from the list in `## Capabilities`.
+A profile describes one boilerplate once, so that setup, architecture, planning and execution all read the same facts about it. It lives at `boilerplates/<name>/profile.md`. `bin/po-lint` checks it against this template: every `## ` heading below must be present, the command names must stay as they are, each capability must come from the list in `## Capabilities`, and the platforms of `## Platform` must be values of the `Platform` setting.
 
 ## Identity and licence
 
@@ -8,6 +8,12 @@ A profile describes one boilerplate once, so that setup, architecture, planning 
 - Origin: <URL of the repository the profile was written from>
 - Licence: <SPDX identifier, e.g. MIT>
 - Commit profiled: <full hash the facts below were read at>
+
+## Platform
+
+- Platform: web
+
+One or more values of the `Platform` setting of `templates/agents-local.md`, separated by commas; `/po-setup` offers this profile only to a project that declares one of them.
 
 ## Commands
 
@@ -55,6 +61,8 @@ A profile keeps only the rows the boilerplate actually provides. The names are f
 ## UI inventory
 
 <The components the boilerplate ships and where they are, so a design reuses them before drawing new ones.>
+
+A boilerplate with no screen says so in one line.
 
 ## Known traps
 
