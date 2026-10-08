@@ -44,6 +44,10 @@ Leave the end-to-end suite and the production build to ship, except when the dif
 
 **6. Check the neighbours.** Find the other callers of what the diff changed and read them.
 
+## After the six steps: the lenses
+
+Run each lens of the preloaded `review-lenses` skill whose trigger the diff contains. Grade what it finds on the scale below, list it under `## Findings`, and record the lenses on the report's `Lenses run:` line.
+
 ## Severity
 
 - **critical** — users would get a defect, an exploitable flaw, a call to something that does not exist, or a regression in what already worked. The ship is blocked.

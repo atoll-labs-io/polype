@@ -45,6 +45,10 @@ Diff listed with `git diff --name-only <Target branch>...story/<id>`, each path 
 ## Neighbours
 - [ ] Other callers of the changed code read; nothing broken
 
+## Lenses
+Lenses run: <security | migration | dependencies | performance — each with the path or content that triggered it | none>
+- [ ] Each lens finding graded on the scale above and listed under Findings
+
 ## Findings
 <one per line: severity — file:line — the problem>
 
