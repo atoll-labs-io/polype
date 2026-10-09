@@ -43,12 +43,25 @@ test_install_keeps_a_hand_written_agents_md() {
   grep -qx '# Our own agent notes' "$P/AGENTS.md.before-polype" || fail "the backup was overwritten by a reinstall"
 }
 
-test_install_adds_claude_md_import_once() {
+test_install_writes_no_claude_md() {
   project
+  install "$P"
+  if [ -e "$P/CLAUDE.md" ]; then fail "install created a CLAUDE.md"; fi
   printf '# Project notes\n' > "$P/CLAUDE.md"
-  install "$P" && install "$P"
-  [ "$(grep -cx '@AGENTS.md' "$P/CLAUDE.md")" -eq 1 ] || fail "@AGENTS.md must appear exactly once"
-  grep -qx '# Project notes' "$P/CLAUDE.md" || fail "existing CLAUDE.md content was lost"
+  local notes; notes="$(cksum < "$P/CLAUDE.md")"
+  install "$P"
+  [ "$(cksum < "$P/CLAUDE.md")" = "$notes" ] || fail "install touched the project's own CLAUDE.md"
+}
+
+test_install_drops_the_legacy_claude_md_import() {
+  project
+  printf '@AGENTS.md\n' > "$P/CLAUDE.md"
+  install "$P"
+  if [ -e "$P/CLAUDE.md" ]; then fail "a CLAUDE.md holding only the old import survived"; fi
+  printf '# Project notes\n@AGENTS.md\n' > "$P/CLAUDE.md"
+  install "$P"
+  grep -qx '# Project notes' "$P/CLAUDE.md" || fail "the project's CLAUDE.md content was lost"
+  if grep -qx '@AGENTS.md' "$P/CLAUDE.md"; then fail "the old import was left in CLAUDE.md"; fi
 }
 
 test_install_never_touches_settings() {

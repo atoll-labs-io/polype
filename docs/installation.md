@@ -6,7 +6,8 @@ soi-même à côté des siens.
 
 Deux poses, deux rôles. La pose **globale** met les commandes, les subagents et les skills dans
 `~/.claude/`, donc dans tous les projets à la fois. La pose **projet** met dans le dépôt ce qui lui
-appartient : les templates, le gate, `AGENTS.md`, `CLAUDE.md`, `.gitignore`.
+appartient : les templates, le gate, `AGENTS.md`, `.gitignore`. Aucun `CLAUDE.md` : Claude Code lit
+`AGENTS.md` de lui-même (ADR-0073).
 
 ```
 polype install --global                pose commandes, subagents, skills et charge utile dans ~/.claude
@@ -54,8 +55,8 @@ ln -s ~/.claude/polype/bin/polype ~/.local/bin/polype
 L'installeur suit les liens symboliques pour retrouver sa méthode : lancé par `~/.local/bin/polype`,
 il travaille avec la charge utile qui se trouve à côté du script pointé, jamais à côté du lien.
 
-La pose globale n'écrit ni `AGENTS.md`, ni `CLAUDE.md`, ni `.gitignore`, et ne touche pas à
-`core.hooksPath` : ces quatre-là appartiennent à un projet. Elle ne retire jamais un fichier qu'elle
+La pose globale n'écrit ni `AGENTS.md`, ni `.gitignore`, et ne touche pas à `core.hooksPath` : ces
+trois-là appartiennent à un projet. Elle ne retire jamais un fichier qu'elle
 n'a pas posé — une commande personnelle dans `~/.claude/commands/` survit à `remove --global` — et
 elle ne supprime pas `~/.claude` lui-même.
 
@@ -69,7 +70,7 @@ plus :
 | `method/templates/` | `.polype/templates/` |
 | `method/hooks/` | `.polype/hooks/` (rendus exécutables) |
 
-plus `AGENTS.md`, la ligne `@AGENTS.md` de `CLAUDE.md` et les deux lignes de `.gitignore` décrites
+plus `AGENTS.md` et les deux lignes de `.gitignore` décrites
 plus bas. Aucune copie des commandes, des subagents ni des skills : ils sont déjà globaux. Si
 `~/.claude/polype/version` manque, `init` le dit sur `stderr` et pose quand même le volet projet.
 
@@ -177,7 +178,9 @@ empreintes locales ; la charge utile se repose sur elle-même sans se détruire.
 En plus des copies, `init` comme `install <projet>` :
 - réécrit `AGENTS.md` = les règles de la méthode, puis `---`, puis l'`AGENTS.local.md` du projet ;
   un `AGENTS.md` écrit à la main est d'abord sauvegardé en `AGENTS.md.before-polype` ;
-- ajoute la ligne `@AGENTS.md` à `CLAUDE.md`, une seule fois ;
+- retire la ligne `@AGENTS.md` qu'un installeur d'avant ADR-0073 avait mise dans `CLAUDE.md`, et
+  supprime ce fichier s'il ne contenait rien d'autre ; un `CLAUDE.md` sans cette ligne n'est pas
+  touché, mais tant qu'il existe, Claude Code le lit **à la place** d'`AGENTS.md` ;
 - ajoute au `.gitignore` la racine des worktrees (`Worktree root` lu dans `AGENTS.local.md`,
   `.worktrees/` par défaut) et `.env*`, une seule fois chacun ;
 - avec `--hooks`, pointe `core.hooksPath` sur `.polype/hooks` — et seulement si ce réglage est vide
@@ -258,7 +261,7 @@ les répertoires devenus vides **sous** `~/.claude/commands/`, `~/.claude/agents
 pas créé.
 
 `remove <projet>` supprime les fichiers du manifeste, les trois fichiers d'état, puis les répertoires
-`.claude/` et `.polype/` devenus vides. Il retire la ligne `@AGENTS.md` de `CLAUDE.md`, supprime
+`.claude/` et `.polype/` devenus vides. Il retire l'ancienne ligne `@AGENTS.md` de `CLAUDE.md` comme le fait la pose, supprime
 `AGENTS.md` seulement s'il porte le marqueur d'assemblage, et remet `AGENTS.md.before-polype` à sa
 place s'il existe. Il ne rend `core.hooksPath` à git que si ce réglage vaut `.polype/hooks`.
 
