@@ -112,15 +112,16 @@ test_installer_remove_restores_a_hand_written_agents_md() {
   grep -qx '# Project notes' "$P/CLAUDE.md" || fail "the project's CLAUDE.md content was lost"
 }
 
-test_remove_deletes_a_claude_md_it_created() {
+test_remove_drops_the_legacy_claude_md_import() {
   project
   polype install "$P"
+  printf '@AGENTS.md\n' > "$P/CLAUDE.md"
   polype remove "$P"
-  if [ -e "$P/CLAUDE.md" ]; then fail "the CLAUDE.md the installer created was left behind"; fi
+  if [ -e "$P/CLAUDE.md" ]; then fail "a CLAUDE.md holding only the old import was left behind"; fi
   rm -rf "$SCRATCH"
   project
-  printf '# Project notes\n' > "$P/CLAUDE.md"
   polype install "$P"
+  printf '# Project notes\n@AGENTS.md\n' > "$P/CLAUDE.md"
   polype remove "$P"
   require_file "$P/CLAUDE.md"
   grep -qx '# Project notes' "$P/CLAUDE.md" || fail "the project's CLAUDE.md content was lost"

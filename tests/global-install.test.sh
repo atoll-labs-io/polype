@@ -55,7 +55,7 @@ test_installer_init_activates_a_project_after_a_global_install() {
   [ -f "$P/.polype/templates/plan.md" ] || fail "init laid no template down"
   [ -x "$P/.polype/hooks/po-gate.sh" ] || fail "the gate is missing or not executable"
   grep -qF 'Nothing reaches the code except through a story' "$P/AGENTS.md" || fail "init did not assemble AGENTS.md"
-  grep -qx '@AGENTS.md' "$P/CLAUDE.md" || fail "init did not import AGENTS.md from CLAUDE.md"
+  if [ -e "$P/CLAUDE.md" ]; then fail "init created a CLAUDE.md"; fi
   [ -f "$P/.polype/version" ] || fail "init left no version stamp"
   if [ -e "$P/.claude/commands" ]; then fail "init copied the commands the global install already serves"; fi
   if [ -e "$P/.claude/agents" ] || [ -e "$P/.claude/skills" ]; then fail "init copied subagents or skills into the project"; fi
