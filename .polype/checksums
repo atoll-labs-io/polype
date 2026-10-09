@@ -19,9 +19,9 @@
 2128279462 4039 .claude/commands/po-stories.md
 2064474370 3396 .claude/commands/po-stories-review.md
 2598334128 5909 .claude/agents/designer.md
-3334671893 6084 .claude/agents/implementer.md
+3333199442 6231 .claude/agents/implementer.md
 2018203589 6698 .claude/agents/planner.md
-324440817 5507 .claude/agents/qa.md
+1341470260 5728 .claude/agents/qa.md
 2429299304 6300 .claude/agents/reviewer.md
 1590527754 2303 .claude/agents/stories-reviewer.md
 3262471946 5996 .claude/skills/agentic-stories/SKILL.md
@@ -32,9 +32,9 @@
 3649530943 6774 .claude/skills/interrogation/SKILL.md
 2323248751 1144 .claude/skills/qa-drivers/browser.md
 1185975541 2759 .claude/skills/qa-drivers/mobile-web.md
-1171685324 4622 .claude/skills/qa-drivers/scenarios.md
-297398171 5791 .claude/skills/qa-drivers/scene.md
-4225199151 7162 .claude/skills/qa-drivers/simulation.md
+1700502845 4843 .claude/skills/qa-drivers/scenarios.md
+1109183683 6101 .claude/skills/qa-drivers/scene.md
+1830557832 7507 .claude/skills/qa-drivers/simulation.md
 3379038249 3064 .claude/skills/qa-drivers/SKILL.md
 1568792004 8375 .claude/skills/review-antihallu/SKILL.md
 1311165776 4774 .claude/skills/review-lenses/SKILL.md
@@ -57,7 +57,7 @@
 497355174 1840 .polype/templates/stories.md
 2457356057 1737 .polype/templates/stories-review.md
 2968085624 1577 .polype/templates/verification-record.md
-4102760803 37943 .polype/hooks/po-bounds.sh
+2988109289 39398 .polype/hooks/po-bounds.sh
 3634281850 25202 .polype/hooks/po-gate.sh
 2080428839 3445 .polype/hooks/po-run.sh
 118128939 189 .polype/hooks/pre-commit
