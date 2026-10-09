@@ -46,7 +46,7 @@ Nothing else is walked. A criterion with no observable effect goes to `## Not se
 4. For each criterion in scope: act as its user would, compare with what the story says, and with the design note for a screen, keep the evidence the driver names, and write each finding with the steps that lead to it. Replay a finding's steps once before calling it verified.
 5. Evidence goes under `docs/qa/<id>/` and nowhere else; anything else a driver produces goes only into the `mktemp -d` directory `qa-drivers` describes, removed at the end.
 6. Stop everything you started, whatever the outcome of the walk.
-7. Run `git -C <path> status --porcelain` again. It lists a path outside `docs/qa/<id>/` that the output kept at step 1 did not list → the report ends in `QA status: blocked`, naming those paths; remove nothing.
+7. Run `git -C <path> status --porcelain` again. It lists a path outside `docs/qa/<id>/` that the output kept at step 1 did not list → the report ends in `QA status: blocked`, naming those paths; remove nothing. A line naming a parent of `docs/qa/<id>/`, such as `?? docs/qa/` at a project's first QA, is set aside too when `git -C <path> ls-files --others --exclude-standard -- <that parent>` lists nothing outside `docs/qa/<id>/`.
 
 ## The report
 Fill `templates/qa.md` into `docs/qa/<id>/report.md`. A walk that could not finish ends in `QA status: blocked`, keeping everything it did see; `complete` means every item in scope was reached or listed in `## Not seen` with its reason. A walk that followed no driver file is never `complete`.
