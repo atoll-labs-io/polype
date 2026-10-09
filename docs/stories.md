@@ -1504,3 +1504,35 @@ Objectif : fermer les majeurs et les mineurs que les revues de M8 ont laissés o
 - [ ] `every_refusal_is_readable` — aucun refus de `po-bounds` n'affiche l'octet de marquage brut, y compris pour une substitution placée dans le nom d'une option.
 - [ ] `named_fd_redirections_are_read` — `{fd}>cible` est lu comme une redirection.
 - [ ] `implementer_explores_a_throwaway_clone` — en mode `implementer`, un dépôt jetable sous le répertoire temporaire accepte les verbes git de lecture et de `checkout`, et rien n'en sort vers le worktree ; une ADR qui remplace en partie ADR-0050 (qui refuse `checkout` en mode `implementer`) le dit, et `method/agents/implementer.md` comme `docs/installation.md` ne l'interdisent plus que dans le worktree de la story.
+
+### s99-throwaway-zone-holds — La zone jetable de l'implementer tient sa promesse
+**En tant que** développeur **je veux** que la zone jetable ouverte à l'implementer par s98 refuse les moyens de viser un autre arbre de travail, comme celle du reviewer **afin qu'**ADR-0072 dise vrai : rien n'en sort vers le worktree.
+
+- **Complexité** : 2
+- **Dépend de** : aucune
+- **Surface** : —
+- **Owns** : `method/hooks/po-bounds.sh`, `method/agents/implementer.md`, `tests/bounds-messages.test.sh`, `tests/throwaway-zone-holds.test.sh`
+- **Corrige** : majeur et mineurs de `docs/reviews/s98-bounds-messages.md`
+
+**Critères d'acceptation**
+- [ ] `throwaway_refuses_another_work_tree` — en mode `implementer`, dans un dépôt jetable, `--work-tree`, `-c core.worktree=…` (et `--config-env` vers cette clé) et une assignation `GIT_WORK_TREE=` ou `GIT_DIR=` sont refusés, comme en mode `reviewer`.
+- [ ] `story_worktree_is_judged_first` — un test place un worktree de story sous le répertoire temporaire et montre qu'il y est jugé comme worktree de story, pas comme dépôt jetable.
+- [ ] `implementer_knows_the_file_url` — `method/agents/implementer.md` dit qu'un clone d'une source locale depuis le répertoire temporaire se fait par `file://<chemin>`.
+
+**Notes pour l'agent** : réutiliser la vérification de clé de configuration du mode `reviewer` (`check_config_key`) plutôt que d'en écrire une seconde ; ADR-0072 n'a pas à changer, puisque le hook la rend vraie.
+
+### s100-qa-evidence-set-aside — La preuve de QA ne bloque jamais sa propre visite
+**En tant que** développeur **je veux** que la comparaison avant/après de chaque pilote reconnaisse sa propre preuve même à la première QA d'un projet, et que les règles du pilote par scénarios aient des tests qui mordent **afin qu'**une première QA ne finisse pas `blocked` sur ses propres fichiers.
+
+- **Complexité** : 2
+- **Dépend de** : aucune
+- **Surface** : —
+- **Owns** : `method/agents/qa.md`, `method/skills/qa-drivers/scenarios.md`, `method/skills/qa-drivers/scene.md`, `method/skills/qa-drivers/simulation.md`, `tests/qa-contract-holds.test.sh`, `tests/qa-evidence-set-aside.test.sh`
+- **Corrige** : majeur et mineurs de `docs/reviews/s93-qa-contract-holds.md` ; mineurs de `docs/reviews/s94-scene-and-simulation-drivers.md` (arrêt des groupes du pilote de scène, attente de l'enregistreur)
+
+**Critères d'acceptation**
+- [ ] `first_qa_sets_its_evidence_aside` — `qa` et les trois pilotes qui comparent l'état du dépôt mettent de côté `docs/qa/<id>/` et toute ligne parente qui ne couvre que lui (`?? docs/qa/` à la première QA), ou listent les fichiers non suivis un par un.
+- [ ] `bounded_waits_bite` — la conséquence de la limite de 60 secondes du pilote par scénarios et celle de la ligne sans pilote de `qa` ont chacune un test qui échoue quand elle disparaît ou s'inverse.
+- [ ] `scene_and_recorder_stop_cleanly` — le pilote de scène arrête chaque groupe de processus qu'il a lancé et fait quitter le moteur après la capture ; l'attente de l'arrêt de l'enregistreur du pilote de simulation est bornée, et son dépassement est un constat.
+
+**Notes pour l'agent** : `tests/qa-drivers.test.sh`, `tests/scenario-driver.test.sh`, `tests/godot-scene-driver.test.sh`, `tests/ros-simulation-driver.test.sh` et `tests/scene-and-simulation-drivers.test.sh` figent des phrases de ces fichiers : les garder.
