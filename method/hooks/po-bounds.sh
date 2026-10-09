@@ -11,7 +11,10 @@
 #                              cherry-pick, revert, am or pull outside a story/<id> worktree. git
 #                              checkout only in a throwaway repo of the temp dir (as for the reviewer),
 #                              where every path the call names and each redirection target must stay
-#                              under the temp dir too (ADR-0072).
+#                              under the temp dir too (ADR-0072). In that repo --git-dir, --work-tree,
+#                              a -c or --config-env setting core.worktree, and a word starting with
+#                              GIT_DIR=, GIT_WORK_TREE=, GIT_CONFIG_PARAMETERS= or GIT_CONFIG_COUNT=
+#                              are refused, as for the reviewer.
 #   po-bounds.sh qa            Write: the path must lie in docs/qa/<id>/ of the story whose linked
 #                              story/<id> worktree holds it; the rest of docs/ is refused too.
 #                              Bash: every git call must use a reading verb of an allowlist
@@ -662,11 +665,22 @@ check_redirects() {
 check_config_key() {
   local key
   key="$(printf '%s' "${1%%=*}" | tr '[:upper:]' '[:lower:]')"
-  [ "$key" != core.worktree ] || deny "core.worktree points git elsewhere, forbidden to the reviewer: $cmd"
+  [ "$key" != core.worktree ] || deny "core.worktree points git elsewhere, forbidden to the $mode: $cmd"
+}
+
+# Succeeds, printing the variable name, when the typed word ($1) assigns a variable that points git
+# elsewhere. A quoted value is still an assignment (GIT_DIR="/x" git log), so q words count too.
+git_env_word() {
+  case "${1:0:1}:${1:1}" in
+    [uq]:GIT_DIR=*|[uq]:GIT_WORK_TREE=*|[uq]:GIT_CONFIG_PARAMETERS=*|[uq]:GIT_CONFIG_COUNT=*)
+      printf '%s' "${1:1}" | sed 's/=.*//'; return 0 ;;
+  esac
+  return 1
 }
 
 check_bash() {
-  local cmd="$1" cur="$2" mode="$3" lexed line i j k n w a verb dir nonopt re throwaway
+  local cmd="$1" cur="$2" mode="$3" lexed line i j k n w a verb dir nonopt re throwaway pointer envpoint="" ev
+  local -a cfgs=()
   local -a words=() vals=() all=() redirs=()
   lexed="$(printf '%s' "$cmd" | lex_command)" || deny "po-bounds cannot read this command: the lexer failed: $cmd"
   while IFS= read -r line; do
@@ -674,6 +688,15 @@ check_bash() {
   done <<< "$lexed"
   re='^-[A-Za-z]*[fDMC][A-Za-z]*$'
   [ "$mode" = qa ] || temp_root
+  if [ "$mode" = implementer ]; then
+    # The whole command: an export in an earlier simple command still reaches the git call.
+    while IFS= read -r line; do
+      IFS=$'\037' read -ra all <<< "$line"
+      for a in ${all[@]+"${all[@]}"}; do
+        [ -z "$envpoint" ] && envpoint="$(git_env_word "$a")" || true
+      done
+    done <<< "$lexed"
+  fi
   while IFS= read -r line; do
     [ -n "$line" ] || continue
     all=(); words=(); vals=(); redirs=()
@@ -684,11 +707,9 @@ check_bash() {
     n=${#words[@]}
     for ((k = 0; k < n; k++)); do vals[k]="${words[k]#?}"; done
     if [ "$mode" = reviewer ]; then
-      # A quoted value is still an assignment (GIT_DIR="/x" git log), so q words count too.
       for ((k = 0; k < n; k++)); do
-        case "${words[k]:0:1}:${vals[k]}" in
-          [uq]:GIT_DIR=*|[uq]:GIT_WORK_TREE=*|[uq]:GIT_CONFIG_PARAMETERS=*|[uq]:GIT_CONFIG_COUNT=*) deny "${vals[k]%%=*} points git elsewhere, forbidden to the reviewer: $cmd" ;;
-        esac
+        ev="$(git_env_word "${words[k]}")" || continue
+        deny "$ev points git elsewhere, forbidden to the reviewer: $cmd"
       done
     fi
     i=0
@@ -706,21 +727,25 @@ check_bash() {
       fi
       # Quoted text is a git call only as the command word ("git", env \git, A=1 'git').
       if { [ "$w" = git ] || [[ "$w" == */git ]]; } && [ "${words[i]:0:1}" != q ]; then
-        j=$((i + 1)); dir="$cur"
+        j=$((i + 1)); dir="$cur"; pointer=""; cfgs=()
         while [ "$j" -lt "$n" ]; do
           case "${vals[j]}" in
             -C) dir="$(step_dir "$dir" "${vals[j+1]-}")"; j=$((j + 2)) ;;
             --git-dir=*|--work-tree=*)
               [ "$mode" != reviewer ] || deny "git ${vals[j]%%=*} points git elsewhere, forbidden to the reviewer: $cmd"
+              [ -n "$pointer" ] || pointer="${vals[j]%%=*}"
               j=$((j + 1)) ;;
             --git-dir|--work-tree)
               [ "$mode" != reviewer ] || deny "git ${vals[j]} points git elsewhere, forbidden to the reviewer: $cmd"
+              [ -n "$pointer" ] || pointer="${vals[j]}"
               j=$((j + 2)) ;;
             -c|--config-env)
               [ "$mode" != reviewer ] || check_config_key "${vals[j+1]-}"
+              cfgs+=("${vals[j+1]-}")
               j=$((j + 2)) ;;
             --config-env=*)
               [ "$mode" != reviewer ] || check_config_key "${vals[j]#*=}"
+              cfgs+=("${vals[j]#*=}")
               j=$((j + 1)) ;;
             --git-dir|--work-tree|--namespace|--attr-source) j=$((j + 2)) ;;
             -*) j=$((j + 1)) ;;
@@ -777,6 +802,9 @@ check_bash() {
               ;;
           esac
           if [ "$throwaway" = yes ]; then
+            [ -z "$pointer" ] || deny "git $pointer points git elsewhere, forbidden to the implementer in a throwaway repo: $cmd"
+            for a in ${cfgs[@]+"${cfgs[@]}"}; do check_config_key "$a"; done
+            [ -z "$envpoint" ] || deny "$envpoint points git elsewhere, forbidden to the implementer in a throwaway repo: $cmd"
             check_temp_paths "$dir" "$j"
             check_redirects "$cur"
           fi
