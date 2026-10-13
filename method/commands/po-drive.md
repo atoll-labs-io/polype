@@ -28,7 +28,7 @@ You drive the fleet: you prepare the lanes, dispatch the subagents, check what c
 ## The ready set
 State comes from the worktrees and from git, derived the way `/po-status` derives it (`method/commands/po-status.md`), never from what you remember of an earlier wave: since then a lane may have finished, failed or been interrupted.
 
-Read, for each story of `docs/stories.md`: whether it is shipped — a commit whose subject starts with `<id>:` on `Target branch` — its dependencies, and the `Owns` paths the story declares.
+Read, for each story of `docs/stories.md`: whether it is shipped — a story `s<n>-<slug>` is shipped when a commit on `Target branch` or `origin/<Target branch>` has a subject starting with `<id>:`, or, when no commit does, with `s<n>:` exactly, its number written as the id writes it — its dependencies, and the `Owns` paths the story declares.
 
 A story is **ready** when the three hold together:
 1. it is not shipped;
@@ -65,7 +65,7 @@ The table is read top to bottom and **the first row that matches wins**: several
 | review whose last `Ship allowed:` is `yes`, `Merge mode: pr`, `gh pr view story/<id> --json state --jq .state` printing `OPEN`, and an effective `Ship confirmation` of `human` (the line, or a collaborative forge as `/po-ship` reads it) | a human merge — the lane waits: no subagent, no ship rerun, its pull request URL in the report |
 | review whose last `Ship allowed:` is `yes`, `Merge mode: pr`, and `gh pr view story/<id> --json state --jq .state` printing `CLOSED` | a human — the pull request was closed without a merge |
 | review whose last `Ship allowed:` is `yes` | the ship |
-| a commit whose subject starts with `<id>:` on `Target branch` | nothing — the story is done |
+| the story is shipped, as `## The ready set` reads it | nothing — the story is done |
 
 Under an effective `automatic`, an open pull request matches neither the waiting row nor the closed row, so the lane resumes at the ship, and `/po-ship` reuses that open pull request rather than opening a second one.
 
