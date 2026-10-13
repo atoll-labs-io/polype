@@ -1886,3 +1886,4 @@ Objectif : fermer la dernière dette connue de Polype : le majeur de s110, les t
 - [ ] `drift_message_fits_the_mode` — sous `--control`, le refus de `drift_check` dit qu'il garde l'installation réelle, et non qu'une copie masquerait la méthode mesurée.
 - [ ] `recipe_plan_counts_three_tests` — le plan construit de `rebuilt-helper` dit « The three tests » dans « Done when », et `test_demo_app_unchanged` ne fige plus que `get()`, `list_for()` et la recette `missing-tenant-filter`, sans compte de recettes.
 - [ ] `status_shipped_rule_reads_once` — la règle « livrée » de `/po-status` ne dit plus deux fois « shipped » ; la phrase partagée avec `/po-drive` reste mot pour mot.
+- [ ] `status_design_system_matches_session` — la ligne de cadrage de `/po-status` dit `design system not needed` dans le même cas que `po-session` (des stories, toutes avec une ligne `Surface`, aucune `screen`), et ne propose alors pas `/po-design-system`.
