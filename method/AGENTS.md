@@ -66,6 +66,18 @@ The main session of a project is its project lead (ADR-0076). While framing is m
 
 The lead answers the question it was asked first, and relaunches the fleet only when the project is waiting for it. At session start it reads the state `po-session` prints — the framing stage, the ready stories, the lanes in flight and what waits for a human — as its first picture of the project; a line `po-session` marks as presumed is confirmed with `/po-drive status` before the lead acts on it.
 
+## What goes to the person
+
+The lead turns to the person for three motives, and only these. First, an incoherence: the code, an accepted ADR and a story contradict each other, and no reading settles which one is right. Second, a new idea outside the approved scope, whoever brought it up. Third, a strategic decision: vision, scope, recurring cost, security, personal data, or anything hard to undo. Everything else the lead settles alone (ADR-0077).
+
+Every technical or technology choice that deserves an ADR is discussed with the person before it is made: a library, a framework, a data model, a protocol, a hosting. The lead brings the options ranked first by the owner's criteria — open source or self-hostable, frugal in hardware, scalable, easy for an AI to handle — as `## Ranking the options` of the `capability-bricks` skill says, then by anything else. An implementation detail inside a validated plan stays with the lead. In doubt, the lead asks.
+
+A plan that needs such a choice holds the line `Technical choice: waiting for a human` on its own, and no agent validates it, whatever `Plan validation` says: `/po-plan` puts the choice to the person, records the answer and removes the line.
+
+Every stop that goes to a human — `Root cause: not found`, `Max attempts` reached, a QA verdict `blocked`, an orphan worktree, a closed pull request, a plan holding the line above — goes to the person at once, one at a time, and the fleet carries on with its other lanes. No gate opens any other way than before, and the stops of ADR-0070 stay stops: raising them early changes when the person hears of them, not what they hold back.
+
+Each decision the lead takes alone — what a wave holds, a fix run started, an implementation detail, an answer given without asking — adds one dated line with its reason to `docs/decisions-log.md`, following `templates/decisions-log.md`. The log is landed after each wave, as `/po-drive` says, so the person can read afterwards what was settled without them (ADR-0080).
+
 ## Law 3 — Every gate is closed until a file opens it
 
 | Gate | Opens when | Guards |
@@ -101,7 +113,7 @@ State the scope before touching anything, change as little as possible, respect 
 ## Law 6 — Evidence lives next to the code
 
 All pipeline output is markdown under `docs/`, in git.
-- The framing files — `docs/prd.md` or `docs/brief.md`, `docs/stories.md`, `docs/reviews/stories.md`, `docs/architecture.md`, `docs/design-system.md` — are committed on `Target branch`. Research, design (`docs/designs/<id>/`), plan, record, QA evidence (`docs/qa/<id>/`) and review travel on `story/<id>`, so the story's commit and its pull request carry their own evidence.
+- The framing files — `docs/prd.md` or `docs/brief.md`, `docs/stories.md`, `docs/reviews/stories.md`, `docs/architecture.md`, `docs/design-system.md`, `docs/decisions-log.md` — reach `Target branch` through a framing pull request, as `## Landing the framing` of `/po-setup` says. Research, design (`docs/designs/<id>/`), plan, record, QA evidence (`docs/qa/<id>/`) and review travel on `story/<id>`, so the story's commit and its pull request carry their own evidence.
 - Keep research under ~200 lines, plans under ~250, reviews under ~150: every stage after yours reads them. Trim sentences, never tables that record decisions.
 - The plan's checkboxes are the progress bar; ticking one never triggers a commit.
 - A story is committed once by the implementer. `/po-qa` commits `docs/qa/<id>/` alone, in a commit of its own, once its report is written. A fix run adds one commit of its own; a migration may get its own commit so it can be reverted alone. Ship lands the story as one commit `<id>: <story title>` on `Target branch`, with no merge commit.

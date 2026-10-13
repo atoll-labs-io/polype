@@ -40,6 +40,7 @@ These signals send a story to the full track:
 - authorization or tenant scope;
 - an API contract;
 - a new dependency;
+- a technical choice that deserves an ADR (library, pattern, data model);
 - a defect to fix: a `Fixes` line (`Corrige` in a French stories file), whose research follows the `diagnostic` skill on the full track.
 
 They are checked twice. First on the story text, before reading the code and before any worktree exists: a signal there → stop and point to `/po-research <id>`. Then after reading the code, since the code often shows what the story left out.
@@ -69,6 +70,8 @@ Leave the plan uncommitted; the implementer commits it with the code.
 The rule of `/po-plan`, per `Plan validation`:
 - `human`: AskUserQuestion "Approve the plan for <id>?" with the facts, tasks and test strategy summarised; answers Approve / Change / Stop. Write `validated: yes` into the frontmatter on Approve only.
 - `autonomous`: check the plan against each acceptance criterion yourself, write `validated: yes`, and say that no human reviewed it.
+
+A plan that needs a technical choice deserving an ADR is never validated here, whatever `Plan validation` says: the story leaves the short track for `/po-research <id>`, and `/po-plan` puts the choice to the person.
 
 Without `validated: yes`, nothing below starts.
 

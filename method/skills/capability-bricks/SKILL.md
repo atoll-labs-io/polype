@@ -6,6 +6,10 @@ description: The default brick of each capability, its alternatives and when to 
 
 A capability is an interface the application codes against; a brick is one implementation of it. Each default is picked self-hostable first, so the edition users run on their own servers needs no account with any third party. The table below comes from Polype's ADR-0020 and is complete here: a project that does not carry that ADR reads it from this file.
 
+## Ranking the options
+
+Whenever options are compared — the brick of a capability, a switch away from it, a library, a pattern, a data model — they are ranked first by the owner's criteria, in this order: open source or self-hostable, frugal in hardware, scalable, easy for an AI to handle. Only then do other considerations weigh, such as price, familiarity or popularity. An option ranked lower is retained only when the ADR writes down the criterion that justifies passing over the ones above it.
+
 ## Default bricks
 
 | Capability | Default brick | Alternatives | Switch when |

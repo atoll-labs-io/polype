@@ -32,6 +32,8 @@ Then check the framing on `Target branch`, following `Entry mode`:
 
 A story with a screen (`AGENTS.md`, Law 1) also needs, before any worktree exists, `docs/design-system.md` on `Target branch` and a `Design source` other than `—`: the design stage stops without them. Either missing → stop now and point to `/po-design-system`, or ask the person to set `Design source`, rather than run research and stop at stage 3.
 
+Every stop for a human in the stages below — a research without a root cause at stage 2, a plan holding the line `Technical choice: waiting for a human` that the person did not settle at stage 4, a QA report `blocked` at stage 6, the fix runs spent at stage 7 — ends this run at once and reports that stop alone, with its reason. The lanes `/po-drive` runs are not this command's, and nothing here pauses them.
+
 ## Stage 1 — Track
 Read `Story track`; a missing setting is a stop, never a guess.
 - `full` → the full track.
@@ -49,7 +51,7 @@ Create or confirm the worktree as `/po-research` describes. Write `docs/research
 Only for a story with a screen; skip it otherwise. Apply `/po-design` in the story worktree, reusing `docs/designs/<id>/design.md` if it already exists. The approval here is the one `/po-design` defines.
 
 ## Stage 4 — Plan — checkpoint
-Write `docs/plans/<id>.md` under the `/po-plan` contract if it does not exist. When `docs/designs/<id>/design.md` exists, read it with the research: the screen tasks build what it settles, cite it, and add nothing it leaves out. If the plan's frontmatter already has `validated: yes`, move on. Otherwise:
+Write `docs/plans/<id>.md` under the `/po-plan` contract if it does not exist. When `docs/designs/<id>/design.md` exists, read it with the research: the screen tasks build what it settles, cite it, and add nothing it leaves out. If the plan's frontmatter already has `validated: yes`, move on. A plan holding the line `Technical choice: waiting for a human` first has its choice put to the person, as `## Approval` of `/po-plan` says, before either bullet below and whatever `Plan validation` says. Then, for a plan still without `validated: yes`:
 - `Plan validation: human` → AskUserQuestion "Approve the plan for <id>?" with tasks, files and test strategy; Approve / Change / Stop. Only Approve writes `validated: yes`; the other answers end the run.
 - `autonomous` → check the plan against every acceptance criterion, write `validated: yes`, and state that no human reviewed it.
 

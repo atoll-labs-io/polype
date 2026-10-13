@@ -27,7 +27,7 @@ Run as a command, this plan is written in this context on the session's model, w
 
 Everything below reads and writes inside the worktree.
 
-**A plan file already present?** Skip to "Approval" with a summary of it.
+**A plan file already present?** Skip to "Approval" with a summary of it. When it holds the line `Technical choice: waiting for a human`, that choice is the first thing "Approval" puts to the person.
 
 ## Inputs
 The story, `docs/research/<id>.md`, `docs/designs/<id>/design.md` when it exists, `AGENTS.md`, `docs/architecture.md` if present, and the accepted ADRs. The test strategy follows the `testing-doctrine` skill.
@@ -42,11 +42,13 @@ Without a research file, warn that the plan would rest on documents that may no 
 - **The pivot**: the decision everything hinges on and how it could be wrong.
 - When `docs/designs/<id>/design.md` exists, the screen tasks build what it settles, cite it, and add nothing it leaves out.
 - More than about ten tasks, or a story rated 5 → recommend splitting the story instead of writing a long plan.
-- A structural choice with alternatives (library, pattern, data model) gets an ADR in `<ADR directory>` from `templates/adr.md`; it stays on the story branch.
+- A choice that deserves an ADR (library, pattern, data model) is not settled here. Draft it as an ADR in `<ADR directory>` from `templates/adr.md` with `status: proposed`, its options ranked by the owner's criteria as `## Ranking the options` of the `capability-bricks` skill says; it stays on the story branch. Write the tasks for the top-ranked option, name the ADR in the plan, and put the line `Technical choice: waiting for a human` alone on its line in the plan body. Such a plan never validates itself, whatever `Plan validation` says (ADR-0077).
 
 Fill `templates/plan.md` into `docs/plans/<id>.md`, frontmatter `validated: no`, **250 lines at most**. Shorten prose, keep decision tables whole.
 
 ## Approval — per `Plan validation`
+A plan holding the line `Technical choice: waiting for a human` is settled with the person first, whatever `Plan validation` says: AskUserQuestion with the ADR's options in their ranked order, the person free to answer something else. Then set the ADR to `status: accepted`, or rewrite it for the option chosen; rewrite the tasks the choice changes; remove the marker line. Only then do the two bullets below apply.
+
 - `human`: AskUserQuestion "Approve the plan for <id>?" with the tasks, files and test strategy summarised; answers Approve / Change / Stop. Write `validated: yes` into the frontmatter on Approve and on nothing else.
 - `autonomous`: check the plan against each acceptance criterion yourself, write `validated: yes`, and state that no human reviewed it.
 
