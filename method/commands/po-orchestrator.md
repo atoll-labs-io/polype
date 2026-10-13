@@ -80,4 +80,13 @@ Any other blocked review → back to stage 5 as a fix run, with the full latest 
 ## Stage 8 — Ship — checkpoint
 Apply `/po-ship`: verdict gate, expensive checks, then the one-commit landing through its pull request. The human checkpoint of this stage is the one `/po-ship` defines for `Ship confirmation` and `Merge mode`, the ship following the effective `Ship confirmation` that `/po-ship` settles from the forge (`## The forge's review rule`) — an AskUserQuestion before a local merge, or the pull request itself in pr mode. Cleanup only after proof of the merge.
 
+## The decisions log
+This run settles some things without the person (ADR-0077), and each gets one row: each plan it approved under `Plan validation: autonomous`, and each fix run it started. That holds on the full track, at Stage 4 and Stage 7, and on the short track for a `/po-flow` run this command handed the story to.
+
+The rows go to `docs/decisions-log.md` in the repository root, through Bash; the file is created from `templates/decisions-log.md` when it is absent. Each row is dated `YYYY-MM-DD` and carries its reason, and no row already there is rewritten.
+
+They are written once the story has shipped or the run stopped, never before its ship: a local ship stops on a tracked file modified in the root (`method/commands/po-ship.md`). Then land the file as `## Landing the framing` of `/po-setup` says, slug `decisions-log`, path `docs/decisions-log.md`, message `docs: decisions log`, as `/po-drive` does. A stop of that landing is reported and leaves the story's own outcome as it was.
+
+A run that decided nothing alone writes no row.
+
 Finish with "<id> shipped.", "Pull request ready: <url>.", or the stage that stopped, what is missing, and the next command.
