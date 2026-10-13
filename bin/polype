@@ -231,6 +231,58 @@ drop_legacy_claude_md_import() {
   fi
 }
 
+# The SessionStart hook is merged into the project's own .claude/settings.json, never laid down:
+# the file holds the project's other settings, and the manifest must not claim it.
+session_hook_filter='.hooks.SessionStart = [ (.hooks.SessionStart // [])[]
+    | .hooks = [ (.hooks // [])[] | select((.command // "") | contains(".polype/hooks/po-session.sh") | not) ]
+    | select(.hooks | length > 0) ]'
+
+settings_file_is_usable() {
+  local settings="$1"
+  command -v jq >/dev/null 2>&1 || { echo "polype: jq not found; $2" >&2; return 1; }
+  [ -f "$settings" ] || return 0
+  jq -e 'type == "object"' "$settings" >/dev/null 2>&1 && return 0
+  echo "polype: .claude/settings.json is not a valid JSON object; left untouched, $2" >&2
+  return 1
+}
+
+wire_session_hook() {
+  local settings="$project/.claude/settings.json"
+  settings_file_is_usable "$settings" "the SessionStart hook was not wired into .claude/settings.json" || return 0
+  mkdir -p "$project/.claude"
+  # The variable stays literal: Claude Code expands it when the hook runs.
+  if { if [ -f "$settings" ]; then cat "$settings"; else echo '{}'; fi; } \
+      | jq --arg cmd '"$CLAUDE_PROJECT_DIR"/.polype/hooks/po-session.sh' \
+           "$session_hook_filter | .hooks.SessionStart += [{hooks: [{type: \"command\", command: \$cmd}]}]" \
+      > "$settings.polype-next"; then
+    mv -f "$settings.polype-next" "$settings"
+  else
+    rm -f "$settings.polype-next"
+    echo "polype: could not merge the SessionStart hook into .claude/settings.json; left untouched" >&2
+  fi
+}
+
+# A file left with nothing but the emptied structure goes, so .claude/ can be pruned after it.
+unwire_session_hook() {
+  local settings="$project/.claude/settings.json"
+  [ -f "$settings" ] || return 0
+  settings_file_is_usable "$settings" "the SessionStart hook was left in .claude/settings.json" || return 0
+  jq -e '[.hooks.SessionStart[]?.hooks[]?.command? // empty | select(contains(".polype/hooks/po-session.sh"))] | length > 0' \
+    "$settings" >/dev/null 2>&1 || return 0
+  if jq "$session_hook_filter
+        | if (.hooks.SessionStart | length) == 0 then del(.hooks.SessionStart) else . end
+        | if (.hooks | length) == 0 then del(.hooks) else . end" "$settings" > "$settings.polype-next"; then
+    if jq -e 'length == 0' "$settings.polype-next" >/dev/null 2>&1; then
+      rm -f "$settings.polype-next" "$settings"
+    else
+      mv -f "$settings.polype-next" "$settings"
+    fi
+  else
+    rm -f "$settings.polype-next"
+    echo "polype: could not take the SessionStart hook out of .claude/settings.json; left untouched" >&2
+  fi
+}
+
 # AGENTS.md, .gitignore and core.hooksPath belong to a project, never to the user home.
 wire_the_project() {
   [ "$mode" = global ] && return 0
@@ -238,6 +290,7 @@ wire_the_project() {
   drop_legacy_claude_md_import
   ignore_worktrees_and_env
   set_hooks_path
+  wire_session_hook
   missing_settings >&2
 }
 
@@ -271,7 +324,7 @@ done_message() {
     global)
       echo "Polype $POLYPE_VERSION installed in $root ($(wc -l < "$manifest") files), payload in $state_dir. Run 'polype init <project-dir>' in each project." ;;
     init)
-      echo "Polype $POLYPE_VERSION activated in $project ($(wc -l < "$manifest") files). Commit .polype/, AGENTS.md and .gitignore on the target branch so story worktrees get them." ;;
+      echo "Polype $POLYPE_VERSION activated in $project ($(wc -l < "$manifest") files). Commit .polype/, .claude/settings.json, AGENTS.md and .gitignore on the target branch so story worktrees get them." ;;
     *)
       echo "Polype $POLYPE_VERSION installed in $project ($(wc -l < "$manifest") files). Commit .claude/, .polype/, AGENTS.md and .gitignore on the target branch so story worktrees get them." ;;
   esac
@@ -414,7 +467,7 @@ cmd_remove() {
   while IFS= read -r path; do rm -f "$root/$path"; done < "$manifest"
   rm -f "$manifest" "$checksums" "$version_file"
   # The payload lives there too, and nothing else does.
-  if [ "$mode" = global ]; then rm -rf "$state_dir"; fi
+  if [ "$mode" = global ]; then rm -rf "$state_dir"; else unwire_session_hook; fi
   prune_empty_dirs
   unwire_the_project
 

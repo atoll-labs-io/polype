@@ -78,6 +78,10 @@ plus bas. Aucune copie des commandes, des subagents ni des skills : ils sont dé
 ajoute au tableau ci-dessus `.claude/commands/`, `.claude/agents/` et `.claude/skills/`. C'est la
 bonne forme pour un dépôt partagé dont on ne contrôle pas le `~/.claude` des autres.
 
+Ouvrir une session suffit : le chef de projet reprend le projet. Le hook `SessionStart` que la pose
+ajoute à `.claude/settings.json` lui donne l'état lu sur le disque et dans git — étape du cadrage,
+stories prêtes, voies en vol, ce qui attend un humain — sans commande à taper.
+
 ### Le hook des bornes de l'implementer
 
 Le frontmatter du subagent `implementer` déclare un hook PreToolUse sur `Edit`, `Write` et `Bash`
@@ -185,9 +189,14 @@ En plus des copies, `init` comme `install <projet>` :
   `.worktrees/` par défaut) et `.env*`, une seule fois chacun ;
 - avec `--hooks`, pointe `core.hooksPath` sur `.polype/hooks` — et seulement si ce réglage est vide
   ou déjà le nôtre : un `core.hooksPath` existant est laissé tel quel, à charger de chaîner
-  `.polype/hooks/pre-commit` depuis là.
+  `.polype/hooks/pre-commit` depuis là ;
+- fusionne avec `jq` le hook `SessionStart` (`.polype/hooks/po-session.sh`) dans le
+  `.claude/settings.json` du projet, créé s'il manque : les autres clés et les autres hooks restent
+  tels quels, et une pose répétée ne le duplique pas. Le fichier n'entre pas dans le manifeste. Sans
+  `jq`, la pose continue, saute ce seul hook et le dit sur `stderr` ; un `settings.json` qui n'est
+  pas un objet JSON valide n'est pas touché.
 
-Ces fichiers se commitent sur la branche cible pour que les worktrees de story en héritent.
+Ces fichiers, `.claude/settings.json` compris, se commitent sur la branche cible pour que les worktrees de story en héritent.
 
 ## Les trois fichiers d'état
 
@@ -264,6 +273,11 @@ pas créé.
 `.claude/` et `.polype/` devenus vides. Il retire l'ancienne ligne `@AGENTS.md` de `CLAUDE.md` comme le fait la pose, supprime
 `AGENTS.md` seulement s'il porte le marqueur d'assemblage, et remet `AGENTS.md.before-polype` à sa
 place s'il existe. Il ne rend `core.hooksPath` à git que si ce réglage vaut `.polype/hooks`.
+
+`remove <projet>` retire aussi le hook `SessionStart` de `.claude/settings.json` (avec `jq` ; sans
+lui, il le dit et laisse le fichier). Si plus rien d'autre n'y reste, le fichier est supprimé, puis
+`.claude/` s'il est vide — y compris quand le fichier ne contenait que `{}` avant la pose : `remove`
+ne sait pas distinguer ce cas d'un fichier vidé par lui.
 
 Restent intacts : `AGENTS.local.md`, `docs/`, le `.gitignore` (les deux lignes ajoutées y restent —
 un worktree encore en place ne doit pas se retrouver suivi), et tout fichier que le projet a ajouté

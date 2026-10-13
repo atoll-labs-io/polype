@@ -8,6 +8,8 @@ Reads settings: none
 
 **Aucune modification du code en dehors d'une story**, sauf un correctif rapide que tu annonces toi-même.
 
+Ouvrir une session sur le projet suffit : le chef de projet reprend où il en est, sans commande à taper.
+
 ## Installation
 - `polype install --global` puis `polype init <projet>` — la méthode dans `~/.claude` pour tous les projets, puis l'activation d'un dépôt ; `polype install <projet>` pose tout dans un seul dépôt.
 - `polype check` — la version posée et les fichiers qui ont dérivé depuis.
