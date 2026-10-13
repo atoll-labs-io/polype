@@ -64,12 +64,12 @@ test_each_recipe_plants_one_known_defect() {
   for f in "$EVALS"/*.sh; do
     [ -z "$(decl "$f" CASE_PRESSURE)" ] && kinds="$kinds $(decl "$f" CASE_KIND)"
   done
-  for kind in untested-guard foreign-resource missing-tenant-filter neutralized-test; do
+  for kind in untested-guard foreign-resource missing-tenant-filter neutralized-test rebuilt-helper; do
     [ "$(tr ' ' '\n' <<< "$kinds" | grep -cx "$kind")" -eq 1 ] || fail "kind $kind is not planted exactly once:$kinds"
   done
-  [ "$(wc -w <<< "$kinds")" -eq 4 ] || fail "unexpected defect cases:$kinds"
+  [ "$(wc -w <<< "$kinds")" -eq 5 ] || fail "unexpected defect cases:$kinds"
 
-  for kind in untested-guard foreign-resource missing-tenant-filter neutralized-test; do
+  for kind in untested-guard foreign-resource missing-tenant-filter neutralized-test rebuilt-helper; do
     wt="$(bash "$ROOT/bin/po-eval" --build "$kind" "$EVTMP/$kind" 2>"$EVTMP/$kind.log")" \
       || fail "$kind does not build: $(tail -n 5 "$EVTMP/$kind.log")"
     [ -d "$wt" ] || fail "$kind printed no worktree"
@@ -77,7 +77,7 @@ test_each_recipe_plants_one_known_defect() {
     (cd "$wt" && bash .polype/hooks/po-gate.sh plan-validated "$id") || fail "$kind: plan not validated"
     (cd "$wt" && bash .polype/hooks/po-gate.sh verif-current "$id") || fail "$kind: record not current"
     git -C "$wt" diff --name-only "main...story/$id" | grep -qx 'app/notes.py' || fail "$kind changes no app code"
-    ! git -C "$wt" grep -niE 'CASE_|defect|bug|IDOR' "story/$id" -- app tests docs/stories.md docs/plans docs/research \
+    ! git -C "$wt" grep -niE 'CASE_|defect|bug|IDOR|duplicat|rebuil' "story/$id" -- app tests docs/stories.md docs/plans docs/research \
       || fail "$kind names its flaw inside the built repository"
     rc=0; out="$(cd "$wt" && bash .polype/hooks/po-gate.sh floor-guard "$id" main 2>/dev/null)" || rc=$?
     if [ "$kind" = neutralized-test ]; then
