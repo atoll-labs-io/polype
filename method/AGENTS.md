@@ -7,6 +7,8 @@ Polype writes this section and rewrites it on every install. Your project speaks
 
 A setting is a line `Name: value` in `AGENTS.local.md`; its value is the text after the first colon, trimmed. An agent reads settings, it never decides them, and it never fills a missing one with a guess. `—` is a real value: "this project has none". When a command needs something set to `—`, it reports that the project lacks it and carries on without it or stops, as its own file says — it never swaps in an alternative.
 
+`Ship confirmation` alone carries an origin: a final `(forge)` or `(chosen)` on its value says where the value came from and is not part of it, so `human (forge)` reads `human` wherever a command compares the value. A value with no suffix reads as `(forge)` (ADR-0079). Only these two words count as an origin; a parenthesis ending any other value, such as a free-text `Design tool`, belongs to that value. One exception to "an agent reads settings, it never decides them" follows from it: `/po-ship` rewrites a `Ship confirmation` value that reads `(forge)` so that it follows the forge, on a branch and a draft pull request, never on `Target branch`. A `(chosen)` value is never rewritten by an agent.
+
 ## Law 1 — Nothing reaches the code except through a story
 
 Every change is a story unless the user explicitly calls it a quick fix. Framing runs once, before the first story; then each story walks its own cycle.
@@ -51,6 +53,8 @@ Stories are written in `docs/stories.md`, following `templates/stories.md`.
 `/po-drive` is one driver: it opens one lane per ready story and advances those lanes at the same time, a lane being that story's worktree and the subagents working in it. `/po-drive status` derives the same state and launches nothing — what is in flight, what waits, and for which reason.
 
 Two limits keep the parallelism honest. **Ships stay serial**: a lane whose review passed lands on `Target branch` alone, the next one lands after it, in the order the reviews passed. **`Owns` bounds a lane**: the `Owns` line of a story fixes the paths its lane may change, and two stories sharing one of those paths never run at once — the second waits for the first to ship. Two stories share a path when an `Owns` entry of one overlaps an entry of the other, by the overlap rule of check 8 of the `stories-review` skill.
+
+Under an effective `Ship confirmation: human` with `Merge mode: pr`, opening the pull request is not the landing: the fleet opens it, moves on to its other lanes, and may open the next lane's pull request while the first one waits. Those stories land in the order a person merges them, and a lane is cleaned up only once its merge is proven.
 
 ## Law 2 — Whoever writes the code does not judge it
 
@@ -112,7 +116,7 @@ A story id is `s<number>-<slug>` (for example `s04-refund-order`). It is chosen 
 
 ## Merging
 
-Every story reaches `Target branch` as one commit titled `<id>: <story title>`, with no merge commit (ADR-0080, ADR-0081). `/po-ship` builds that commit beside `story/<id>`, which keeps its reviewed tree. No agent pushes `Target branch`: `Merge mode: pr` pushes the landing commit to the story branch and lands it through a pull request; `local` is only for a repository without a remote, where the commit lands on this machine and nothing is pushed. `Ship confirmation: human` means a person approves each merge; `automatic` means the gate is enough. Either way, cleanup waits for proof that the landing happened.
+Every story reaches `Target branch` as one commit titled `<id>: <story title>`, with no merge commit (ADR-0080, ADR-0081). `/po-ship` builds that commit beside `story/<id>`, which keeps its reviewed tree. No agent pushes `Target branch`: `Merge mode: pr` pushes the landing commit to the story branch and lands it through a pull request; `local` is only for a repository without a remote, where the commit lands on this machine and nothing is pushed. `Ship confirmation: human` means a person approves each merge; `automatic` means the gate is enough. Either way, cleanup waits for proof that the landing happened. The value `/po-ship` acts on is the effective one: `human` on a collaborative repository whatever the line says (`/po-ship`, `## The forge's review rule`). `po-gate ship-allowed` is required before any merge, whatever the value.
 
 ## Tests
 

@@ -2,15 +2,15 @@
 
 This file is the project's. Polype's installer never rewrites it; `/po-setup` writes it once and you edit it afterwards. Rules live in `AGENTS.md`, which the installer regenerates — do not edit that one.
 
-Format: one `Name: value` per line inside the blocks below, with no comment after the value (anything after the colon is the value). After a change, rerun the installer so the conventions at the bottom reach `AGENTS.md`.
+Format: one `Name: value` per line inside the blocks below, with no comment after the value (anything after the colon is the value, except a final `(forge)` or `(chosen)` on `Ship confirmation`, which records where the value came from). After a change, rerun the installer so the conventions at the bottom reach `AGENTS.md`.
 
 ## Pipeline
 
 ```
 Merge mode:        pr
 Target branch:     main
-Plan validation:   human
-Ship confirmation: human
+Plan validation:   autonomous
+Ship confirmation: automatic
 Test budget:       25
 Verification mode: record
 Full suite:        execute-end
@@ -41,8 +41,8 @@ Light up to:       2
 | --- | --- |
 | Merge mode | `pr` — a pull request to the target branch, landed as one commit · `local` — only for a repository without a remote: the commit lands on this machine and nothing is pushed |
 | Target branch | where finished stories land |
-| Plan validation | `human` — you approve each plan · `autonomous` — the planner approves its own and says so |
-| Ship confirmation | `human` — you approve each merge · `automatic` — the review gate is enough |
+| Plan validation | `human` — you approve each plan · `autonomous` — the planner approves its own and says so; the default, since a human is asked only for the reasons ADR-0077 names |
+| Ship confirmation | `human` — you approve each merge · `automatic` — the review gate is enough. A final `(forge)` means the value follows the repository and `/po-ship` keeps it in line at each ship; `(chosen)` is the person's choice on a solo repository, never rewritten by an agent; no suffix reads `(forge)`. A collaborative repository gives `human (forge)` whatever the line says |
 | Test budget | maximum tests per story before the plan must justify more |
 | Verification mode | `record` — a review reuses a current verification record · `rerun` — a review repeats the checks |
 | Full suite | where the complete unit suite runs: `execute-end` · `ship` · `both` |
