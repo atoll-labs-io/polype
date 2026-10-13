@@ -50,6 +50,18 @@ frontmatter_status() {
 
 # --- Framing --------------------------------------------------------------------------------
 
+# True when stories exist, each has a Surface line and none says screen; a story without one may have a screen (Law 1).
+no_story_has_a_screen() {
+  on_target docs/stories.md | awk -v re="$id_re" '
+    function flush() { if (id != "") { n++; if (!surf) unknown = 1; if (scr) screen = 1 } id = ""; surf = 0; scr = 0 }
+    /^##+ / { flush(); line = $0; sub(/^##+ /, "", line); if (match(line, "^" re)) id = substr(line, 1, RLENGTH); next }
+    id != "" && /^- \*\*Surface\*\*/ {
+      surf = 1; v = tolower($0); sub(/^[^:]*:/, "", v)
+      if (v ~ /(^|[^a-z])screen([^a-z]|$)/) scr = 1
+    }
+    END { flush(); exit !(n > 0 && !unknown && !screen) }'
+}
+
 framing() {
   local scope_file="" scope_cmd="" scope stories review arch ds next ready_value
   case "$entry" in
@@ -74,6 +86,7 @@ framing() {
   esac
   if on_target_exists docs/architecture.md; then arch=present; else arch=missing; fi
   if on_target_exists docs/design-system.md; then ds=present; else ds=missing; fi
+  if [ "$ds" = missing ] && [ "$stories" = present ] && no_story_has_a_screen; then ds="not needed"; fi
   echo "Framing: scope $scope · stories $stories · stories review $review · architecture $arch · design system $ds"
 
   if [ -n "$scope_file" ] && [ "$scope" != approved ]; then next="$scope_cmd"
@@ -195,6 +208,10 @@ waiting_for_a_human() {
     if [ -f "$research" ] && grep -qx 'Root cause: not found' "$research" 2>/dev/null \
        && ! { [ -f "$plan" ] && grep -qx 'validated: yes' "$plan" 2>/dev/null; }; then
       lines+=("$id: root cause not found (docs/research/$id.md)")
+    fi
+    if [ -f "$plan" ] && grep -qx 'Technical choice: waiting for a human' "$plan" 2>/dev/null \
+       && ! grep -qx 'validated: yes' "$plan" 2>/dev/null; then
+      lines+=("$id: technical choice waiting for a human (docs/plans/$id.md) → /po-plan $id")
     fi
     if [ "$(last_value 'QA status' "$qa")" = blocked ]; then
       lines+=("$id: QA blocked (docs/qa/$id/report.md)")
