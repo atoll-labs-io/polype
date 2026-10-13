@@ -40,6 +40,7 @@ Without a research file, warn that the plan would rest on documents that may no 
 - Stay within `Test budget`, or explain the excess in the test strategy. Access rules go in the policy's tests only; services test business rules; no pair-by-pair enum tests; each rule at one layer; adapters do not retest a 403.
 - **Run interdicts**: what must stay untouched and what must not be done, each verifiable by the reviewer.
 - **The pivot**: the decision everything hinges on and how it could be wrong.
+- **Reuse**: a `## Reuse` section filled in — for each piece of new code, the first rung of the template's ladder that holds and why each rung above it fails; one line when the plan writes no new code, never a missing section.
 - When `docs/designs/<id>/design.md` exists, the screen tasks build what it settles, cite it, and add nothing it leaves out.
 - More than about ten tasks, or a story rated 5 → recommend splitting the story instead of writing a long plan.
 - A choice that deserves an ADR (library, pattern, data model) is not settled here. Draft it as an ADR in `<ADR directory>` from `templates/adr.md` with `status: proposed`, its options ranked by the owner's criteria as `## Ranking the options` of the `capability-bricks` skill says; it stays on the story branch. Write the tasks for the top-ranked option, name the ADR in the plan, and put the line `Technical choice: waiting for a human` alone on its line in the plan body. Such a plan never validates itself, whatever `Plan validation` says (ADR-0077).
