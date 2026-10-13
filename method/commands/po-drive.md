@@ -39,6 +39,8 @@ Overlap between two `Owns` entries is decided by one rule. Two `Owns` entries ov
 
 Take the ready stories in the order of `docs/stories.md` and stop at `Parallel` lanes, the lanes already running counted in. A story dropped for a conflict is named in the report with the path that collided and the lane holding it, plus the two entries that overlapped and one path matching both; it is the first candidate of the next wave. Nothing ready → report which dependency each story is waiting for and stop the wave.
 
+A lane **waiting for a human merge** — its pull request open under an effective `Ship confirmation: human` — keeps its `Owns` paths, so rule 3 still holds against it, but takes no `Parallel` slot, since no subagent works in it.
+
 ## Resuming
 A wave never sends a story back to stage one: a stop, a crash or a closed session leaves its work in place, and that work is what the lane starts from. For each story the ready set kept, and before any subagent is dispatched, derive the stage it reached from the files of `<Worktree root><id>` and from git — the derivation above, extended to say where the lane resumes:
 
@@ -59,6 +61,8 @@ The table is read top to bottom and **the first row that matches wins**: several
 | `Review status: blocked` and a `Next action:` naming `/po-qa` or the `<id>: QA evidence` commit | the review stage, at the same `Fix loop:` — the QA it waited for is current, or a row above would have matched |
 | review whose last `Ship allowed:` is `no` | a fix run, at loop `Fix loop:` + 1 |
 | review whose last `Ship allowed:` is `yes` but `po-gate ship-allowed <id>` refuses its `Reviewed tree:` | the review stage, at loop `Fix loop:` + 1 |
+| review whose last `Ship allowed:` is `yes`, `Merge mode: pr`, `gh pr view story/<id> --json state --jq .state` printing `OPEN`, and an effective `Ship confirmation` of `human` (the line, or a collaborative forge as `/po-ship` reads it) | a human merge — the lane waits: no subagent, no ship rerun, its pull request URL in the report |
+| review whose last `Ship allowed:` is `yes`, `Merge mode: pr`, and `gh pr view story/<id> --json state --jq .state` printing `CLOSED` | a human — the pull request was closed without a merge |
 | review whose last `Ship allowed:` is `yes` | the ship |
 | a commit whose subject starts with `<id>:` on `Target branch` | nothing — the story is done |
 
@@ -132,12 +136,14 @@ Any other `Ship allowed: no` sends that lane back to `implementer` as a fix run,
 ## Ships, one at a time
 Ships never overlap. `Merge mode: local` requires the repository root clean and on `Target branch` (`method/commands/po-ship.md`), and two merges into the same branch at once would race each other in any mode; so you ship one story, prove it, then ship the next, in the order their reviews passed.
 
-Each ship is `/po-ship` applied as written: `po-gate ship-allowed <id>` first — the **last** `Ship allowed:` line of `docs/reviews/<id>.md` must be `yes` **and** its `Reviewed tree:` must still match the code outside `docs/`, and anything else stops that ship — then the expensive checks once, the one commit titled `<id>: <story title>`, landed through its pull request, and cleanup only on proof of the merge. `Ship confirmation: human` means one AskUserQuestion per merge; `automatic` lets the gate decide alone. On a resumed ship, `/po-ship` reads the pull request already open for `story/<id>` and never opens a second one.
+Each ship is `/po-ship` applied as written: `po-gate ship-allowed <id>` first — the **last** `Ship allowed:` line of `docs/reviews/<id>.md` must be `yes` **and** its `Reviewed tree:` must still match the code outside `docs/`, and anything else stops that ship — then the expensive checks once, the one commit titled `<id>: <story title>`, landed through its pull request, and cleanup only on proof of the merge. `Ship confirmation: human` means one AskUserQuestion per merge under `Merge mode: local`, and a pull request left for a person under `Merge mode: pr`; `automatic` lets the gate decide alone, unless the repository is collaborative (`/po-ship`, `## The forge's review rule`). On a resumed ship, `/po-ship` reads the pull request already open for `story/<id>` and never opens a second one.
+
+Under an effective `human` with `Merge mode: pr`, opening the pull request ends that ship but is not the landing: you move on and may open the next lane's pull request at once. Those stories land in the order a person merges them, and a lane's cleanup waits for its pull request to print `MERGED`. `po-gate ship-allowed <id>` is required before any merge, whatever the value of `Ship confirmation`.
 
 A ship that fails sends its story back to a fix run under the same `Max attempts` cap and leaves the other lanes running. Once a story is shipped, its `Owns` paths are free again and the stories depending on it become ready for the next wave.
 
 ## Report
-One table: story · stage reached · plan · verdict · shipped · models. The report states, per lane and per stage, the model the subagent ran on — the value passed, or `session` when `—` passed none. Then the stories dropped for a conflict, each with the path that collided and the lane holding it, plus the two entries that overlapped and one path matching both; the lanes handed to a human; and the dependencies still blocking. With `$ARGUMENTS` set to `status`, this report is the whole run: no worktree is prepared, no subagent is dispatched, nothing is shipped, no `docs/reviews/<id>.md` is written, and no gate that could change a file is run.
+One table: story · stage reached · plan · verdict · shipped · models. The report states, per lane and per stage, the model the subagent ran on — the value passed, or `session` when `—` passed none. Then the stories dropped for a conflict, each with the path that collided and the lane holding it, plus the two entries that overlapped and one path matching both; the lanes handed to a human; every pull request opened and waiting for a human merge, with its URL; any `Ship confirmation` line a ship rewrote, with its draft URL; and the dependencies still blocking. With `$ARGUMENTS` set to `status`, this report is the whole run: no worktree is prepared, no subagent is dispatched, nothing is shipped, no `docs/reviews/<id>.md` is written, and no gate that could change a file is run.
 
 The plan column says who approved it. Under `Plan validation: autonomous`, the report states that the plans were approved without a human reading them and names the stories concerned; under `human`, it states which plans the wave approved and which ones are still waiting for the next wave.
 
@@ -145,6 +151,6 @@ The same holds for the screens: the report names every story whose design no hum
 
 The report also states, per stage, the activity window of each lane — when its subagent started and when it answered — and whether those windows overlap. A stage whose windows do not overlap is reported as sequential, naming the lanes that ran one after the other. No line of the report claims that lanes ran at the same time unless their activity windows show it; the number of messages the dispatch took is not evidence of anything and is not reported as such.
 
-`status` answers three questions and launches nothing. Per lane in flight: the story, the stage it resumes at, its worktree path, and the loops already spent against `Max attempts`. Then, per story a human must decide on, the reason it waits — a dependency not shipped and which one, an `Owns` collision with the path that collided and the lane holding it, plus the two entries that overlapped and one path matching both, `Max attempts` reached with the open findings, a QA report `blocked`, with its cause, or an orphan worktree as it was found.
+`status` answers three questions and launches nothing. Per lane in flight: the story, the stage it resumes at, its worktree path, and the loops already spent against `Max attempts`. Then, per story a human must decide on, the reason it waits — a dependency not shipped and which one, an `Owns` collision with the path that collided and the lane holding it, plus the two entries that overlapped and one path matching both, `Max attempts` reached with the open findings, a QA report `blocked`, with its cause, a pull request waiting for a human merge, with its URL, or an orphan worktree as it was found.
 
 Finish with the candidates of the next wave, or "Fleet idle: nothing is ready."

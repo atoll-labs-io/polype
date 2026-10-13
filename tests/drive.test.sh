@@ -82,7 +82,7 @@ test_drive_ships_serially_after_each_review() {
   # The gate, read exactly as /po-ship reads it.
   holds "$ships" '`po-gate ship-allowed <id>` first' 'the ship section'
   holds "$ships" 'the **last** `Ship allowed:` line of `docs/reviews/<id>.md` must be `yes` **and** its `Reviewed tree:` must still match the code outside `docs/`' 'the ship section'
-  holds "$ships" '`Ship confirmation: human` means one AskUserQuestion per merge' 'the ship section'
+  holds "$ships" '`Ship confirmation: human` means one AskUserQuestion per merge under `Merge mode: local`, and a pull request left for a person under `Merge mode: pr`' 'the ship section'
 
   # A blocked story loops back, within a bounded number of attempts.
   local verdict; verdict=$(section_of "$DRIVE" 'The verdict, and the fix runs')

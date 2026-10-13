@@ -23,18 +23,21 @@ Collect what the repository states on its own:
 - the package manager, from the lockfile present;
 - the scripts the project really defines (package manifest, Makefile, task runner) — candidates for `Install`, `Test`, `Typecheck`, `E2E`, `Build`, and `Dev`, the command that starts the development server;
 - the default branch: `git symbolic-ref --short refs/remotes/origin/HEAD`, or the current branch when there is no remote;
-- whether the repository has a base, as `/po-architect` defines it: a package manifest, or source files outside Polype's own files (`AGENTS*.md`, `CLAUDE.md`, `docs/`, `.claude/`, `.polype/`, `.gitignore`).
+- whether the repository has a base, as `/po-architect` defines it: a package manifest, or source files outside Polype's own files (`AGENTS*.md`, `CLAUDE.md`, `docs/`, `.claude/`, `.polype/`, `.gitignore`);
+- the forge, read exactly as `/po-ship` reads it (`## The forge's review rule` of `method/commands/po-ship.md`): which forge it is, whether it could be read and, if not, why, and whether the repository is collaborative.
 
 These become the suggested answers. A command you did not find in a file stays `—`.
 
-## Step 2 — Five questions, one AskUserQuestion call each, plus the Platform, design and QA stage follow-ups and the catalogue offer
+## Step 2 — Five questions, one AskUserQuestion call each, plus the Platform, design, QA stage and Ship confirmation follow-ups and the catalogue offer
 1. How stories land: `Merge mode` `pr` when the repository has a remote, `local` only for a repository without a remote (suggest one from `git remote`), and the `Target branch` (suggest the default branch).
-2. Who approves plans: `Plan validation` `human` or `autonomous`. Propose the same value for `Ship confirmation`; change it only if the user asks.
+2. Who approves plans: `Plan validation`, `autonomous` suggested, or `human`.
 3. Where the project starts, `Entry mode`: `replace` (an internal replacement for a paid SaaS), `adapt` (a competing product with an angle of its own) or `new` (an idea built from nothing).
 4. Who draws the screens, `Design source`: `internal` (an agent skill draws them in the repository), `external` (they come from a tool outside it) or not decided yet. Only the source is asked here.
 5. The project commands, `Dev` included, with your suggestions from step 1.
 
 Before the catalogue offer and question 5, make one separate AskUserQuestion call for `Platform`: what the project builds, one or more of `web`, `mobile`, `cli`, `api`, `lib`, `xr`, `robot`. Offer the likeliest ones as options and let the free answer name any of the seven; write the answer separated by commas.
+
+Then `Ship confirmation`, from what step 1 read of the forge. Collaborative → no question: write `human (forge)`, and the setup's last message says which signal made the repository collaborative. Solo or unreadable → one separate AskUserQuestion call for `Ship confirmation`, stating what the forge showed or why it could not be read, with the answers `automatic (chosen)` (suggested) and `human (chosen)`. Tell the person they change it later by asking in conversation; no agent changes a `(chosen)` value on its own.
 
 Once the `Design source` answer is known, make one separate AskUserQuestion call for its detail: the `Design skill` when the answer is `internal`, the `Design tool` when it is `external`; the other one stays `—`. When the source is not decided yet, skip this call: both stay `—`.
 
@@ -42,7 +45,7 @@ Once the `Dev` and `Platform` answers are known, make one separate AskUserQuesti
 
 When step 1 found no base, offer the catalogue before question 5, in one AskUserQuestion: each profile of Polype's catalogue (`boilerplates/*/profile.md` in Polype's repository, when it is at hand) whose `- Platform:` line names one of the project's platforms, with its name and origin, plus the answer "no profile". A chosen profile's `## Commands` block becomes the suggestions of question 5, copied verbatim. No profile fits those platforms → say so and carry on without one. When the catalogue cannot be reached, say so and carry on without a profile. A repository that already has a base gets no offer.
 
-Nothing else is asked beyond these five questions, the `Platform` follow-up, that design follow-up, the `QA stage` follow-up and the catalogue offer; every other setting keeps the template's value, `Story track` and `Flow threshold` included, and so do the model defaults: `Model strong: opus`, `Model light: sonnet`, `Light up to: 2`.
+Nothing else is asked beyond these five questions, the `Platform` follow-up, the `Ship confirmation` follow-up, that design follow-up, the `QA stage` follow-up and the catalogue offer; every other setting keeps the template's value, `Story track` and `Flow threshold` included, and so do the model defaults: `Model strong: opus`, `Model light: sonnet`, `Light up to: 2`.
 
 A `Design source` left at `—` is not a choice: every design command stops on it and asks for the source again. Setup never fills it on the user's behalf.
 
