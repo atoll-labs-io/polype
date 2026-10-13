@@ -27,7 +27,7 @@ test_plan_validated_fails_without_file() {
 }
 
 # A review bound to the tree HEAD has now, followed by the given verdict lines.
-review() { { echo "Reviewed tree: $(git rev-parse 'HEAD^{tree}')"; printf '%b' "$1"; } > docs/reviews/s01-a.md; }
+review() { { echo "Review status: complete"; echo "Reviewed tree: $(git rev-parse 'HEAD^{tree}')"; printf '%b' "$1"; } > docs/reviews/s01-a.md; }
 
 test_ship_allowed_passes_only_on_exact_line() {
   sandbox
@@ -71,11 +71,11 @@ test_ship_allowed_ignores_docs_changes_after_review() {
 test_ship_allowed_fails_without_reviewed_tree() {
   sandbox
   local tree; tree=$(git rev-parse 'HEAD^{tree}')
-  printf 'Max severity: minor\nShip allowed: yes\n' > docs/reviews/s01-a.md
+  printf 'Review status: complete\nMax severity: minor\nShip allowed: yes\n' > docs/reviews/s01-a.md
   ! passes ship-allowed s01-a || fail "a review without 'Reviewed tree:' allowed the ship"
-  printf 'Reviewed tree: %s\nShip allowed: yes\n' "${tree:0:12}" > docs/reviews/s01-a.md
+  printf 'Review status: complete\nReviewed tree: %s\nShip allowed: yes\n' "${tree:0:12}" > docs/reviews/s01-a.md
   ! passes ship-allowed s01-a || fail "an abbreviated tree hash was accepted"
-  printf 'Reviewed tree: %s\nShip allowed: yes\n' "$(printf 'f%.0s' {1..40})" > docs/reviews/s01-a.md
+  printf 'Review status: complete\nReviewed tree: %s\nShip allowed: yes\n' "$(printf 'f%.0s' {1..40})" > docs/reviews/s01-a.md
   ! passes ship-allowed s01-a || fail "a tree naming no object was accepted"
 }
 

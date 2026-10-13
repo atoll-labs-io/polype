@@ -2,8 +2,9 @@
 # po-gate — Polype's gates as plain file checks, so any tool (or CI) can enforce them.
 #
 #   po-gate plan-validated <id>   0 when the plan's frontmatter says `validated: yes`
-#   po-gate ship-allowed <id>     0 when the review's last `Ship allowed:` line says yes and the `Reviewed tree:`
-#                                 of that same review still matches HEAD outside docs/
+#   po-gate ship-allowed <id>     0 when the review's last `Ship allowed:` line says yes, the `Review status:`
+#                                 of that same review and the file's last one say complete, and its `Reviewed tree:`
+#                                 still matches HEAD outside docs/
 #   po-gate verif-current <id>    0 when the verification record is complete, matches HEAD, and every check its
 #                                 `## Checks` table declares has a passing `po-run` row on the recorded code
 #   po-gate qa-current <id>       0 when the committed QA report's last `QA status:` says complete and its `Tree:`
@@ -34,16 +35,22 @@ plan_validated() {
 # The hash of the block closed by the last line matching the verdict ERE: the last `<label>:` line since the previous
 # verdict, so stacked reports pair each verdict with its own tree. A leading `- ` or `* ` is read away; the hash must
 # be 40 hex alone or followed by a blank and a remark (abbreviations would resolve in git, so they are refused).
-paired_hash() {
+paired_value() {
   awk -v label="$1" -v verdict="$2" '
     { line = $0; if (line ~ /^[-*] /) line = substr(line, 3) }
     index(line, label ":") == 1 { cand = substr(line, length(label) + 2); sub(/^[[:space:]]+/, "", cand) }
     $0 ~ verdict { final = cand; cand = ""; closed = 1 }
-    END {
-      h = substr(final, 1, 40)
-      if (closed && length(h) == 40 && h ~ /^[0-9a-f]+$/ && (length(final) == 40 || substr(final, 41, 1) ~ /[[:space:]]/)) print h
-    }
+    END { if (closed) print final }
   ' "$3"
+}
+
+paired_hash() {
+  local final h; final="$(paired_value "$@")"
+  h="${final:0:40}"
+  if [[ "$h" =~ ^[0-9a-f]{40}$ ]] && { [ ${#final} -eq 40 ] || [[ "${final:40:1}" =~ [[:space:]] ]]; }; then
+    echo "$h"
+  fi
+  return 0
 }
 
 tree_exists() { git -C "$(top)" cat-file -e "$1^{tree}" 2>/dev/null; }
@@ -53,11 +60,15 @@ code_matches() { git -C "$(top)" diff --quiet "$1" HEAD -- . ':(exclude)docs'; }
 
 # Only the last verdict line counts: a report may quote an earlier verdict before giving its own.
 ship_allowed() {
-  local review verdict tree; review="$(top)/docs/reviews/$1.md"
+  local review verdict tree pstatus lstatus; review="$(top)/docs/reviews/$1.md"
   [ -f "$review" ] || refuse "$1 has not been reviewed (docs/reviews/$1.md) — /po-review $1" || return 1
   verdict="$(grep -E '^([-*] )?Ship allowed:' "$review" | tail -n 1 | sed 's/^[-*] //' || true)"
   [[ "$verdict" =~ ^Ship\ allowed:[[:space:]]*yes[[:space:]]*$ ]] \
     || refuse "the review of $1 does not allow shipping (last verdict: ${verdict:-none})" || return 1
+  pstatus="$(paired_value 'Review status' '^([-*] )?Ship allowed:' "$review")"
+  lstatus="$(grep -E '^([-*] )?Review status:' "$review" | tail -n 1 | sed -E 's/^([-*] )?Review status:[[:space:]]*//' || true)"
+  { [[ "$pstatus" =~ ^complete[[:space:]]*$ ]] && [[ "$lstatus" =~ ^complete[[:space:]]*$ ]]; } \
+    || refuse "the review of $1 has no 'Review status: complete' line for its last verdict — /po-review $1" || return 1
   tree="$(paired_hash 'Reviewed tree' '^([-*] )?Ship allowed:' "$review")"
   [ -n "$tree" ] || refuse "the review of $1 has no usable 'Reviewed tree:' hash — /po-review $1" || return 1
   { tree_exists "$tree" && code_matches "$tree"; } \
