@@ -22,12 +22,16 @@ A kill PRD keeps the part of the target that people really use and buries the re
    - `new` → stop: "This project starts from an idea, not from an existing SaaS: run /po-brief instead."
    - `—` → stop: "`Entry mode` is not set: run /po-setup or set it in AGENTS.local.md." Do not guess it from the argument.
 3. No target in `$ARGUMENTS` → ask for it before anything else.
-4. `docs/prd.md` exists with `status: draft` → resume: show the validated sections and continue at the first empty one. With `status: approved` → stop and say the PRD is already approved; editing it is the user's call.
+4. `docs/prd.md` exists with `status: draft` → resume: recap the approved sections in a few lines, without showing them again, and continue at the first empty one. With `status: approved` → stop and say the PRD is already approved; editing it is the user's call.
 
 ## Interview rules
 - One question per message. Wait for the answer before the next one.
 - Offer a suggested answer when the target's public product makes one obvious; the user corrects it.
-- Nothing enters `docs/prd.md` before the user validates it. Each section is shown in full, validated, and only then written; the file is created from `templates/prd.md` with `status: draft` when the first section is validated.
+- Nothing enters `docs/prd.md` before the user validates it. The file is created from `templates/prd.md` with `status: draft` when the first section is validated.
+- Each section goes to the user alone, one section per question, with AskUserQuestion: a summary of what the section settles and why, which the user answers Approve / Change / Set aside.
+- The summary aims short and grows when the subject needs it: no fact needed to decide is cut to keep it short.
+- Each item is written only once approved, and the commit asks for no rereading.
+- Change → back to the step of the sequence that section belongs to, then ask about it again. Set aside → drop the draft; the section stays empty, so the interview comes back to it.
 
 ## Sequence
 1. **Target and why** — which product, which plan, and what is wrong with it today.
@@ -49,7 +53,7 @@ A competing product lives or dies by its angle, so treat it like a brand-new ide
 When a probe gets no answer, the angle section records the gap instead of filling it.
 
 ## Finish
-1. Show the whole PRD and ask the user to read it end to end. On approval, set `status: approved`.
+1. Every section was approved on its own question; nothing is shown again for reading, so set `status: approved`.
 2. Commit from the repository root, on `Target branch` only; another branch → stop and say so. Check `git status --porcelain` first: an environment file listed there → stop. Commit `docs/prd.md` alone as `docs: PRD for <target>`.
 
 Finish with: "PRD approved. Next: write the stories in docs/stories.md."

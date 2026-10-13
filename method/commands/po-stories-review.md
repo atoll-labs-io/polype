@@ -7,6 +7,7 @@ allowed-tools:
   - Agent
   - Write
   - Bash
+  - AskUserQuestion
 ---
 # /po-stories-review
 
@@ -38,11 +39,23 @@ Write the subagent's answer, whole, to `docs/reviews/stories.md`, replacing any 
 
 If the subagent fails, times out, returns nothing, or returns a report without both verdict lines, write the file yourself from `templates/stories-review.md`: `Review status: blocked`, the concrete cause, what is missing, what must change, then `Max severity: critical` and `Stories ready: no`. Never guess a verdict.
 
+## Critical findings
+Once the report is written, put each critical finding to the user, one critical finding per question, with AskUserQuestion: a summary of the story, the problem and why it is critical, which the user answers Fix / Accept the risk / Set the story aside.
+The summary aims short and grows when the subject needs it: no fact needed to decide is cut to keep it short.
+- Fix → the finding stays open, and the Outcome sends its story id to `/po-stories <ids>` to be rewritten.
+- Accept the risk → the finding stays open in the report, and nothing is sent back.
+- Set the story aside → the Outcome sends its story id to `/po-stories <ids>` to be removed.
+
+Each answer is appended to that finding's own line in `## Findings` of `docs/reviews/stories.md`, as ` — owner: <answer>`. The `Max severity:` and `Stories ready:` lines are never changed: a verdict is the subagent's, not the owner's.
+
+Majors and minors stay in the report and are not asked. With no critical finding, or with a blocked review written by this command, nothing is asked.
+
 ## Commit
 Check `git status --porcelain` first: an environment file listed there → stop. Commit `docs/reviews/stories.md` alone on `Target branch` as `docs: stories review`.
 
 ## Outcome
 - `Stories ready: yes` → "Stories reviewed. Next: /po-research <first story id>"
-- `Stories ready: no` → list the critical findings, then: "Fix `docs/stories.md` by hand or with /po-stories, then run /po-stories-review again."
+- `Stories ready: no` → list the story ids answered Fix or Set the story aside, then: "Run /po-stories <ids>, then /po-stories-review again." When every critical finding was answered Accept the risk, say that those risks stay open in the report.
+- A blocked review → list what it says is missing, then: "Run /po-stories-review again once that is fixed."
 
 The verdict is a soft gate: `/po-research` warns when `docs/reviews/stories.md` is missing or says `Stories ready: no`, and carries on anyway.

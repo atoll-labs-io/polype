@@ -64,7 +64,12 @@ Write the state patterns — empty, loading, error, success, disabled, focus —
 
 ## Approval and commit
 1. Draft `docs/design-system.md` from `templates/design-system.md`.
-2. One grouped AskUserQuestion shows the draft — sources, tokens, the contrast results and their fixes, the gaps — and asks for approval. A change goes back to the step it belongs to; nothing is written before approval.
+2. Put the draft to the user with AskUserQuestion, one token group, one contrast fix or one gap per question, each of which the user answers Approve / Change / Set aside.
+   - A token group is the tokens of one role (text, surface, border, accent, focus…), with their light and dark values and the measured ratios of their pairs. The state patterns and the do / don't lists then come as one last item.
+   - The summary aims short and grows when the subject needs it: no fact needed to decide is cut to keep it short.
+   - Each item is written only once approved, and the commit asks for no rereading.
+   - Change → back to the step the item belongs to, then ask about it again.
+   - Set aside → a token group or a gap is left out of the file and named in the final message; a contrast fix set aside leaves its pair recorded as failing, with no fix.
 3. Write the file.
 4. Check `git status --porcelain`: an environment file listed there → stop. On `Target branch`, commit `docs/design-system.md` as `docs: design system`.
 

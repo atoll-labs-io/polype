@@ -50,7 +50,7 @@ Number them `NNNN-<slug>.md` from the next free number in `<ADR directory>`, wit
 ## Step 4 — Conventions as rules
 Write the conventions as rules in the `## Conventions` section of `AGENTS.local.md`, with Edit, and edit no other section of that file. A first run replaces the placeholder of that section; a rerun keeps every rule already written there and adds the new ones after them — the section is never rewritten from scratch, because a convention written by hand is not this command's to delete. Each rule is one line an agent can obey, backed by the `path:line` where the base shows it.
 
-A rule already written that the code now contradicts is kept and reported, never deleted in passing; a new rule that contradicts one already written is not added either. Both are quoted to the person in the grouped AskUserQuestion of "Approval and commit", who decides which one stands.
+A rule already written that the code now contradicts is kept and reported, never deleted in passing; a new rule that contradicts one already written is not added either. Both are quoted to the person in the question on the conventions in "Approval and commit", who decides which one stands.
 
 Every settings block of `AGENTS.local.md` stays exactly as it is: this command reads settings, it never decides them.
 
@@ -61,7 +61,13 @@ Never propose rewriting, replacing or restructuring the base: stories adapt to i
 
 ## Approval and commit
 1. Draft `docs/architecture.md` from `templates/architecture.md`, filling its map, capability table, ownership and attachment points from steps 2 and 3.
-2. One grouped AskUserQuestion shows the drafted ADRs, the conventions and `docs/architecture.md` together and asks for approval. On a rerun it also shows what the new conventions would remove or contradict, so approval is given on the difference and not on the draft alone. A change goes back to the step it belongs to; nothing is written before approval.
+2. Put the drafts to the user with AskUserQuestion, one ADR per question, then the conventions as one item, then `docs/architecture.md` summarised as one item, each of which the user answers Approve / Change / Set aside.
+   - Each ADR is summarised as what the ADR decides, why, and the options turned down; a gap ADR also gives the switch condition that justifies it.
+   - On a rerun, the conventions item also shows what the new conventions would remove or contradict, so approval is given on the difference and not on the draft alone.
+   - The summary aims short and grows when the subject needs it: no fact needed to decide is cut to keep it short.
+   - Each item is written only once approved, and the commit asks for no rereading.
+   - Change → back to the step the item belongs to, then ask about it again.
+   - Set aside → an ADR is not written, and its capability goes back to step 3, or is marked not needed in `docs/architecture.md` when the user says so; on the conventions, no new rule is written; on `docs/architecture.md`, the command ends with nothing written.
 3. Write the files. Rerun the installer if it is available, so `AGENTS.md` carries the new conventions; otherwise say that `AGENTS.md` will catch up at the next install.
 4. Check `git status --porcelain`: an environment file listed there → stop. On `Target branch`, commit `docs/architecture.md`, the new ADRs, `AGENTS.local.md` and, when the installer regenerated it, `AGENTS.md`, as `docs: architecture`.
 

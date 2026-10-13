@@ -1,5 +1,6 @@
 ---
 description: Cut the approved PRD or brief into stories an agent can build without asking, and commit docs/stories.md on the target branch
+argument-hint: [story ids sent back by /po-stories-review]
 allowed-tools:
   - Read
   - Glob
@@ -28,8 +29,11 @@ Every later stage reads `docs/stories.md`: research checks its hypotheses, the p
 1. Read the source in full. From a PRD, keep the core loop, the angle and the graveyard at hand; from a brief, the wedge, the non-goals and the premises.
 2. Draft the list of stories: id, title, complexity, dependencies, surface and Owns for each, in dependency order.
 3. Run the checks of "Before writing" on the draft and fix what fails.
-4. Show the list to the user and get explicit agreement. A change of scope, order or split goes back to step 3.
-5. Write each story in full from `templates/stories.md`: the user story, complexity, dependencies, surface, Owns, acceptance criteria, notes for the agent.
+4. Draft each story in full from `templates/stories.md`: the user story, complexity, dependencies, surface, Owns, acceptance criteria, notes for the agent.
+5. Put the stories to the user in order, one story per question, with AskUserQuestion: each summarised as what the story delivers, why, and its acceptance criteria, which the user answers Approve / Change / Set aside.
+   - The summary aims short and grows when the subject needs it: no fact needed to decide is cut to keep it short.
+   - Each item is written only once approved, and the commit asks for no rereading.
+   - Change → back to "Before writing" for that story, then ask about it again. Set aside → the story leaves the draft, and "Before writing" runs again on what remains, since a dependency may now be broken.
 6. `docs/stories.md` already exists → append the new stories after the existing ones, numbered from the next free `s<n>`. Existing ids and stories are never renumbered or rewritten: branches and files already carry them.
 
 ## Before writing
@@ -44,8 +48,15 @@ Go through the draft story by story; a failed line is fixed before anything is w
 - [ ] Every story carries a `Surface` the project's `Platform` admits, by the table of the `agentic-stories` skill, or `—`.
 - [ ] Every interface shared by two stories is an earlier contract story they both depend on.
 
+## A story sent back by the review
+`$ARGUMENTS` holding story ids sent back by `/po-stories-review` → this section replaces the sequence: the command rewrites (Fix) or removes (Set the story aside) those stories and no other, as the review's outcome named them.
+- Each story keeps its id. A story with a `story/<id>` branch or a `docs/research/<id>.md` has already started → stop and say that it has already started; it is not reopened here.
+- A rewritten story goes through "Before writing", then through the one-story question of step 5, and is written in place once approved.
+- This section is the one exception to step 6: only a story sent back by `/po-stories-review` that has not started is rewritten or removed.
+- The commit follows "Finish", with the message `docs: stories fixed after review`.
+
 ## Finish
-1. Show the whole `docs/stories.md` and ask the user to read it end to end; wait for explicit agreement.
+1. Every story was approved on its own question; nothing is shown again for reading.
 2. Commit from the repository root, on `Target branch` only; another branch → stop and say so. Check `git status --porcelain` first: an environment file listed there → stop. Commit `docs/stories.md` alone as `docs: stories for <product>`.
 
 Finish with: "Stories written. Next: /po-research <first story id>"
