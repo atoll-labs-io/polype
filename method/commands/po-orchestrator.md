@@ -76,6 +76,6 @@ A second review blocked on QA or on QA evidence while `story/<id>` already holds
 Any other blocked review → back to stage 5 as a fix run, with the full latest report. After two fix runs still blocked → stop and list the open findings for a human. A verdict is never softened to reach the next stage.
 
 ## Stage 8 — Ship — checkpoint
-Apply `/po-ship`: verdict gate, expensive checks, then the merge. The human checkpoint of this stage is the one `/po-ship` defines for `Ship confirmation` and `Merge mode` — an AskUserQuestion before a local merge, or the pull request itself in pr mode. Cleanup only after proof of the merge.
+Apply `/po-ship`: verdict gate, expensive checks, then the one-commit landing through its pull request. The human checkpoint of this stage is the one `/po-ship` defines for `Ship confirmation` and `Merge mode` — an AskUserQuestion before a local merge, or the pull request itself in pr mode. Cleanup only after proof of the merge.
 
 Finish with "<id> shipped.", "Pull request ready: <url>.", or the stage that stopped, what is missing, and the next command.

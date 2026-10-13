@@ -13,13 +13,6 @@ test_ship_gate_is_mechanical() {
   contains "$CMD" 'the **last** line starting with `Ship allowed:`'
 }
 
-test_ship_always_squashes_with_the_story_subject() {
-  contains "$CMD" 'Merge, always as a squash'
-  contains "$CMD" 'git merge --squash story/<id>'
-  contains "$CMD" 'gh pr merge <url> --squash --subject "<id>: <story title>"'
-  contains "$CMD" 'titled `<id>: <story title>`'
-}
-
 test_ship_cleans_up_only_on_proven_merge() {
   contains "$CMD" 'Cleanup, only after proof'
   contains "$CMD" 'prints exactly `MERGED`'

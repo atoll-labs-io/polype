@@ -39,7 +39,7 @@ Light up to:       2
 
 | Setting | Values |
 | --- | --- |
-| Merge mode | `pr` — a pull request to the target branch · `local` — squash merge on this machine |
+| Merge mode | `pr` — a pull request to the target branch, landed as one commit · `local` — only for a repository without a remote: the commit lands on this machine and nothing is pushed |
 | Target branch | where finished stories land |
 | Plan validation | `human` — you approve each plan · `autonomous` — the planner approves its own and says so |
 | Ship confirmation | `human` — you approve each merge · `automatic` — the review gate is enough |

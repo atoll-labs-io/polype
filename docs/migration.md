@@ -48,7 +48,8 @@ Polype ajoute par-dessus ce que `/spec` n'avait pas : un boilerplate imposé à 
 design system et des maquettes avant les écrans, et trois points d'entrée au lieu d'un.
 
 Les décisions qui pèsent sur ce tableau : `docs/decisions/ADR-0002-adr-projet-dans-le-repo.md`,
-`docs/decisions/ADR-0015-squash-direct-et-corrections-au-fil-de-leau.md` et
+`docs/decisions/ADR-0015-squash-direct-et-corrections-au-fil-de-leau.md`,
+`docs/decisions/ADR-0080-tout-arrive-sur-la-branche-cible-par-une-pr-en-fast-forward.md` et
 `docs/decisions/ADR-0018-ou-vit-letat-du-travail.md`.
 
 ## 2. Retirer `/spec` et `/drive`
@@ -112,7 +113,7 @@ tracker. Dans l'ordre :
 3. **Solder la branche d'intégration.** Elle ne survit pas à la migration (ADR-0015) : ce qui est
    vert dedans part dans `Target branch` en une fusion ou une PR, comme on l'aurait fait en fin de
    milestone, et la branche est supprimée. Si rien de vert n'y est, elle est supprimée telle quelle.
-   Ensuite, chaque story Polype squashe directement sur `Target branch`.
+   Ensuite, chaque story Polype arrive sur `Target branch` en un commit, par une PR (ADR-0080).
 4. **Réécrire les packets restants en stories.** Chaque packet non commencé devient une story de
    `<projet>/docs/stories.md`, au format de `templates/stories.md` : le but du packet devient la
    phrase « En tant que … je veux … afin de … », `owns` se recopie tel quel dans `Owns`, `depends`
