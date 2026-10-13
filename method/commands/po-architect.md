@@ -1,5 +1,5 @@
 ---
-description: Settle the project's base, read its code, write its habits as rules in AGENTS.local.md, record one ADR per structural choice and commit docs/architecture.md on the target branch
+description: Settle the project's base, read its code, write its habits as rules in AGENTS.local.md, record one ADR per structural choice and land docs/architecture.md on the target branch through a pull request
 allowed-tools:
   - Read
   - Glob
@@ -11,7 +11,7 @@ allowed-tools:
 ---
 # /po-architect
 
-Reads settings: `Target branch`, `Package manager`, `Install`, `Test`, `Typecheck`, `E2E`, `Build`, `ADR directory`
+Reads settings: `Target branch`, `Merge mode`, `Ship confirmation`, `Package manager`, `Install`, `Test`, `Typecheck`, `E2E`, `Build`, `ADR directory`
 
 Stories fit a base far better than they invent one. This command decides what that base is, learns how it is built, and turns what it learns into rules and decisions every later stage reads: the conventions in `AGENTS.local.md`, the ADRs in `<ADR directory>`, the map in `docs/architecture.md`. It decides and records; it does not produce code.
 
@@ -69,6 +69,6 @@ Never propose rewriting, replacing or restructuring the base: stories adapt to i
    - Change → back to the step the item belongs to, then ask about it again.
    - Set aside → an ADR is not written, and its capability goes back to step 3, or is marked not needed in `docs/architecture.md` when the user says so; on the conventions, no new rule is written; on `docs/architecture.md`, the command ends with nothing written.
 3. Write the files. Rerun the installer if it is available, so `AGENTS.md` carries the new conventions; otherwise say that `AGENTS.md` will catch up at the next install.
-4. Check `git status --porcelain`: an environment file listed there → stop. On `Target branch`, commit `docs/architecture.md`, the new ADRs, `AGENTS.local.md` and, when the installer regenerated it, `AGENTS.md`, as `docs: architecture`.
+4. Check `git status --porcelain`: an environment file listed there → stop. Commit `docs/architecture.md`, the new ADRs, `AGENTS.local.md` and, when the installer regenerated it, `AGENTS.md`, as `docs: architecture`, on the branch `framing/architecture`, landed as `## Landing the framing` of `/po-setup` says (`method/commands/po-setup.md`).
 
 Finish with: "Architecture recorded. Next: /po-research <first story id>"

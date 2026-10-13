@@ -1,5 +1,5 @@
 ---
-description: Record the project's design system once — find its visual source, inventory tokens and components, measure every text/surface contrast in light and dark, and commit docs/design-system.md on the target branch
+description: Record the project's design system once — find its visual source, inventory tokens and components, measure every text/surface contrast in light and dark, and land docs/design-system.md on the target branch through a pull request
 allowed-tools:
   - Read
   - Glob
@@ -11,7 +11,7 @@ allowed-tools:
 ---
 # /po-design-system
 
-Reads settings: `Target branch`
+Reads settings: `Target branch`, `Merge mode`, `Ship confirmation`
 
 Screens hold together when each one is composed from the same recorded system. This command writes that record, `docs/design-system.md`, from what already exists: the base's tokens and components, or a direction the user supplies. It records and measures; it does not write the product's code and it does not make up a look.
 
@@ -71,6 +71,6 @@ Write the state patterns — empty, loading, error, success, disabled, focus —
    - Change → back to the step the item belongs to, then ask about it again.
    - Set aside → a token group or a gap is left out of the file and named in the final message; a contrast fix set aside leaves its pair recorded as failing, with no fix.
 3. Write the file.
-4. Check `git status --porcelain`: an environment file listed there → stop. On `Target branch`, commit `docs/design-system.md` as `docs: design system`.
+4. Check `git status --porcelain`: an environment file listed there → stop. Commit `docs/design-system.md` as `docs: design system`, on the branch `framing/design-system`, landed as `## Landing the framing` of `/po-setup` says (`method/commands/po-setup.md`).
 
 Finish with: "Design system recorded. Next: /po-research <first story id>"

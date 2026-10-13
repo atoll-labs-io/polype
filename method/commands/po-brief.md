@@ -1,5 +1,5 @@
 ---
-description: Put a new product idea to the test like a skeptical cofounder, one question at a time, and commit an approved docs/brief.md on the target branch
+description: Put a new product idea to the test like a skeptical cofounder, one question at a time, and land an approved docs/brief.md on the target branch through a pull request
 argument-hint: [idea in one sentence]
 allowed-tools:
   - Read
@@ -13,7 +13,7 @@ allowed-tools:
 ---
 # /po-brief
 
-Reads settings: `Entry mode`, `Target branch`, `ADR directory`
+Reads settings: `Entry mode`, `Target branch`, `ADR directory`, `Merge mode`, `Ship confirmation`
 
 A project that starts from an idea starts from a brief that has survived objections. `$ARGUMENTS` may carry the idea in one sentence; without it, the interview opens by asking for the pitch.
 
@@ -56,6 +56,6 @@ Until then, keep asking; a missing criterion is the next question.
 1. Run the blocking checks first, before a single approved byte is written: the current branch is `Target branch`, another branch → stop and say so; `git status --porcelain` lists no environment file, one listed → stop. Stopping here, or anywhere before the last step, leaves `docs/brief.md` at `status: interviewing` — nothing is approved until the commit lands.
 2. Every section was approved on its own question during the interview; nothing is shown again for reading, so set `status: approved`.
 3. Write the first ADR from `templates/adr.md` as `<ADR directory>0001-<slug>.md`, or under the next free number when the `ADR directory` folder already holds some: the approach chosen among the alternatives, with the ones turned down and why.
-4. From the repository root, commit `docs/brief.md` and the ADR together in one commit, `docs: brief for <product>`. The approval and its ADR go in the same commit, or neither: an ADR that is not written yet is written before committing, and neither of the two is ever committed alone.
+4. From the repository root, commit `docs/brief.md` and the ADR together in one commit, `docs: brief for <product>`, on the branch `framing/brief`, landed as `## Landing the framing` of `/po-setup` says (`method/commands/po-setup.md`). The approval and its ADR go in the same commit, or neither: an ADR that is not written yet is written before committing, and neither of the two is ever committed alone.
 
 Finish with: "Brief approved. Next: write the stories in docs/stories.md."
