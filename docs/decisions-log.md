@@ -24,3 +24,9 @@ A decision the person took is not logged here: it is an ADR or a story.
 | 2026-10-13 | s110-framing-second-landing, s111-tech-choice-backstop | Asked both reviewers to resend their answers with the `Review status:` line they had left out | `/po-review` requires the line in the recorded file; the lead transcribes and does not author it |
 | 2026-10-13 | s111-tech-choice-backstop | Shipped before s110 | Its review came back first |
 | 2026-10-13 | s110-framing-second-landing, s111-tech-choice-backstop | Merged by the agent (PRs #19, #20) | Effective `Ship confirmation: automatic`, solo repository |
+| 2026-10-13 | s112-short-subject-shipped | Launched in wave 3 | Ready once s109 shipped; no `Owns` overlap with s113 |
+| 2026-10-13 | s113-reuse-ladder | Launched in wave 3 | Ready once s111 shipped; no `Owns` overlap with s112 |
+| 2026-10-13 | s112-short-subject-shipped | Plan approved without a human (short track) | `Plan validation: autonomous`; complexity 2 within `Flow threshold`, no escalation signal |
+| 2026-10-13 | s113-reuse-ladder | Lane handed to the owner | Its plan holds `Technical choice: waiting for a human` for ADR-0085 (option A recommended); s114 waits on it |
+| 2026-10-13 | s112-short-subject-shipped | Asked the reviewer to resend its answer with the missing `Review status:` line | `/po-review` requires the line; the lead does not author it |
+| 2026-10-13 | s112-short-subject-shipped | Merged by the agent (PR #22) | Effective `Ship confirmation: automatic`, solo repository |
