@@ -1,4 +1,4 @@
-211639851 8269 .claude/commands/po-architect.md
+3570021578 8472 .claude/commands/po-architect.md
 2250556533 4320 .claude/commands/po-brief.md
 3814311873 5322 .claude/commands/po-design.md
 3416876865 5730 .claude/commands/po-design-system.md
@@ -13,7 +13,7 @@
 2104684209 4582 .claude/commands/po-research.md
 1041616432 5684 .claude/commands/po-retro.md
 1196631900 4567 .claude/commands/po-review.md
-472810635 12357 .claude/commands/po-setup.md
+2589221400 12540 .claude/commands/po-setup.md
 2684724053 13082 .claude/commands/po-ship.md
 4141017937 5820 .claude/commands/po-status.md
 281641464 5624 .claude/commands/po-stories.md
@@ -59,7 +59,7 @@
 2457356057 1737 .polype/templates/stories-review.md
 2968085624 1577 .polype/templates/verification-record.md
 2988109289 39398 .polype/hooks/po-bounds.sh
-3634281850 25202 .polype/hooks/po-gate.sh
+2605510240 25991 .polype/hooks/po-gate.sh
 2080428839 3445 .polype/hooks/po-run.sh
-2894906131 9319 .polype/hooks/po-session.sh
+118186783 9512 .polype/hooks/po-session.sh
 118128939 189 .polype/hooks/pre-commit

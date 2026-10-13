@@ -35,3 +35,7 @@ A decision the person took is not logged here: it is an ADR or a story.
 | 2026-10-13 | s114-reuse-ladder-eval | Kept the planner's choice: the control arm refuses to start without `ANTHROPIC_API_KEY` or `CLAUDE_CODE_OAUTH_TOKEN` and never copies `~/.claude/.credentials.json` | The cautious way to handle a secret, and easy to undo |
 | 2026-10-13 | s113-reuse-ladder, s114-reuse-ladder-eval | Merged by the agent (PRs #24, #25) | Effective `Ship confirmation: automatic`, solo repository |
 | 2026-10-13 | — | Landed this log together with the refreshed installed copy in one framing PR | Both are framing-path files written after the milestone's last ship |
+| 2026-10-13 | s115-no-claude-md, s116-eval-arms-same-environment | Launched together | Both approved by the owner, `Owns` disjoint |
+| 2026-10-13 | s115-no-claude-md | Kept the planner's reading: with no `AGENTS.local.md`, the installer leaves a `CLAUDE.md` with notes untouched and says so, instead of creating the file | The installer never writes `AGENTS.local.md`, which `/po-setup` refuses to overwrite; the story notes allowed this branch |
+| 2026-10-13 | s115-no-claude-md | Shipped with the review's minor 5 put to the owner afterwards (`CLAUDE.local.md`, usually private, moves into a tracked file) | Ship allowed; the owner approved absorbing both files; an update leaves the change uncommitted and visible |
+| 2026-10-13 | s115-no-claude-md, s116-eval-arms-same-environment | Merged by the agent (PRs #28, #29) | Effective `Ship confirmation: automatic`, solo repository |
