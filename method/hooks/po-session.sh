@@ -187,7 +187,7 @@ lanes_in_flight() {
 # --- Waiting for a human --------------------------------------------------------------------
 
 waiting_for_a_human() {
-  local lines=() id wt research plan qa review ship status next loop
+  local lines=() id wt research plan qa review ship status next loop name
   for id in ${lane_order[@]+"${lane_order[@]}"}; do
     wt="$top/${LANES[$id]}"
     research="$wt/docs/research/$id.md" plan="$wt/docs/plans/$id.md"
@@ -216,6 +216,9 @@ waiting_for_a_human() {
     fi
   done
   lines+=(${ORPHANS[@]+"${ORPHANS[@]}"})
+  for name in CLAUDE.md CLAUDE.local.md; do
+    [ -f "$top/$name" ] && lines+=("$name: Claude Code reads it instead of AGENTS.md → polype update . moves it into AGENTS.local.md")
+  done
   if [ ${#lines[@]} -eq 0 ]; then
     echo "Waiting for a human: nothing"
   else

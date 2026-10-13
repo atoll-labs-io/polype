@@ -182,14 +182,21 @@ empreintes locales ; la charge utile se repose sur elle-même sans se détruire.
 En plus des copies, `init` comme `install <projet>` :
 - réécrit `AGENTS.md` = les règles de la méthode, puis `---`, puis l'`AGENTS.local.md` du projet ;
   un `AGENTS.md` écrit à la main est d'abord sauvegardé en `AGENTS.md.before-polype` ;
-- retire la ligne `@AGENTS.md` qu'un installeur d'avant ADR-0073 avait mise dans `CLAUDE.md`, et
-  supprime ce fichier s'il ne contenait rien d'autre ; un `CLAUDE.md` sans cette ligne n'est pas
-  touché, mais tant qu'il existe, Claude Code le lit **à la place** d'`AGENTS.md` ;
+- absorbe, avant d'assembler `AGENTS.md`, le `CLAUDE.md` et le `CLAUDE.local.md` de la racine du
+  projet (ADR-0086) : leur contenu, sans la ligne `@AGENTS.md`, va à la fin d'`AGENTS.local.md` sous
+  le titre `## Notes moved from CLAUDE.md`, puis le fichier est supprimé et l'installeur le dit sur
+  `stderr`. Un fichier qui ne contenait que l'import est supprimé sans rien ajouter. Sans
+  `AGENTS.local.md`, un fichier qui contient autre chose est laissé tel quel, l'installeur le dit et
+  la pose continue : lancer `/po-setup`, puis `polype update .`. Le `CLAUDE.md` global de
+  l'utilisateur (`~/.claude/CLAUDE.md`) n'est jamais touché ; tant qu'un `CLAUDE.md` existe dans le
+  projet, Claude Code le lit **à la place** d'`AGENTS.md` ;
 - ajoute au `.gitignore` la racine des worktrees (`Worktree root` lu dans `AGENTS.local.md`,
   `.worktrees/` par défaut) et `.env*`, une seule fois chacun ;
 - avec `--hooks`, pointe `core.hooksPath` sur `.polype/hooks` — et seulement si ce réglage est vide
   ou déjà le nôtre : un `core.hooksPath` existant est laissé tel quel, à charger de chaîner
-  `.polype/hooks/pre-commit` depuis là ;
+  `.polype/hooks/pre-commit` depuis là ; ce pre-commit refuse aussi, sur toute branche, un
+  `CLAUDE.md` ou un `CLAUDE.local.md` ajouté ou modifié à n'importe quelle profondeur (sa
+  suppression passe) ;
 - fusionne avec `jq` le hook `SessionStart` (`.polype/hooks/po-session.sh`) dans le
   `.claude/settings.json` du projet, créé s'il manque : les autres clés et les autres hooks restent
   tels quels, et une pose répétée ne le duplique pas. Le fichier n'entre pas dans le manifeste. Sans
@@ -270,7 +277,7 @@ les répertoires devenus vides **sous** `~/.claude/commands/`, `~/.claude/agents
 pas créé.
 
 `remove <projet>` supprime les fichiers du manifeste, les trois fichiers d'état, puis les répertoires
-`.claude/` et `.polype/` devenus vides. Il retire l'ancienne ligne `@AGENTS.md` de `CLAUDE.md` comme le fait la pose, supprime
+`.claude/` et `.polype/` devenus vides. Il se contente de retirer l'ancienne ligne `@AGENTS.md` de `CLAUDE.md`, sans rien déplacer dans `AGENTS.local.md`, supprime
 `AGENTS.md` seulement s'il porte le marqueur d'assemblage, et remet `AGENTS.md.before-polype` à sa
 place s'il existe. Il ne rend `core.hooksPath` à git que si ce réglage vaut `.polype/hooks`.
 

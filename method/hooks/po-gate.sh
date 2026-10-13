@@ -9,8 +9,9 @@
 #   po-gate qa-current <id>       0 when the committed QA report's last `QA status:` says complete and its `Tree:`
 #                                 matches HEAD; ignored files do not count (ADR-0044)
 #   po-gate pre-commit            non-zero, on every branch, when a staged environment file or an added line holding
-#                                 a private key or a known token is staged; and on a code commit to story/<id>
-#                                 whose plan is not approved
+#                                 a private key or a known token is staged, or a CLAUDE.md or CLAUDE.local.md is
+#                                 added or modified at any depth; and on a code commit to story/<id> whose plan
+#                                 is not approved
 #   po-gate floor-guard <id> <base>  scans `git diff <base>...story/<id>` for what lowers the bar of the checks:
 #                                 0 nothing, 1 one `<path>:<line>: <rule>: <detail>` per flag, 2 cannot verify
 #
@@ -241,6 +242,21 @@ secret_scan() {
   [ -z "$out" ] || printf '%s\n' "$out"
 }
 
+# Claude Code reads AGENTS.md only while no CLAUDE.md exists (ADR-0086); deleting one is the fix, so it passes.
+claude_md_check() {
+  local paths path found=no
+  paths="$(git -c core.quotePath=false diff --cached --name-only --no-renames --diff-filter=d -z | tr '\0' '\n')" \
+    || refuse "could not list the staged files; refusing the commit" || return 1
+  while IFS= read -r path; do
+    case "${path##*/}" in
+      CLAUDE.md|CLAUDE.local.md)
+        refuse "$path: CLAUDE.md staged — Claude Code reads AGENTS.md only while none exists; put its notes in AGENTS.local.md" \
+          || found=yes ;;
+    esac
+  done <<< "$paths"
+  [ "$found" = no ]
+}
+
 pre_commit() {
   local branch staged path code=no hits count
   hits="$(secret_scan)" || return 1
@@ -249,6 +265,7 @@ pre_commit() {
     count="$(printf '%s\n' "$hits" | wc -l | tr -d ' ')"
     refuse "refusing the commit: $count staged secret(s); the values are not shown" || return 1
   fi
+  claude_md_check || return 1
   branch="$(git rev-parse --abbrev-ref HEAD 2>/dev/null || true)"
   [[ "$branch" == story/* ]] || return 0
   # --no-renames: moving code into docs/ must count as touching code.

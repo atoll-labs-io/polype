@@ -1,11 +1,11 @@
 ---
 adr: 0073
 title: L'installeur n'écrit plus de CLAUDE.md, Claude Code lit AGENTS.md lui-même
-status: accepted
+status: superseded
 date: 2026-10-09
 scope: installer
 supersedes: []
-superseded-by: []
+superseded-by: [ADR-0086]
 ---
 
 # ADR-0073 — Plus de CLAUDE.md : Claude Code lit AGENTS.md

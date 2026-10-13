@@ -1,7 +1,7 @@
 <!-- Assembled by Polype. Edit AGENTS.local.md, then rerun the installer; changes made here are lost. -->
 # Polype — Rules of this repository
 
-Polype writes this section and rewrites it on every install. Your project speaks in `AGENTS.local.md` (settings, project commands, conventions), which the installer leaves alone and appends at the end of this file.
+Polype writes this section and rewrites it on every install. Your project speaks in `AGENTS.local.md` (settings, project commands, conventions), which the installer only reads, except to append the notes it moves out of a `CLAUDE.md`, and appends at the end of this file.
 
 ## Reading settings
 
@@ -145,6 +145,8 @@ At most `Test budget` tests per story unless the plan argues for more. A test th
 `bin/polype` is the installer: it lays the method down, refreshes it with `update`, audits it with `check` and takes it back with `remove`. It has two poses. `polype install --global` puts the commands, the subagents and the skills in `~/.claude/`, so every project on the machine sees them. `polype init <project>` then activates one repository with what belongs to it and travels in its git: the templates, the gate and the assembled `AGENTS.md`. `polype install <project>` does both at once inside a single repository, which is the right shape for a repository whose collaborators' `~/.claude/` you do not control. The detail of each pose — what it writes, what `update` spares, how to read a `check` report — is in Polype's `docs/installation.md`.
 
 `.claude/commands/`, `.claude/agents/` and `.claude/skills/` hold the commands, subagents and skills. `.polype/templates/` holds the templates: a reference to `templates/<name>.md` means `.polype/templates/<name>.md`. `.polype/hooks/po-gate.sh`, called `po-gate` in these rules, runs from the repository root or from any story worktree. `po-gate` checks the gates of Law 3. `.polype/hooks/po-bounds.sh`, called `po-bounds`, keeps the `implementer`, `qa` and `reviewer` subagents inside their bounds: a PreToolUse hook wired from those subagents' frontmatter, it decides which paths they may write and which git commands they may run. `.polype/hooks/po-run.sh`, called `po-run`, launches one check inside a story worktree: the check's output and exit code pass through unchanged, and the check's row — never its output — is appended to `docs/verif/<id>.md`. `.polype/hooks/po-session.sh`, called `po-session`, is the `SessionStart` hook the installer merges into the project's `.claude/settings.json`: it prints the framing stage, the ready stories, the lanes in flight and what waits for a human, and changes nothing. These files are committed on `Target branch` so every worktree has them and the pre-commit hook works there too; after a global pose only `.polype/` and `AGENTS.md` are in the repository, the rest living in `~/.claude/`.
+
+The only `CLAUDE.md` is the user's global one: no agent creates a `CLAUDE.md` or a `CLAUDE.local.md` in a project, and the project's notes go in `AGENTS.local.md`. The installer absorbs a root `CLAUDE.md` or `CLAUDE.local.md` into `AGENTS.local.md`, and the pre-commit refuses one at any depth (ADR-0086).
 
 Never edit an installed file: the next install overwrites it without asking. Project-specific needs become settings in `AGENTS.local.md`; general improvements go back to Polype itself.
 
