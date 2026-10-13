@@ -1825,3 +1825,18 @@ Objectif : qu'aucun projet Polype n'ait plus jamais de `CLAUDE.md`, et que l'év
 - [ ] `recipe_names_no_flaw` — le dépôt construit ne nomme toujours pas le défaut, selon la règle de `tests/evals.test.sh`.
 
 **Notes pour l'agent** : choix du porteur le 2026-10-13. Options écartées : corriger `get()` (casse `missing-tenant-filter`) ; dire dans la story que les ids impliquent le tenant (un reviewer le relèverait quand même). Après la livraison, le chef de projet relance `bin/po-eval --control --model claude-opus-5-5 --repeat 3 rebuilt-helper` et met `docs/evals/reuse-ladder.md` à jour ; ces appels ne font pas partie de la story.
+
+### s119-rebuilt-helper-tests-tenant — La recette rebuilt-helper teste la frontière de tenant
+**En tant que** développeur **je veux** que la plantation de `rebuilt-helper` teste la condition de tenant de `archived_for()` **afin que** son score attendu ne mesure plus que la copie, et non un test manquant.
+
+- **Complexité** : 1
+- **Dépend de** : aucune
+- **Surface** : —
+- **Corrige** : la section « Seconde mesure, après s118 » de `docs/evals/reuse-ladder.md`
+- **Owns** : `evals/cases/rebuilt-helper.sh`, `tests/rebuilt-helper-single-defect.test.sh`, `tests/reuse-ladder-eval.test.sh`
+
+**Critères d'acceptation**
+- [ ] `plant_tests_the_tenant_boundary` — la plantation ajoute un test où une note archivée appartient à un utilisateur du même id mais d'un autre tenant, et vérifie qu'elle n'apparaît pas dans `archived_for()` ; retirer la condition de tenant de `archived_for()` dans le dépôt construit fait échouer ce test.
+- [ ] `copy_stays_the_only_defect` — `archived_for()` recopie toujours le filtre de `list_for()` sans l'appeler, `CASE_EXPECT_SEVERITY=major` et `CASE_EXPECT_SHIP=yes` restent, et le dépôt construit ne nomme toujours pas le défaut.
+
+**Notes pour l'agent** : approuvée par le porteur le 2026-10-13 (« go »). Après la livraison, le chef de projet relance `bin/po-eval --control --model claude-opus-5-5 --repeat 3 rebuilt-helper` et met `docs/evals/reuse-ladder.md` à jour ; ces appels ne font pas partie de la story. Le revieweur de s118 a jugé que `test_demo_app_unchanged` figeait trop de fichiers : cette story peut le garder tel quel, tant qu'il reste vert.
