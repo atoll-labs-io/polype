@@ -143,6 +143,7 @@ test_installer_state_files_are_not_their_own_ghosts() {
   project && polype install "$P"
   if grep -qxF '.polype/version' "$P/.polype/manifest"; then fail ".polype/version is listed in the manifest"; fi
   if grep -qxF '.polype/checksums' "$P/.polype/manifest"; then fail ".polype/checksums is listed in the manifest"; fi
+  if grep -qxF '.claude/.polype-checksums' "$P/.polype/manifest"; then fail ".claude/.polype-checksums is listed in the manifest"; fi
   polype update "$P"
   require_file "$P/.polype/version"
   require_file "$P/.polype/checksums"

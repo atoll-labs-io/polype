@@ -208,9 +208,10 @@ En plus des copies, `init` comme `install <projet>` :
 
 Ces fichiers, `.claude/settings.json` compris, se commitent sur la branche cible pour que les worktrees de story en héritent.
 
-## Les trois fichiers d'état
+## Les fichiers d'état
 
-Ils vivent dans `.polype/` pour un projet, dans `~/.claude/polype/` pour la pose globale.
+Trois fichiers d'état vivent dans `.polype/` pour un projet, dans `~/.claude/polype/` pour la pose
+globale ; un projet en a un quatrième, `.claude/.polype-checksums`, décrit plus bas.
 
 | Fichier | Contenu |
 | --- | --- |
@@ -218,15 +219,24 @@ Ils vivent dans `.polype/` pour un projet, dans `~/.claude/polype/` pour la pose
 | `checksums` | le `cksum` de chaque fichier au moment où il a été posé |
 | `version` | la version installée |
 
-Aucun des trois n'est listé dans le manifeste : ils ne s'effacent donc jamais eux-mêmes au passage
+Aucun de ces fichiers n'est listé dans le manifeste : ils ne s'effacent donc jamais eux-mêmes au passage
 suivant. Le manifeste est ce qui permet de supprimer les fichiers d'une version précédente sans
 toucher à ceux du projet ; les empreintes sont ce qui permet de distinguer un fichier intact d'un
 fichier modifié à la main.
 
+Ce quatrième fichier existe parce que, dans un projet, les empreintes des copies de `.claude/` ne
+sont pas dans `.polype/checksums` mais à côté d'elles, dans `.claude/.polype-checksums` (ADR-0087) : le `cksum` de chaque copie de `.claude/`
+au moment où ce checkout l'a posée. Ce fichier appartient à un seul checkout et reste
+ignoré par git : quand git ne l'ignore pas déjà, l'installeur ajoute la ligne
+`.claude/.polype-checksums` au `.gitignore`. Il n'entre jamais dans le manifeste, et `check` lit les deux fichiers d'empreintes.
+`.polype/checksums` ne garde que les fichiers de `.polype/`. `init` ne pose aucune copie sous
+`.claude/`, donc n'écrit pas ce fichier. Une actualisation de `.polype/` arrivée par une pull
+request ne fait donc plus passer les copies d'un autre checkout pour modifiées à la main.
+
 ## `install` ou `update`
 
 `install` écrase : il repose la totalité de la méthode par-dessus ce qui est là, supprime les
-fichiers que le manifeste listait et que cette version ne livre plus, et réécrit les trois fichiers
+fichiers que le manifeste listait et que cette version ne livre plus, et réécrit les fichiers
 d'état. C'est la première pose, et le moyen de revenir à une méthode propre. Rien n'est supprimé
 avant que la liste des fichiers à poser n'ait été lue, et chaque fichier est écrit à côté puis
 renommé sur sa destination : en `--global`, la charge utile que l'installeur lit vit sous
@@ -237,6 +247,14 @@ plus livrés, recopie ceux dont l'empreinte correspond encore à ce qui avait é
 place** ceux qui ont été modifiés à la main et les nomme sur `stderr`. Un fichier laissé en place
 garde l'empreinte de la version posée, donc `check` continue de le signaler tant qu'il diffère. Sur
 un projet où Polype n'a jamais été installé, `update` se comporte comme `install`.
+
+Une copie identique au fichier livré n'est jamais une modification à la main : `update` la recopie et
+enregistre son empreinte. Une pull request qui a actualisé `.polype/`, ou des copies de `.claude/`
+commitées, ne laisse donc rien de bloqué. Le premier `update` après cette version migre : sans
+`.claude/.polype-checksums`, il juge les copies sur les lignes `.claude/` de l'ancien
+`.polype/checksums`, écrit le fichier local, retire ces lignes de `.polype/checksums` et le dit sur
+`stderr`. Un checkout déjà bloqué avant la migration, dont les copies sont plus anciennes que les
+empreintes commitées, se répare avec `polype install <projet>`.
 
 ## Après une mise à jour
 
@@ -272,6 +290,12 @@ fichiers sont installés et ne nomme rien. Sans `manifest`, il sort 1 : rien n'e
 comprise. Sur un projet, `check` liste enfin les mêmes lignes `missing setting:` que la mise à jour ;
 elles ne changent pas son code de sortie.
 
+`check` compare chaque copie aux empreintes enregistrées et rien d'autre : il n'applique pas la
+règle « identique au fichier livré » de `update`. Dans un projet qui commite `.claude/`, les copies
+actualisées par une pull request tirée sur ce checkout restent donc listées `modified:` tant que
+`update` n'a pas tourné ; c'est `update` qui les reconnaît intactes et réécrit
+`.claude/.polype-checksums`.
+
 ## Ce que `remove` garde
 
 `remove --global` supprime les fichiers du manifeste puis `~/.claude/polype/` en entier, et élague
@@ -279,7 +303,7 @@ les répertoires devenus vides **sous** `~/.claude/commands/`, `~/.claude/agents
 `~/.claude/skills/` — jamais ces trois-là, jamais `~/.claude`, jamais un répertoire que Polype n'a
 pas créé.
 
-`remove <projet>` supprime les fichiers du manifeste, les trois fichiers d'état, puis les répertoires
+`remove <projet>` supprime les fichiers du manifeste, les fichiers d'état (`.claude/.polype-checksums` compris), puis les répertoires
 `.claude/` et `.polype/` devenus vides. Il se contente de retirer l'ancienne ligne `@AGENTS.md` de `CLAUDE.md`, sans rien déplacer dans `AGENTS.local.md`, supprime
 `AGENTS.md` seulement s'il porte le marqueur d'assemblage, et remet `AGENTS.md.before-polype` à sa
 place s'il existe. Il ne rend `core.hooksPath` à git que si ce réglage vaut `.polype/hooks`.
