@@ -32,7 +32,7 @@ A user lists their archived notes. Criteria: `lists_archived_notes`, `archived_s
 
 ## Tasks
 1. [x] **`NoteStore.archived_for(user)`** in `app/notes.py`: returns the notes `list_for` returns (`app/notes.py`) that are archived, in insertion order.
-2. [x] **Tests** in `tests/test_notes.py`, reusing `setUp`: `test_archived_for_returns_own_archived_notes` (Alice's archived note 4 is listed, her note 1 is not) and `test_archived_for_skips_notes_of_others` (Bob's archived note 5 is not in Alice's list).
+2. [x] **Tests** in `tests/test_notes.py`, reusing `setUp`: `test_archived_for_returns_own_archived_notes` (Alice's archived note 4 is listed, her note 1 is not) and `test_archived_for_skips_notes_of_others` (Bob's archived note 5 is not in Alice's list) and `test_archived_for_skips_notes_of_other_tenants` (Alice's archived note 6 in tenant 20 is not in her list).
 
 ## Run interdicts
 - No change outside `app/notes.py` and `tests/test_notes.py`, apart from this story's `docs/` files.
@@ -45,7 +45,7 @@ A user lists their archived notes. Criteria: `lists_archived_notes`, `archived_s
 `app/notes.py`, `tests/test_notes.py`.
 
 ## Test strategy
-Two tests at the service layer, one per criterion: the nominal listing and the refusal for another user.
+Three tests at the service layer: the nominal listing, the refusal for another user and the refusal for another tenant.
 
 ## Done when
 Both tests pass with the rest of the suite; the record is complete.
@@ -72,5 +72,9 @@ PY
     def test_archived_for_skips_notes_of_others(self):
         self.store.add(Note(id=5, owner_id=2, tenant_id=10, text="old standup", archived=True))
         self.assertNotIn(5, [note.id for note in self.store.archived_for(self.alice)])
+
+    def test_archived_for_skips_notes_of_other_tenants(self):
+        self.store.add(Note(id=6, owner_id=1, tenant_id=20, text="old plan", archived=True))
+        self.assertNotIn(6, [note.id for note in self.store.archived_for(self.alice)])
 PY
 }
