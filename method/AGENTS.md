@@ -84,10 +84,10 @@ Each decision the lead takes alone — what a wave holds, a fix run started, an 
 | --- | --- | --- |
 | Plan validated | the frontmatter of `docs/plans/<id>.md` holds `validated: yes` | `/po-execute`; code commits on `story/<id>` (pre-commit hook) |
 | Record current | `docs/verif/<id>.md` is marked complete, its `Tree:` matches the committed code outside `docs/`, **and** every check its `## Checks` table declares has a passing `po-run` row on that same code | whether the review may reuse the recorded run |
-| Ship allowed | the last `Ship allowed:` line of `docs/reviews/<id>.md` says `yes` **and** the review's `Reviewed tree:` matches the committed code outside `docs/` | `/po-ship` |
+| Ship allowed | the last `Ship allowed:` line of `docs/reviews/<id>.md` says `yes`, the `Review status:` of that review says `complete` **and** the review's `Reviewed tree:` matches the committed code outside `docs/` | `/po-ship` |
 | QA current | the last `QA status:` line of `docs/qa/<id>/report.md` says `complete` **and** its `Tree:` matches the committed code outside `docs/` | the review of a story that goes to QA |
 
-A plan file that exists is not a validated plan. No record means nothing is proven. A review without its two verdict lines counts as blocked. So does a review without a usable `Reviewed tree:`: a verdict counts for the code it judged, not for commits added after it. `po-gate` (see "Installed files") checks all four.
+A plan file that exists is not a validated plan. No record means nothing is proven. A review without its two verdict lines, or without `Review status: complete`, counts as blocked. So does a review without a usable `Reviewed tree:`: a verdict counts for the code it judged, not for commits added after it. `po-gate` (see "Installed files") checks all four.
 
 Severity decides what a review blocks. **Critical** stops the ship. **Major** is logged in the report and handled in a later cycle; **minor** is style. After a blocked review, `/po-execute` runs again in fix mode, findings first; a story gets two fix loops, then a human decides.
 

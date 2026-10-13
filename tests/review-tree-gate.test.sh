@@ -20,27 +20,27 @@ review() { printf '%b' "$1" > docs/reviews/s01-a.md; }
 
 test_ship_gate_reads_the_last_review() {
   sandbox
-  review "Reviewed tree: $T1\nShip allowed: no\nReviewed tree: $T2\nShip allowed: yes\n"
+  review "Review status: complete\nReviewed tree: $T1\nShip allowed: no\nReview status: complete\nReviewed tree: $T2\nShip allowed: yes\n"
   passes ship-allowed s01-a || fail "the last review's own tree was not used"
-  review "Reviewed tree: $T2\nShip allowed: no\nShip allowed: yes\n"
+  review "Reviewed tree: $T2\nShip allowed: no\nReview status: complete\nShip allowed: yes\n"
   ! passes ship-allowed s01-a || fail "a last review without a tree borrowed an earlier one"
-  review "Reviewed tree: $T1\nShip allowed: yes\nReviewed tree: $T2\n"
+  review "Review status: complete\nReviewed tree: $T1\nShip allowed: yes\nReviewed tree: $T2\n"
   ! passes ship-allowed s01-a || fail "an unfinished appended review allowed the ship"
 }
 
 test_verdict_lines_may_be_list_items() {
   sandbox
-  review "- Reviewed tree: $T2 (taken again just before answering: unchanged)\n* Ship allowed: yes\n"
+  review "Review status: complete\n- Reviewed tree: $T2 (taken again just before answering: unchanged)\n* Ship allowed: yes\n"
   passes ship-allowed s01-a || fail "list-item lines refused"
-  review "Reviewed tree: $T2\nShip allowed: yes\n- Ship allowed: no\n"
+  review "Review status: complete\nReviewed tree: $T2\nShip allowed: yes\n- Ship allowed: no\n"
   ! passes ship-allowed s01-a || fail "a bulleted last verdict was ignored"
-  review "  - Reviewed tree: $T2\nShip allowed: yes\n"
+  review "Review status: complete\n  - Reviewed tree: $T2\nShip allowed: yes\n"
   ! passes ship-allowed s01-a || fail "indented line accepted"
-  review "+ Reviewed tree: $T2\nShip allowed: yes\n"
+  review "Review status: complete\n+ Reviewed tree: $T2\nShip allowed: yes\n"
   ! passes ship-allowed s01-a || fail "+ bullet accepted"
-  review "Reviewed tree: ${T2:0:12} (short)\nShip allowed: yes\n"
+  review "Review status: complete\nReviewed tree: ${T2:0:12} (short)\nShip allowed: yes\n"
   ! passes ship-allowed s01-a || fail "abbreviated hash accepted"
-  review "- Reviewed tree: $T2. I took it again\nShip allowed: yes\n"
+  review "Review status: complete\n- Reviewed tree: $T2. I took it again\nShip allowed: yes\n"
   ! passes ship-allowed s01-a || fail "punctuation stuck to the hash accepted"
 }
 
