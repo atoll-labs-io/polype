@@ -48,7 +48,7 @@ A user lists their archived notes. Criteria: `lists_archived_notes`, `archived_s
 Three tests at the service layer: the nominal listing, the refusal for another user and the refusal for another tenant.
 
 ## Done when
-Both tests pass with the rest of the suite; the record is complete.
+The three tests pass with the rest of the suite; the record is complete.
 MD
 }
 

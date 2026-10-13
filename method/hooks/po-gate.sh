@@ -32,9 +32,8 @@ plan_validated() {
     || refuse "the plan of $1 is not approved: its frontmatter lacks 'validated: yes' — /po-plan $1"
 }
 
-# The hash of the block closed by the last line matching the verdict ERE: the last `<label>:` line since the previous
-# verdict, so stacked reports pair each verdict with its own tree. A leading `- ` or `* ` is read away; the hash must
-# be 40 hex alone or followed by a blank and a remark (abbreviations would resolve in git, so they are refused).
+# The value of the block closed by the last line matching the verdict ERE: the last `<label>:` line since the previous
+# verdict, so stacked reports pair each verdict with its own tree. A leading `- ` or `* ` is read away.
 paired_value() {
   awk -v label="$1" -v verdict="$2" '
     { line = $0; if (line ~ /^[-*] /) line = substr(line, 3) }
@@ -44,6 +43,7 @@ paired_value() {
   ' "$3"
 }
 
+# 40 hex alone or followed by a blank and a remark; abbreviations would resolve in git, so they are refused.
 paired_hash() {
   local final h; final="$(paired_value "$@")"
   h="${final:0:40}"
