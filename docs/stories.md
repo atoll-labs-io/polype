@@ -1661,3 +1661,115 @@ Tests qui figent `method/AGENTS.md` sans appartenir à une story de M9 : `tests/
 - [ ] `unknown_host_gets_no_token` — la sonde `/api/v1/version` qui reconnaît un Forgejo/Gitea part sans jeton, et aucun appel vers un hôte non reconnu n'en porte un.
 
 **Notes pour l'agent** : `/po-setup` lit la forge « exactly as `/po-ship` reads it » et n'a pas à changer. Tests non possédés à garder verts : `tests/ship-follows-forge.test.sh`, `tests/ship-through-pr.test.sh`, `tests/ship.test.sh`. Options écartées avec le porteur le 2026-10-13 : lier le jeton par une variable `*_HOST` (convention de glab seulement, rien pour Forgejo) ; garder le repli tel quel.
+
+## M9 bis — Les restes de M9
+
+Objectif : fermer les majeurs que les revues de M9 ont laissés ouverts, rendre la détection des stories livrées juste sur un dépôt qui a gardé des sujets courts, et faire dire au plan ce qu'il réutilise. Cadré le 2026-10-13 avec le porteur ; revue des stories : `docs/reviews/stories-m9bis.md`. Aucune gate de Law 3 ne change.
+
+Tests qui figent les fichiers de ces stories sans leur appartenir : `tests/fleet-wiring.test.sh`, `tests/structure.test.sh`, `tests/drive.test.sh`, `tests/resume.test.sh`, `tests/ship.test.sh`, `tests/ship-follows-forge.test.sh`, `tests/framing-through-pr.test.sh`, `tests/project-lead.test.sh`, `tests/plan.test.sh`, `tests/planner.test.sh`, `tests/flow.test.sh`, `tests/review.test.sh`. Les changements y restent additifs et gardent leurs phrases.
+
+### s108-ship-resumes-cleanly — Un ship automatique repris aboutit
+**En tant que** porteur de projet **je veux** qu'un ship automatique interrompu puis repris merge le commit qu'il a déjà poussé **afin qu'**une reprise ne coûte jamais une tentative de correction pour rien.
+
+- **Complexité** : 2
+- **Dépend de** : aucune
+- **Surface** : —
+- **Corrige** : M1 et M2 de `docs/reviews/s105-ship-through-pr.md`, mineurs 1 et 2 de `docs/reviews/s107-forge-token-bound-to-host.md`
+- **Owns** : `method/commands/po-ship.md`, `tests/ship-through-pr.test.sh`, `tests/forge-token-host.test.sh`, `tests/ship-resumes-cleanly.test.sh`
+
+**Critères d'acceptation**
+- [ ] `resumed_ship_merges_the_pushed_head` — quand `origin/story/<id>` porte déjà un commit de parent `<base>` et d'arbre `<tree>` et que la poussée est sautée, `/po-ship` prend `<sha>` de `origin/story/<id>` ; `--match-head-commit` reçoit ce SHA complet, jamais un commit reconstruit à neuf.
+- [ ] `push_targets_only_the_story_ref` — le test de `tests/ship-through-pr.test.sh` qui interdit de pousser `Target branch` vérifie la refspec elle-même (`<sha>:refs/heads/story/<id>`) et échoue si une ligne `git push` de `po-ship.md` nomme `Target branch` ; retirer la refspec ou ajouter `Target branch` à la ligne existante le fait échouer.
+- [ ] `forge_read_pins_and_skips_curlrc` — la lecture de la forge appelle `curl -q` (qui ignore `~/.curlrc`) partout où elle dit ne porter aucun jeton, et un test échoue si le `--hostname github.com` de `gh api` disparaît.
+
+**Notes pour l'agent** : la revue de s105 laissait le choix entre reprendre le SHA poussé et des dates fixes pour `commit-tree` ; le plan retient la reprise du SHA poussé, qui ne change pas le commit construit au premier passage. Si le planner juge l'autre voie nécessaire, c'est un choix technique : la ligne `Technical choice: waiting for a human`.
+
+### s109-drive-guards — Les lanes de la flotte gardent les garde-fous du chemin seul
+**En tant que** porteur de projet **je veux** qu'une lane de `/po-drive` vérifie son point de départ comme `/po-research`, que l'attente d'un merge humain n'arrive que sous un `human` effectif, et que chaque décision prise seul soit consignée **afin que** la flotte ne parte jamais d'un cadrage non mergé, n'attende pas un humain qui n'a rien à faire, et que je relise tout ce qui s'est tranché sans moi.
+
+- **Complexité** : 3
+- **Dépend de** : aucune
+- **Surface** : —
+- **Corrige** : majeur 1 de `docs/reviews/s106-framing-through-pr.md`, majeur 2 de `docs/reviews/s102-ship-follows-the-forge.md`, mineur `method/AGENTS.md:79` de `docs/reviews/s104-escalation-contract.md`
+- **Owns** : `method/commands/po-drive.md`, `method/commands/po-orchestrator.md`, `tests/drive-guards.test.sh`
+
+**Critères d'acceptation**
+- [ ] `lane_checks_its_start_point` — `### Preparing the lanes` reprend l'étape 2 de `/po-research` qui vérifie que la story est présente au point de départ ; une story dont le cadrage n'est pas encore sur `origin/<Target branch>` n'ouvre pas de lane et le rapport dit qu'elle attend le merge du cadrage.
+- [ ] `pr_wait_needs_effective_human` — la ligne de `## Resuming` qui fait attendre une PR ouverte un merge humain exige un `Ship confirmation` effectif à `human` ; un test échoue si cette condition est retirée de la ligne, et sous `automatic` une PR ouverte reprend au ship.
+- [ ] `lone_decisions_are_all_logged` — `## The decisions log` de `/po-drive` consigne chaque décision prise seul que `AGENTS.md` nomme, détail d'implémentation et réponse donnée sans demander compris. `/po-orchestrator` gagne une section `## The decisions log` : il consigne son approbation autonome d'un plan et ses runs de correction, écrit les lignes une fois la story livrée ou arrêtée — jamais avant son ship, pour ne pas laisser la racine modifiée — et les livre par le chemin de cadrage, comme `/po-drive`.
+
+### s110-framing-second-landing — Un second dépôt du même cadrage ne perd rien
+**En tant que** porteur de projet **je veux** qu'un deuxième atterrissage sur la même branche de cadrage parte de ce qu'elle porte déjà tant qu'elle n'est pas mergée, quelle que soit la forge, et que la racine se réaligne une fois le merge prouvé **afin qu'**un second `/po-architect` ne fasse jamais disparaître l'ADR du premier.
+
+- **Complexité** : 2
+- **Dépend de** : aucune
+- **Surface** : —
+- **Corrige** : majeur 2 et mineur 3 de `docs/reviews/s106-framing-through-pr.md`
+- **Owns** : `method/commands/po-setup.md`, `tests/framing-second-landing.test.sh`
+
+**Critères d'acceptation**
+- [ ] `framing_merge_is_proven_per_forge` — `## Landing the framing` dit qu'une branche `framing/<slug>` est mergée selon la preuve de l'étape 3 de `/po-ship` : avec une pull request, `gh pr view` sur elle affiche exactement `MERGED` ; sans pull request (une forge en vrai fast-forward, ADR-0081), le commit de tête de `origin/framing/<slug>` est ancêtre de `origin/<Target branch>`. L'ascendance n'est jamais la preuve d'un merge sur GitHub.
+- [ ] `second_landing_stacks_on_the_framing_branch` — la **Base** est `origin/framing/<slug>` dès que cette branche distante existe et que la preuve ci-dessus ne la dit pas mergée, qu'une pull request soit ouverte ou non ; sinon `origin/<Target branch>`, et une branche mergée n'est jamais reprise comme base.
+- [ ] `root_realigns_after_a_merge` — chaque commande de cadrage, avant de construire son commit, réaligne la racine sur `origin/<Target branch>` par `git merge --ff-only` quand la preuve dit mergée une branche `framing/<slug>` qu'elle avait laissée en attente ; un refus est rapporté et rien n'est forcé.
+
+**Notes pour l'agent** : correction du critique de `docs/reviews/stories-m9bis.md` approuvée par le porteur le 2026-10-13 : la preuve de merge de `/po-ship`, pas l'ascendance seule, et `git merge --ff-only`, déjà employé par le chemin automatique, plutôt que `git reset --keep`.
+
+### s111-tech-choice-backstop — Un plan court renvoyé garde sa question
+**En tant que** porteur de projet **je veux** qu'un plan court renvoyé pour un choix technique garde la ligne qui le fait attendre et les options à me soumettre **afin que** `/po-plan` me pose toujours la question, même en `Plan validation: autonomous`.
+
+- **Complexité** : 2
+- **Dépend de** : aucune
+- **Surface** : —
+- **Corrige** : majeurs 1 et 2 de `docs/reviews/s104-escalation-contract.md`, majeur de `docs/reviews/s101-conversational-framing.md`
+- **Owns** : `method/commands/po-flow.md`, `method/commands/po-plan.md`, `tests/escalation-contract.test.sh`, `tests/conversational-framing.test.sh`, `tests/tech-choice-backstop.test.sh`
+
+**Critères d'acceptation**
+- [ ] `flow_plan_sent_back_keeps_the_marker` — quand la clause d'approbation de `/po-flow` renvoie un plan vers `/po-research` pour un choix technique, elle écrit `Technical choice: waiting for a human` dans le plan déjà présent, le laisse en `validated: no` et esquisse l'ADR en `status: proposed` avec ses options rangées selon les critères du porteur ; `/po-plan` qui saute à l'approbation trouve la ligne et pose la question avec ces options.
+- [ ] `approval_test_bites_in_its_section` — le test du critère `plan_with_a_tech_choice_waits_for_a_human` vérifie la ligne et sa règle dans la section `Approval` de `po-plan.md`, si bien que retirer le paragraphe qui tranche le choix avec la personne le fait échouer.
+- [ ] `stories_review_rules_bite` — `test_stories_review_surfaces_criticals_only` échoue si la règle « never changed: a verdict is the subagent's » de `po-stories-review.md` ou le refus « has already started » de `po-stories.md` disparaît.
+
+### s112-short-subject-shipped — Une story livrée sous un sujet court compte comme livrée
+**En tant que** porteur de projet **je veux** qu'une story livrée sous un sujet `sNN:` compte comme livrée quand aucun commit ne porte son id complet **afin que** `/po-drive` ne relance jamais s01 à s10 sur ce dépôt ni sur un dépôt qui a gardé l'ancienne convention.
+
+- **Complexité** : 2
+- **Dépend de** : s109-drive-guards
+- **Surface** : —
+- **Owns** : `method/hooks/po-session.sh`, `method/commands/po-status.md`, `method/commands/po-drive.md`, `tests/short-subject-shipped.test.sh`
+
+**Critères d'acceptation**
+- [ ] `short_subject_counts_as_shipped` — `/po-status` et `/po-drive` disent, avec la même phrase, qu'une story `s<n>-<slug>` est livrée sur un commit de `Target branch` (ou `origin/<Target branch>`) dont le sujet commence par `<id>:`, ou, faute d'un tel commit, par `s<n>:` exactement ; `po-session` applique la même règle dans `read_shipped`.
+- [ ] `short_subject_is_exact` — `s1:` ne marque pas `s10-…` ni `s100-…`, et un sujet `s10-autre:` ne marque pas `s10-…` ; un test le montre sur un dépôt jetable avec `po-session`.
+- [ ] `session_lists_no_short_shipped_story` — sur un dépôt jetable dont l'historique livre `s01-x` sous `s01: …`, `po-session` ne liste pas `s01-x` dans les stories prêtes.
+
+**Notes pour l'agent** : option retenue par le porteur le 2026-10-13 ; options écartées : une marque « Livrée » dans `docs/stories.md` (un second signal à tenir) et ne rien changer (vigilance à chaque vague). Dépend de s109 parce que les deux possèdent `po-drive.md`. Ce dépôt livre bien s01 à s10 sous `s01:` … `s10:` (`git log --oneline main`).
+
+### s113-reuse-ladder — Le plan dit ce qu'il réutilise avant d'écrire du neuf
+**En tant que** développeur **je veux** que chaque plan dise, pour chaque morceau de code neuf, ce qu'il aurait pu réutiliser et pourquoi il ne le fait pas, et que la revue relève le code neuf qu'un existant fournissait déjà **afin qu'**un plan surdimensionné ne soit plus exécuté tel quel sans que personne le conteste.
+
+- **Complexité** : 3
+- **Dépend de** : s111-tech-choice-backstop
+- **Surface** : —
+- **Owns** : `method/templates/plan.md`, `method/templates/plan-flow.md`, `method/agents/planner.md`, `method/commands/po-plan.md`, `method/commands/po-flow.md`, `method/skills/review-antihallu/SKILL.md`, `tests/reuse-ladder.test.sh`
+
+**Critères d'acceptation**
+- [ ] `plans_carry_a_reuse_section` — `plan.md` et `plan-flow.md` portent une section `## Reuse` qui demande, pour chaque morceau de code neuf, le premier échelon qui tient — déjà dans ce dépôt (`path:line`), bibliothèque standard ou plateforme, dépendance déjà installée, code neuf — et pourquoi chaque échelon au-dessus échoue ; elle interdit toute option, configuration ou abstraction que la story ne demande pas.
+- [ ] `never_cut_list_is_explicit` — la même section dit que l'échelle ne retire jamais la validation aux frontières de confiance, la sécurité, ni la gestion d'erreur qui évite une perte de données.
+- [ ] `planner_requires_the_ladder` — le contrat du planner (puce **Plan** et puce **Short track**), `/po-plan` et `/po-flow` exigent la section `## Reuse` remplie ; un plan sans code neuf l'écrit en une ligne plutôt que de l'omettre.
+- [ ] `review_flags_rebuilt_helpers` — l'étape 3 de `review-antihallu` dit qu'un code neuf que fournissait déjà un utilitaire existant cité, ou la bibliothèque standard, est un constat **majeur**, et que l'écart entre la section `## Reuse` du plan et le diff se juge comme un écart à une tâche.
+
+**Notes pour l'agent** : cadrée d'abord le 2026-10-13 sous l'id `s101-reuse-ladder` (branche `story/reuse-ladder`, jamais livrée), reprise ici avec l'accord du porteur, et coupée en deux sur la revue des stories : la mesure est s114. L'idée vient de Ponytail (`DietrichGebert/ponytail`), dont l'échelle est : faut-il que ça existe → déjà dans le code → bibliothèque standard ou plateforme → dépendance installée → le minimum de code neuf. Polype reprend le mécanisme au moment du plan, pas ses hooks permanents. Écrire la méthode avec ses propres mots, sans reprendre le texte de Ponytail. L'implementer reste tel quel (`method/agents/implementer.md`, « Do what the plan says and nothing else ») : c'est le plan qui porte l'échelle. La lentille Dependencies de `review-lenses` reste valable et n'est pas dupliquée. La section tient dans les limites de longueur de la Loi 6. Le choix « échelle au plan, mesurée contre un témoin, pas de hook permanent » mérite une ADR, écrite par le planner avec le numéro que le pilote lui réserve, et soumise au porteur.
+
+### s114-reuse-ladder-eval — La règle de réutilisation se mesure contre un témoin
+**En tant que** développeur **je veux** une recette d'éval qui plante un utilitaire réécrit et un bras témoin « Follow YAGNI. » lancé sans toucher l'installation globale **afin de** savoir si la règle de s113 fait mieux qu'une ligne avant de la garder.
+
+- **Complexité** : 3
+- **Dépend de** : s113-reuse-ladder
+- **Surface** : —
+- **Owns** : `evals/`, `bin/po-eval`, `tests/evals.test.sh`, `tests/reuse-ladder-eval.test.sh`
+
+**Critères d'acceptation**
+- [ ] `eval_plants_a_rebuilt_helper` — `evals/cases/` contient une recette où le diff réécrit un utilitaire déjà présent dans l'application de démonstration (`app/notes.py`), avec `CASE_EXPECT_SEVERITY=major` et `CASE_EXPECT_SHIP=yes`, sans que le dépôt construit nomme le défaut ; `tests/evals.test.sh` compte ce nouveau type.
+- [ ] `eval_has_a_yagni_control_arm` — `bin/po-eval --control` lance les mêmes cas avec un reviewer dont la phrase de s113 à l'étape 3 est remplacée par la seule ligne « Follow YAGNI. », et affiche les deux taux côte à côte ; `tests/run.sh` ne lance toujours aucun appel payant.
+- [ ] `control_arm_never_touches_the_global_install` — le bras témoin s'installe dans un `CLAUDE_CONFIG_DIR` temporaire, supprimé à la fin, et ne modifie jamais `~/.claude/` ; `drift_check` continue de comparer l'installation réelle à `method/`.
+
+**Notes pour l'agent** : la mesure elle-même — au moins 3 répétitions par bras — est faite d'appels payants que lance le porteur, après la livraison : la story livre l'outil, pas les taux. Le chef de projet signale ce lancement au porteur une fois s114 livrée ; ses taux vont dans `docs/evals/reuse-ladder.md`, et si la règle ne bat pas le témoin, une story suivante la retire. Écart au cadrage d'origine voulu par la revue des stories : aucune étape du cycle ne porte une mesure faite par le porteur.
