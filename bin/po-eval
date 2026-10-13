@@ -4,6 +4,7 @@
 # before the run count is printed and confirmed, and tests/run.sh never runs this.
 #
 # Usage: po-eval [--repeat N] [--model M] [--control] [case…]   every case by default, N=3
+#                                                               (--control needs --model)
 #        po-eval --list                            one case name per line
 #        po-eval --build <case> <dir>              builds that case's repository in <dir>, prints its worktree
 #
@@ -12,9 +13,10 @@
 # `blocked` is graded `blocked` and never passes. No model grades another model here.
 #
 # --control runs every case a second time on a copy of this checkout whose review-antihallu step-3
-# reuse sentence is replaced by `Follow YAGNI.` alone, installed globally into a temporary config
-# dir removed at exit, and prints both rates side by side. That config dir holds no login: the
-# control arm needs ANTHROPIC_API_KEY or CLAUDE_CODE_OAUTH_TOKEN in the environment.
+# reuse sentence is replaced by `Follow YAGNI.` alone, and prints both rates side by side. Each arm
+# runs on its own temporary config dir, installed globally from its own method and removed at exit,
+# with the same --model, so the sentence is the only difference. Those config dirs hold no login:
+# both arms need ANTHROPIC_API_KEY or CLAUDE_CODE_OAUTH_TOKEN in the environment.
 set -euo pipefail
 
 POLYPE_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
@@ -27,7 +29,7 @@ CONTROL_PREFIX='New code that an existing helper you can cite by'
 
 usage() {
   cat >&2 <<'USAGE'
-usage: po-eval [--repeat N] [--model M] [--control] [case…]
+usage: po-eval [--repeat N] [--model M] [--control] [case…]   (--control needs --model)
        po-eval --list
        po-eval --build <case> <dir>
 USAGE
@@ -165,6 +167,15 @@ while [ $# -gt 0 ]; do
   esac
 done
 
+if [ "$control" = yes ] && { [ "$list" = yes ] || [ "$build" = yes ]; }; then
+  echo "po-eval: --control cannot be combined with --list or --build" >&2
+  exit 2
+fi
+if [ "$control" = yes ] && [ -z "$model" ]; then
+  echo "po-eval: --control needs --model, so both arms run the same model" >&2
+  exit 2
+fi
+
 if [ "$list" = yes ]; then all_cases; exit 0; fi
 
 if [ "$build" = yes ]; then
@@ -186,6 +197,10 @@ fi
 total=$(( ${#selected[@]} * repeat ))
 if [ "$control" = yes ]; then
   echo "${#selected[@]} cases × $repeat repetitions × 2 arms = $(( total * 2 )) runs of claude -p"
+  logins=()
+  [ -z "${ANTHROPIC_API_KEY:-}" ] || logins+=(ANTHROPIC_API_KEY)
+  [ -z "${CLAUDE_CODE_OAUTH_TOKEN:-}" ] || logins+=(CLAUDE_CODE_OAUTH_TOKEN)
+  echo "both arms: model $model, each on its own temporary CLAUDE_CONFIG_DIR installed from its own method, login from ${logins[0]}${logins[1]:+ and ${logins[1]}}"
 else
   echo "${#selected[@]} cases × $repeat repetitions = $total runs of claude -p"
 fi
@@ -202,10 +217,13 @@ if [ "$control" = yes ]; then
   ctl="$(mktemp -d)"
   trap 'rm -rf "$ctl"' EXIT
   control_setup "$ctl"
+  CLAUDE_CONFIG_DIR="$ctl/rule-config" bash "$POLYPE_ROOT/bin/polype" install --global >/dev/null
 fi
 
 results="$(mktemp -d)"
 echo "results: $results"
+rule_config=""
+[ "$control" != yes ] || rule_config="$ctl/rule-config"
 model_args=()
 [ -z "$model" ] || model_args=(--model "$model")
 
@@ -216,7 +234,7 @@ for name in "${selected[@]}"; do
   passed=0 cpassed=0
   labels=() clabels=()
   for n in $(seq 1 "$repeat"); do
-    label="$(run_arm "$POLYPE_ROOT/bin/po-eval" "" "$results/$name/$n")"
+    label="$(run_arm "$POLYPE_ROOT/bin/po-eval" "$rule_config" "$results/$name/$n")"
     [ "$label" = "$expected" ] && passed=$((passed + 1))
     labels+=("$label")
     if [ "$control" = yes ]; then

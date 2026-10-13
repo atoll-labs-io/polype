@@ -22,6 +22,7 @@ cfg_skill="$CLAUDE_CONFIG_DIR/skills/review-antihallu/SKILL.md"
 proj_skill="$PWD/.claude/skills/review-antihallu/SKILL.md"
 {
   echo "cfg=$CLAUDE_CONFIG_DIR"
+  echo "args=$*"
   echo "cfg_yagni=$(count 'Follow YAGNI.' "$cfg_skill")"
   echo "cfg_prefix=$(count "$RL_PREFIX" "$cfg_skill")"
   echo "proj_yagni=$(count 'Follow YAGNI.' "$proj_skill")"
@@ -71,12 +72,12 @@ test_eval_plants_a_rebuilt_helper() {
 
 test_eval_has_a_yagni_control_arm() {
   rl_setup
-  rl_run n --control --repeat 1 rebuilt-helper
+  rl_run n --control --model test-model --repeat 1 rebuilt-helper
   [ "$RL_STATUS" -ne 0 ] || fail "declining should exit non-zero"
   grep -qF '1 cases × 1 repetitions × 2 arms = 2 runs' <<< "$RL_OUT" || fail "the two arms were not announced: $RL_OUT"
   [ "$(rl_calls)" -eq 0 ] || fail "claude was called without confirmation"
 
-  rl_run y --control --repeat 1 rebuilt-helper
+  rl_run y --control --model test-model --repeat 1 rebuilt-helper
   [ "$RL_STATUS" -eq 0 ] || fail "po-eval --control failed: $RL_OUT"
   [ "$(rl_calls)" -eq 2 ] || fail "expected two calls, got $(rl_calls)"
   [ "$(rl_field 1 proj_prefix)" -eq 1 ] && [ "$(rl_field 1 proj_yagni)" -eq 0 ] \
@@ -89,12 +90,14 @@ test_eval_has_a_yagni_control_arm() {
 }
 
 test_control_arm_never_touches_the_global_install() {
-  local before ctlcfg
+  local before ctlcfg rulecfg
   rl_setup
   before="$(cfg_listing)"
-  rl_run y --control --repeat 1 rebuilt-helper
+  rl_run y --control --model test-model --repeat 1 rebuilt-helper
   [ "$RL_STATUS" -eq 0 ] || fail "po-eval --control failed: $RL_OUT"
-  [ "$(rl_field 1 cfg)" = "$RLTMP/cfg" ] || fail "the rule arm did not run on the inherited config"
+  rulecfg="$(rl_field 1 cfg)"
+  case "$rulecfg" in "$RLTMP/tmp"/*) ;; *) fail "the rule config is outside TMPDIR: $rulecfg" ;; esac
+  [ ! -e "$rulecfg" ] || fail "the rule config $rulecfg survived the run"
   ctlcfg="$(rl_field 2 cfg)"
   case "$ctlcfg" in "$RLTMP/tmp"/*) ;; *) fail "the control config is outside TMPDIR: $ctlcfg" ;; esac
   [ ! -e "$ctlcfg" ] || fail "the control config $ctlcfg survived the run"
@@ -103,7 +106,7 @@ test_control_arm_never_touches_the_global_install() {
 
   rl_setup
   echo "# drift" >> "$RLTMP/cfg/agents/reviewer.md"
-  rl_run y --control --repeat 1 rebuilt-helper
+  rl_run y --control --model test-model --repeat 1 rebuilt-helper
   [ "$RL_STATUS" -eq 2 ] && grep -qF 'agents/reviewer.md differs' <<< "$RL_OUT" \
     || fail "drift in the real config was not refused (exit $RL_STATUS): $RL_OUT"
   [ "$(rl_calls)" -eq 0 ] || fail "claude was called despite drift"
@@ -111,7 +114,7 @@ test_control_arm_never_touches_the_global_install() {
   rm -rf "$RLTMP/cfg"
   rl_setup
   RL_TOKEN=()
-  rl_run y --control --repeat 1 rebuilt-helper
+  rl_run y --control --model test-model --repeat 1 rebuilt-helper
   [ "$RL_STATUS" -eq 2 ] && grep -qF 'claude setup-token' <<< "$RL_OUT" \
     || fail "a control run without a token was not refused (exit $RL_STATUS): $RL_OUT"
   [ "$(rl_calls)" -eq 0 ] || fail "claude was called without a token"
