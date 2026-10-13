@@ -63,7 +63,12 @@ Every framing command lands its commit this way: this one, `/po-brief`, `/po-prd
 **Remote check**, as in `/po-ship`. `Merge mode: pr` with no `origin` remote → stop: a repository without a remote uses `local`. `Merge mode: local` with a remote → stop with "`Merge mode: local` is only for a repository without a remote (ADR-0080); set it to `pr`."
 
 **Base.**
-- `pr`: `git fetch origin`. A pull request already open from `framing/<slug>` (`gh pr list --head framing/<slug> --state open`) → `<base>` is `origin/framing/<slug>`, so the new commit stacks on the earlier one and the same pull request carries both. Otherwise `<base>` is `origin/<Target branch>`.
+- `pr`: `git fetch origin`. No `origin/framing/<slug>` (`git rev-parse --verify --quiet refs/remotes/origin/framing/<slug>` fails) → `<base>` is `origin/<Target branch>`.
+- A framing branch already on the remote is proven merged or not, as step 3 of `/po-ship` proves a ship:
+  - On GitHub, the forge `## The forge's review rule` of `method/commands/po-ship.md` recognises from `origin`, the proof is the pull request: `gh pr view framing/<slug> --json state --jq .state` prints exactly `MERGED`. Any other state, or no pull request from that branch, means not merged. `gh` missing or not logged in → stop: Ancestry is never the proof of a merge on GitHub, which rebuilds every commit it lands (ADR-0081).
+  - On any other forge, where the merge is a true fast-forward (ADR-0081), the proof is `git merge-base --is-ancestor origin/framing/<slug> origin/<Target branch>`.
+- Not merged → `<base>` is `origin/framing/<slug>`, whether a pull request is open or not. The new commit stacks on what the branch already carries, and an open pull request carries both.
+- Merged → the root realigns before anything is built: in the root, `git merge --ff-only origin/<Target branch>`. A refusal is reported and the landing carries on: no stash, checkout or reset forces it. Then `git push origin --delete framing/<slug>`, and `<base>` is `origin/<Target branch>`. A merged branch is never taken as a base.
 - That ref missing → stop: a person pushes `Target branch` to the remote once, since no agent pushes it.
 - `local`: `<base>` is `framing/<slug>` when that local branch exists and is not an ancestor of `Target branch`; otherwise `<base>` is `<Target branch>`.
 
@@ -77,7 +82,7 @@ Every framing command lands its commit this way: this one, `/po-brief`, `/po-prd
 - `git push --force-with-lease=framing/<slug> origin <sha>:refs/heads/framing/<slug>`. A refused push is never forced: stop and report it.
 - Reuse the pull request already open from `framing/<slug>`, or open one with `gh pr create --base <Target branch> --head framing/<slug>`, titled `<message>`. On a forge where no pull request is opened yet (ADR-0081: GitHub only), the branch is sent and the report asks a person to open the pull request.
 - The effective `Ship confirmation` is the one `## The forge's review rule` of `method/commands/po-ship.md` settles; the line itself is never rewritten here.
-- `human` → stop with "Framing pull request ready: <url>. Land it with Rebase and merge; /po-research starts a story only once its section is on `origin/<Target branch>`."
+- `human` → stop with "Framing pull request ready: <url>. Land it with Rebase and merge; /po-research starts a story only once its section is on `origin/<Target branch>`." Once a person merges, the next landing of any framing command realigns the root as **Base** says.
 - `automatic` → when the pull request has checks, wait for them to pass; a failing check → stop and leave the pull request open. Then `gh pr merge <url> --rebase --match-head-commit <sha>`.
 - Proof: `gh pr view <url> --json state --jq .state` prints exactly `MERGED`; anything else is not proof, and nothing below runs.
 - Then `git fetch origin` and, in the root, `git merge --ff-only origin/<Target branch>`. A refusal is reported and the landing stands: never stash or check out to force it. Then `git push origin --delete framing/<slug>`.
