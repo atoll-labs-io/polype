@@ -1539,7 +1539,7 @@ Objectif : fermer les majeurs et les mineurs que les revues de M8 ont laissés o
 
 ## M9 — L'autonomie
 
-Le cadrage se valide en conversation, la session principale devient le chef de projet, et l'humain n'est plus sollicité que pour une incohérence, une idée nouvelle, une décision stratégique ou un choix technique (ADR-0074 à ADR-0077). Aucune gate de Law 3 ne change.
+Le cadrage se valide en conversation, la session principale devient le chef de projet, et l'humain n'est plus sollicité que pour une incohérence, une idée nouvelle, une décision stratégique ou un choix technique (ADR-0074 à ADR-0077). Rien n'arrive plus sur la branche cible autrement que par une PR en fast-forward (ADR-0080). Aucune gate de Law 3 ne change.
 
 Tests qui figent `method/AGENTS.md` sans appartenir à une story de M9 : `tests/fleet-wiring.test.sh` et `tests/structure.test.sh`. Les changements y restent additifs et gardent leurs phrases.
 
@@ -1560,23 +1560,24 @@ Tests qui figent `method/AGENTS.md` sans appartenir à une story de M9 : `tests/
 **Notes pour l'agent** : les gardes existantes (`status: approved`, branche `Target branch`, commit commun du brief et de son ADR) restent telles quelles ; seule la façon de recueillir l'accord change. `/po-design` n'est pas concerné (ADR-0019). `/po-stories-review` gagne AskUserQuestion dans ses `allowed-tools` : `bin/po-lint` refuse un corps qui pose une question sans l'outil (`tests/lint.test.sh`). Tests non possédés qui figent ces textes, à garder verts par des changements additifs : `tests/architect.test.sh` (section `Approval and commit`, « what the new conventions would remove or contradict », AskUserQuestion) — `po-architect.md:53` cite aussi « the grouped AskUserQuestion of "Approval and commit" », à réécrire ; `tests/brief.test.sh` (« agreement », « set `status: approved` », « The approval and its ADR go in the same commit, or neither ») ; `tests/stories.test.sh` ; `tests/design-system.test.sh`.
 
 ### s102-ship-follows-the-forge — Le ship suit le processus de revue du dépôt
-**En tant que** porteur de projet seul sur un dépôt **je veux** que la flotte merge ce que la gate a prouvé sans me le demander, sauf si le dépôt ou moi exigeons une revue humaine **afin de** n'être sollicité pour un merge que lorsqu'un humain doit vraiment relire (ADR-0075).
+**En tant que** porteur de projet seul sur un dépôt **je veux** que la flotte merge ce que la gate a prouvé sans me le demander, sauf si le dépôt ou moi exigeons une revue humaine **afin de** n'être sollicité pour un merge que lorsqu'un humain doit vraiment relire (ADR-0075, ADR-0079).
 
 - **Complexité** : 3
-- **Dépend de** : aucune
+- **Dépend de** : s105-ship-through-pr
 - **Surface** : —
 - **Owns** : `method/commands/po-setup.md`, `method/commands/po-ship.md`, `method/commands/po-drive.md`, `method/commands/po-orchestrator.md`, `method/commands/po-flow.md`, `method/templates/agents-local.md`, `method/AGENTS.md`, `tests/drive.test.sh`, `tests/ship-follows-forge.test.sh`
 
 **Critères d'acceptation**
-- [ ] `setup_reads_review_rules_from_the_forge` — `/po-setup` lit la revue obligatoire de la protection de branche, `CODEOWNERS` et les autres collaborateurs avec droit d'écriture, propose `Ship confirmation` en conséquence et ne recopie plus `Plan validation` sur lui.
+- [ ] `setup_reads_review_rules_from_the_forge` — `/po-setup` détecte la forge depuis le remote `origin` (GitHub, GitLab, sinon Forgejo/Gitea sondé sur `/api/v1`) et lit par son API la revue obligatoire de la protection de branche, `CODEOWNERS` et les autres collaborateurs avec droit d'écriture ; il propose `Ship confirmation` en conséquence et ne recopie plus `Plan validation` sur lui. Pas de remote, hôte inconnu ou pas de jeton : la forge est illisible et le rapport le dit.
+- [ ] `collaborative_repo_forbids_agent_merge` — un dépôt collaboratif (autre collaborateur en écriture, `CODEOWNERS` qui nomme quelqu'un d'autre, ou protection qui exige une approbation) donne `human (forge)` quoi que dise la ligne ; un dépôt où la personne est seule suit son choix du setup, `automatic (chosen)` ou `human (chosen)`, modifiable en conversation ; une valeur sans suffixe se lit `(forge)`, et un dépôt solo y donne `automatic (forge)`. Le 403 d'un dépôt privé sur un plan gratuit vaut « aucune protection ».
 - [ ] `setting_records_its_origin` — la valeur de `Ship confirmation` porte un suffixe d'origine, `(forge)` ou `(chosen)` (le `(choisi)` d'ADR-0075, en anglais comme le reste de la méthode) ; la section « Reading settings » de `method/AGENTS.md` dit qu'un suffixe final entre parenthèses est l'origine, pas la valeur, de sorte que `human (forge)` se lit `human` partout où une commande compare la valeur.
 - [ ] `template_defaults_trust_the_gates` — le gabarit propose `Plan validation: autonomous` (ADR-0077 : l'humain n'est sollicité que pour ses motifs) et `Ship confirmation: automatic`.
-- [ ] `forge_tightening_switches_to_human` — à chaque ship, une forge qui exige désormais une revue fait passer le réglage à `human (forge)`, ligne commitée et signalée au rapport ; une valeur `(forge)` revient à `automatic` quand la forge ne l'exige plus ; une forge sans API lisible garde la valeur du setup et le rapport le dit.
+- [ ] `forge_tightening_switches_to_human` — à chaque ship, une forge qui exige désormais une revue fait passer le réglage à `human (forge)`, ligne commitée sur une branche, poussée et proposée en PR draft (ADR-0080), signalée au rapport, le ship suivant déjà la valeur effective ; une valeur `(forge)` revient à `automatic` quand la forge ne l'exige plus ; une forge sans API lisible garde la valeur du setup et le rapport le dit.
 - [ ] `chosen_value_never_moves` — une valeur `(chosen)` n'est jamais réécrite par un agent, et `method/AGENTS.md` borne l'exception à « an agent reads settings, it never decides them » aux seules valeurs `(forge)`.
 - [ ] `pr_wait_does_not_block_the_fleet` — sous `human` en mode `pr`, ouvrir la PR n'est pas l'atterrissage : la flotte ouvre la PR, passe aux autres voies et peut ouvrir la PR suivante, l'ordre d'atterrissage restant celui des merges humains ; le nettoyage n'a lieu qu'une fois le merge prouvé. La règle « Ships stay serial » de `method/AGENTS.md` et `po-drive.md` le dit, en gardant ses phrases.
 - [ ] `ship_gate_unchanged` — `po-gate ship-allowed` est toujours exigé avant tout merge, quelle que soit la valeur.
 
-**Notes pour l'agent** : `tests/drive.test.sh` fige la phrase « `Ship confirmation: human` means one AskUserQuestion per merge » ; la story la change, et le dit. Tests non possédés à garder verts par des changements additifs : `tests/fleet-wiring.test.sh` (« **Ships stay serial** », « in the order the reviews passed ») ; pour l'étape 2 de `po-setup.md`, `tests/commands-and-texts.test.sh`, `tests/setup-modes.test.sh`, `tests/platform-setting.test.sh`, `tests/design-handoff.test.sh`, `tests/qa.test.sh` ; `tests/structure.test.sh` (forme des lignes du gabarit : pas de `#`) ; `tests/ship.test.sh` (AskUserQuestion dans `po-ship.md`) ; et ceux qui figent `po-drive.md` et `po-orchestrator.md` (`resume`, `qa-fleet`, `fleet-design`, `surface-routing`, `grouped-validation`).
+**Notes pour l'agent** : ADR-0079, écrite par le premier plan sans discussion, a été réécrite avec le porteur le 2026-10-13 : la recherche déjà sur disque reste, le plan et l'ADR sont refaits sur les critères ci-dessus, et la PR passe par le chemin de s105. `tests/drive.test.sh` fige la phrase « `Ship confirmation: human` means one AskUserQuestion per merge » ; la story la change, et le dit. Tests non possédés à garder verts par des changements additifs : `tests/fleet-wiring.test.sh` (« **Ships stay serial** », « in the order the reviews passed ») ; pour l'étape 2 de `po-setup.md`, `tests/commands-and-texts.test.sh`, `tests/setup-modes.test.sh`, `tests/platform-setting.test.sh`, `tests/design-handoff.test.sh`, `tests/qa.test.sh` ; `tests/structure.test.sh` (forme des lignes du gabarit : pas de `#`) ; `tests/ship.test.sh` (AskUserQuestion dans `po-ship.md`) ; et ceux qui figent `po-drive.md` et `po-orchestrator.md` (`resume`, `qa-fleet`, `fleet-design`, `surface-routing`, `grouped-validation`).
 
 ### s103-project-lead — La session principale est le chef de projet
 **En tant que** porteur de projet **je veux** qu'en ouvrant une conversation sur un projet Polype, la session soit d'emblée le chef de projet qui connaît l'état du projet **afin de** n'avoir aucune commande à taper pour que le projet avance (ADR-0076).
@@ -1600,7 +1601,7 @@ Tests qui figent `method/AGENTS.md` sans appartenir à une story de M9 : `tests/
 **En tant que** porteur de projet **je veux** un contrat écrit de ce qui me revient et de ce que le chef tranche seul, avec un journal de ses décisions **afin d'**être sollicité seulement là où mon jugement change le résultat, sans jamais perdre la main sur la technologie (ADR-0077).
 
 - **Complexité** : 3
-- **Dépend de** : s101-conversational-framing, s103-project-lead
+- **Dépend de** : s101-conversational-framing, s103-project-lead, s106-framing-through-pr
 - **Surface** : —
 - **Owns** : `method/AGENTS.md`, `method/commands/po-drive.md`, `method/commands/po-orchestrator.md`, `method/commands/po-architect.md`, `method/commands/po-plan.md`, `method/commands/po-flow.md`, `method/agents/planner.md`, `method/skills/capability-bricks/SKILL.md`, `method/templates/decisions-log.md`, `tests/escalation-contract.test.sh`
 
@@ -1609,7 +1610,39 @@ Tests qui figent `method/AGENTS.md` sans appartenir à une story de M9 : `tests/
 - [ ] `tech_choices_are_never_settled_alone` — tout choix technique ou technologique qui mérite une ADR est discuté avec l'humain avant d'être pris ; un détail d'implémentation dans un plan validé reste au chef ; dans le doute, il demande.
 - [ ] `plan_with_a_tech_choice_waits_for_a_human` — un plan qui demande un choix digne d'une ADR (bibliothèque, motif, modèle de données) ne se valide jamais lui-même, quel que soit `Plan validation` : `po-plan.md`, `po-flow.md` et `planner.md` le disent, la voie remonte le choix avec ses options classées, les autres voies continuent, et la table de reprise de `/po-drive` porte la ligne « plan en attente d'un choix technique → un humain ».
 - [ ] `human_stops_do_not_halt_the_fleet` — `/po-drive` et `/po-orchestrator` remontent chaque arrêt « à un humain » tout de suite, un par un, et la flotte continue les autres voies.
-- [ ] `lead_logs_what_it_decides_alone` — chaque décision prise seule ajoute à `docs/decisions-log.md` une ligne datée avec sa raison, selon `templates/decisions-log.md` ; le journal est commité seul sur `Target branch` après chaque vague, avant les ships, pour que la racine reste propre ; Law 6 le range parmi les fichiers de cadrage.
+- [ ] `lead_logs_what_it_decides_alone` — chaque décision prise seule ajoute à `docs/decisions-log.md` une ligne datée avec sa raison, selon `templates/decisions-log.md` ; le journal est commité sur une branche et proposé en PR après chaque vague, par le chemin de cadrage de s106 (ADR-0080) ; Law 6 le range parmi les fichiers de cadrage.
 - [ ] `options_ranked_by_owner_criteria` — `capability-bricks` et `/po-architect` classent les options d'abord par : open source ou auto-hébergeable, sobre en ressources matérielles, scalable, facile à manipuler pour une IA.
 
 **Notes pour l'agent** : aucune gate ne s'ouvre autrement qu'aujourd'hui ; les arrêts d'ADR-0070 restent des arrêts. Le changement de `capability-bricks` est additif : `tests/capability-bricks.test.sh`, `tests/bricks.test.sh` et `tests/catalogue-wiring.test.sh` le figent. Les tests qui figent `po-plan.md`, `po-flow.md` et `planner.md` restent verts.
+
+### s105-ship-through-pr — Une story arrive sur la branche cible par une PR, en fast-forward
+**En tant que** porteur de projet **je veux** que chaque story arrive sur `Target branch` par une PR mergée en fast-forward, un commit par story, sans qu'aucun agent pousse sur cette branche **afin de** garder un historique linéaire où chaque arrivée laisse une PR (ADR-0080).
+
+- **Complexité** : 3
+- **Dépend de** : aucune
+- **Surface** : —
+- **Owns** : `method/AGENTS.md`, `method/commands/po-ship.md`, `method/commands/po-drive.md`, `method/commands/po-orchestrator.md`, `method/commands/po-flow.md`, `method/commands/po-help.md`, `method/commands/po-status.md`, `method/commands/po-setup.md`, `method/agents/implementer.md`, `method/templates/agents-local.md`, `method/hooks/po-gate.sh`, `docs/conception.md`, `docs/migration.md`, `tests/ship.test.sh`, `tests/ship-through-pr.test.sh`
+
+**Critères d'acceptation**
+- [ ] `ship_opens_a_pr_and_fast_forwards` — `/po-ship` écrase `story/<id>` en un commit, la rebase sur `Target branch`, la pousse, ouvre la PR et la merge en fast-forward (« Rebase and merge » côté forge) ; sous `human`, il ouvre la PR et s'arrête là, la personne merge.
+- [ ] `one_commit_per_story` — le commit qui arrive sur `Target branch` est unique, titré `<id>: <story title>`, sans commit de merge ; Law 1, Law 6, « Merging » et « Done means » de `method/AGENTS.md` le disent à la place du squash.
+- [ ] `no_agent_pushes_target_branch` — `method/AGENTS.md` dit qu'aucun agent ne pousse sur `Target branch` ; `/po-ship` ne pousse que `story/<id>`, et repousse une PR rebasée avec `--force-with-lease` sur cette seule branche.
+- [ ] `local_only_without_remote` — `Merge mode: local` ne vaut plus que pour un dépôt sans remote : le fast-forward se fait sur la machine et rien n'est poussé ; `/po-setup` et le gabarit le disent.
+- [ ] `ship_gate_unchanged` — `po-gate ship-allowed` est exigé avant tout merge ; ADR-0015 est marquée `superseded` par ADR-0080.
+
+**Notes pour l'agent** : `po-gate.sh` ne change que si sa détection d'une story livrée suppose un squash. Tests non possédés qui figent « squash » ou `Merge mode`, à mettre à jour seulement si la story change la clause qu'ils vérifient, en le disant : `tests/drive.test.sh`, `tests/fleet-wiring.test.sh`, `tests/pilot.test.sh`, `tests/migration-doc.test.sh`, `tests/install.test.sh`, `tests/installer.test.sh`, `tests/distribution-wiring.test.sh`, `tests/structure.test.sh`. Risque principal : un ship humain dont `Target branch` avance pendant l'attente ; la reprise de `/po-drive` relit l'état de la PR plutôt que de la recréer.
+
+### s106-framing-through-pr — Le cadrage et les réglages arrivent aussi par une PR
+**En tant que** porteur de projet **je veux** que le cadrage et les réglages arrivent sur `Target branch` par une PR comme le code **afin qu'**aucun agent ne pousse sur cette branche et qu'une story ne démarre jamais sur un cadrage resté local (ADR-0080).
+
+- **Complexité** : 3
+- **Dépend de** : s105-ship-through-pr
+- **Surface** : —
+- **Owns** : `method/commands/po-setup.md`, `method/commands/po-brief.md`, `method/commands/po-prd.md`, `method/commands/po-stories.md`, `method/commands/po-stories-review.md`, `method/commands/po-architect.md`, `method/commands/po-design-system.md`, `method/commands/po-research.md`, `tests/framing-through-pr.test.sh`
+
+**Critères d'acceptation**
+- [ ] `framing_commits_on_a_branch` — les sept commandes de cadrage commitent sur une branche `framing/<slug>` partie de `Target branch`, la poussent et ouvrent une PR ; aucune ne commite ni ne pousse sur `Target branch`.
+- [ ] `framing_pr_fast_forwards` — la PR de cadrage est mergée en fast-forward, par l'agent sous `Ship confirmation: automatic`, par la personne sous `human` ; sans remote, le fast-forward se fait sur la machine.
+- [ ] `research_waits_for_framing_merge` — `/po-research` ne crée le worktree d'une story que si sa section est présente sur le point de départ (`origin/<Target branch>` quand il existe) ; sinon il s'arrête en disant que la PR de cadrage attend son merge.
+
+**Notes pour l'agent** : les gardes existantes (`status: approved`, commit commun du brief et de son ADR, approbation élément par élément de s101) restent ; seul l'endroit du commit change. Tests non possédés à garder verts : `tests/brief.test.sh`, `tests/prd.test.sh`, `tests/stories.test.sh`, `tests/stories-review.test.sh`, `tests/architect.test.sh`, `tests/design-system.test.sh`, `tests/conversational-framing.test.sh`, `tests/research.test.sh`.
