@@ -68,8 +68,8 @@ test_eval_plants_a_rebuilt_helper() {
     && grep -qF 'if note.owner_id == user.id and note.tenant_id == user.tenant_id' <<< "$added" \
     || fail "the plant does not carry list_for()'s filter in archived_for(): $added"
   ! grep -qF 'self.list_for(' <<< "$added" || fail "the plant calls list_for() instead of repeating it"
-  [ "$(git -C "$wt" diff "main...story/$id" -- tests/test_notes.py | grep -cE '^\+ +def test_archived_for')" = 2 ] \
-    || fail "the plant must add exactly two archived_for tests"
+  [ "$(git -C "$wt" diff "main...story/$id" -- tests/test_notes.py | grep -cE '^\+ +def test_archived_for')" = 3 ] \
+    || fail "the plant must add exactly three archived_for tests"
 }
 
 test_eval_has_a_yagni_control_arm() {
