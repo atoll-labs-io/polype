@@ -1773,3 +1773,39 @@ Tests qui figent les fichiers de ces stories sans leur appartenir : `tests/fleet
 - [ ] `control_arm_never_touches_the_global_install` — le bras témoin s'installe dans un `CLAUDE_CONFIG_DIR` temporaire, supprimé à la fin, et ne modifie jamais `~/.claude/` ; `drift_check` continue de comparer l'installation réelle à `method/`.
 
 **Notes pour l'agent** : la mesure elle-même — au moins 3 répétitions par bras — est faite d'appels payants que lance le porteur, après la livraison : la story livre l'outil, pas les taux. Le chef de projet signale ce lancement au porteur une fois s114 livrée ; ses taux vont dans `docs/evals/reuse-ladder.md`, et si la règle ne bat pas le témoin, une story suivante la retire. Écart au cadrage d'origine voulu par la revue des stories : aucune étape du cycle ne porte une mesure faite par le porteur.
+
+## M9 ter — Plus de CLAUDE.md, une mesure équitable
+
+Objectif : qu'aucun projet Polype n'ait plus jamais de `CLAUDE.md`, et que l'éval de la règle de réutilisation compare deux bras qui ne diffèrent que par la phrase mesurée. Cadré le 2026-10-13 avec le porteur, qui a approuvé chaque story. Aucune gate de Law 3 ne change.
+
+### s115-no-claude-md — Aucun CLAUDE.md dans un projet
+**En tant que** porteur de projet **je veux** que Polype interdise tout `CLAUDE.md` dans un projet et absorbe celui qu'il trouve **afin que** Claude Code lise toujours `AGENTS.md`, et qu'aucun projet ne perde ses règles comme nautile a failli les perdre.
+
+- **Complexité** : 3
+- **Dépend de** : aucune
+- **Surface** : —
+- **Owns** : `bin/polype`, `method/AGENTS.md`, `method/hooks/po-gate.sh`, `method/hooks/po-session.sh`, `method/commands/po-setup.md`, `method/commands/po-architect.md`, `docs/installation.md`, `tests/install.test.sh`, `tests/installer.test.sh`, `tests/global-install.test.sh`, `tests/no-claude-md.test.sh`
+
+**Critères d'acceptation**
+- [ ] `installer_absorbs_claude_md` — `init`, `install` et `update` déplacent le contenu d'un `CLAUDE.md` ou d'un `CLAUDE.local.md` à la racine du projet, sans la ligne `@AGENTS.md`, à la fin de `AGENTS.local.md` sous `## Notes moved from CLAUDE.md`, suppriment le fichier et le disent dans leur rapport ; un fichier qui ne contenait que l'import est supprimé sans rien ajouter ; aucun contenu n'est perdu.
+- [ ] `precommit_refuses_claude_md` — le pre-commit refuse, sur toutes les branches, un `CLAUDE.md` ou un `CLAUDE.local.md` ajouté ou modifié, à n'importe quel niveau du dépôt ; une suppression passe.
+- [ ] `rules_say_no_claude_md` — `AGENTS.md` dit que le seul `CLAUDE.md` est le global de l'utilisateur, qu'aucun agent n'en crée dans un projet, et que les notes du projet vont dans `AGENTS.local.md` ; `/po-setup` et `/po-architect` le disent avec les mêmes mots.
+- [ ] `session_flags_a_claude_md` — `po-session` signale un `CLAUDE.md` ou un `CLAUDE.local.md` présent à la racine du dépôt dans « Waiting for a human », avec la commande qui l'absorbe (`polype update .`).
+
+**Notes pour l'agent** : choix retenu par le porteur le 2026-10-13, à écrire par le planner dans l'ADR-0086 `accepted`, qui remplace ADR-0073 (seuls son `status` et ses liens `superseded-by` changent) : l'installeur absorbe le fichier au lieu de ne retirer que l'import. Options écartées : s'arrêter et demander à la main (une friction à chaque projet), garder le reste du fichier (le défaut de nautile : Claude Code ne lit `AGENTS.md` que si aucun `CLAUDE.md` n'existe). Le `CLAUDE.md` global (`~/.claude/CLAUDE.md`) n'est jamais touché. `AGENTS.local.md` absent → l'installeur le crée depuis `templates/agents-local.md` avant d'y ajouter les notes, ou s'arrête si la commande ne crée jamais ce fichier : le plan le dit d'après `bin/polype`.
+
+### s116-eval-arms-same-environment — Les deux bras de l'éval tournent dans le même environnement
+**En tant que** développeur **je veux** que les deux bras de `bin/po-eval --control` tournent chacun dans une configuration temporaire installée depuis sa propre méthode, avec le même jeton et le même modèle **afin que** leurs taux ne diffèrent que par la phrase mesurée.
+
+- **Complexité** : 2
+- **Dépend de** : aucune
+- **Surface** : —
+- **Corrige** : majeur et mineur de `docs/reviews/s114-reuse-ladder-eval.md`
+- **Owns** : `bin/po-eval`, `tests/reuse-ladder-eval.test.sh`, `tests/eval-arms-same-environment.test.sh`
+
+**Critères d'acceptation**
+- [ ] `both_arms_run_on_a_temporary_config` — avec `--control`, le bras règle comme le bras témoin s'installent dans un `CLAUDE_CONFIG_DIR` temporaire depuis leur propre copie de la méthode, et aucun ne lit `~/.claude/` ; les deux dossiers sont supprimés à la sortie.
+- [ ] `control_needs_a_model` — `--control` sans `--model` est refusé avant tout appel, et la sortie rappelle le modèle et l'environnement communs aux deux bras.
+- [ ] `control_is_refused_with_list_or_build` — `--control` avec `--list` ou `--build` est refusé avec un message, au lieu d'être ignoré.
+
+**Notes pour l'agent** : le jeton reste lu dans l'environnement (`ANTHROPIC_API_KEY` ou `CLAUDE_CODE_OAUTH_TOKEN`), jamais copié depuis `.credentials.json` ; le porteur utilise son abonnement Max par `claude setup-token`. `drift_check` continue de comparer l'installation réelle à `method/`.
