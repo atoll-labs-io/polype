@@ -1879,7 +1879,7 @@ Objectif : fermer la dernière dette connue de Polype : le majeur de s110, les t
 - **Dépend de** : aucune
 - **Surface** : —
 - **Corrige** : mineurs de `docs/reviews/s115-no-claude-md.md`, `docs/reviews/s116-eval-arms-same-environment.md`, `docs/reviews/s118-rebuilt-helper-single-defect.md`, `docs/reviews/s119-rebuilt-helper-tests-tenant.md`, `docs/reviews/s112-short-subject-shipped.md`
-- **Owns** : `docs/installation.md`, `bin/po-eval`, `evals/cases/rebuilt-helper.sh`, `method/commands/po-status.md`, `tests/rebuilt-helper-single-defect.test.sh`, `tests/install.test.sh`, `tests/docs-and-eval-cleanup.test.sh`
+- **Owns** : `docs/installation.md`, `bin/po-eval`, `evals/cases/rebuilt-helper.sh`, `method/commands/po-status.md`, `method/commands/po-drive.md`, `method/AGENTS.md`, `method/hooks/po-gate.sh`, `tests/resume.test.sh`, `tests/rebuilt-helper-single-defect.test.sh`, `tests/install.test.sh`, `tests/docs-and-eval-cleanup.test.sh`
 
 **Critères d'acceptation**
 - [ ] `installation_cites_adr_0086` — `docs/installation.md` cite ADR-0086 et non plus ADR-0073, et dit qu'un `CLAUDE.local.md`, même privé, est déplacé dans `AGENTS.local.md`, qui est commité (décision du porteur du 2026-10-14) ; le test `install_writes_no_claude_md` porte un nom et un message qui disent ce qu'il vérifie.
@@ -1887,3 +1887,5 @@ Objectif : fermer la dernière dette connue de Polype : le majeur de s110, les t
 - [ ] `recipe_plan_counts_three_tests` — le plan construit de `rebuilt-helper` dit « The three tests » dans « Done when », et `test_demo_app_unchanged` ne fige plus que `get()`, `list_for()` et la recette `missing-tenant-filter`, sans compte de recettes.
 - [ ] `status_shipped_rule_reads_once` — la règle « livrée » de `/po-status` ne dit plus deux fois « shipped » ; la phrase partagée avec `/po-drive` reste mot pour mot.
 - [ ] `status_design_system_matches_session` — la ligne de cadrage de `/po-status` dit `design system not needed` dans le même cas que `po-session` (des stories, toutes avec une ligne `Surface`, aucune `screen`), et ne propose alors pas `/po-design-system`.
+- [ ] `drive_resumes_a_review_the_gate_refuses` — dans `## Resuming` de `/po-drive`, la ligne qui renvoie à la revue couvre toute revue au dernier `Ship allowed: yes` que `po-gate ship-allowed <id>` refuse, quelle qu'en soit la raison (`Reviewed tree:` périmé ou `Review status:` absent ou pas `complete`) ; le texte de `## Ships, one at a time` cite aussi le statut ; une lane dont la revue n'a pas de `Review status:` ne retombe plus en boucle sur le ship (majeur de `docs/reviews/s120-session-and-gate-checks.md`).
+- [ ] `law3_row_states_both_status_checks` — la ligne « Ship allowed » de la Loi 3 dans `method/AGENTS.md` dit les deux conditions que `po-gate` vérifie (le statut du bloc du dernier verdict et la dernière ligne `Review status:` du fichier), et le commentaire de `po-gate.sh` sur le hash est placé au-dessus de la fonction qui l'applique (mineurs de la même revue).
