@@ -30,3 +30,8 @@ A decision the person took is not logged here: it is an ADR or a story.
 | 2026-10-13 | s113-reuse-ladder | Lane handed to the owner | Its plan holds `Technical choice: waiting for a human` for ADR-0085 (option A recommended); s114 waits on it |
 | 2026-10-13 | s112-short-subject-shipped | Asked the reviewer to resend its answer with the missing `Review status:` line | `/po-review` requires the line; the lead does not author it |
 | 2026-10-13 | s112-short-subject-shipped | Merged by the agent (PR #22) | Effective `Ship confirmation: automatic`, solo repository |
+| 2026-10-13 | s113-reuse-ladder | Recorded the owner's choice of ADR-0085 option A in the plan and the ADR, then validated the plan | The owner answered "go pour A"; `Plan validation: autonomous` applies once the choice is settled |
+| 2026-10-13 | s113-reuse-ladder | Fixed the ADR-0085 body ("Option proposée" → "Option choisie") on the story branch before the ship | The review's minor; an accepted ADR's body is never edited once on `main`; the change is under `docs/` and leaves the reviewed tree valid |
+| 2026-10-13 | s114-reuse-ladder-eval | Kept the planner's choice: the control arm refuses to start without `ANTHROPIC_API_KEY` or `CLAUDE_CODE_OAUTH_TOKEN` and never copies `~/.claude/.credentials.json` | The cautious way to handle a secret, and easy to undo |
+| 2026-10-13 | s113-reuse-ladder, s114-reuse-ladder-eval | Merged by the agent (PRs #24, #25) | Effective `Ship confirmation: automatic`, solo repository |
+| 2026-10-13 | — | Landed this log together with the refreshed installed copy in one framing PR | Both are framing-path files written after the milestone's last ship |

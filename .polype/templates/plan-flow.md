@@ -24,6 +24,12 @@ Written by `/po-flow`. On the short track this one file stands in for both the r
 ## Story
 <restatement and acceptance criteria>
 
+## Reuse
+<For each piece of new code the tasks write, the first rung that holds and why each rung above it fails. The rungs, in this order: already in this repository, cited by `path:line`; the standard library or the platform; a dependency already installed; new code. Add no option, setting or abstraction the story does not ask for. The ladder never cuts validation at a trust boundary, security, or the error handling that keeps data from being lost. A plan that writes no new code says so in one line instead of leaving this section out.>
+
+| New code | Rung that holds | Why each rung above fails |
+| --- | --- | --- |
+
 ## Tasks
 <Six at most; more means the story leaves the short track.>
 

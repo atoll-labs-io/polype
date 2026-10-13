@@ -126,23 +126,32 @@ read_worktrees() {
 # --- Shipped and ready ----------------------------------------------------------------------
 
 declare -A SHIPPED=()
+declare -A SHORT_SHIPPED=()
+
+# A story is shipped under its full id, or under its bare number ("s01:") when no commit carries the id.
+is_shipped() { [ -n "${SHIPPED[$1]-}" ] || [ -n "${SHORT_SHIPPED[${1%%-*}]-}" ]; }
 
 read_shipped() {
   local refs=("$target") id
   git -C "$top" rev-parse --verify -q "refs/remotes/origin/$target" >/dev/null 2>&1 && refs+=("origin/$target")
+  local subjects
+  subjects="$(git -C "$top" log --format=%s "${refs[@]}" -- 2>/dev/null)"
   while IFS= read -r id; do
     SHIPPED["${id%:}"]=1
-  done < <(git -C "$top" log --format=%s "${refs[@]}" -- 2>/dev/null | grep -oE "^$id_re:")
+  done < <(grep -oE "^$id_re:" <<< "$subjects")
+  while IFS= read -r id; do
+    SHORT_SHIPPED["${id%:}"]=1
+  done < <(grep -oE '^s[0-9]+:' <<< "$subjects")
 }
 
 ready_stories() {
   local id deps dep ready=() ok
   while read -r id deps; do
     [ -n "$id" ] || continue
-    [ -n "${SHIPPED[$id]-}" ] && continue
+    is_shipped "$id" && continue
     [ -n "${LANES[$id]-}" ] && continue
     ok=yes
-    for dep in $deps; do [ -n "${SHIPPED[$dep]-}" ] || ok=no; done
+    for dep in $deps; do is_shipped "$dep" || ok=no; done
     [ "$ok" = yes ] && ready+=("$id")
   done < <(on_target docs/stories.md | awk -v re="$id_re" '
     function flush() { if (id != "") print id, deps; id = ""; deps = "" }
@@ -201,7 +210,7 @@ waiting_for_a_human() {
       fi
     fi
     if [ "$ship" = yes ] && [ "$merge_mode" = pr ] && [ "$confirmation" = human ] \
-       && [ -z "${SHIPPED[$id]-}" ] \
+       && ! is_shipped "$id" \
        && git -C "$top" rev-parse --verify -q "refs/remotes/origin/story/$id" >/dev/null 2>&1; then
       lines+=("$id: pull request presumed waiting for a human merge (story/$id pushed; the forge was not asked)")
     fi
