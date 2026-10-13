@@ -1646,3 +1646,18 @@ Tests qui figent `method/AGENTS.md` sans appartenir à une story de M9 : `tests/
 - [ ] `research_waits_for_framing_merge` — `/po-research` ne crée le worktree d'une story que si sa section est présente sur le point de départ (`origin/<Target branch>` quand il existe) ; sinon il s'arrête en disant que la PR de cadrage attend son merge.
 
 **Notes pour l'agent** : les gardes existantes (`status: approved`, commit commun du brief et de son ADR, approbation élément par élément de s101) restent ; seul l'endroit du commit change. Tests non possédés à garder verts : `tests/brief.test.sh`, `tests/prd.test.sh`, `tests/stories.test.sh`, `tests/stories-review.test.sh`, `tests/architect.test.sh`, `tests/design-system.test.sh`, `tests/conversational-framing.test.sh`, `tests/research.test.sh`.
+
+### s107-forge-token-bound-to-host — Un jeton ne part jamais vers un hôte pour lequel il n'a pas été émis
+**En tant que** porteur de projet **je veux** que la lecture de la forge n'envoie un jeton qu'à l'hôte pour lequel il a été émis **afin qu'**un dépôt cloné depuis une instance tierce ne récupère jamais mon jeton d'une autre instance (finding majeur de sécurité de la revue de s102, ADR-0079).
+
+- **Complexité** : 2
+- **Dépend de** : aucune
+- **Surface** : —
+- **Owns** : `method/commands/po-ship.md`, `tests/forge-token-host.test.sh`
+
+**Critères d'acceptation**
+- [ ] `env_token_only_for_github` — dans `## The forge's review rule` de `/po-ship`, le repli `curl` avec une variable d'environnement n'existe plus que pour github.com (`GH_TOKEN` ou `GITHUB_TOKEN`) ; `GITLAB_TOKEN` et `GITEA_TOKEN` n'y sont plus cités comme repli.
+- [ ] `other_forges_through_their_cli_only` — GitLab et Forgejo/Gitea ne se lisent que par leur CLI (`glab`, `tea`), qui lie chaque jeton à son hôte dans sa configuration ; sans CLI configurée pour l'hôte d'`origin`, la forge est illisible et le rapport le dit.
+- [ ] `unknown_host_gets_no_token` — la sonde `/api/v1/version` qui reconnaît un Forgejo/Gitea part sans jeton, et aucun appel vers un hôte non reconnu n'en porte un.
+
+**Notes pour l'agent** : `/po-setup` lit la forge « exactly as `/po-ship` reads it » et n'a pas à changer. Tests non possédés à garder verts : `tests/ship-follows-forge.test.sh`, `tests/ship-through-pr.test.sh`, `tests/ship.test.sh`. Options écartées avec le porteur le 2026-10-13 : lier le jeton par une variable `*_HOST` (convention de glab seulement, rien pour Forgejo) ; garder le repli tel quel.
