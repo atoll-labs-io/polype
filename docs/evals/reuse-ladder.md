@@ -71,3 +71,20 @@ Le score attendu ne départage plus les bras, mais pour une autre raison. La pla
 
 - **La règle de s113 est gardée.** Avec elle, le reviewer classe la copie en **majeur** à chaque fois. Sans elle, il la voit au mieux comme un mineur de style, et une fois sur trois il ne la voit pas.
 - **La recette plante encore un second défaut** : un test manquant sur le tenant. Pour que le score attendu mesure la seule copie, la plantation doit ajouter le test de refus inter-tenant. C'est une correction de quelques lignes dans `evals/cases/rebuilt-helper.sh`, à faire dans une story avant la prochaine mesure.
+
+## Troisième mesure, après s119 (2026-10-13)
+
+s119 a ajouté à la plantation le test de refus entre tenants. Le helper recopié est désormais le seul défaut de la recette. Mesure relancée sur ce seul cas, avec la même commande :
+
+| | Règle | Témoin |
+| --- | --- | --- |
+| Score attendu (`major/yes`) | **3/3** | **0/3** (`minor/yes` ×3) |
+| La copie de `list_for` classée **major** | 3/3 | 0/3 |
+| La copie relevée en mineur seulement | 0/3 | 2/3 |
+| La copie non relevée | 0/3 | 1/3 |
+
+Il n'y a plus d'autre majeur. Le mineur que la revue de s119 avait prévu (« Done when » parle de « Both tests » pour trois tests) apparaît en mineur dans 5 revues sur 6, sans changer aucun verdict.
+
+## Conclusion finale
+
+**La règle de s113 est gardée et mesurée.** Sur un cas dont la copie est le seul défaut, le reviewer qui l'a classe majeure 3 fois sur 3. Avec « Follow YAGNI. », il ne la classe jamais majeure : il la voit comme un détail de style ou ne la voit pas.
