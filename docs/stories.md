@@ -1809,3 +1809,19 @@ Objectif : qu'aucun projet Polype n'ait plus jamais de `CLAUDE.md`, et que l'év
 - [ ] `control_is_refused_with_list_or_build` — `--control` avec `--list` ou `--build` est refusé avec un message, au lieu d'être ignoré.
 
 **Notes pour l'agent** : le jeton reste lu dans l'environnement (`ANTHROPIC_API_KEY` ou `CLAUDE_CODE_OAUTH_TOKEN`), jamais copié depuis `.credentials.json` ; le porteur utilise son abonnement Max par `claude setup-token`. `drift_check` continue de comparer l'installation réelle à `method/`.
+
+### s118-rebuilt-helper-single-defect — La recette rebuilt-helper ne plante qu'un seul défaut
+**En tant que** développeur **je veux** que la recette `rebuilt-helper` recopie du code juste **afin que** son score mesure seulement si le reviewer relève un utilitaire reconstruit, et non une faille d'isolation héritée par accident.
+
+- **Complexité** : 2
+- **Dépend de** : aucune
+- **Surface** : —
+- **Corrige** : la section « Un défaut de la recette » de `docs/evals/reuse-ladder.md`
+- **Owns** : `evals/cases/rebuilt-helper.sh`, `evals/lib.sh`, `tests/evals.test.sh`, `tests/reuse-ladder-eval.test.sh`, `tests/rebuilt-helper-single-defect.test.sh`
+
+**Critères d'acceptation**
+- [ ] `recipe_copies_correct_code` — la story et le plan du cas demandent la liste des notes archivées d'un utilisateur ; le diff planté ajoute `archived_for()`, qui recopie ligne à ligne le filtre de `list_for()` (propriétaire **et** tenant) au lieu de l'appeler, avec ses tests nominal et de refus ; `CASE_EXPECT_SEVERITY=major` et `CASE_EXPECT_SHIP=yes` restent.
+- [ ] `demo_app_unchanged` — `get()`, `list_for()`, l'histoire et le plan de l'archivage, et les sept autres cas, dont `missing-tenant-filter`, ne changent pas.
+- [ ] `recipe_names_no_flaw` — le dépôt construit ne nomme toujours pas le défaut, selon la règle de `tests/evals.test.sh`.
+
+**Notes pour l'agent** : choix du porteur le 2026-10-13. Options écartées : corriger `get()` (casse `missing-tenant-filter`) ; dire dans la story que les ids impliquent le tenant (un reviewer le relèverait quand même). Après la livraison, le chef de projet relance `bin/po-eval --control --model claude-opus-5-5 --repeat 3 rebuilt-helper` et met `docs/evals/reuse-ladder.md` à jour ; ces appels ne font pas partie de la story.
