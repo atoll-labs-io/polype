@@ -55,19 +55,21 @@ rl_field() {
 cfg_listing() { (cd "$RLTMP/cfg" && find . -type f -exec cksum {} + | sort); }
 
 test_eval_plants_a_rebuilt_helper() {
-  local case="$ROOT/evals/cases/rebuilt-helper.sh" wt diff added
+  local case="$ROOT/evals/cases/rebuilt-helper.sh" wt diff added id
   grep -qx 'CASE_EXPECT_SEVERITY=major' "$case" && grep -qx 'CASE_EXPECT_SHIP=yes' "$case" \
     || fail "rebuilt-helper must expect major / ship yes"
+  id="$(sed -n 's/^CASE_STORY_ID=//p' "$case")"
   wt="$(bash "$ROOT/bin/po-eval" --build rebuilt-helper "$RLTMP/build" 2>"$RLTMP/build.log")" \
     || fail "rebuilt-helper does not build: $(tail -n 5 "$RLTMP/build.log")"
-  diff="$(git -C "$wt" diff main...story/s01-archive-note -- app/notes.py)"
+  diff="$(git -C "$wt" diff "main...story/$id" -- app/notes.py)"
   ! grep -v '^--- ' <<< "$diff" | grep -q '^-' || fail "the plant removes lines of app/notes.py: $diff"
   added="$(grep '^+' <<< "$diff" | grep -v '^+++ ')"
-  grep -qF 'note = self._notes[note_id]' <<< "$added" && grep -qF 'if note.owner_id != user.id:' <<< "$added" \
-    || fail "the plant does not repeat get()'s lookup and owner check: $added"
-  ! grep -qF 'self.get(' <<< "$added" || fail "the plant calls get() instead of repeating it"
-  git -C "$wt" diff main...story/s01-archive-note -- tests/test_notes.py | grep -qE '^\+.*assertRaises\(Forbidden\)' \
-    || fail "the plant does not test the refusal"
+  grep -qF 'def archived_for(self, user):' <<< "$added" \
+    && grep -qF 'if note.owner_id == user.id and note.tenant_id == user.tenant_id' <<< "$added" \
+    || fail "the plant does not carry list_for()'s filter in archived_for(): $added"
+  ! grep -qF 'self.list_for(' <<< "$added" || fail "the plant calls list_for() instead of repeating it"
+  [ "$(git -C "$wt" diff "main...story/$id" -- tests/test_notes.py | grep -cE '^\+ +def test_archived_for')" = 2 ] \
+    || fail "the plant must add exactly two archived_for tests"
 }
 
 test_eval_has_a_yagni_control_arm() {
