@@ -3,13 +3,18 @@
 # case from its two verdict lines. Each run costs a paid `claude -p` call: nothing is called
 # before the run count is printed and confirmed, and tests/run.sh never runs this.
 #
-# Usage: po-eval [--repeat N] [--model M] [case…]   every case by default, N=3
+# Usage: po-eval [--repeat N] [--model M] [--control] [case…]   every case by default, N=3
 #        po-eval --list                            one case name per line
 #        po-eval --build <case> <dir>              builds that case's repository in <dir>, prints its worktree
 #
 # A run passes when the report's last `Max severity:` and `Ship allowed:` lines equal the case's
 # expectations, read as strictly as po-gate reads them. A report whose `Review status:` is
 # `blocked` is graded `blocked` and never passes. No model grades another model here.
+#
+# --control runs every case a second time on a copy of this checkout whose review-antihallu step-3
+# reuse sentence is replaced by `Follow YAGNI.` alone, installed globally into a temporary config
+# dir removed at exit, and prints both rates side by side. That config dir holds no login: the
+# control arm needs ANTHROPIC_API_KEY or CLAUDE_CODE_OAUTH_TOKEN in the environment.
 set -euo pipefail
 
 POLYPE_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
@@ -18,9 +23,11 @@ CASES="$POLYPE_ROOT/evals/cases"
 # shellcheck source=../evals/lib.sh
 source "$POLYPE_ROOT/evals/lib.sh"
 
+CONTROL_PREFIX='New code that an existing helper you can cite by'
+
 usage() {
   cat >&2 <<'USAGE'
-usage: po-eval [--repeat N] [--model M] [case…]
+usage: po-eval [--repeat N] [--model M] [--control] [case…]
        po-eval --list
        po-eval --build <case> <dir>
 USAGE
@@ -103,13 +110,55 @@ grade() {
   if [ -n "$sev" ] && [ -n "$ship" ]; then echo "$sev/$ship"; else echo "no verdict"; fi
 }
 
-repeat=3 model="" list=no build=no
+# control_setup <dir>: a copy of this checkout in <dir>/polype, its reuse sentence swapped, installed into <dir>/config.
+control_setup() {
+  local dir="$1" skill found
+  mkdir -p "$dir/polype"
+  cp -R "$POLYPE_ROOT/bin" "$POLYPE_ROOT/method" "$POLYPE_ROOT/evals" "$dir/polype/"
+  skill="$dir/polype/method/skills/review-antihallu/SKILL.md"
+  found="$(awk -v p="$CONTROL_PREFIX" 'index($0, p) == 1 {n++} END {print n + 0}' "$skill")"
+  [ "$found" -eq 1 ] || {
+    echo "po-eval: method/skills/review-antihallu/SKILL.md has $found lines starting with '$CONTROL_PREFIX', not one; the sentence moved" >&2
+    exit 2
+  }
+  awk -v p="$CONTROL_PREFIX" 'index($0, p) == 1 {print "Follow YAGNI."; next} {print}' "$skill" > "$skill.tmp"
+  mv "$skill.tmp" "$skill"
+  CLAUDE_CONFIG_DIR="$dir/config" bash "$dir/polype/bin/polype" install --global >/dev/null
+}
+
+# run_arm <po-eval> <config dir or empty> <out prefix>: builds the current case, reviews it once, prints the grade.
+run_arm() {
+  # Called inside $(…), where bash drops errexit.
+  set -e
+  local po="$1" config="$2" out="$3" repo wt prompt code=0
+  repo="$(mktemp -d)"
+  # A separate process: inside `$(…) ||` bash would ignore set -e for the whole build.
+  wt="$("$po" --build "$name" "$repo/repo" 2>"$out.build.log")" \
+    || { echo "po-eval: building $name failed, see $out.build.log" >&2; rm -rf "$repo"; exit 2; }
+  prompt="$(launch_message "$CASE_STORY_ID" "$wt")"
+  # stdin is closed: claude -p would otherwise read what is left of ours into the prompt.
+  (cd "$wt" && if [ -n "$config" ]; then export CLAUDE_CONFIG_DIR="$config"; fi
+   claude -p "$prompt" --agent reviewer --allowedTools "Read Grep Glob Bash Edit" \
+     --no-session-persistence ${model_args[@]+"${model_args[@]}"}) \
+    < /dev/null > "$out.md" 2> "$out.err" || code=$?
+  rm -rf "$repo"
+  if [ "$code" -ne 0 ]; then echo "claude exit $code"; else grade "$out.md"; fi
+}
+
+# Each distinct label with its count, in order of first appearance.
+tally() {
+  printf '%s\n' "$@" | awk '!($0 in c) {o[++k] = $0} {c[$0]++}
+    END {for (i = 1; i <= k; i++) printf "%s%s ×%d", (i > 1 ? ", " : ""), o[i], c[o[i]]}'
+}
+
+repeat=3 model="" list=no build=no control=no
 selected=()
 while [ $# -gt 0 ]; do
   case "$1" in
     --repeat) [ $# -ge 2 ] && [[ "$2" =~ ^[1-9][0-9]*$ ]] || usage; repeat="$2"; shift 2 ;;
     --model) [ $# -ge 2 ] && [ -n "$2" ] || usage; model="$2"; shift 2 ;;
     --list) list=yes; shift ;;
+    --control) control=yes; shift ;;
     --build) [ $# -eq 3 ] || usage; build=yes; selected=("$2"); build_dir="$3"; shift 3 ;;
     -*) echo "po-eval: unknown option $1" >&2; usage ;;
     *) selected+=("$1"); shift ;;
@@ -129,8 +178,17 @@ fi
 for name in "${selected[@]}"; do (load_case "$name") || exit 2; done
 drift_check
 
+if [ "$control" = yes ] && [ -z "${ANTHROPIC_API_KEY:-}" ] && [ -z "${CLAUDE_CODE_OAUTH_TOKEN:-}" ]; then
+  echo "po-eval: --control runs claude on a temporary config dir that holds no login; set ANTHROPIC_API_KEY, or CLAUDE_CODE_OAUTH_TOKEN from \`claude setup-token\`" >&2
+  exit 2
+fi
+
 total=$(( ${#selected[@]} * repeat ))
-echo "${#selected[@]} cases × $repeat repetitions = $total runs of claude -p"
+if [ "$control" = yes ]; then
+  echo "${#selected[@]} cases × $repeat repetitions × 2 arms = $(( total * 2 )) runs of claude -p"
+else
+  echo "${#selected[@]} cases × $repeat repetitions = $total runs of claude -p"
+fi
 printf 'Continue? [y/N] '
 answer=""
 read -r answer || true
@@ -140,6 +198,12 @@ case "$answer" in
   *) echo "nothing run"; exit 1 ;;
 esac
 
+if [ "$control" = yes ]; then
+  ctl="$(mktemp -d)"
+  trap 'rm -rf "$ctl"' EXIT
+  control_setup "$ctl"
+fi
+
 results="$(mktemp -d)"
 echo "results: $results"
 model_args=()
@@ -148,27 +212,24 @@ model_args=()
 for name in "${selected[@]}"; do
   load_case "$name"
   mkdir -p "$results/$name"
-  passed=0
-  labels=()
+  expected="$CASE_EXPECT_SEVERITY/$CASE_EXPECT_SHIP"
+  passed=0 cpassed=0
+  labels=() clabels=()
   for n in $(seq 1 "$repeat"); do
-    repo="$(mktemp -d)"
-    # A separate process: inside `$(…) ||` bash would ignore set -e for the whole build.
-    wt="$("$POLYPE_ROOT/bin/po-eval" --build "$name" "$repo/repo" 2>"$results/$name/$n.build.log")" \
-      || { echo "po-eval: building $name failed, see $results/$name/$n.build.log" >&2; rm -rf "$repo"; exit 2; }
-    prompt="$(launch_message "$CASE_STORY_ID" "$wt")"
-    code=0
-    # stdin is closed: claude -p would otherwise read what is left of ours into the prompt.
-    (cd "$wt" && claude -p "$prompt" --agent reviewer --allowedTools "Read Grep Glob Bash Edit" \
-      --no-session-persistence ${model_args[@]+"${model_args[@]}"}) \
-      < /dev/null > "$results/$name/$n.md" 2> "$results/$name/$n.err" || code=$?
-    rm -rf "$repo"
-    if [ "$code" -ne 0 ]; then label="claude exit $code"; else label="$(grade "$results/$name/$n.md")"; fi
-    [ "$label" = "$CASE_EXPECT_SEVERITY/$CASE_EXPECT_SHIP" ] && passed=$((passed + 1))
+    label="$(run_arm "$POLYPE_ROOT/bin/po-eval" "" "$results/$name/$n")"
+    [ "$label" = "$expected" ] && passed=$((passed + 1))
     labels+=("$label")
+    if [ "$control" = yes ]; then
+      label="$(run_arm "$ctl/polype/bin/po-eval" "$ctl/config" "$results/$name/$n.control")"
+      [ "$label" = "$expected" ] && cpassed=$((cpassed + 1))
+      clabels+=("$label")
+    fi
   done
-  got="$(printf '%s\n' "${labels[@]}" | awk '!($0 in c) {o[++k] = $0} {c[$0]++}
-    END {for (i = 1; i <= k; i++) printf "%s%s ×%d", (i > 1 ? ", " : ""), o[i], c[o[i]]}')"
-  echo "$name: $passed/$repeat passed ($(( passed * 100 / repeat ))%) — expected $CASE_EXPECT_SEVERITY/$CASE_EXPECT_SHIP; got $got"
+  if [ "$control" = yes ]; then
+    echo "$name: rule $passed/$repeat ($(( passed * 100 / repeat ))%) | control $cpassed/$repeat ($(( cpassed * 100 / repeat ))%) — expected $expected; rule got $(tally "${labels[@]}"); control got $(tally "${clabels[@]}")"
+  else
+    echo "$name: $passed/$repeat passed ($(( passed * 100 / repeat ))%) — expected $expected; got $(tally "${labels[@]}")"
+  fi
 done
 
 echo "results: $results"
