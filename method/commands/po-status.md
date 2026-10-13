@@ -28,7 +28,7 @@ Everything comes from files and git; nothing is guessed. Bash is used read-only:
    - record: present or not, and whether `po-gate verif-current <id>` passes;
    - QA: for a story that goes to QA (`AGENTS.md`, Law 1), `docs/qa/<id>/report.md` present or not, its last `QA status:`, and whether `po-gate qa-current <id>` passes; `—` for any other story; `QA stage` unset → shown as unset for a story that has a screen or a `Surface` other than `—`, never guessed;
    - review: last `Ship allowed:` value — yes · no · none — and its `Fix loop:`, plus whether `po-gate ship-allowed <id>` passes; a `yes` whose `Reviewed tree:` no longer matches the code is shown as stale, next `/po-review <id>`;
-   - shipped: a commit whose subject starts with `<id>:` on `Target branch` or `origin/<Target branch>` → shipped; an open pull request from `story/<id>` → waiting for merge;
+   - shipped: a story `s<n>-<slug>` is shipped when a commit on `Target branch` or `origin/<Target branch>` has a subject starting with `<id>:`, or, when no commit does, with `s<n>:` exactly, its number written as the id writes it → shipped; an open pull request from `story/<id>` → waiting for merge;
    - dependencies: if one of them is not shipped, the story shows "waiting for <ids>" instead of a next command.
 4. **Fleet.** The lanes `/po-drive` would see, derived from the same worktrees and the same git, never from a memory of a wave:
    - **lanes in flight**: a worktree `<Worktree root><id>` whose `git -C <Worktree root><id> rev-parse --abbrev-ref HEAD` prints `story/<id>`; their count against `Parallel`, and for each one the story, the path and the stage of step 3;
