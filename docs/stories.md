@@ -1889,3 +1889,20 @@ Objectif : fermer la dernière dette connue de Polype : le majeur de s110, les t
 - [ ] `status_design_system_matches_session` — la ligne de cadrage de `/po-status` dit `design system not needed` dans le même cas que `po-session` (des stories, toutes avec une ligne `Surface`, aucune `screen`), et ne propose alors pas `/po-design-system`.
 - [ ] `drive_resumes_a_review_the_gate_refuses` — dans `## Resuming` de `/po-drive`, la ligne qui renvoie à la revue couvre toute revue au dernier `Ship allowed: yes` que `po-gate ship-allowed <id>` refuse, quelle qu'en soit la raison (`Reviewed tree:` périmé ou `Review status:` absent ou pas `complete`) ; le texte de `## Ships, one at a time` cite aussi le statut ; une lane dont la revue n'a pas de `Review status:` ne retombe plus en boucle sur le ship (majeur de `docs/reviews/s120-session-and-gate-checks.md`).
 - [ ] `law3_row_states_both_status_checks` — la ligne « Ship allowed » de la Loi 3 dans `method/AGENTS.md` dit les deux conditions que `po-gate` vérifie (le statut du bloc du dernier verdict et la dernière ligne `Review status:` du fichier), et le commentaire de `po-gate.sh` sur le hash est placé au-dessus de la fonction qui l'applique (mineurs de la même revue).
+
+### s123-local-copy-checksums — Les copies de .claude/ se comparent à ce que le checkout a installé
+**En tant que** porteur de projet **je veux** que les sommes de contrôle des copies installées sous `.claude/` vivent à côté d'elles, hors de git **afin qu'**une mise à jour livrée par une PR ne fasse plus passer les copies de chaque checkout pour des retouches.
+
+- **Complexité** : 3
+- **Dépend de** : aucune
+- **Surface** : —
+- **Corrige** : à chaque mise à jour du 2026-10-14, `polype update` laissait 5 à 23 copies de `.claude/` « modifiées » dans Polype, pecten et nautile, parce que `.polype/checksums`, commité, décrivait déjà la nouvelle version alors que `.claude/` est ignoré par git
+- **Owns** : `bin/polype`, `docs/installation.md`, `tests/install.test.sh`, `tests/installer.test.sh`, `tests/global-install.test.sh`, `tests/local-copy-checksums.test.sh`
+
+**Critères d'acceptation**
+- [ ] `local_copies_have_local_sums` — `init`, `install <projet>` et `update` écrivent les sommes des copies installées sous `.claude/` dans un fichier à côté d'elles (`.claude/.polype-checksums`), jamais commité ; `.polype/checksums` ne garde que les fichiers que git suit (`.polype/`, `AGENTS.md`).
+- [ ] `update_after_a_pr_refresh_replaces_stale_copies` — sur un dépôt jetable dont `.polype/` et `AGENTS.md` ont été mis à jour par un commit venu d'ailleurs, `polype update` remplace les copies de `.claude/` restées à l'ancienne version sans les dire modifiées ; une copie retouchée à la main reste, elle, laissée en place et signalée.
+- [ ] `local_sums_file_stays_out_of_git` — l'installeur s'assure que `.claude/.polype-checksums` est ignoré par git (il ajoute la ligne au `.gitignore` du projet quand git ne l'ignore pas déjà), et `polype check` lit les deux fichiers.
+- [ ] `first_update_migrates` — un projet installé avant cette story, sans fichier local, est migré au premier `update` : les copies qui correspondent à `.polype/checksums` comptent comme intactes, le fichier local est écrit, et l'installeur le dit.
+
+**Notes pour l'agent** : option A, choisie par le porteur le 2026-10-14 ; option écartée : reconnaître toute version déjà publiée de la méthode (plus lourd, demande l'historique). La pose globale (`~/.claude/`) n'est pas concernée, puisqu'elle n'est pas dans un dépôt. `docs/installation.md` décrit le nouveau fichier.
