@@ -24,7 +24,7 @@ Then read the settings above and the project commands from `AGENTS.local.md`; st
 ## The forge's review rule
 Read at every ship, after Step 0 and before any check runs; `/po-setup` reads the forge the same way. It settles the **effective** `Ship confirmation` of this ship. It never opens, skips or replaces `po-gate ship-allowed <id>`.
 
-**Which forge.** From `git remote get-url origin`: host `github.com` → GitHub; a host containing `gitlab` → GitLab; any other host → probe `https://<host>/api/v1/version`, and a JSON answer holding `version` → Forgejo/Gitea. No `origin`, no answer, or a host matching none of these → the forge is unreadable. The probe carries no token: plain `curl`, no header, no `.netrc`. No call to an unrecognised host carries a token.
+**Which forge.** From `git remote get-url origin`: host `github.com` → GitHub; a host containing `gitlab` → GitLab; any other host → probe `https://<host>/api/v1/version`, and a JSON answer holding `version` → Forgejo/Gitea. No `origin`, no answer, or a host matching none of these → the forge is unreadable. The probe carries no token: plain `curl -q`, `-q` first so `~/.curlrc` is never read, no header, no `.netrc`. No call to an unrecognised host carries a token.
 
 **How it is read.** A token only ever goes to the host that issued it. GitHub: `gh api`, pinned with `--hostname github.com`, when `gh` is installed and logged in; otherwise `curl` on `https://api.github.com` with `GH_TOKEN` or `GITHUB_TOKEN`, sent in a request header, never echoed, never written to a file. These two variables are the only environment tokens this rule uses, and only because GitHub is recognised on the host `github.com` alone. No CLI and no token → the forge is unreadable.
 
@@ -71,10 +71,10 @@ Message and title: `<id>: <story title>`.
 - `story/<id>` is never rewritten: its tree stays the reviewed one, which `po-gate ship-allowed` and the resume of `/po-drive` keep reading.
 
 **`Merge mode: pr`**
-- Push the landing commit alone to the story branch on the remote: `git push --force-with-lease=story/<id> origin <sha>:refs/heads/story/<id>`. Skip the push when `origin/story/<id>` already holds a commit whose parent is `<base>` and whose tree is `<tree>`. Every push of the landing names `story/<id>` and nothing else; the only other branch this command ever sends is `framing/ship-confirmation`, from `## The forge's review rule`.
+- Push the landing commit alone to the story branch on the remote: `git push --force-with-lease=story/<id> origin <sha>:refs/heads/story/<id>`. Skip the push when the head of `origin/story/<id>` already has `<base>` as its only parent and `<tree>` as its tree. When the push is skipped, `<sha>` becomes that head: `git rev-parse origin/story/<id>`, its full SHA, never the commit `git commit-tree` printed on this run, whose new committer date gives it another SHA. Every push of the landing names `story/<id>` and nothing else; the only other branch this command ever sends is `framing/ship-confirmation`, from `## The forge's review rule`.
 - A pull request for `story/<id>` already open → reuse it. None → open one to `Target branch`, titled `<id>: <story title>`, with what changed, why, how to test, and the review verdict (max severity and a summary of the findings).
 - `Ship confirmation: human`, the effective value → stop here. The pull request is the human's decision point: "Pull request ready: <url>. Land it with Rebase and merge — one commit, no merge commit — then run /po-ship <id> again for cleanup." When `Target branch` has moved before that, a later run rebuilds the landing commit on the new base and pushes it again; it never opens a second pull request.
-- `automatic`, the effective value → wait for `ci` to be green when the project declares it, run `po-gate ship-allowed <id>` once more, then `gh pr merge <url> --rebase --match-head-commit <sha>`, then cleanup.
+- `automatic`, the effective value → wait for `ci` to be green when the project declares it, run `po-gate ship-allowed <id>` once more, then, `<sha>` being the pushed head when the push was skipped, `gh pr merge <url> --rebase --match-head-commit <sha>`, then cleanup.
 
 **`Merge mode: local`**
 - `Ship confirmation: human`, the effective value → AskUserQuestion "Land <id> on <Target branch> as one commit?", answers Merge / Not now. Continue on Merge only.
