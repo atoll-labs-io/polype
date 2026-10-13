@@ -1809,3 +1809,18 @@ Objectif : qu'aucun projet Polype n'ait plus jamais de `CLAUDE.md`, et que l'év
 - [ ] `control_is_refused_with_list_or_build` — `--control` avec `--list` ou `--build` est refusé avec un message, au lieu d'être ignoré.
 
 **Notes pour l'agent** : le jeton reste lu dans l'environnement (`ANTHROPIC_API_KEY` ou `CLAUDE_CODE_OAUTH_TOKEN`), jamais copié depuis `.credentials.json` ; le porteur utilise son abonnement Max par `claude setup-token`. `drift_check` continue de comparer l'installation réelle à `method/`.
+
+### s117-eval-reuses-login — L'éval se connecte avec le login existant
+**En tant que** porteur de projet **je veux** que `bin/po-eval --control` réutilise le login Claude Code déjà présent sur la machine **afin de** lancer l'éval sur mon abonnement Max sans créer de jeton.
+
+- **Complexité** : 2
+- **Dépend de** : aucune
+- **Surface** : —
+- **Owns** : `bin/po-eval`, `tests/reuse-ladder-eval.test.sh`, `tests/eval-arms-same-environment.test.sh`, `tests/eval-reuses-login.test.sh`
+
+**Critères d'acceptation**
+- [ ] `arms_link_the_existing_login` — sous `--control`, chaque configuration temporaire reçoit un lien symbolique `.credentials.json` vers `${CLAUDE_CONFIG_DIR:-$HOME/.claude}/.credentials.json` quand ce fichier existe ; jamais une copie ; les dossiers temporaires sont créés en `0700` et supprimés à la sortie, lien compris, sans que le fichier visé change.
+- [ ] `token_no_longer_required` — `--control` démarre sans `ANTHROPIC_API_KEY` ni `CLAUDE_CODE_OAUTH_TOKEN` quand ce login existe ; sans login ni jeton, il refuse avant tout appel, et son message dit de se connecter avec `claude` ou d'exporter un jeton. La ligne d'annonce dit d'où vient le login (le fichier, ou les noms des variables), jamais une valeur.
+- [ ] `login_file_is_never_read_into_output` — aucune sortie de `po-eval` ni aucun fichier de résultats ne contient le contenu du fichier de login.
+
+**Notes pour l'agent** : choix du porteur le 2026-10-13 (lien vers le login existant plutôt qu'un jeton `claude setup-token`). Un lien, et non une copie, laisse le rafraîchissement OAuth écrire dans le vrai fichier. `drift_check` ne change pas. Le jeton d'environnement reste accepté quand il est présent. Si un vrai `claude -p` a aussi besoin d'un autre fichier pour démarrer sans onboarding (par exemple `~/.claude.json`), le plan le dit d'après la documentation et ne le copie pas sans le porteur.
