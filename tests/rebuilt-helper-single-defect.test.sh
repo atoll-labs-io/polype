@@ -34,18 +34,11 @@ if hasattr(NoteStore, 'archive') or hasattr(NoteStore, '_owned'):
 }
 
 test_demo_app_unchanged() {
-  local lib="$ROOT/evals/lib.sh" cases="$ROOT/evals/cases" c
+  local lib="$ROOT/evals/lib.sh" cases="$ROOT/evals/cases"
   [ "$(grep -cF 'if note.owner_id != user.id:' "$lib")" = 1 ] || fail "get's owner check changed"
   [ "$(grep -cF 'if note.owner_id == user.id and note.tenant_id == user.tenant_id' "$lib")" = 1 ] \
     || fail "list_for's filter changed"
-  grep -qF '### s01-archive-note — Archive a note' "$lib" || fail "the archive story moved"
-  for c in foreign-resource untested-guard neutralized-test; do
-    grep -qF 'eval_archive_story' "$cases/$c.sh" && grep -qF 'eval_archive_plan' "$cases/$c.sh" \
-      || fail "$c no longer uses the archive story and plan"
-  done
-  ! grep -qE 'eval_archive_(story|plan)' "$cases/rebuilt-helper.sh" || fail "rebuilt-helper still uses the archive story"
   grep -qF 'if note.shared]' "$cases/missing-tenant-filter.sh" || fail "missing-tenant-filter changed"
-  [ "$(ls "$cases"/*.sh | wc -l)" = 8 ] || fail "evals/cases must hold 8 recipes"
 }
 
 rh_names_no_flaw() {

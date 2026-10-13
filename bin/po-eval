@@ -81,7 +81,11 @@ drift_check() {
     done < <(cd "$POLYPE_ROOT/method/skills/$skill" && find . -type f | sed 's|^\./||')
   done
   [ "$drift" -eq 0 ] && return 0
-  echo "po-eval: a user-level copy would shadow the method under test; run bin/polype update --global" >&2
+  if [ "$control" = yes ]; then
+    echo "po-eval: the real install at $cfg drifted from method/; neither arm reads it, but this check guards that install: run bin/polype update --global" >&2
+  else
+    echo "po-eval: a user-level copy would shadow the method under test; run bin/polype update --global" >&2
+  fi
   exit 2
 }
 

@@ -6,8 +6,9 @@ soi-même à côté des siens.
 
 Deux poses, deux rôles. La pose **globale** met les commandes, les subagents et les skills dans
 `~/.claude/`, donc dans tous les projets à la fois. La pose **projet** met dans le dépôt ce qui lui
-appartient : les templates, le gate, `AGENTS.md`, `.gitignore`. Aucun `CLAUDE.md` : Claude Code lit
-`AGENTS.md` de lui-même (ADR-0073).
+appartient : les templates, le gate, `AGENTS.md`, `.gitignore`. Le projet ne garde ni
+`CLAUDE.md` ni `CLAUDE.local.md` : Claude Code ne lit `AGENTS.md` que tant qu'aucun de ces deux fichiers
+n'existe, et l'installeur absorbe ceux qu'il trouve (ADR-0086).
 
 ```
 polype install --global                pose commandes, subagents, skills et charge utile dans ~/.claude
@@ -185,9 +186,11 @@ En plus des copies, `init` comme `install <projet>` :
 - absorbe, avant d'assembler `AGENTS.md`, le `CLAUDE.md` et le `CLAUDE.local.md` de la racine du
   projet (ADR-0086) : leur contenu, sans la ligne `@AGENTS.md`, va à la fin d'`AGENTS.local.md` sous
   le titre `## Notes moved from CLAUDE.md`, puis le fichier est supprimé et l'installeur le dit sur
-  `stderr`. Un fichier qui ne contenait que l'import est supprimé sans rien ajouter. Sans
-  `AGENTS.local.md`, un fichier qui contient autre chose est laissé tel quel, l'installeur le dit et
-  la pose continue : lancer `/po-setup`, puis `polype update .`. Le `CLAUDE.md` global de
+  `stderr`. Un `CLAUDE.local.md`, même privé et ignoré par git, est déplacé lui aussi dans
+  `AGENTS.local.md`, qui est commité, puis dans `AGENTS.md` : c'est la décision du propriétaire
+  consignée dans `docs/decisions-log.md`. Un fichier qui ne contenait que l'import est supprimé sans
+  rien ajouter. Sans `AGENTS.local.md`, un fichier qui contient autre chose est laissé tel quel,
+  l'installeur le dit et la pose continue : lancer `/po-setup`, puis `polype update .`. Le `CLAUDE.md` global de
   l'utilisateur (`~/.claude/CLAUDE.md`) n'est jamais touché ; tant qu'un `CLAUDE.md` existe dans le
   projet, Claude Code le lit **à la place** d'`AGENTS.md` ;
 - ajoute au `.gitignore` la racine des worktrees (`Worktree root` lu dans `AGENTS.local.md`,

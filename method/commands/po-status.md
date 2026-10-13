@@ -18,7 +18,7 @@ Everything comes from files and git; nothing is guessed. Bash is used read-only:
    - `docs/stories.md` present or not;
    - stories review: the `Stories ready:` value of `docs/reviews/stories.md` — yes · no · none;
    - `docs/architecture.md` present or not;
-   - `docs/design-system.md` present or not.
+   - `docs/design-system.md` present or not; absent while stories exist, each with a `Surface` line and none of them `screen` (the rule of `po-session`), it reads `design system not needed` and `/po-design-system` is never proposed.
 3. **Per story** listed in `docs/stories.md` (none → "No stories yet"), reading from its worktree `<Worktree root><id>` while it exists and from `Target branch` afterwards:
    - complexity from `docs/stories.md`;
    - track: `flow` when the plan frontmatter holds `track: flow`, `full` when a plan exists without it; no plan yet → the track the settings predict (`Story track`, and for `auto` the complexity against `Flow threshold`), suffixed `(expected)` — `auto` with no complexity gives `full (expected)`;
@@ -27,8 +27,8 @@ Everything comes from files and git; nothing is guessed. Bash is used read-only:
    - plan: none · draft · approved (`validated: yes` in the frontmatter), and ticked boxes over total;
    - record: present or not, and whether `po-gate verif-current <id>` passes;
    - QA: for a story that goes to QA (`AGENTS.md`, Law 1), `docs/qa/<id>/report.md` present or not, its last `QA status:`, and whether `po-gate qa-current <id>` passes; `—` for any other story; `QA stage` unset → shown as unset for a story that has a screen or a `Surface` other than `—`, never guessed;
-   - review: last `Ship allowed:` value — yes · no · none — and its `Fix loop:`, plus whether `po-gate ship-allowed <id>` passes; a `yes` whose `Reviewed tree:` no longer matches the code is shown as stale, next `/po-review <id>`;
-   - shipped: a story `s<n>-<slug>` is shipped when a commit on `Target branch` or `origin/<Target branch>` has a subject starting with `<id>:`, or, when no commit does, with `s<n>:` exactly, its number written as the id writes it → shipped; an open pull request from `story/<id>` → waiting for merge;
+   - review: last `Ship allowed:` value — yes · no · none — and its `Fix loop:`, plus whether `po-gate ship-allowed <id>` passes; a `yes` that `po-gate ship-allowed <id>` refuses, whatever the reason — a stale `Reviewed tree:`, or a `Review status:` missing or other than `complete` — is shown as refused with that reason, next `/po-review <id>`;
+   - shipped: a story `s<n>-<slug>` is shipped when a commit on `Target branch` or `origin/<Target branch>` has a subject starting with `<id>:`, or, when no commit does, with `s<n>:` exactly, its number written as the id writes it; an open pull request from `story/<id>` → waiting for merge;
    - dependencies: if one of them is not shipped, the story shows "waiting for <ids>" instead of a next command.
 4. **Fleet.** The lanes `/po-drive` would see, derived from the same worktrees and the same git, never from a memory of a wave:
    - **lanes in flight**: a worktree `<Worktree root><id>` whose `git -C <Worktree root><id> rev-parse --abbrev-ref HEAD` prints `story/<id>`; their count against `Parallel`, and for each one the story, the path and the stage of step 3;

@@ -43,14 +43,15 @@ test_install_keeps_a_hand_written_agents_md() {
   grep -qx '# Our own agent notes' "$P/AGENTS.md.before-polype" || fail "the backup was overwritten by a reinstall"
 }
 
-test_install_writes_no_claude_md() {
+# With an AGENTS.local.md, the CLAUDE.md is absorbed instead (tests/no-claude-md.test.sh).
+test_install_creates_no_claude_md_and_spares_one_without_settings() {
   project
   install "$P"
   if [ -e "$P/CLAUDE.md" ]; then fail "install created a CLAUDE.md"; fi
   printf '# Project notes\n' > "$P/CLAUDE.md"
   local notes; notes="$(cksum < "$P/CLAUDE.md")"
   install "$P"
-  [ "$(cksum < "$P/CLAUDE.md")" = "$notes" ] || fail "install touched the project's own CLAUDE.md"
+  [ "$(cksum < "$P/CLAUDE.md")" = "$notes" ] || fail "without AGENTS.local.md, install changed the project's CLAUDE.md"
 }
 
 test_install_drops_the_legacy_claude_md_import() {
