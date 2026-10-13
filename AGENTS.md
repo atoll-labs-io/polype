@@ -7,6 +7,8 @@ Polype writes this section and rewrites it on every install. Your project speaks
 
 A setting is a line `Name: value` in `AGENTS.local.md`; its value is the text after the first colon, trimmed. An agent reads settings, it never decides them, and it never fills a missing one with a guess. `—` is a real value: "this project has none". When a command needs something set to `—`, it reports that the project lacks it and carries on without it or stops, as its own file says — it never swaps in an alternative.
 
+`Ship confirmation` alone carries an origin: a final `(forge)` or `(chosen)` on its value says where the value came from and is not part of it, so `human (forge)` reads `human` wherever a command compares the value. A value with no suffix reads as `(forge)` (ADR-0079). Only these two words count as an origin; a parenthesis ending any other value, such as a free-text `Design tool`, belongs to that value. One exception to "an agent reads settings, it never decides them" follows from it: `/po-ship` rewrites a `Ship confirmation` value that reads `(forge)` so that it follows the forge, on a branch and a draft pull request, never on `Target branch`. A `(chosen)` value is never rewritten by an agent.
+
 ## Law 1 — Nothing reaches the code except through a story
 
 Every change is a story unless the user explicitly calls it a quick fix. Framing runs once, before the first story; then each story walks its own cycle.
@@ -36,7 +38,7 @@ A story walks these stages, none skipped, none reordered:
 | Execute | `/po-execute` | code, tests, `docs/verif/<id>.md`, one commit |
 | QA (stories that go to QA, by `QA stage`) | `/po-qa` | `docs/qa/<id>/`, report and evidence, committed alone |
 | Review | `/po-review` | `docs/reviews/<id>.md` with a verdict |
-| Ship | `/po-ship` | one squash commit on `Target branch` |
+| Ship | `/po-ship` | one commit on `Target branch`, landed through a pull request |
 
 **Design and QA, by surface.** A story **has a screen** when its `Surface` line says `screen`, or when it has no `Surface` line and its text shows a screen (ADR-0054); the design stage is for it alone. A story **goes to QA** when `QA stage` is `screens` and the story has a screen, or when `QA stage` is `surfaces` and its `Surface` line says anything but `—`; a story with no `Surface` line goes only when it has a screen. With `QA stage: —`, no story goes to QA. With `QA stage` missing, a story that has a screen or a `Surface` other than `—` cannot be routed and stops, naming the setting; any other story carries on, since no value would send it to QA. Every command, agent and template that routes a story uses these two terms and does not restate the rule (ADR-0058).
 
@@ -52,9 +54,29 @@ Stories are written in `docs/stories.md`, following `templates/stories.md`.
 
 Two limits keep the parallelism honest. **Ships stay serial**: a lane whose review passed lands on `Target branch` alone, the next one lands after it, in the order the reviews passed. **`Owns` bounds a lane**: the `Owns` line of a story fixes the paths its lane may change, and two stories sharing one of those paths never run at once — the second waits for the first to ship. Two stories share a path when an `Owns` entry of one overlaps an entry of the other, by the overlap rule of check 8 of the `stories-review` skill.
 
+Under an effective `Ship confirmation: human` with `Merge mode: pr`, opening the pull request is not the landing: the fleet opens it, moves on to its other lanes, and may open the next lane's pull request while the first one waits. Those stories land in the order a person merges them, and a lane is cleaned up only once its merge is proven.
+
 ## Law 2 — Whoever writes the code does not judge it
 
 Code is written by the `implementer` subagent, reviews are made by the `reviewer` subagent, each in its own context. The main context of a session plans, delegates and reports; it has no business editing source files during a story.
+
+## The project lead
+
+The main session of a project is its project lead (ADR-0076). While framing is missing, it leads framing in conversation with the person, one stage of Law 1 after the other; once framing is done, it runs `/po-drive` wave after wave until the milestone is done. It never writes a story's code: Law 2 binds it like any main context, and the code belongs to the `implementer`. A subagent is never the project lead: it does the one job its prompt names, then hands back.
+
+The lead answers the question it was asked first, and relaunches the fleet only when the project is waiting for it. At session start it reads the state `po-session` prints — the framing stage, the ready stories, the lanes in flight and what waits for a human — as its first picture of the project; a line `po-session` marks as presumed is confirmed with `/po-drive status` before the lead acts on it.
+
+## What goes to the person
+
+The lead turns to the person for three motives, and only these. First, an incoherence: the code, an accepted ADR and a story contradict each other, and no reading settles which one is right. Second, a new idea outside the approved scope, whoever brought it up. Third, a strategic decision: vision, scope, recurring cost, security, personal data, or anything hard to undo. Everything else the lead settles alone (ADR-0077).
+
+Every technical or technology choice that deserves an ADR is discussed with the person before it is made: a library, a framework, a data model, a protocol, a hosting. The lead brings the options ranked first by the owner's criteria — open source or self-hostable, frugal in hardware, scalable, easy for an AI to handle — as `## Ranking the options` of the `capability-bricks` skill says, then by anything else. An implementation detail inside a validated plan stays with the lead. In doubt, the lead asks.
+
+A plan that needs such a choice holds the line `Technical choice: waiting for a human` on its own, and no agent validates it, whatever `Plan validation` says: `/po-plan` puts the choice to the person, records the answer and removes the line.
+
+Every stop that goes to a human — `Root cause: not found`, `Max attempts` reached, a QA verdict `blocked`, an orphan worktree, a closed pull request, a plan holding the line above — goes to the person at once, one at a time, and the fleet carries on with its other lanes. No gate opens any other way than before, and the stops of ADR-0070 stay stops: raising them early changes when the person hears of them, not what they hold back.
+
+Each decision the lead takes alone — what a wave holds, a fix run started, an implementation detail, an answer given without asking — adds one dated line with its reason to `docs/decisions-log.md`, following `templates/decisions-log.md`. The log is landed after each wave, as `/po-drive` says, so the person can read afterwards what was settled without them (ADR-0080).
 
 ## Law 3 — Every gate is closed until a file opens it
 
@@ -91,10 +113,10 @@ State the scope before touching anything, change as little as possible, respect 
 ## Law 6 — Evidence lives next to the code
 
 All pipeline output is markdown under `docs/`, in git.
-- The framing files — `docs/prd.md` or `docs/brief.md`, `docs/stories.md`, `docs/reviews/stories.md`, `docs/architecture.md`, `docs/design-system.md` — are committed on `Target branch`. Research, design (`docs/designs/<id>/`), plan, record, QA evidence (`docs/qa/<id>/`) and review travel on `story/<id>`, so the story's commit and its pull request carry their own evidence.
+- The framing files — `docs/prd.md` or `docs/brief.md`, `docs/stories.md`, `docs/reviews/stories.md`, `docs/architecture.md`, `docs/design-system.md`, `docs/decisions-log.md` — reach `Target branch` through a framing pull request, as `## Landing the framing` of `/po-setup` says. Research, design (`docs/designs/<id>/`), plan, record, QA evidence (`docs/qa/<id>/`) and review travel on `story/<id>`, so the story's commit and its pull request carry their own evidence.
 - Keep research under ~200 lines, plans under ~250, reviews under ~150: every stage after yours reads them. Trim sentences, never tables that record decisions.
 - The plan's checkboxes are the progress bar; ticking one never triggers a commit.
-- A story is committed once by the implementer. `/po-qa` commits `docs/qa/<id>/` alone, in a commit of its own, once its report is written. A fix run adds one commit of its own; a migration may get its own commit so it can be reverted alone. Ship squashes everything into one commit on `Target branch`.
+- A story is committed once by the implementer. `/po-qa` commits `docs/qa/<id>/` alone, in a commit of its own, once its report is written. A fix run adds one commit of its own; a migration may get its own commit so it can be reverted alone. Ship lands the story as one commit `<id>: <story title>` on `Target branch`, with no merge commit.
 - Structural decisions are ADRs in `<ADR directory>NNNN-<slug>.md`, from `templates/adr.md`, listing the options turned down and why. An accepted ADR is never rewritten: a new ADR supersedes it, and only its frontmatter links, `supersedes` and `superseded-by`, ever change — plus its `status`, set to `superseded` when the new ADR replaces it wholly.
 - **Secrets never enter git.** `.env*` files must be ignored. When the hooks are on (`core.hooksPath` at `.polype/hooks`), the pre-commit refuses, on every branch, a staged environment file other than `.env.example` and an added line holding a private key or a known token. Projects that do not turn the hooks on keep checking, before any commit, that `git status --porcelain` lists no environment file, and stop if it does.
 
@@ -112,7 +134,7 @@ A story id is `s<number>-<slug>` (for example `s04-refund-order`). It is chosen 
 
 ## Merging
 
-`Merge mode: pr` goes through a pull request to `Target branch`; `local` merges on this machine. `Ship confirmation: human` means a person approves each merge; `automatic` means the gate is enough. Either way the merge is a squash titled `<id>: <story title>`, and cleanup waits for proof that it happened.
+Every story reaches `Target branch` as one commit titled `<id>: <story title>`, with no merge commit (ADR-0080, ADR-0081). `/po-ship` builds that commit beside `story/<id>`, which keeps its reviewed tree. No agent pushes `Target branch`: `Merge mode: pr` pushes the landing commit to the story branch and lands it through a pull request; `local` is only for a repository without a remote, where the commit lands on this machine and nothing is pushed. `Ship confirmation: human` means a person approves each merge; `automatic` means the gate is enough. Either way, cleanup waits for proof that the landing happened. The value `/po-ship` acts on is the effective one: `human` on a collaborative repository whatever the line says (`/po-ship`, `## The forge's review rule`). `po-gate ship-allowed` is required before any merge, whatever the value.
 
 ## Tests
 
@@ -122,13 +144,13 @@ At most `Test budget` tests per story unless the plan argues for more. A test th
 
 `bin/polype` is the installer: it lays the method down, refreshes it with `update`, audits it with `check` and takes it back with `remove`. It has two poses. `polype install --global` puts the commands, the subagents and the skills in `~/.claude/`, so every project on the machine sees them. `polype init <project>` then activates one repository with what belongs to it and travels in its git: the templates, the gate and the assembled `AGENTS.md`. `polype install <project>` does both at once inside a single repository, which is the right shape for a repository whose collaborators' `~/.claude/` you do not control. The detail of each pose — what it writes, what `update` spares, how to read a `check` report — is in Polype's `docs/installation.md`.
 
-`.claude/commands/`, `.claude/agents/` and `.claude/skills/` hold the commands, subagents and skills. `.polype/templates/` holds the templates: a reference to `templates/<name>.md` means `.polype/templates/<name>.md`. `.polype/hooks/po-gate.sh`, called `po-gate` in these rules, runs from the repository root or from any story worktree. `po-gate` checks the gates of Law 3. `.polype/hooks/po-bounds.sh`, called `po-bounds`, keeps the `implementer`, `qa` and `reviewer` subagents inside their bounds: a PreToolUse hook wired from those subagents' frontmatter, it decides which paths they may write and which git commands they may run. `.polype/hooks/po-run.sh`, called `po-run`, launches one check inside a story worktree: the check's output and exit code pass through unchanged, and the check's row — never its output — is appended to `docs/verif/<id>.md`. These files are committed on `Target branch` so every worktree has them and the pre-commit hook works there too; after a global pose only `.polype/` and `AGENTS.md` are in the repository, the rest living in `~/.claude/`.
+`.claude/commands/`, `.claude/agents/` and `.claude/skills/` hold the commands, subagents and skills. `.polype/templates/` holds the templates: a reference to `templates/<name>.md` means `.polype/templates/<name>.md`. `.polype/hooks/po-gate.sh`, called `po-gate` in these rules, runs from the repository root or from any story worktree. `po-gate` checks the gates of Law 3. `.polype/hooks/po-bounds.sh`, called `po-bounds`, keeps the `implementer`, `qa` and `reviewer` subagents inside their bounds: a PreToolUse hook wired from those subagents' frontmatter, it decides which paths they may write and which git commands they may run. `.polype/hooks/po-run.sh`, called `po-run`, launches one check inside a story worktree: the check's output and exit code pass through unchanged, and the check's row — never its output — is appended to `docs/verif/<id>.md`. `.polype/hooks/po-session.sh`, called `po-session`, is the `SessionStart` hook the installer merges into the project's `.claude/settings.json`: it prints the framing stage, the ready stories, the lanes in flight and what waits for a human, and changes nothing. These files are committed on `Target branch` so every worktree has them and the pre-commit hook works there too; after a global pose only `.polype/` and `AGENTS.md` are in the repository, the rest living in `~/.claude/`.
 
 Never edit an installed file: the next install overwrites it without asking. Project-specific needs become settings in `AGENTS.local.md`; general improvements go back to Polype itself.
 
 ## Done means
 
-- one squash commit (or one pull request) with a description that says what, why and how to check;
+- one commit landed through a pull request (or locally, without a remote) with a description that says what, why and how to check;
 - business tests green, nothing broken elsewhere;
 - a review with no open critical finding;
 - deployed, if the project deploys.
@@ -142,7 +164,7 @@ This file is the project's. Polype's installer never rewrites it. Rules live in 
 ## Pipeline
 
 ```
-Merge mode:        local
+Merge mode:        pr
 Target branch:     main
 Plan validation:   autonomous
 Ship confirmation: automatic
