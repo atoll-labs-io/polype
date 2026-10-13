@@ -61,4 +61,6 @@ test_stories_review_surfaces_criticals_only() {
   contains "$review" '/po-stories <ids>'
   contains "$stories" 'sent back by `/po-stories-review`'
   contains "$stories" 'keeps its id'
+  contains "$review" "never changed: a verdict is the subagent's"
+  contains "$stories" 'has already started'
 }

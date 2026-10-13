@@ -43,11 +43,17 @@ test_tech_choices_are_never_settled_alone() {
 
 test_plan_with_a_tech_choice_waits_for_a_human() {
   local f
-  for f in "$PLAN_CMD" "$FLOW" "$PLANNER"; do contains "$f" "$WHATEVER"; done
-  for f in "$PLAN_CMD" "$PLANNER"; do
-    contains "$f" "$MARKER"
-    contains "$f" 'status: proposed'
-  done
+  for f in "$FLOW" "$PLANNER"; do contains "$f" "$WHATEVER"; done
+  contains "$PLANNER" "$MARKER"
+  contains "$PLANNER" 'status: proposed'
+  local appr; appr="$(section_of "$PLAN_CMD" 'Approval — per `Plan validation`')"
+  holds "$appr" "$MARKER" 'po-plan Approval'
+  holds "$appr" "$WHATEVER" 'po-plan Approval'
+  holds "$appr" 'in their ranked order' 'po-plan Approval'
+  holds "$appr" 'remove the marker line' 'po-plan Approval'
+  local wr; wr="$(section_of "$PLAN_CMD" 'Writing the plan')"
+  holds "$wr" 'status: proposed' 'po-plan Writing the plan'
+  holds "$wr" "$MARKER" 'po-plan Writing the plan'
   holds "$(section_of "$FLOW" 'Escalation signals')" 'a technical choice that deserves an ADR' 'po-flow Escalation signals'
 
   # The waiting row must be read before the plain plan row, or the first match sends the lane to a planner.

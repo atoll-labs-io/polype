@@ -12,7 +12,7 @@ allowed-tools:
 ---
 # /po-flow
 
-Reads settings: `Target branch`, `Worktree root`, `Install`, `Story track`, `Flow threshold`, `QA stage`, `Plan validation`, `Test budget`, `Verification mode`, `Full suite`, `Merge mode`, `Ship confirmation`, `Model strong`, `Model light`, `Light up to`
+Reads settings: `Target branch`, `Worktree root`, `Install`, `Story track`, `Flow threshold`, `QA stage`, `Plan validation`, `ADR directory`, `Test budget`, `Verification mode`, `Full suite`, `Merge mode`, `Ship confirmation`, `Model strong`, `Model light`, `Light up to`
 
 Story: $ARGUMENTS
 
@@ -67,11 +67,17 @@ Fill `templates/plan-flow.md` into `docs/plans/<id>.md`: frontmatter `track: flo
 Leave the plan uncommitted; the implementer commits it with the code.
 
 ## Approval
+A plan that needs a technical choice deserving an ADR is never validated here, whatever `Plan validation` says, so this clause is read before the two bullets below. The story leaves the short track, and before pointing to `/po-research <id>` you do four things:
+- keep `docs/plans/<id>.md` on disk and put the line `Technical choice: waiting for a human` alone on its line in its body;
+- leave its frontmatter at `validated: no`;
+- draft the ADR in `<ADR directory>` from `templates/adr.md`, under the next free number, with `status: proposed` and its options ranked by the owner's criteria as `## Ranking the options` of the `capability-bricks` skill says;
+- name that ADR in the plan.
+
+`/po-plan`, skipping to its Approval on the plan already present, finds the line and puts the choice to the person with the ADR's options in their ranked order.
+
 The rule of `/po-plan`, per `Plan validation`:
 - `human`: AskUserQuestion "Approve the plan for <id>?" with the facts, tasks and test strategy summarised; answers Approve / Change / Stop. Write `validated: yes` into the frontmatter on Approve only.
 - `autonomous`: check the plan against each acceptance criterion yourself, write `validated: yes`, and say that no human reviewed it.
-
-A plan that needs a technical choice deserving an ADR is never validated here, whatever `Plan validation` says: the story leaves the short track for `/po-research <id>`, and `/po-plan` puts the choice to the person.
 
 Without `validated: yes`, nothing below starts.
 
