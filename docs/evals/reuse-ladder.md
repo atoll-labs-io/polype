@@ -48,3 +48,26 @@ Le `critical` vient d'un second défaut, que la recette plante sans le vouloir. 
 
 - **La règle de s113 bat le témoin** sur ce qu'elle mesure : sans elle, le reviewer ne relève jamais le helper reconstruit. Elle est gardée, et aucune story de retrait n'est ouverte.
 - **Le score de `rebuilt-helper` reste faussé** tant que la recette plante aussi un défaut de tenant. À corriger dans une story à part, avant toute nouvelle mesure : par exemple, faire porter le helper recopié sur une règle sans lien avec le tenant, sans toucher à `get`, dont dépend `missing-tenant-filter`.
+
+## Seconde mesure, après s118 (2026-10-13)
+
+s118 a corrigé la recette : le helper recopie désormais le filtre juste de `list_for()` (propriétaire **et** tenant) au lieu de `get()`. Mesure relancée sur ce seul cas :
+
+```
+bin/po-eval --control --model claude-opus-5-5 --repeat 3 rebuilt-helper
+```
+
+| | Règle | Témoin |
+| --- | --- | --- |
+| Score attendu (`major/yes`) | 3/3 | 3/3 |
+| La copie de `list_for` classée **major** | **3/3** | 0/3 |
+| La copie relevée en mineur seulement | 0/3 | 2/3 |
+| La copie non relevée | 0/3 | 1/3 |
+| Frontière de tenant non testée, classée major | 3/3 | 3/3 |
+
+Le score attendu ne départage plus les bras, mais pour une autre raison. La plantation ne teste pas la condition de tenant de `archived_for`, alors que la story l'exige (« in their tenant »). Les six revues relèvent ce manque comme majeur, ce qui suffit à produire `major/yes` dans les deux bras. Le planner et le reviewer de s118 avaient nommé ce risque.
+
+## Conclusion mise à jour
+
+- **La règle de s113 est gardée.** Avec elle, le reviewer classe la copie en **majeur** à chaque fois. Sans elle, il la voit au mieux comme un mineur de style, et une fois sur trois il ne la voit pas.
+- **La recette plante encore un second défaut** : un test manquant sur le tenant. Pour que le score attendu mesure la seule copie, la plantation doit ajouter le test de refus inter-tenant. C'est une correction de quelques lignes dans `evals/cases/rebuilt-helper.sh`, à faire dans une story avant la prochaine mesure.
