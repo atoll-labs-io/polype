@@ -50,6 +50,7 @@ The table is read top to bottom and **the first row that matches wins**: several
 | --- | --- |
 | no worktree, or no `docs/research/<id>.md` | the research and plan stage |
 | research holding the line `Root cause: not found`, and no plan with `validated: yes` | a human — the diagnostic found no cause, and a plan built on that research would be a guessed fix (ADR-0070) |
+| plan holding the line `Technical choice: waiting for a human`, without `validated: yes` | a human — the plan waits for a technical choice, sent with its options ranked; `/po-plan <id>` puts it to them and records the answer (ADR-0077) |
 | research present, plan absent or without `validated: yes` | the plan, built on the research already on disk — the lane keeps that file and never writes it again (`method/agents/planner.md`) |
 | `po-gate plan-validated <id>` passes, the story has a screen and `docs/designs/<id>/design.md` is absent | the design stage |
 | `po-gate plan-validated <id>` passes, no record or `po-gate verif-current <id>` fails | the code stage |
@@ -103,7 +104,7 @@ Per lane, in this order, each stage dispatched as its own wave:
 
 A lane designs after it has planned. The planner is not run again once the note exists — `## Resuming` forbids replaying a recorded stage — so the screen tasks of the plan were written without it, and the implementer is the one that reads `docs/designs/<id>/design.md` before those tasks, the screen it builds being the one the note settles (`method/agents/implementer.md`). A story whose plan must be built on its design is driven through `/po-orchestrator`, the single-story path, which designs before it plans.
 
-A lane that stops stays stopped and is reported; the other lanes of the wave carry on.
+A lane that stops stays stopped and is reported; the other lanes of the wave carry on. A lane that goes to a human goes to the person at once, in a message of its own naming the story, the reason and what the person must decide: it is not held back for the wave's report, and it is not asked through AskUserQuestion, which would hold every other lane until the answer came. Meanwhile the other lanes carry on.
 
 The deciding roles — planner, designer, qa, reviewer — get `Model strong` whatever the story's complexity; only the implementer's model follows the complexity, as `/po-execute` settles it. A model setting at `—` passes no `model` at all, and that subagent runs on the session's model. If the Agent tool rejects a model name, that lane stops, named in the report with the setting and its value; the other lanes carry on. The lane is never redispatched with another model or with none, and the refusal is never recorded as a review or a QA report: the setting is at fault, not the story.
 
@@ -111,6 +112,8 @@ The deciding roles — planner, designer, qa, reviewer — get `Model strong` wh
 The plans a wave produced are approved together, per `Plan validation`.
 
 Under `autonomous`, nothing is asked: each plan comes back from its lane already holding `validated: yes`, checked against its own acceptance criteria by the planner that wrote it, and the wave report says that no human read it (`## Report`).
+
+A plan that comes back holding the line `Technical choice: waiting for a human` keeps `validated: no` under either value: the planner drafted the choice and settled nothing. It is not offered in the grouped question below, and its lane goes to a human as `## A wave` says, while the other lanes carry on.
 
 Under `human`, the whole wave goes into **one AskUserQuestion**, never one per story: a question per story would serialise the very lanes you started in parallel. The question shows, for each plan, the story id, its tasks and its test strategy, and the path `docs/plans/<id>.md`, so any plan can be opened and read whole before answering. Three answers:
 
@@ -142,8 +145,15 @@ Under an effective `human` with `Merge mode: pr`, opening the pull request ends 
 
 A ship that fails sends its story back to a fix run under the same `Max attempts` cap and leaves the other lanes running. Once a story is shipped, its `Owns` paths are free again and the stories depending on it become ready for the next wave.
 
+## The decisions log
+Once the ships are done, after the wave's last ship, record what the wave decided without the person (ADR-0077): append through Bash, to `docs/decisions-log.md` in the repository root, one row per decision — each story launched and each one held back, with why; each fix run started; each re-review of a late commit; each plan approved without a human; each lane handed to a human. The file is created from `templates/decisions-log.md` when it is absent. Rows are dated `YYYY-MM-DD` and carry their reason; none already there is rewritten.
+
+The log is written after the ships because a local ship stops on a tracked file modified in the root (`method/commands/po-ship.md`). Then land it as `## Landing the framing` of `/po-setup` says, slug `decisions-log`, path `docs/decisions-log.md`, message `docs: decisions log`. A stop of that landing ends the landing, never the wave's report; a log left uncommitted is landed by the next wave together with its own rows. Under `Merge mode: local` with an effective `human`, a "Not now" leaves `docs/decisions-log.md` staged in the root, so the next local ship stops on it until the log is landed.
+
+`status` writes no row.
+
 ## Report
-One table: story · stage reached · plan · verdict · shipped · models. The report states, per lane and per stage, the model the subagent ran on — the value passed, or `session` when `—` passed none. Then the stories dropped for a conflict, each with the path that collided and the lane holding it, plus the two entries that overlapped and one path matching both; the lanes handed to a human; every pull request opened and waiting for a human merge, with its URL; any `Ship confirmation` line a ship rewrote, with its draft URL; and the dependencies still blocking. With `$ARGUMENTS` set to `status`, this report is the whole run: no worktree is prepared, no subagent is dispatched, nothing is shipped, no `docs/reviews/<id>.md` is written, and no gate that could change a file is run.
+One table: story · stage reached · plan · verdict · shipped · models. The report states, per lane and per stage, the model the subagent ran on — the value passed, or `session` when `—` passed none. Then the stories dropped for a conflict, each with the path that collided and the lane holding it, plus the two entries that overlapped and one path matching both; the lanes handed to a human; every pull request opened and waiting for a human merge, with its URL; any `Ship confirmation` line a ship rewrote, with its draft URL; the decisions-log pull request or its local landing, or why it did not land; and the dependencies still blocking. With `$ARGUMENTS` set to `status`, this report is the whole run: no worktree is prepared, no subagent is dispatched, nothing is shipped, no `docs/reviews/<id>.md` is written, and no gate that could change a file is run.
 
 The plan column says who approved it. Under `Plan validation: autonomous`, the report states that the plans were approved without a human reading them and names the stories concerned; under `human`, it states which plans the wave approved and which ones are still waiting for the next wave.
 
@@ -151,6 +161,6 @@ The same holds for the screens: the report names every story whose design no hum
 
 The report also states, per stage, the activity window of each lane — when its subagent started and when it answered — and whether those windows overlap. A stage whose windows do not overlap is reported as sequential, naming the lanes that ran one after the other. No line of the report claims that lanes ran at the same time unless their activity windows show it; the number of messages the dispatch took is not evidence of anything and is not reported as such.
 
-`status` answers three questions and launches nothing. Per lane in flight: the story, the stage it resumes at, its worktree path, and the loops already spent against `Max attempts`. Then, per story a human must decide on, the reason it waits — a dependency not shipped and which one, an `Owns` collision with the path that collided and the lane holding it, plus the two entries that overlapped and one path matching both, `Max attempts` reached with the open findings, a QA report `blocked`, with its cause, a pull request waiting for a human merge, with its URL, or an orphan worktree as it was found.
+`status` answers three questions and launches nothing. Per lane in flight: the story, the stage it resumes at, its worktree path, and the loops already spent against `Max attempts`. Then, per story a human must decide on, the reason it waits — a dependency not shipped and which one, an `Owns` collision with the path that collided and the lane holding it, plus the two entries that overlapped and one path matching both, `Max attempts` reached with the open findings, a QA report `blocked`, with its cause, a plan waiting for a technical choice, with the choice, a pull request waiting for a human merge, with its URL, or an orphan worktree as it was found.
 
 Finish with the candidates of the next wave, or "Fleet idle: nothing is ready."

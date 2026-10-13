@@ -38,7 +38,7 @@ Apply the `codebase-analysis` skill to the base: the profile first when there is
 No decision is drafted before this analysis is done.
 
 ## Step 3 — Structural decisions
-Each structural choice becomes one ADR in `<ADR directory>` from `templates/adr.md`. Read the `capability-bricks` skill before drafting them. Draft one for:
+Each structural choice becomes one ADR in `<ADR directory>` from `templates/adr.md`. Read the `capability-bricks` skill before drafting them. The options of each ADR are ranked as `## Ranking the options` of `capability-bricks` says before one is retained. Draft one for:
 - the stack: language, framework, runtime, as the base already fixes them;
 - each capability the project needs — database, authentication, authorization, multi-tenancy, files, background jobs, email, payment, cache, observability, internationalisation, deployment — naming the brick retained as the project's default and the bricks that could replace it; a capability the project does not need is said so in `docs/architecture.md`, without an ADR;
 - each third-party integration the project depends on.
@@ -62,7 +62,7 @@ Never propose rewriting, replacing or restructuring the base: stories adapt to i
 ## Approval and commit
 1. Draft `docs/architecture.md` from `templates/architecture.md`, filling its map, capability table, ownership and attachment points from steps 2 and 3.
 2. Put the drafts to the user with AskUserQuestion, one ADR per question, then the conventions as one item, then `docs/architecture.md` summarised as one item, each of which the user answers Approve / Change / Set aside.
-   - Each ADR is summarised as what the ADR decides, why, and the options turned down; a gap ADR also gives the switch condition that justifies it.
+   - Each ADR is summarised as what the ADR decides, why, and the options turned down, listed in their ranked order; a gap ADR also gives the switch condition that justifies it.
    - On a rerun, the conventions item also shows what the new conventions would remove or contradict, so approval is given on the difference and not on the draft alone.
    - The summary aims short and grows when the subject needs it: no fact needed to decide is cut to keep it short.
    - Each item is written only once approved, and the commit asks for no rereading.

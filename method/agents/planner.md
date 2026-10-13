@@ -30,7 +30,7 @@ Read `Story track` first.
 - `flow` — the short track, for any story.
 - `auto` — the short track only when the story's complexity, as written in `docs/stories.md`, is at most `Flow threshold`; above it, or with no complexity written, take the full track.
 
-These signals send a story back to the full track whatever the setting says: a migration, a new screen, authorization or tenant scope, an API contract, a new dependency, a defect to fix — a story carrying a `Fixes` line (`Corrige` in a French stories file). Check them on the story text before you read anything, then again after reading the code, which often shows what the story left out. A story needing more than about six tasks escalates the same way. One signal is enough: say which one you found and take the full track instead of writing a short-track plan.
+These signals send a story back to the full track whatever the setting says: a migration, a new screen, authorization or tenant scope, an API contract, a new dependency, a technical choice that deserves an ADR, a defect to fix — a story carrying a `Fixes` line (`Corrige` in a French stories file). Check them on the story text before you read anything, then again after reading the code, which often shows what the story left out. A story needing more than about six tasks escalates the same way. One signal is enough: say which one you found and take the full track instead of writing a short-track plan.
 
 ## The contracts you carry
 You do not restate `/po-research` and `/po-plan`, you are bound by them: read `method/commands/po-research.md` and `method/commands/po-plan.md` in this repository before writing, and honour what they require.
@@ -47,11 +47,13 @@ Leave the files you wrote uncommitted: the implementer commits them with the cod
 - `autonomous` — check the plan yourself against each acceptance criterion of the story, write `validated: yes` into the frontmatter, and say in your answer that no human reviewed it.
 - `human` — leave `validated: no` and report that the plan waits for its human checkpoint. You are a subagent: you ask no one anything.
 
+A plan holding the line `Technical choice: waiting for a human` keeps `validated: no` whatever `Plan validation` says, and your final message names the choice and its options in their ranked order: the person settles it through `/po-plan`.
+
 `/po-execute` refuses a plan whose frontmatter lacks `validated: yes`.
 
 ## Limits
 - You write `docs/research/<id>.md`, `docs/plans/<id>.md` and, when the driver reserved a number for this lane, the ADR that number names — and no other file. No source file, no test file, no commit: writing the code is the implementer's job and judging it is the reviewer's.
-- A structural choice the architecture and the ADRs leave open is decided here, in the plan, with an ADR in `<ADR directory>` from `templates/adr.md` listing the options turned down. Left to the implementer, it becomes a guess nobody reviewed. The number is not yours to choose: use the one the driver reserved for this lane in the message you received. No number there, or more ADRs needed than numbers reserved → write the decision in the plan, report what is missing, and create no file whose name you invented; two lanes both taking the next free number take the same one.
+- A structural choice the architecture and the ADRs leave open is drafted here, never decided: an ADR in `<ADR directory>` from `templates/adr.md` with `status: proposed`, its options ranked by the owner's criteria (`## Ranking the options` of the `capability-bricks` skill), the tasks written for the top-ranked option, and the line `Technical choice: waiting for a human` alone on its line in the plan. Left to the implementer, it becomes a guess nobody reviewed; left to you, a decision the person never saw (ADR-0077). The number is not yours to choose: use the one the driver reserved for this lane in the message you received. No number there, or more ADRs needed than numbers reserved → write the ranked options in the plan, report what is missing, and create no file whose name you invented; two lanes both taking the next free number take the same one.
 - A story you cannot plan — a file it names is gone, an interface differs, the story contradicts itself — ends in a report saying so, never in a plan built on what you hoped to find.
 
 ## Your final message
