@@ -1,5 +1,5 @@
 ---
-description: Cut the approved PRD or brief into stories an agent can build without asking, and commit docs/stories.md on the target branch
+description: Cut the approved PRD or brief into stories an agent can build without asking, and land docs/stories.md on the target branch through a pull request
 argument-hint: [story ids sent back by /po-stories-review]
 allowed-tools:
   - Read
@@ -11,7 +11,7 @@ allowed-tools:
 ---
 # /po-stories
 
-Reads settings: `Entry mode`, `Target branch`, `Platform`
+Reads settings: `Entry mode`, `Target branch`, `Platform`, `Merge mode`, `Ship confirmation`
 
 Every later stage reads `docs/stories.md`: research checks its hypotheses, the plan cuts its criteria into tasks, the review holds the code to them. This command writes that file from the framing document the project already approved. The source comes from the settings, never from an argument.
 
@@ -53,10 +53,10 @@ Go through the draft story by story; a failed line is fixed before anything is w
 - Each story keeps its id. A story with a `story/<id>` branch or a `docs/research/<id>.md` has already started → stop and say that it has already started; it is not reopened here.
 - A rewritten story goes through "Before writing", then through the one-story question of step 5, and is written in place once approved.
 - This section is the one exception to step 6: only a story sent back by `/po-stories-review` that has not started is rewritten or removed.
-- The commit follows "Finish", with the message `docs: stories fixed after review`.
+- The commit follows "Finish", with the message `docs: stories fixed after review`, on the same branch `framing/stories`.
 
 ## Finish
 1. Every story was approved on its own question; nothing is shown again for reading.
-2. Commit from the repository root, on `Target branch` only; another branch → stop and say so. Check `git status --porcelain` first: an environment file listed there → stop. Commit `docs/stories.md` alone as `docs: stories for <product>`.
+2. Work from the repository root, which must be on `Target branch`; another branch → stop and say so. Check `git status --porcelain` first: an environment file listed there → stop. Commit `docs/stories.md` alone as `docs: stories for <product>`, on the branch `framing/stories`, landed as `## Landing the framing` of `/po-setup` says (`method/commands/po-setup.md`).
 
 Finish with: "Stories written. Next: /po-research <first story id>"

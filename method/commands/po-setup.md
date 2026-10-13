@@ -1,5 +1,5 @@
 ---
-description: First Polype command in a project — writes AGENTS.local.md from the repository and five answers, ignores the worktree folder, and commits the installed method
+description: First Polype command in a project — writes AGENTS.local.md from the repository and five answers, ignores the worktree folder, and lands the installed method through a pull request
 allowed-tools:
   - Read
   - Glob
@@ -53,6 +53,38 @@ A `Design source` left at `—` is not a choice: every design command stops on i
 1. Copy `templates/agents-local.md` to `AGENTS.local.md` at the repository root and fill in the answers. Keep one setting per line and no trailing comment. Leave the conventions placeholder as it is, unless a profile was chosen: then the conventions section holds one line naming `boilerplates/<name>/profile.md` and its `Commit profiled`, the profile `/po-architect` starts from.
 2. Make sure `.gitignore` lists the `Worktree root` folder and `.env*`; add what is missing.
 3. Rerun the installer if it is available, so `AGENTS.md` includes the new settings; otherwise say that `AGENTS.md` will catch up at the next install.
-4. On `Target branch`, commit `AGENTS.local.md`, `.gitignore`, `AGENTS.md`, `.claude/` and `.polype/` together as `chore: set up polype`. Never commit a `CLAUDE.md`: Claude Code reads `AGENTS.md` only while none exists (ADR-0073). Worktrees are created from this branch: without this commit they would have neither the rules, nor the templates, nor the gate.
+4. Commit `AGENTS.local.md`, `.gitignore`, `AGENTS.md`, `.claude/` and `.polype/` together (those that exist) as `chore: set up polype`, on the branch `framing/setup`, landed as `## Landing the framing` below says. Setup lands with the `Merge mode` and `Target branch` it has just written and the effective `Ship confirmation` of the forge it has just read. Never commit a `CLAUDE.md`: Claude Code reads `AGENTS.md` only while none exists (ADR-0073). Worktrees are created from `Target branch`: until this landing is merged, they would have neither the rules, nor the templates, nor the gate.
 
 Finish with: "Polype is set up. Write stories in docs/stories.md, then run /po-research <story>." When a profile was chosen, add that the person brings the boilerplate into the repository at its `Commit profiled` and commits it before running `/po-architect`. Close by listing the model defaults written — `Model strong: opus`, `Model light: sonnet`, `Light up to: 2` — and say they are changed in `AGENTS.local.md`.
+
+## Landing the framing
+Every framing command lands its commit this way: this one, `/po-brief`, `/po-prd`, `/po-stories`, `/po-stories-review`, `/po-architect` and `/po-design-system` (ADR-0080, ADR-0081). The command works from the repository root, which stays on `Target branch`: no switch, no checkout, no stash. It never commits to `Target branch` directly and never pushes it. Each command names its own `<slug>`, the `<paths>` it commits and its `<message>`.
+
+**Remote check**, as in `/po-ship`. `Merge mode: pr` with no `origin` remote → stop: a repository without a remote uses `local`. `Merge mode: local` with a remote → stop with "`Merge mode: local` is only for a repository without a remote (ADR-0080); set it to `pr`."
+
+**Base.**
+- `pr`: `git fetch origin`. A pull request already open from `framing/<slug>` (`gh pr list --head framing/<slug> --state open`) → `<base>` is `origin/framing/<slug>`, so the new commit stacks on the earlier one and the same pull request carries both. Otherwise `<base>` is `origin/<Target branch>`.
+- That ref missing → stop: a person pushes `Target branch` to the remote once, since no agent pushes it.
+- `local`: `<base>` is `framing/<slug>` when that local branch exists and is not an ancestor of `Target branch`; otherwise `<base>` is `<Target branch>`.
+
+**The commit, built beside the checkout** (as the settings commit of `/po-ship`):
+- Build a temporary index: `GIT_INDEX_FILE=<tmp> git read-tree <base>`, then `GIT_INDEX_FILE=<tmp> git add -- <paths>`.
+- When `core.hooksPath` is `.polype/hooks`, run `GIT_INDEX_FILE=<tmp> .polype/hooks/po-gate.sh pre-commit`; a refusal stops the landing, since `commit-tree` runs no hook and this is the only secret scan the commit gets.
+- `GIT_INDEX_FILE=<tmp> git write-tree` prints `<tree>`; `git commit-tree <tree> -p <base> -m "<message>"` prints `<sha>`. Remove the temporary index.
+- Then `git add -- <paths>` in the root's own index: the root keeps these files uncommitted, and a later fast-forward of the root refuses untracked or modified copies of them unless they are staged.
+
+**`Merge mode: pr`**
+- `git push --force-with-lease=framing/<slug> origin <sha>:refs/heads/framing/<slug>`. A refused push is never forced: stop and report it.
+- Reuse the pull request already open from `framing/<slug>`, or open one with `gh pr create --base <Target branch> --head framing/<slug>`, titled `<message>`. On a forge where no pull request is opened yet (ADR-0081: GitHub only), the branch is sent and the report asks a person to open the pull request.
+- The effective `Ship confirmation` is the one `## The forge's review rule` of `method/commands/po-ship.md` settles; the line itself is never rewritten here.
+- `human` → stop with "Framing pull request ready: <url>. Land it with Rebase and merge; /po-research starts a story only once its section is on `origin/<Target branch>`."
+- `automatic` → when the pull request has checks, wait for them to pass; a failing check → stop and leave the pull request open. Then `gh pr merge <url> --rebase --match-head-commit <sha>`.
+- Proof: `gh pr view <url> --json state --jq .state` prints exactly `MERGED`; anything else is not proof, and nothing below runs.
+- Then `git fetch origin` and, in the root, `git merge --ff-only origin/<Target branch>`. A refusal is reported and the landing stands: never stash or check out to force it. Then `git push origin --delete framing/<slug>`.
+
+**`Merge mode: local`**
+- `git update-ref refs/heads/framing/<slug> <sha>`.
+- `human` → AskUserQuestion "Land <message> on <Target branch>?", answers Merge / Not now. Not now leaves the branch in place, and the report says so.
+- In the root, `git merge --ff-only framing/<slug>`, then `git branch -d framing/<slug>`. Nothing is pushed.
+
+**Report.** The command's finish names the branch `framing/<slug>`, the pull request URL or the local landing, and the effective `Ship confirmation` with why: collaborative, solo, or unreadable with the call that failed.

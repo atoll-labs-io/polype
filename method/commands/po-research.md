@@ -28,9 +28,10 @@ Path: `<repository root>/<Worktree root><id>`. Branch: `story/<id>`.
 
 If it does not exist yet:
 1. When the repository has a remote, `git fetch` it, and start from `origin/<Target branch>` if that ref exists; otherwise start from the local `Target branch`. A story must see every story merged before it.
-2. `git worktree add -b story/<id> <path> <start point>`.
-3. Copy into it the environment files git ignores: `git ls-files --others --ignored --exclude-standard -- '.env*'`. If an `.env*` file exists that git does **not** ignore, stop: it would be committed. Ask for it to be added to `.gitignore` first.
-4. Run `Install` inside the worktree; with `Install: —`, say so and skip it. Do not run the tests.
+2. The story must be on that start point: `git show <start point>:docs/stories.md` holds a heading line naming `<id>` (`## <id>` or `### <id>`). None → stop before any worktree exists, with "<id> is not on <start point> yet: its framing pull request waits for its merge. Merge it, then run /po-research <id> again."
+3. `git worktree add -b story/<id> <path> <start point>`.
+4. Copy into it the environment files git ignores: `git ls-files --others --ignored --exclude-standard -- '.env*'`. If an `.env*` file exists that git does **not** ignore, stop: it would be committed. Ask for it to be added to `.gitignore` first.
+5. Run `Install` inside the worktree; with `Install: —`, say so and skip it. Do not run the tests.
 
 If it exists: confirm with `git -C <path> rev-parse --abbrev-ref HEAD` that it is on `story/<id>`, and with `git worktree list` that this path belongs to this repository. Anything else — detached HEAD, other branch, branch used by another worktree, path equal to the repository root — ends the command with a description of what you found. Do not repair it with `switch`, `checkout` or `stash`.
 

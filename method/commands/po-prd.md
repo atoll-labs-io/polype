@@ -1,5 +1,5 @@
 ---
-description: Frame the replacement or the adaptation of an existing SaaS through an interview, one question at a time, and commit docs/prd.md on the target branch
+description: Frame the replacement or the adaptation of an existing SaaS through an interview, one question at a time, and land docs/prd.md on the target branch through a pull request
 argument-hint: <target SaaS>
 allowed-tools:
   - Read
@@ -11,7 +11,7 @@ allowed-tools:
 ---
 # /po-prd
 
-Reads settings: `Entry mode`, `Target branch`
+Reads settings: `Entry mode`, `Target branch`, `Merge mode`, `Ship confirmation`
 
 A kill PRD keeps the part of the target that people really use and buries the rest on purpose. `$ARGUMENTS` names the target; the mode comes from the settings alone, never from the argument.
 
@@ -54,6 +54,6 @@ When a probe gets no answer, the angle section records the gap instead of fillin
 
 ## Finish
 1. Every section was approved on its own question; nothing is shown again for reading, so set `status: approved`.
-2. Commit from the repository root, on `Target branch` only; another branch → stop and say so. Check `git status --porcelain` first: an environment file listed there → stop. Commit `docs/prd.md` alone as `docs: PRD for <target>`.
+2. Work from the repository root, which must be on `Target branch`; another branch → stop and say so. Check `git status --porcelain` first: an environment file listed there → stop. Commit `docs/prd.md` alone as `docs: PRD for <target>`, on the branch `framing/prd`, landed as `## Landing the framing` of `/po-setup` says (`method/commands/po-setup.md`).
 
 Finish with: "PRD approved. Next: write the stories in docs/stories.md."

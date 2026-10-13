@@ -1,5 +1,5 @@
 ---
-description: Has docs/stories.md judged against the approved PRD or brief by a subagent that did not write it, and commits the verdict in docs/reviews/stories.md
+description: Has docs/stories.md judged against the approved PRD or brief by a subagent that did not write it, and lands the verdict in docs/reviews/stories.md on the target branch through a pull request
 allowed-tools:
   - Read
   - Glob
@@ -11,7 +11,7 @@ allowed-tools:
 ---
 # /po-stories-review
 
-Reads settings: `Entry mode`, `Target branch`, `Model strong`, `Platform`
+Reads settings: `Entry mode`, `Target branch`, `Model strong`, `Platform`, `Merge mode`, `Ship confirmation`
 
 Whoever cut the stories is the worst placed to see what they left out. This command hands `docs/stories.md` and its scope source to the `stories-reviewer` subagent, in a fresh context, and writes `docs/reviews/stories.md` on `Target branch` from its answer. It never edits the stories.
 
@@ -51,7 +51,7 @@ Each answer is appended to that finding's own line in `## Findings` of `docs/rev
 Majors and minors stay in the report and are not asked. With no critical finding, or with a blocked review written by this command, nothing is asked.
 
 ## Commit
-Check `git status --porcelain` first: an environment file listed there → stop. Commit `docs/reviews/stories.md` alone on `Target branch` as `docs: stories review`.
+Check `git status --porcelain` first: an environment file listed there → stop. Commit `docs/reviews/stories.md` alone as `docs: stories review`, on the branch `framing/stories-review`, landed as `## Landing the framing` of `/po-setup` says (`method/commands/po-setup.md`).
 
 ## Outcome
 - `Stories ready: yes` → "Stories reviewed. Next: /po-research <first story id>"
