@@ -62,7 +62,7 @@ Read the story, `AGENTS.md`, `docs/architecture.md` when it exists and the accep
 Then run the second signal check described above.
 
 ## The plan
-Fill `templates/plan-flow.md` into `docs/plans/<id>.md`: frontmatter `track: flow` and `validated: no`, verified facts with their `path:line`, each escalation signal marked absent with where it was checked, six tasks at most, each naming the test that would fail if it were wrong. Tests follow the `testing-doctrine` skill and stay within `Test budget`. About 150 lines at most.
+Fill `templates/plan-flow.md` into `docs/plans/<id>.md`: frontmatter `track: flow` and `validated: no`, verified facts with their `path:line`, each escalation signal marked absent with where it was checked, six tasks at most, each naming the test that would fail if it were wrong. It carries a `## Reuse` section filled in, one line when the plan writes no new code. Tests follow the `testing-doctrine` skill and stay within `Test budget`. About 150 lines at most.
 
 Leave the plan uncommitted; the implementer commits it with the code.
 

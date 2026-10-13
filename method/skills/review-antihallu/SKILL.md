@@ -35,6 +35,8 @@ Leave the end-to-end suite and the production build to ship, except when the dif
 
 **3. Hold the diff against the plan.** Go task by task. A missing task and an unrequested change are both findings. The same goes for code at odds with what the research established, with an accepted ADR, or with a run interdict.
 
+New code that an existing helper you can cite by `path:line`, or the standard library, already provided is a **major** finding, and a gap between the plan's `## Reuse` section and the diff is judged as a gap against a task.
+
 **4. Make the tests prove themselves.**
 - *Floor.* Run `po-gate floor-guard <id> <Target branch>` from the worktree before reading any test: it lists what the diff does to make the checks easier to pass. Exit 0: nothing was lowered. Exit 1: each printed line is a flag: justified in the plan → **minor**, otherwise **major**, except that a deleted test file the plan does not justify → **critical**. Justified means the plan names the file or the directive and gives the reason. Exit 2: the guard could not verify, which is never clean: the review is blocked, with the guard's message as `Failure cause:`.
 - *Coverage that is only apparent.* Check for the six kinds of test that prove nothing, listed in the `testing-doctrine` skill. Read fixtures and mocks, not only assertions. Tests of CSS classes, DOM shape, fixed labels, echoed props or inventories do not count as coverage.
