@@ -1,12 +1,12 @@
 ---
 adr: 0015
 title: Chaque story est squashée dans la branche cible, sans PR de milestone
-status: accepted
+status: superseded
 date: 2026-09-19
 deciders: [lecrabe]
 tags: [adr, polype, git]
 supersedes: [ADR-0013]
-superseded-by: []
+superseded-by: [ADR-0080]
 ---
 
 # ADR-0015 — Chaque story est squashée dans la branche cible, sans PR de milestone
