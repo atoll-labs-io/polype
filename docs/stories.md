@@ -1536,3 +1536,26 @@ Objectif : fermer les majeurs et les mineurs que les revues de M8 ont laissés o
 - [ ] `scene_and_recorder_stop_cleanly` — le pilote de scène arrête chaque groupe de processus qu'il a lancé et fait quitter le moteur après la capture ; l'attente de l'arrêt de l'enregistreur du pilote de simulation est bornée, et son dépassement est un constat.
 
 **Notes pour l'agent** : `tests/qa-drivers.test.sh`, `tests/scenario-driver.test.sh`, `tests/godot-scene-driver.test.sh`, `tests/ros-simulation-driver.test.sh` et `tests/scene-and-simulation-drivers.test.sh` figent des phrases de ces fichiers : les garder.
+
+## Hors jalon — Moins de code
+
+Objectif : qu'un plan surdimensionné ne parte plus sans que personne le conteste. Cadré le 2026-10-13 à la demande de l'utilisateur.
+
+### s101-reuse-ladder — Le plan dit ce qu'il réutilise avant d'écrire du neuf
+**En tant que** développeur **je veux** que chaque plan dise, pour chaque morceau de code neuf, ce qu'il aurait pu réutiliser et pourquoi il ne le fait pas, et que la revue relève le code neuf qu'un existant fournissait déjà **afin qu'**un plan surdimensionné ne soit plus exécuté tel quel sans que personne le conteste.
+
+- **Complexité** : 2
+- **Dépend de** : aucune
+- **Surface** : —
+- **Owns** : `method/templates/plan.md`, `method/templates/plan-flow.md`, `method/agents/planner.md`, `method/commands/po-plan.md`, `method/commands/po-flow.md`, `method/skills/review-antihallu/SKILL.md`, `evals/`, `bin/po-eval`, `tests/evals.test.sh`, `tests/reuse-ladder.test.sh`
+
+**Critères d'acceptation**
+- [ ] `plans_carry_a_reuse_section` — `plan.md` et `plan-flow.md` portent une section `## Reuse` qui demande, pour chaque morceau de code neuf, le premier échelon qui tient — déjà dans ce dépôt (`path:line`), bibliothèque standard ou plateforme, dépendance déjà installée, code neuf — et pourquoi chaque échelon au-dessus échoue ; elle interdit toute option, configuration ou abstraction que la story ne demande pas.
+- [ ] `never_cut_list_is_explicit` — la même section dit que l'échelle ne retire jamais la validation aux frontières de confiance, la sécurité, ni la gestion d'erreur qui évite une perte de données.
+- [ ] `planner_requires_the_ladder` — le contrat du planner (puce **Plan** et puce **Short track**), `/po-plan` et `/po-flow` exigent la section `## Reuse` remplie ; un plan sans code neuf l'écrit en une ligne plutôt que de l'omettre.
+- [ ] `review_flags_rebuilt_helpers` — l'étape 3 de `review-antihallu` dit qu'un code neuf que fournissait déjà un utilitaire existant cité, ou la bibliothèque standard, est un constat **majeur**, et que l'écart entre la section `## Reuse` du plan et le diff se juge comme un écart à une tâche.
+- [ ] `eval_plants_a_rebuilt_helper` — `evals/cases/` contient une recette où le diff réécrit un utilitaire déjà présent dans l'application de démonstration, avec `CASE_EXPECT_SEVERITY=major` et `CASE_EXPECT_SHIP=yes`, sans que le dépôt construit nomme le défaut ; `tests/evals.test.sh` compte ce nouveau type.
+- [ ] `eval_has_a_yagni_control_arm` — `bin/po-eval --control` installe le reviewer avec la nouvelle phrase de l'étape 3 remplacée par la seule ligne « Follow YAGNI. », lance les mêmes cas et affiche les deux taux côte à côte ; `tests/run.sh` ne lance toujours aucun appel payant.
+- [ ] (revue) Les deux bras ont été lancés sur la recette (au moins 3 répétitions chacun) et leurs taux sont écrits dans la revue de la story ; une règle qui ne bat pas le bras témoin n'est pas gardée, et la story le dit au lieu de la livrer.
+
+**Notes pour l'agent** : l'idée vient de Ponytail (`DietrichGebert/ponytail`), dont l'échelle est : faut-il que ça existe → déjà dans le code → bibliothèque standard ou plateforme → dépendance installée → le minimum de code neuf. Son banc d'essai ne comparait qu'à un agent nu ; Polype reprend donc le mécanisme au moment du plan, pas ses hooks permanents, et le mesure contre un témoin d'une ligne. Écrire la méthode avec ses propres mots, sans reprendre le texte de Ponytail. L'implementer reste tel quel (`method/agents/implementer.md`, « Do what the plan says and nothing else ») : c'est le plan qui porte l'échelle. La lentille Dependencies de `review-lenses` (une dépendance qui double la bibliothèque standard demande sa raison) reste valable et n'est pas dupliquée. La section tient dans les limites de longueur de la Loi 6 (plan ~250 lignes, plan court ~150). `tests/plan.test.sh`, `tests/planner.test.sh`, `tests/flow.test.sh`, `tests/review.test.sh`, `tests/surface-routing.test.sh` et `tests/scene-and-simulation-drivers.test.sh` figent des phrases de ces fichiers : les changements sont additifs. Le choix « échelle au plan, mesurée contre un témoin, pas de hook permanent » mérite une ADR, écrite par le planner avec le numéro que le pilote lui réserve.
