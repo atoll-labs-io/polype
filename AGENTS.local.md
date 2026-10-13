@@ -5,7 +5,7 @@ This file is the project's. Polype's installer never rewrites it. Rules live in 
 ## Pipeline
 
 ```
-Merge mode:        local
+Merge mode:        pr
 Target branch:     main
 Plan validation:   autonomous
 Ship confirmation: automatic

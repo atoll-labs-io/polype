@@ -44,6 +44,7 @@
 .polype/templates/agents-local.md
 .polype/templates/architecture.md
 .polype/templates/brief.md
+.polype/templates/decisions-log.md
 .polype/templates/design-brief.md
 .polype/templates/design-screen.md
 .polype/templates/design-system.md
@@ -60,4 +61,5 @@
 .polype/hooks/po-bounds.sh
 .polype/hooks/po-gate.sh
 .polype/hooks/po-run.sh
+.polype/hooks/po-session.sh
 .polype/hooks/pre-commit
