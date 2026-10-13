@@ -28,7 +28,7 @@ Collect what the repository states on its own:
 These become the suggested answers. A command you did not find in a file stays `—`.
 
 ## Step 2 — Five questions, one AskUserQuestion call each, plus the Platform, design and QA stage follow-ups and the catalogue offer
-1. How stories land: `Merge mode` `pr` or `local`, and the `Target branch` (suggest the default branch).
+1. How stories land: `Merge mode` `pr` when the repository has a remote, `local` only for a repository without a remote (suggest one from `git remote`), and the `Target branch` (suggest the default branch).
 2. Who approves plans: `Plan validation` `human` or `autonomous`. Propose the same value for `Ship confirmation`; change it only if the user asks.
 3. Where the project starts, `Entry mode`: `replace` (an internal replacement for a paid SaaS), `adapt` (a competing product with an angle of its own) or `new` (an idea built from nothing).
 4. Who draws the screens, `Design source`: `internal` (an agent skill draws them in the repository), `external` (they come from a tool outside it) or not decided yet. Only the source is asked here.

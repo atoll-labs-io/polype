@@ -30,7 +30,7 @@ Setup ─ choix du mode ─┬─ Remplacer ─┐
                        ├─ Adapter ───┼─ Stories ─ Revue stories ─ Architecture (boilerplate) ─ Design system
                        └─ Zéro ──────┘
 puis, par story (en parallèle, une lane par ownership disjoint) :
-Research ─ Design ─ Plan ─ Execute ─ Review ─ Ship (squash dans la branche cible, ADR-0015)
+Research ─ Design ─ Plan ─ Execute ─ Review ─ Ship (un commit par PR, ADR-0080)
 à la demande : revue transverse (/roast-me)
 ```
 
@@ -107,9 +107,10 @@ Capacités à couvrir : base de données, auth, autorisation, multi-tenant, fich
 - [ADR-0012](decisions/ADR-0012-pas-de-rouge-dabord.md) — pas de rouge-d'abord à l'implémentation, preuve de morsure en revue.
 - ~~ADR-0013~~ — remplacée par ADR-0015.
 - ~~ADR-0014~~ — remplacée par ADR-0017.
-- [ADR-0015](decisions/ADR-0015-squash-direct-et-corrections-au-fil-de-leau.md) — chaque story squashée dans la branche cible, corrections au fil de l'eau.
+- ~~ADR-0015~~ — remplacée par ADR-0080.
 - [ADR-0016](decisions/ADR-0016-flotte-un-driver-des-subagents.md) — la flotte est un driver unique qui lance des subagents en parallèle ; l'état se lit dans les worktrees et git (encore `status: proposed` alors que M3 l'a implémentée).
 - [ADR-0017](decisions/ADR-0017-validation-groupee.md) — validation des plans groupée par vague, ship story par story (remplace ADR-0014).
+- [ADR-0080](decisions/ADR-0080-tout-arrive-sur-la-branche-cible-par-une-pr-en-fast-forward.md) — chaque story arrive sur la branche cible en un commit, par une PR, et aucun agent ne pousse sur elle (remplace ADR-0015).
 
 ## Qualité
 

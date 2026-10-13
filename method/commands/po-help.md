@@ -30,7 +30,7 @@ Reads settings: none
 3. `/po-execute <story>` — l'implementer code, trace ses vérifications, commite.
    - `/po-qa <story>` — pour une story que `QA stage` envoie en QA : un agent vérifie sa surface avec le pilote qui lui va (navigateur, scénarios, rendu de scène, simulation) et laisse ses preuves dans `docs/qa/<id>/`, sans rien corriger. `/po-orchestrator` et `/po-drive` la lancent eux-mêmes quand `QA stage` vaut `screens` (les stories `screen`) ou `surfaces` (toute surface autre que `—`) ; une story sans ligne `Surface` n'y va que si elle a un écran.
 4. `/po-review <story>` — relecture par un autre contexte, tests mis à l'épreuve, verdict.
-5. `/po-ship <story>` — verdict vérifié, contrôles lourds une fois, squash, nettoyage.
+5. `/po-ship <story>` — verdict vérifié, contrôles lourds une fois, un commit par PR, nettoyage.
 
 ## Outils
 - `/po-orchestrator <story>` — choisit la piste (complète ou courte), ajoute le design pour une story avec écran et la QA pour une story que `QA stage` y envoie, enchaîne les étapes et ne s'arrête que pour tes décisions.

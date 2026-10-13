@@ -44,7 +44,7 @@ Results are never copied by hand: `po-run` writes each check's row in the record
 4. Run `git add -A` so the index holds your final code, put the hash printed by `git write-tree` on the `Tree:` line and fill "Not proven here". Set `Verification status: complete` only if the last run of every declared check on this code exited 0 — read it in `## Runs`; `po-gate verif-current` cannot tell you yet, since it also compares with a HEAD you have not committed.
 5. Check `git status --porcelain`: no `.env*` or other secret may be staged. Then commit.
    - First run: **one commit** with the research, the plan and its ticks, the design folder `docs/designs/<id>/` when there is one, the record and all the code. A migration may take its own commit so it can be reverted alone.
-   - Fix run: one additional commit, `<id>: address review findings`, including the review that listed them. Ship squashes the branch anyway.
+   - Fix run: one additional commit, `<id>: address review findings`, including the review that listed them. Ship lands the branch as one commit anyway.
    English commit messages, no co-author trailer.
 
 ## Limits

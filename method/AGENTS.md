@@ -36,7 +36,7 @@ A story walks these stages, none skipped, none reordered:
 | Execute | `/po-execute` | code, tests, `docs/verif/<id>.md`, one commit |
 | QA (stories that go to QA, by `QA stage`) | `/po-qa` | `docs/qa/<id>/`, report and evidence, committed alone |
 | Review | `/po-review` | `docs/reviews/<id>.md` with a verdict |
-| Ship | `/po-ship` | one squash commit on `Target branch` |
+| Ship | `/po-ship` | one commit on `Target branch`, landed through a pull request |
 
 **Design and QA, by surface.** A story **has a screen** when its `Surface` line says `screen`, or when it has no `Surface` line and its text shows a screen (ADR-0054); the design stage is for it alone. A story **goes to QA** when `QA stage` is `screens` and the story has a screen, or when `QA stage` is `surfaces` and its `Surface` line says anything but `—`; a story with no `Surface` line goes only when it has a screen. With `QA stage: —`, no story goes to QA. With `QA stage` missing, a story that has a screen or a `Surface` other than `—` cannot be routed and stops, naming the setting; any other story carries on, since no value would send it to QA. Every command, agent and template that routes a story uses these two terms and does not restate the rule (ADR-0058).
 
@@ -94,7 +94,7 @@ All pipeline output is markdown under `docs/`, in git.
 - The framing files — `docs/prd.md` or `docs/brief.md`, `docs/stories.md`, `docs/reviews/stories.md`, `docs/architecture.md`, `docs/design-system.md` — are committed on `Target branch`. Research, design (`docs/designs/<id>/`), plan, record, QA evidence (`docs/qa/<id>/`) and review travel on `story/<id>`, so the story's commit and its pull request carry their own evidence.
 - Keep research under ~200 lines, plans under ~250, reviews under ~150: every stage after yours reads them. Trim sentences, never tables that record decisions.
 - The plan's checkboxes are the progress bar; ticking one never triggers a commit.
-- A story is committed once by the implementer. `/po-qa` commits `docs/qa/<id>/` alone, in a commit of its own, once its report is written. A fix run adds one commit of its own; a migration may get its own commit so it can be reverted alone. Ship squashes everything into one commit on `Target branch`.
+- A story is committed once by the implementer. `/po-qa` commits `docs/qa/<id>/` alone, in a commit of its own, once its report is written. A fix run adds one commit of its own; a migration may get its own commit so it can be reverted alone. Ship lands the story as one commit `<id>: <story title>` on `Target branch`, with no merge commit.
 - Structural decisions are ADRs in `<ADR directory>NNNN-<slug>.md`, from `templates/adr.md`, listing the options turned down and why. An accepted ADR is never rewritten: a new ADR supersedes it, and only its frontmatter links, `supersedes` and `superseded-by`, ever change — plus its `status`, set to `superseded` when the new ADR replaces it wholly.
 - **Secrets never enter git.** `.env*` files must be ignored. When the hooks are on (`core.hooksPath` at `.polype/hooks`), the pre-commit refuses, on every branch, a staged environment file other than `.env.example` and an added line holding a private key or a known token. Projects that do not turn the hooks on keep checking, before any commit, that `git status --porcelain` lists no environment file, and stop if it does.
 
@@ -112,7 +112,7 @@ A story id is `s<number>-<slug>` (for example `s04-refund-order`). It is chosen 
 
 ## Merging
 
-`Merge mode: pr` goes through a pull request to `Target branch`; `local` merges on this machine. `Ship confirmation: human` means a person approves each merge; `automatic` means the gate is enough. Either way the merge is a squash titled `<id>: <story title>`, and cleanup waits for proof that it happened.
+Every story reaches `Target branch` as one commit titled `<id>: <story title>`, with no merge commit (ADR-0080, ADR-0081). `/po-ship` builds that commit beside `story/<id>`, which keeps its reviewed tree. No agent pushes `Target branch`: `Merge mode: pr` pushes the landing commit to the story branch and lands it through a pull request; `local` is only for a repository without a remote, where the commit lands on this machine and nothing is pushed. `Ship confirmation: human` means a person approves each merge; `automatic` means the gate is enough. Either way, cleanup waits for proof that the landing happened.
 
 ## Tests
 
@@ -128,7 +128,7 @@ Never edit an installed file: the next install overwrites it without asking. Pro
 
 ## Done means
 
-- one squash commit (or one pull request) with a description that says what, why and how to check;
+- one commit landed through a pull request (or locally, without a remote) with a description that says what, why and how to check;
 - business tests green, nothing broken elsewhere;
 - a review with no open critical finding;
 - deployed, if the project deploys.
