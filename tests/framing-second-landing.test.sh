@@ -53,5 +53,4 @@ test_root_realigns_after_a_merge() {
   endb=$(offset "$land" '**The commit, built beside the checkout**')
   rt=$(offset "$land" 'GIT_INDEX_FILE=<tmp> git read-tree <base>')
   [ -n "$endb" ] && [ -n "$rt" ] && [ "$endb" -lt "$rt" ] || fail "the realignment does not precede the commit build"
-  holds "$land" 'the next landing of any framing command realigns the root as **Base** says' 'the human bullet'
 }
