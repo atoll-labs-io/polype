@@ -9,7 +9,7 @@
 # $CLAUDE_CONFIG_DIR), and the payload — bin/ and method/ — under ~/.claude/polype/, so that
 # ~/.claude/polype/bin/polype finds its own method through ../method. In a project, templates and
 # the gate land in .polype/, AGENTS.md is regenerated from the method's rules followed by the
-# project's AGENTS.local.md, which is only read.
+# project's AGENTS.local.md, which is only read, except to append the notes moved out of a CLAUDE.md.
 #
 # Three state files describe an install, next to each other: manifest (what was laid down),
 # checksums (what it contained) and version. They live in .polype/ for a project, in
@@ -218,9 +218,9 @@ set_hooks_path() {
   fi
 }
 
-# Installers before ADR-0073 imported AGENTS.md from CLAUDE.md. Claude Code now reads AGENTS.md
-# itself, but only while no CLAUDE.md exists, so the import goes, and the file with it when nothing
-# else is left. A CLAUDE.md without the import is the project's and stays untouched.
+# Used by remove only: install, init and update absorb CLAUDE.md into AGENTS.local.md instead
+# (ADR-0086), but remove takes Polype away and must not move the project's notes into a file it
+# leaves behind, so it only drops the import older installers wrote.
 drop_legacy_claude_md_import() {
   [ -f "$project/CLAUDE.md" ] && grep -qx '@AGENTS.md' "$project/CLAUDE.md" || return 0
   grep -vx '@AGENTS.md' "$project/CLAUDE.md" > "$project/CLAUDE.md.polype-next" || true
@@ -229,6 +229,40 @@ drop_legacy_claude_md_import() {
   else
     rm -f "$project/CLAUDE.md.polype-next" "$project/CLAUDE.md"
   fi
+}
+
+# Claude Code reads AGENTS.md only while no CLAUDE.md exists, so a project keeps none (ADR-0086).
+# AGENTS.local.md is replaced before any source is deleted, so a failure loses nothing; without an
+# AGENTS.local.md the installer has nowhere to put the notes and /po-setup must create it first.
+absorb_claude_md() {
+  local name body collected=()
+  for name in CLAUDE.md CLAUDE.local.md; do
+    [ -f "$project/$name" ] && [ ! -L "$project/$name" ] || continue
+    body="$(grep -vx '@AGENTS.md' "$project/$name" || true)"
+    if ! grep -q '[^[:space:]]' <<< "$body"; then
+      rm -f "$project/$name"
+      echo "polype: $name held only the @AGENTS.md import; deleted" >&2
+    elif [ ! -f "$project/AGENTS.local.md" ]; then
+      echo "polype: $name left in place: no AGENTS.local.md to move it into; run /po-setup, then polype update ." >&2
+    else
+      collected+=("$name")
+    fi
+  done
+  [ ${#collected[@]} -gt 0 ] || return 0
+  {
+    cat "$project/AGENTS.local.md"
+    [ -z "$(tail -c 1 "$project/AGENTS.local.md")" ] || printf '\n'
+    printf '\n## Notes moved from CLAUDE.md\n\n'
+    for name in "${collected[@]}"; do
+      if [ "$name" = CLAUDE.local.md ]; then printf 'From `CLAUDE.local.md`:\n'; fi
+      grep -vx '@AGENTS.md' "$project/$name" || true
+    done
+  } > "$project/AGENTS.local.md.polype-next"
+  mv -f "$project/AGENTS.local.md.polype-next" "$project/AGENTS.local.md"
+  for name in "${collected[@]}"; do
+    rm -f "$project/$name"
+    echo "polype: $name moved into AGENTS.local.md under ## Notes moved from CLAUDE.md, then deleted" >&2
+  done
 }
 
 # The SessionStart hook is merged into the project's own .claude/settings.json, never laid down:
@@ -286,8 +320,8 @@ unwire_session_hook() {
 # AGENTS.md, .gitignore and core.hooksPath belong to a project, never to the user home.
 wire_the_project() {
   [ "$mode" = global ] && return 0
+  absorb_claude_md
   assemble_agents_md
-  drop_legacy_claude_md_import
   ignore_worktrees_and_env
   set_hooks_path
   wire_session_hook
