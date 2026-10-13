@@ -1852,7 +1852,7 @@ Objectif : fermer la dernière dette connue de Polype : le majeur de s110, les t
 - **Dépend de** : aucune
 - **Surface** : —
 - **Corrige** : la ligne `Review status:` omise trois fois en M9 bis sans que `po-gate` le voie ; le mineur de `docs/reviews/s104-escalation-contract.md` sur `po-session` et le marqueur ; « Framing next: /po-design-system » affiché pour nautile, qui n'a pas d'écran
-- **Owns** : `method/hooks/po-gate.sh`, `method/hooks/po-session.sh`, `tests/session-and-gate-checks.test.sh`, `tests/gate.test.sh`, `tests/project-lead.test.sh`
+- **Owns** : `method/hooks/po-gate.sh`, `method/hooks/po-session.sh`, `method/AGENTS.md`, `method/commands/po-ship.md`, `tests/session-and-gate-checks.test.sh`, `tests/gate.test.sh`, `tests/project-lead.test.sh`, `tests/review-tree-gate.test.sh`
 
 **Critères d'acceptation**
 - [ ] `ship_gate_needs_review_status` — `po-gate ship-allowed <id>` refuse une revue dont la dernière ligne `Review status:` manque ou ne dit pas `complete`, avec un message qui nomme la ligne ; une revue complète au `Ship allowed: yes` et au `Reviewed tree:` à jour passe comme avant.
