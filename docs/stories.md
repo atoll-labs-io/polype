@@ -1840,3 +1840,49 @@ Objectif : qu'aucun projet Polype n'ait plus jamais de `CLAUDE.md`, et que l'év
 - [ ] `copy_stays_the_only_defect` — `archived_for()` recopie toujours le filtre de `list_for()` sans l'appeler, `CASE_EXPECT_SEVERITY=major` et `CASE_EXPECT_SHIP=yes` restent, et le dépôt construit ne nomme toujours pas le défaut.
 
 **Notes pour l'agent** : approuvée par le porteur le 2026-10-13 (« go »). Après la livraison, le chef de projet relance `bin/po-eval --control --model claude-opus-5-5 --repeat 3 rebuilt-helper` et met `docs/evals/reuse-ladder.md` à jour ; ces appels ne font pas partie de la story. Le revieweur de s118 a jugé que `test_demo_app_unchanged` figeait trop de fichiers : cette story peut le garder tel quel, tant qu'il reste vert.
+
+## M9 quater — Les finitions
+
+Objectif : fermer la dernière dette connue de Polype : le majeur de s110, les trous de contrôle vus en usage réel le 2026-10-13, et les incohérences de texte et de tests laissées en mineur par les revues de M9 bis et M9 ter. Cadré le 2026-10-14 avec le porteur (« On finit à 100 % »). Aucune gate de Law 3 ne s'assouplit ; `Ship allowed` devient plus strict.
+
+### s120-session-and-gate-checks — Le hook et la gate voient ce qui manquait
+**En tant que** porteur de projet **je veux** que la gate refuse une revue sans `Review status:` et que le hook de session signale un plan en attente de choix technique sans pousser un design system inutile **afin que** ce que j'ai dû surveiller à la main le 2026-10-13 le soit par l'outil.
+
+- **Complexité** : 2
+- **Dépend de** : aucune
+- **Surface** : —
+- **Corrige** : la ligne `Review status:` omise trois fois en M9 bis sans que `po-gate` le voie ; le mineur de `docs/reviews/s104-escalation-contract.md` sur `po-session` et le marqueur ; « Framing next: /po-design-system » affiché pour nautile, qui n'a pas d'écran
+- **Owns** : `method/hooks/po-gate.sh`, `method/hooks/po-session.sh`, `tests/session-and-gate-checks.test.sh`, `tests/gate.test.sh`, `tests/project-lead.test.sh`
+
+**Critères d'acceptation**
+- [ ] `ship_gate_needs_review_status` — `po-gate ship-allowed <id>` refuse une revue dont la dernière ligne `Review status:` manque ou ne dit pas `complete`, avec un message qui nomme la ligne ; une revue complète au `Ship allowed: yes` et au `Reviewed tree:` à jour passe comme avant.
+- [ ] `session_flags_a_technical_choice` — `po-session` liste dans « Waiting for a human » chaque lane dont le plan porte la ligne `Technical choice: waiting for a human`, avec `/po-plan <id>`.
+- [ ] `design_system_only_with_a_screen` — `po-session` ne propose `/po-design-system` comme prochaine étape de cadrage que si au moins une story a un écran, au sens de `AGENTS.md` (Law 1) ; sinon le design system manquant n'est pas une étape, et la ligne de cadrage le dit (`design system not needed`).
+
+### s121-framing-realign-and-orchestrator-log — Le cadrage réaligne la racine, le journal de l'orchestrateur est complet
+**En tant que** porteur de projet **je veux** que tout atterrissage de cadrage réaligne d'abord la racine sur `origin/<Target branch>`, et que `/po-orchestrator` consigne toutes ses décisions prises seul **afin que** la méthode tienne ce qu'elle promet.
+
+- **Complexité** : 2
+- **Dépend de** : aucune
+- **Surface** : —
+- **Corrige** : majeur de `docs/reviews/s110-framing-second-landing.md` ; mineurs de `docs/reviews/s109-drive-guards.md`
+- **Owns** : `method/commands/po-setup.md`, `method/commands/po-orchestrator.md`, `tests/framing-realign-and-orchestrator-log.test.sh`, `tests/framing-second-landing.test.sh`, `tests/drive-guards.test.sh`
+
+**Critères d'acceptation**
+- [ ] `every_landing_realigns_the_root` — dans `## Landing the framing`, chaque atterrissage commence, après le `git fetch`, par `git merge --ff-only origin/<Target branch>` dans la racine quand c'est une avance rapide, quel que soit le slug ; un refus est rapporté et rien n'est forcé ; la phrase du point `human` ne promet plus que ce que fait la commande.
+- [ ] `orchestrator_logs_every_lone_decision` — `## The decisions log` de `/po-orchestrator` consigne aussi la voie qu'il choisit, chaque détail d'implémentation tranché et chaque réponse donnée sans demander ; une exécution qui finit sur « Pull request ready » écrit ses lignes à ce moment-là, et sous `Merge mode: local` un « Not now » laisse le journal indexé à la racine, comme le dit `/po-drive`.
+
+### s122-docs-and-eval-cleanup — Les docs et l'éval disent juste
+**En tant que** développeur **je veux** que la documentation d'installation, les messages de `po-eval`, la recette `rebuilt-helper` et `/po-status` disent exactement ce que fait Polype **afin qu'**aucun texte ne contredise la méthode.
+
+- **Complexité** : 2
+- **Dépend de** : aucune
+- **Surface** : —
+- **Corrige** : mineurs de `docs/reviews/s115-no-claude-md.md`, `docs/reviews/s116-eval-arms-same-environment.md`, `docs/reviews/s118-rebuilt-helper-single-defect.md`, `docs/reviews/s119-rebuilt-helper-tests-tenant.md`, `docs/reviews/s112-short-subject-shipped.md`
+- **Owns** : `docs/installation.md`, `bin/po-eval`, `evals/cases/rebuilt-helper.sh`, `method/commands/po-status.md`, `tests/rebuilt-helper-single-defect.test.sh`, `tests/install.test.sh`, `tests/docs-and-eval-cleanup.test.sh`
+
+**Critères d'acceptation**
+- [ ] `installation_cites_adr_0086` — `docs/installation.md` cite ADR-0086 et non plus ADR-0073, et dit qu'un `CLAUDE.local.md`, même privé, est déplacé dans `AGENTS.local.md`, qui est commité (décision du porteur du 2026-10-14) ; le test `install_writes_no_claude_md` porte un nom et un message qui disent ce qu'il vérifie.
+- [ ] `drift_message_fits_the_mode` — sous `--control`, le refus de `drift_check` dit qu'il garde l'installation réelle, et non qu'une copie masquerait la méthode mesurée.
+- [ ] `recipe_plan_counts_three_tests` — le plan construit de `rebuilt-helper` dit « The three tests » dans « Done when », et `test_demo_app_unchanged` ne fige plus que `get()`, `list_for()` et la recette `missing-tenant-filter`, sans compte de recettes.
+- [ ] `status_shipped_rule_reads_once` — la règle « livrée » de `/po-status` ne dit plus deux fois « shipped » ; la phrase partagée avec `/po-drive` reste mot pour mot.
