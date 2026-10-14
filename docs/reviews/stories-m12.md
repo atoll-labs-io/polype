@@ -1,6 +1,5 @@
 # Stories review: Polype, milestone "M12 — Tout ce qui est à traiter devient une issue" (s134)
 
-[Story](../stories.md)
 
 A one-off review, run outside `/po-stories-review` because Polype has no PRD or brief (`Entry mode: —`). Done on 2026-10-14 by the `stories-reviewer` subagent, in a context that did not write the story. The answer is recorded verbatim.
 
