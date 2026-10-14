@@ -49,11 +49,12 @@ Go through the draft story by story; a failed line is fixed before anything is w
 - [ ] Every interface shared by two stories is an earlier contract story they both depend on.
 
 ## A story sent back by the review
-`$ARGUMENTS` holding story ids sent back by `/po-stories-review` → this section replaces the sequence: the command rewrites (Fix) or removes (Set the story aside) those stories and no other, as the review's outcome named them.
+`$ARGUMENTS` holding story ids sent back by `/po-stories-review` → this section replaces the sequence: the command rewrites (Fix) or removes (Set the story aside) those stories, plus the ones a removal breaks (the next bullets), and no other; the review's outcome names only the first group.
 - Each story keeps its id. A story with a `story/<id>` branch or a `docs/research/<id>.md` has already started → stop and say that it has already started; it is not reopened here.
 - A rewritten story goes through "Before writing", then through the one-story question of step 5, and is written in place once approved.
-- This section is the one exception to step 6: only a story sent back by `/po-stories-review` that has not started is rewritten or removed.
-- The commit follows "Finish", with the message `docs: stories fixed after review`, on the same branch `framing/stories`.
+- A story set aside leaves the file, and "Before writing" runs again on the stories that remain, since a dependency or an `Owns` overlap may now be broken. A remaining story that now fails is put to the user through the one-story question of step 5 with its fix, and written in place once approved; one with a branch or a research file → stop and say so, as above.
+- This section is the one exception to step 6: only a story sent back by `/po-stories-review`, or broken by a removal, that has not started is rewritten or removed.
+- The commit follows "Finish" (steps 1 and 2), with the message `docs: stories fixed after review`, on the same branch `framing/stories`. The command ends with "Stories fixed. Next: /po-stories-review", never with the finish line of "Finish".
 
 ## Finish
 1. Every story was approved on its own question; nothing is shown again for reading.

@@ -24,7 +24,7 @@ Collect what the repository states on its own:
 - the scripts the project really defines (package manifest, Makefile, task runner) — candidates for `Install`, `Test`, `Typecheck`, `E2E`, `Build`, and `Dev`, the command that starts the development server;
 - the default branch: `git symbolic-ref --short refs/remotes/origin/HEAD`, or the current branch when there is no remote;
 - whether the repository has a base, as `/po-architect` defines it: a package manifest, or source files outside Polype's own files (`AGENTS*.md`, `CLAUDE.md`, `docs/`, `.claude/`, `.polype/`, `.gitignore`);
-- the forge, read exactly as `/po-ship` reads it (`## The forge's review rule` of `method/commands/po-ship.md`): which forge it is, whether it could be read and, if not, why, and whether the repository is collaborative.
+- the forge `origin` names. The rest of its reading — whether it could be read and, if not, why, and whether the repository is collaborative — is made exactly as `/po-ship` reads it (`## The forge's review rule` of `method/commands/po-ship.md`) once question 1 of Step 2 has given `Target branch`, since the `CODEOWNERS` and protection signals read that branch.
 
 These become the suggested answers. A command you did not find in a file stays `—`.
 
@@ -37,7 +37,7 @@ These become the suggested answers. A command you did not find in a file stays `
 
 Before the catalogue offer and question 5, make one separate AskUserQuestion call for `Platform`: what the project builds, one or more of `web`, `mobile`, `cli`, `api`, `lib`, `xr`, `robot`. Offer the likeliest ones as options and let the free answer name any of the seven; write the answer separated by commas.
 
-Then `Ship confirmation`, from what step 1 read of the forge. Collaborative → no question: write `human (forge)`, and the setup's last message says which signal made the repository collaborative. Solo or unreadable → one separate AskUserQuestion call for `Ship confirmation`, stating what the forge showed or why it could not be read, with the answers `automatic (chosen)` (suggested) and `human (chosen)`. Tell the person they change it later by asking in conversation; no agent changes a `(chosen)` value on its own.
+Then `Ship confirmation`, from that reading of the forge, made once `Target branch` is known. Collaborative → no question: write `human (forge)`, and the setup's last message says which signal made the repository collaborative. Solo or unreadable → one separate AskUserQuestion call for `Ship confirmation`, stating what the forge showed or why it could not be read, with the answers `automatic (chosen)` (suggested) and `human (chosen)`. Tell the person they change it later by asking in conversation; no agent changes a `(chosen)` value on its own.
 
 Once the `Design source` answer is known, make one separate AskUserQuestion call for its detail: the `Design skill` when the answer is `internal`, the `Design tool` when it is `external`; the other one stays `—`. When the source is not decided yet, skip this call: both stay `—`.
 
@@ -53,7 +53,7 @@ A `Design source` left at `—` is not a choice: every design command stops on i
 1. Copy `templates/agents-local.md` to `AGENTS.local.md` at the repository root and fill in the answers. Keep one setting per line and no trailing comment. Leave the conventions placeholder as it is, unless a profile was chosen: then the conventions section holds one line naming `boilerplates/<name>/profile.md` and its `Commit profiled`, the profile `/po-architect` starts from.
 2. Make sure `.gitignore` lists the `Worktree root` folder and `.env*`; add what is missing.
 3. Rerun the installer if it is available, so `AGENTS.md` includes the new settings; otherwise say that `AGENTS.md` will catch up at the next install.
-4. Commit `AGENTS.local.md`, `.gitignore`, `AGENTS.md`, `.claude/` and `.polype/` together (those that exist) as `chore: set up polype`, on the branch `framing/setup`, landed as `## Landing the framing` below says. Setup lands with the `Merge mode` and `Target branch` it has just written and the effective `Ship confirmation` of the forge it has just read. Never commit a `CLAUDE.md`. The only `CLAUDE.md` is the user's global one: no agent creates a `CLAUDE.md` or a `CLAUDE.local.md` in a project, and the project's notes go in `AGENTS.local.md`. (ADR-0086) Worktrees are created from `Target branch`: until this landing is merged, they would have neither the rules, nor the templates, nor the gate.
+4. Commit `AGENTS.local.md`, `.gitignore`, `AGENTS.md`, `.claude/` and `.polype/` together (those that exist) as `chore: set up polype`, on the branch `framing/setup`, landed as `## Landing the framing` below says. Setup lands with the `Merge mode` and `Target branch` it has just written and the effective `Ship confirmation` of the forge it has just read. Never commit a `CLAUDE.md` (ADR-0086). The only `CLAUDE.md` is the user's global one: no agent creates a `CLAUDE.md` or a `CLAUDE.local.md` in a project, and the project's notes go in `AGENTS.local.md`. Worktrees are created from `Target branch`: until this landing is merged, they would have neither the rules, nor the templates, nor the gate.
 
 Finish with: "Polype is set up. Write stories in docs/stories.md, then run /po-research <story>." When a profile was chosen, add that the person brings the boilerplate into the repository at its `Commit profiled` and commits it before running `/po-architect`. Close by listing the model defaults written — `Model strong: opus`, `Model light: sonnet`, `Light up to: 2` — and say they are changed in `AGENTS.local.md`.
 
@@ -68,7 +68,7 @@ Every framing command lands its commit this way: this one, `/po-brief`, `/po-prd
   - In the root, `git merge --ff-only origin/<Target branch>`, whatever the slug and before anything else is decided. A root already at or ahead of that ref stays as it is. A refusal is reported and the landing carries on: no stash, checkout or reset forces it.
   - No `origin/framing/<slug>` (`git rev-parse --verify --quiet refs/remotes/origin/framing/<slug>` fails) → `<base>` is `origin/<Target branch>`.
 - A framing branch already on the remote is proven merged or not, as step 3 of `/po-ship` proves a ship:
-  - On GitHub, the forge `## The forge's review rule` of `method/commands/po-ship.md` recognises from `origin`, the proof is the pull request: `gh pr view framing/<slug> --json state --jq .state` prints exactly `MERGED`. Any other state, or no pull request from that branch, means not merged. `gh` missing or not logged in → stop: Ancestry is never the proof of a merge on GitHub, which rebuilds every commit it lands (ADR-0081).
+  - On GitHub, the forge `## The forge's review rule` of `method/commands/po-ship.md` recognises from `origin`, the proof is the pull request: `gh pr view framing/<slug> --json state --jq .state` prints exactly `MERGED`. Any other state, or no pull request from that branch, means not merged. `gh` missing or not logged in → stop: ancestry is never the proof of a merge on GitHub, which rebuilds every commit it lands (ADR-0081).
   - On any other forge, where the merge is a true fast-forward (ADR-0081), the proof is `git merge-base --is-ancestor origin/framing/<slug> origin/<Target branch>`.
 - Not merged → `<base>` is `origin/framing/<slug>`, whether a pull request is open or not. The new commit stacks on what the branch already carries, and an open pull request carries both.
 - Merged → `git push origin --delete framing/<slug>`, and `<base>` is `origin/<Target branch>`. A merged branch is never taken as a base.
@@ -92,6 +92,6 @@ Every framing command lands its commit this way: this one, `/po-brief`, `/po-prd
 **`Merge mode: local`**
 - `git update-ref refs/heads/framing/<slug> <sha>`.
 - `human` → AskUserQuestion "Land <message> on <Target branch>?", answers Merge / Not now. Not now leaves the branch in place, and the report says so.
-- In the root, `git merge --ff-only framing/<slug>`, then `git branch -d framing/<slug>`. Nothing is pushed.
+- In the root, `git merge --ff-only framing/<slug>`. A refusal → stop: `framing/<slug>` stays in place and is not deleted, nothing forces the merge (no stash, checkout, reset or rebase), and the report names the branch and git's reason, so a person brings it level with `Target branch` before the next landing. Only after a merge that went through: `git branch -d framing/<slug>`. Nothing is pushed.
 
 **Report.** The command's finish names the branch `framing/<slug>`, the pull request URL or the local landing, and the effective `Ship confirmation` with why: collaborative, solo, or unreadable with the call that failed.
