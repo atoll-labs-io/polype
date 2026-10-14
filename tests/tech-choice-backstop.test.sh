@@ -70,7 +70,8 @@ end=s.index("it is not reopened here.",i)+len("it is not reopened here.")
 open(b,"w").write(s[:i].rstrip(" ")+" "+s[end:].lstrip(" ") if s[end:].strip() else s[:i].rstrip(" ")+s[end:])
 PY
   ! grep -qF "never changed: a verdict is the subagent's" "$m/commands/po-stories-review.md" || fail "review mutant keeps its phrase"
-  grep -qF 'Stories ready:' "$m/commands/po-stories-review.md" || fail "review mutant lost more than the sentence"
+  grep -qF 'as ` — owner: <answer>`.' "$m/commands/po-stories-review.md" || fail "review mutant lost more than the sentence"
+  [ "$(grep -c 'Stories ready:' "$m/commands/po-stories-review.md")" -eq $(( $(grep -c 'Stories ready:' "$METHOD/commands/po-stories-review.md") - 1 )) ] || fail "review mutant lost more than the sentence"
   ! grep -qF 'has already started' "$m/commands/po-stories.md" || fail "stories mutant keeps its phrase"
   grep -qF 'Each story keeps its id.' "$m/commands/po-stories.md" || fail "stories mutant lost 'keeps its id'"
   local review_only stories_only

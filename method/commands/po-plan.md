@@ -23,7 +23,7 @@ Run as a command, this plan is written in this context on the session's model, w
 - No `AGENTS.local.md` → stop and point to `/po-setup`.
 - Match $ARGUMENTS to one id of `docs/stories.md`; none or several → list the ids and stop.
 - `<Worktree root><id>` must exist and `git -C <path> rev-parse --abbrev-ref HEAD` must print `story/<id>`. If not, stop and point to `/po-research <id>`. No branch creation or switching here.
-- `docs/research/<id>.md` holding the line `Root cause: not found` → stop: the diagnostic found no cause, so the story goes to a human and no plan is written.
+- `docs/research/<id>.md` holding `Root cause: not found` as a whole line (`grep -x`, ADR-0070) → stop: the diagnostic found no cause, so the story goes to a human and no plan is written.
 
 Everything below reads and writes inside the worktree.
 

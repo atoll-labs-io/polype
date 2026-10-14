@@ -45,7 +45,7 @@ A story with a screen takes the full track whatever the settings say when that s
 On the short track, apply `/po-flow` as written and stop sequencing stages here: it runs its own execute, review and ship. If `/po-flow` escalates, continue on the full track at stage 2, reusing the worktree it left.
 
 ## Stage 2 — Research
-Create or confirm the worktree as `/po-research` describes. Write `docs/research/<id>.md` under that contract if it does not exist yet; reuse it if it does. A story carrying a `Fixes` line (`Corrige` in a French stories file) is researched under the `diagnostic` skill, the escalated `/po-flow` path included. A research that opens with `Root cause: not found` ends the run here: report it and hand the story to a human, with no plan.
+Create or confirm the worktree as `/po-research` describes. Write `docs/research/<id>.md` under that contract if it does not exist yet; reuse it if it does. A story carrying a `Fixes` line (`Corrige` in a French stories file) is researched under the `diagnostic` skill, the escalated `/po-flow` path included. A research holding `Root cause: not found` as a whole line (`grep -x`, ADR-0070), which the `diagnostic` skill writes first in its `## Structuring facts`, ends the run here: report it and hand the story to a human, with no plan.
 
 ## Stage 3 — Design
 Only for a story with a screen; skip it otherwise. Apply `/po-design` in the story worktree, reusing `docs/designs/<id>/design.md` if it already exists. The approval here is the one `/po-design` defines.

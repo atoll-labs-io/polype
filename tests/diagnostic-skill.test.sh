@@ -42,6 +42,8 @@ test_defect_stories_get_the_diagnostic() {
     contains "$f" '`Fixes`'
     contains "$f" 'Corrige'
   done
+  section_of "$PLANNER" 'Which track' | grep -qF 'a defect to fix — a story carrying a `Fixes` line' || fail "planner Which track lacks the Fixes signal"
+  section_of "$PLANNER" 'Which track' | grep -qF 'Corrige' || fail "planner Which track lacks Corrige"
   section_of "$FLOW" 'Escalation signals' | grep -qF '`Fixes`' || fail "po-flow signals lack Fixes"
   section_of "$FLOW" 'Escalation signals' | grep -qF 'Corrige' || fail "po-flow signals lack Corrige"
   grep -qE '^- \*\*Fixes\*\*:.*Corrige' "$STORIES_TEMPLATE" || fail "stories template lacks the Fixes line naming Corrige"
