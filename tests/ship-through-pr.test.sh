@@ -32,6 +32,11 @@ test_no_agent_pushes_target_branch() {
   [ -n "$pushes" ] || fail "po-ship.md no longer pushes the story branch"
   stray=$(grep -vF 'story/<id>' <<< "$pushes" || true)
   [ -z "$stray" ] || fail "po-ship.md has a git push that does not name story/<id>: $stray"
+}
+
+test_push_targets_only_the_story_ref() {
+  local pushes
+  pushes=$(grep -F 'git push' "$SHIP")
   grep -F -- '--force-with-lease=story/<id>' "$SHIP" | grep -qF '<sha>:refs/heads/story/<id>' \
     || fail "the story push no longer sends <sha>:refs/heads/story/<id>"
   ! grep -qF 'Target branch' <<< "$pushes" || fail "a git push line of po-ship.md names Target branch"

@@ -22,12 +22,14 @@ project_with_stories() {
 }
 
 test_short_subject_counts_as_shipped() {
-  local f body
+  local f
   for f in po-status po-drive; do
     grep -qF -- "$SENTENCE" "$METHOD/commands/$f.md" || fail "$f.md lacks the shared sentence"
   done
-  body="$(awk '/^read_shipped\(\) \{/ {on=1} on {print} on && /^\}/ {exit}' "$HOOK")"
-  grep -qF -- '^s[0-9]+:' <<< "$body" || fail "read_shipped does not read the bare number subject"
+  project_with_stories s01-x:none s02-y:none
+  git -C "$R" commit -q --allow-empty -m 's01: x'
+  session_in "$R" | grep -qxF 'Ready stories: s02-y (Owns not checked: /po-drive decides)' \
+    || fail "a bare s01: subject does not count as shipped in the session output"
 }
 
 test_short_subject_is_exact() {

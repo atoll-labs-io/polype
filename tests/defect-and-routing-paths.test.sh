@@ -40,6 +40,12 @@ test_no_root_cause_goes_to_a_human() {
   [[ $rows == 1 ]] || fail "expected one resuming row with the marker, found $rows"
   section_of "$DRIVE" 'Resuming' | grep 'Root cause: not found' | awk -F'|' '{print $3}' \
     | grep -q '^ a human' || fail "the marker row does not send the lane to a human"
+  grep -F 'Root cause: not found' "$DRIVE" | grep '^|' | grep -qF 'as a whole line' \
+    || fail "the marker row does not say whole line"
+  local step1
+  step1=$(section_of "$DRIVE" 'A wave' | grep '^1\. `subagent_type: planner`')
+  grep -qF 'sends its lane to a human' <<< "$step1" || fail "the planner step does not send the lane to a human"
+  grep -qF 'no plan is approved or dispatched for it' <<< "$step1" || fail "the planner step does not stop the plan"
   marker_line=$(grep -n '^| .*Root cause: not found' "$DRIVE" | head -1 | cut -d: -f1)
   plan_line=$(grep -n '^| .*the lane keeps that file and never writes it again' "$DRIVE" | head -1 | cut -d: -f1)
   [[ -n $marker_line && -n $plan_line ]] || fail "a resuming row is missing"

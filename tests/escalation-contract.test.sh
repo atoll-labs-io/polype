@@ -75,8 +75,9 @@ test_plan_with_a_tech_choice_waits_for_a_human() {
 test_human_stops_do_not_halt_the_fleet() {
   local wave; wave="$(section_of "$DRIVE" 'A wave')"
   holds "$wave" 'at once, in a message of its own' 'po-drive A wave'
-  holds "$wave" 'the other lanes carry on' 'po-drive A wave'
-  contains "$ORCH" 'at once'
+  holds "$wave" 'Meanwhile the other lanes carry on.' 'po-drive A wave'
+  holds "$wave" 'it is not asked through AskUserQuestion, which would hold every other lane' 'po-drive A wave'
+  holds "$(section_of "$ORCH" 'Stage 0 — Can this start?')" 'ends this run at once and reports that stop alone' 'po-orchestrator stage 0'
   contains "$ORCH" 'nothing here pauses them'
   local s; s="$(person_section)" || exit 1
   holds "$s" 'goes to the person at once, one at a time, and the fleet carries on with its other lanes' 'What goes to the person'
