@@ -208,7 +208,7 @@ En plus des copies, `init` comme `install <projet>` :
   laissé tel quel, signalé sur `stderr`. Sans la ligne, sans `AGENTS.local.md` ou avec une autre
   valeur, l'installeur ne touche à aucun des deux, le dit sur `stderr` et la pose continue : lancer
   `/po-setup`, puis reposer de la même façon, `polype init .` pour un projet activé par `init`
-  (jamais `polype update .`, qui y poserait les commandes), `polype update .` après un
+  (la commande conseillée, même si `update` garde désormais ce mode), `polype update .` après un
   `install <projet>`. Le `CLAUDE.md` global de l'utilisateur (`~/.claude/CLAUDE.md`) n'est jamais
   touché ; tant qu'un `CLAUDE.md` sans `@AGENTS.md` existe dans le projet, Claude Code le lit
   **à la place** d'`AGENTS.md` ;
@@ -245,23 +245,29 @@ n'est pas une collision : il est absorbé, comme le dit la liste ci-dessus.
 ## Les fichiers d'état
 
 Trois fichiers d'état vivent dans `.polype/` pour un projet, dans `~/.claude/polype/` pour la pose
-globale ; un projet en a un quatrième, `.claude/.polype-checksums`, décrit plus bas.
+globale ; un projet en a deux de plus, `.polype/mode` et `.claude/.polype-checksums`, décrits plus
+bas.
 
 | Fichier | Contenu |
 | --- | --- |
 | `manifest` | un chemin par ligne : tout ce que la dernière pose a écrit |
 | `checksums` | le `cksum` de chaque fichier au moment où il a été posé |
 | `version` | la version installée |
+| `mode` | projet seulement : `init` ou `project`, le mode que garde `update` (ADR-0091) |
 
 Aucun de ces fichiers n'est listé dans le manifeste : ils ne s'effacent donc jamais eux-mêmes au
 passage suivant. Le manifeste est ce qui permet de supprimer les fichiers d'une version précédente
 sans toucher à ceux du projet ; les empreintes sont ce qui permet de distinguer un fichier intact
 d'un fichier modifié à la main.
 
-Ce quatrième fichier existe parce que, dans un projet, les empreintes des copies de `.claude/` ne
-sont pas dans `.polype/checksums` mais à côté d'elles, dans `.claude/.polype-checksums` (ADR-0087) :
-le `cksum` de chaque copie de `.claude/` au moment où ce checkout l'a posée. Ce fichier appartient à
-un seul checkout et reste ignoré par git : quand git ne l'ignore pas déjà, l'installeur ajoute la
+`.polype/mode` est commité avec le reste de `.polype/`. `update` le lit avant de choisir quoi
+poser ; quand il manque, il déduit le mode du manifeste : sans ligne sous `.claude/commands/`, c'est
+`init`. `install <projet>` ne le lit pas : il reste le moyen de passer un projet en pose complète.
+
+`.claude/.polype-checksums` existe parce que, dans un projet, les empreintes des copies de
+`.claude/` ne sont pas dans `.polype/checksums` mais à côté d'elles (ADR-0087) : le `cksum` de
+chaque copie de `.claude/` au moment où ce checkout l'a posée. Ce fichier appartient à un seul
+checkout et reste ignoré par git : quand git ne l'ignore pas déjà, l'installeur ajoute la
 ligne `.claude/.polype-checksums` au `.gitignore`. Il n'entre jamais dans le manifeste, et `check`
 lit les deux fichiers d'empreintes. `.polype/checksums` ne garde que les fichiers de `.polype/`.
 `init` ne pose aucune copie sous `.claude/`, donc n'écrit pas ce fichier. Une actualisation de
@@ -281,7 +287,12 @@ renommé sur sa destination : en `--global`, la charge utile que l'installeur li
 plus livrés, recopie ceux dont l'empreinte correspond encore à ce qui avait été posé, **laisse en
 place** ceux qui ont été modifiés à la main et les nomme sur `stderr`. Un fichier laissé en place
 garde l'empreinte de la version posée, donc `check` continue de le signaler tant qu'il diffère. Sur
-un projet où Polype n'a jamais été installé, `update` se comporte comme `install`.
+un projet où Polype n'a jamais été installé, `update` se comporte comme `install`. `update` garde
+le mode d'activation du projet : un projet activé par `init` reste à ses fichiers de projet, sans
+copie des commandes, des subagents ni des skills.
+
+Un projet activé par `init` qu'un `update` d'avant cette version a gonflé de ces copies (#73) se
+répare avec `polype init .` : la pose retire les copies et enregistre le mode `init`.
 
 Une copie identique au fichier livré n'est jamais une modification à la main : `update` la recopie
 et enregistre son empreinte. Une pull request qui a actualisé `.polype/`, ou des copies de

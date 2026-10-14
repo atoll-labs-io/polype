@@ -111,8 +111,9 @@ cd ~/mon-projet
 polype init .
 ```
 
-Un projet activé par `init` se rafraîchit par `polype init .`, jamais par `polype update .` : sur un
-tel projet, `update` y poserait aussi les commandes, les subagents et les skills.
+Un projet activé par `init` se rafraîchit par `polype init .`. `update` garde le mode d'activation
+du projet et n'y pose donc pas les commandes ; `polype init .` reste la commande conseillée, et
+répare un projet qu'un ancien `update` a gonflé de ces copies.
 
 ## Ce que Polype fait de ta configuration
 
