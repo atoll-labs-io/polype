@@ -13,6 +13,11 @@ ni `CLAUDE.local.md` : Claude Code ne lit `AGENTS.md` que tant qu'aucun de ces d
 n'existe, et l'installeur absorbe ceux qu'il trouve (ADR-0086). Avec `kept`, il les garde et met
 `@AGENTS.md` en tête du `CLAUDE.md` pour que les règles soient lues aussi (ADR-0089).
 
+Polype vise tout agent ou harness ; pris en charge aujourd'hui : Claude Code ; prévu ensuite :
+Codex (ADR-0005), sans date. Pour un autre outil, il faut ouvrir une issue sur
+`atoll-labs-io/polype`, avec le modèle `.github/ISSUE_TEMPLATE/harness-support.md`. Les poses
+ci-dessous sont celles de Claude Code.
+
 ```
 polype install --global                pose commandes, subagents, skills et charge utile dans ~/.claude
 polype update  --global                rafraîchit la pose globale

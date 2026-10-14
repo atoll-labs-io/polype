@@ -1,12 +1,20 @@
 # Polype
 
-> Le polype, minuscule animal qui bâtit le récif. Une méthode de dev agentique qui emmène un SaaS de l'intention à la production, portée par des agents Claude Code encadrés par des gates mécaniques.
+> Le polype, minuscule animal qui bâtit le récif. Une méthode de dev agentique qui emmène un SaaS de l'intention à la production, pensée pour tout agent ou harness, encadrée par des gates mécaniques ; seul Claude Code est pris en charge pour l'instant.
 
 Polype n'est pas un framework ni un générateur : c'est un jeu de règles, de commandes et de subagents posés dans un dépôt. Les règles tiennent dans `AGENTS.md`, les réglages du projet dans `AGENTS.local.md`, et toute la trace du travail — recherche, plan, vérification, revue — reste en markdown dans `docs/`, donc en git, à côté du code qu'elle justifie.
 
 Quatre principes portent le reste : rien n'atteint le code hors d'une story, celui qui écrit le code ne le juge pas, chaque gate est fermé tant qu'un fichier ne l'ouvre pas, et chaque story vit dans son propre worktree.
 
 **Statut** : le cycle, le cadrage et la flotte tournent — Polype se construit avec Polype. Venture outillage sous Atoll.
+
+## Pour quel agent
+
+Polype vise tout agent ou harness ; pris en charge aujourd'hui : Claude Code ; prévu ensuite : Codex (ADR-0005), sans date. Un autre outil ? Tu peux ouvrir une issue avec le [modèle de demande](.github/ISSUE_TEMPLATE/harness-support.md).
+
+Conçu pour se porter, c'est une intention de conception et non une promesse que cela tourne ailleurs : les règles dans `AGENTS.md`, les skills au format `SKILL.md`, les gates en scripts shell et en hooks git.
+
+Demande Claude Code aujourd'hui : les subagents, les hooks `PreToolUse` et `SessionStart`, `AskUserQuestion` et la pose dans `~/.claude/`.
 
 ## Trois points d'entrée
 
