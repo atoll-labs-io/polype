@@ -32,6 +32,7 @@ wtroot="$(setting 'Worktree root')"
 max_attempts="$(setting 'Max attempts')"
 merge_mode="$(setting 'Merge mode')"
 confirmation="$(setting 'Ship confirmation' | sed -E 's/[[:space:]]*\((forge|chosen)\)$//')"
+claude_md="$(setting 'Project CLAUDE file')"
 
 unreadable() { echo "Unreadable setting: $1"; }
 
@@ -234,7 +235,12 @@ waiting_for_a_human() {
   done
   lines+=(${ORPHANS[@]+"${ORPHANS[@]}"})
   for name in CLAUDE.md CLAUDE.local.md; do
-    [ -f "$top/$name" ] && lines+=("$name: Claude Code reads it instead of AGENTS.md → polype update . moves it into AGENTS.local.md")
+    [ -f "$top/$name" ] || continue
+    case "$claude_md" in
+      absorbed) lines+=("$name: Claude Code reads it instead of AGENTS.md → polype update . moves it into AGENTS.local.md") ;;
+      kept) ;;
+      *) lines+=("$name: Claude Code reads it instead of AGENTS.md → set Project CLAUDE file to absorbed or kept in AGENTS.local.md") ;;
+    esac
   done
   if [ ${#lines[@]} -eq 0 ]; then
     echo "Waiting for a human: nothing"

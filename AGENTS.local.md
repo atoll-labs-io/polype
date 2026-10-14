@@ -33,6 +33,7 @@ Tracker:           none
 Model strong:      opus
 Model light:       sonnet
 Light up to:       2
+Project CLAUDE file: absorbed
 ```
 
 ## Commands

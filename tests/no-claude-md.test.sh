@@ -23,7 +23,7 @@ has_exact_line() { grep -qxF -- "$2" "$1" || fail "${1##*/} lacks the line: $2";
 
 test_installer_absorbs_claude_md() {
   throwaway_home
-  printf 'Merge mode:        local\n' > "$P/AGENTS.local.md"
+  printf 'Merge mode:        local\nProject CLAUDE file: absorbed\n' > "$P/AGENTS.local.md"
   printf '# Project notes\n@AGENTS.md\n' > "$P/CLAUDE.md"
   printf 'local note\n' > "$P/CLAUDE.local.md"
   local out; out="$(run_polype install "$P")"
@@ -47,7 +47,7 @@ test_installer_absorbs_claude_md() {
   local global; global="$(cksum < "$CLAUDE_CONFIG_DIR/CLAUDE.md")"
   local P2="$SCRATCH/.second"
   git init -q -b main "$P2"
-  printf 'Merge mode:        local\n' > "$P2/AGENTS.local.md"
+  printf 'Merge mode:        local\nProject CLAUDE file: absorbed\n' > "$P2/AGENTS.local.md"
   printf '# Init notes\n' > "$P2/CLAUDE.md"
   run_polype install --global >/dev/null
   run_polype init "$P2" >/dev/null
@@ -89,7 +89,7 @@ test_precommit_refuses_claude_md() {
 test_session_flags_a_claude_md() {
   scratch_repo
   local R; R="$(cd "$SCRATCH" && pwd -P)"
-  printf 'Target branch: main\nWorktree root: .worktrees/\nEntry mode: new\nMax attempts: 2\nMerge mode: pr\nShip confirmation: automatic\n' \
+  printf 'Target branch: main\nWorktree root: .worktrees/\nEntry mode: new\nMax attempts: 2\nMerge mode: pr\nShip confirmation: automatic\nProject CLAUDE file: absorbed\n' \
     > "$R/AGENTS.local.md"
   printf '.worktrees/\n' > "$R/.gitignore"
   git -C "$R" add -A && git -C "$R" commit -qm framing
@@ -103,7 +103,7 @@ test_session_flags_a_claude_md() {
 }
 
 test_rules_say_no_claude_md() {
-  local sentence="The only \`CLAUDE.md\` is the user's global one: no agent creates a \`CLAUDE.md\` or a \`CLAUDE.local.md\` in a project, and the project's notes go in \`AGENTS.local.md\`."
+  local sentence="Unless \`Project CLAUDE file\` is \`kept\`, the only \`CLAUDE.md\` is the user's global one: no agent creates a \`CLAUDE.md\` or a \`CLAUDE.local.md\` in a project, and the project's notes go in \`AGENTS.local.md\`."
   contains "$METHOD/AGENTS.md" "$sentence"
   contains "$METHOD/commands/po-setup.md" "$sentence"
   contains "$METHOD/commands/po-architect.md" "$sentence"
