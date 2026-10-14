@@ -128,3 +128,51 @@ Max severity: minor
 Stories ready: yes
 
 > Answered at the next revision, 2026-10-14. m-a and m-c: s132's notes name both tests and what each pins. m-b: the README gives an order of magnitude, which the test recomputes within ±25 %. Stories ready: yes.
+
+## Loop 3 — s133-any-harness-docs
+
+Added to M11 on 2026-10-14 at the owner's request. Reviewed alone, in a context that did not write it. Scope source: the owner's request quoted in the story's notes, plus ADR-0005. Platform `cli`.
+
+Review status: complete
+
+### Coverage
+| Scope item | Source section | Covered by | Covered |
+| --- | --- | --- | --- |
+| "c'est pour Claude Code et tous les autres types d'agent/harness": the docs say Polype targets any agent or harness | owner's request (story notes) | s133 (`docs_name_any_harness`, `portable_and_specific_parts_are_named`) | yes |
+| "le demander en issue si pas disponible": a way to request an unsupported harness | owner's request (story notes) | s133 (`harness_issue_template_exists`, last clause of `docs_name_any_harness`) | yes |
+| Codex comes next, the rest is deferred | ADR-0005 | s133 (`docs_name_any_harness`) | yes |
+
+### Exclusions
+| Excluded item | Source section | Revived by | Revived |
+| --- | --- | --- | --- |
+| Claiming support that does not exist (the Codex port itself) | story notes and ADR-0005 (Codex deferred) | none: the notes keep the port out of this story | no |
+
+### Checks
+- [x] Exclusions: no story revives an excluded item, under any name
+- [x] No technical layer dressed as a story. It is a documentation slice that a reader can try.
+- [ ] Every criterion can be checked by one test. See major findings 1 and 2.
+- [x] Dependency order: `s132-readme-onboarding` exists and comes earlier (line 2048).
+- [x] Complexity: 2, nothing to split.
+- [x] Ids: `s133-any-harness-docs` is well formed, appears once and follows s132.
+- [x] Owns: declared. `README.md` and `docs/installation.md` overlap with s132, but s133 depends on s132, so this is allowed. `method/commands/po-help.md` and `.github/ISSUE_TEMPLATE/` overlap with no unshipped M11 story (s130 and s131 own neither). Older stories that own `po-help.md` or `README.md` (s39, s48 and others) come from shipped milestones.
+
+### Findings
+- **major** — s133 — `portable_and_specific_parts_are_named` requires the README to say that `AGENTS.md`, the `SKILL.md` standard and the shell/git gates "sert déjà tout harness". That goes beyond ADR-0005 and beyond what the code does. The ADR says only that these choices keep a later port cheap ("pour que ce portage reste bon marché"). It does not say they work under another harness today. On the page: skills are installed under `.claude/skills/` or `~/.claude/skills/`, which another tool does not read; the `AGENTS.md` rules name subagents (`implementer`, `reviewer`) and `/po-*` commands; the story's own decision-log line (`docs/decisions-log.md:71`) notes that "24 method files rely on Claude Code subagents, hooks and AskUserQuestion". This breaks the notes' own rule "Ne rien promettre au-delà de ce que le code fait". The criterion should say "conçu pour être portable" or "lu par d'autres outils, sans garantie", not "sert déjà".
+- **major** — s133 — In `docs_name_any_harness`, the sentence "Aucune phrase ne présente Polype comme réservé à Claude Code, ni n'annonce une prise en charge qui n'existe pas. Un test le tient." is a negative universal that no single test can check. It names neither the phrases to forbid nor where to look: the three owned files only, or also `method/AGENTS.md` and `docs/conception.md` (`| Multi-outil | ... | Claude Code d'abord |`), which the story does not own. It should name the files and the exact phrases the test refuses, or drop the clause and keep the positive statements.
+- **minor** — s133 — `Surface: —` says nothing a person sees or runs changes. But `/po-help` prints the new text, and the README is what an outside person reads. `command` fits at least the `/po-help` part, and Platform `cli` admits it. With `QA stage: —` this has no effect on routing.
+- **minor** — s133 — The `H03` line of `docs/parite-killer-saas.md:105` ("tableau honnête de ce qui se dégrade", status `partiel`) is partly delivered by `portable_and_specific_parts_are_named`. The repository convention asks a story that implements a parity line to update its status cell, but s133 does not own `docs/parite-killer-saas.md`. The story should either own it and update H03, or say in its notes why H03 stays as it is.
+- **minor** — s133 — The notes protect the tests that quote the README and `docs/installation.md` word for word. They say nothing about tests that quote `method/commands/po-help.md`, such as the wiring tests of older stories that own it (s05/s20/s32-era Owns lines 116, 303, 466). The implementer should be warned to keep those phrases too.
+- **minor** — M11 — The milestone introduction (line 2016) still says "Les trois stories ... passent l'une après l'autre", but M11 now has four stories. s133 is chained after s132, so the serial order holds and only the wording is stale.
+- **minor** — s133 — Under `docs_name_any_harness`, "prévu ensuite, Codex (ADR-0005)" is consistent with the ADR. But the ADR's date ("vers mi-octobre 2026") is today, so the docs should not repeat a date that is about to pass. The notes could say so.
+
+### Not verified
+- **Whether issues are open on the public GitHub repository `atoll-labs-io/polype`.** The template and a relative link can exist while the forge refuses issues, and I read no code or forge state. A person should check on GitHub that issues are enabled.
+- **Whether `.github/` already exists, and its `ISSUE_TEMPLATE/config.yml`.** The code is out of scope. If a `config.yml` turns off blank issues or points elsewhere, the new template could clash with it.
+- **`Issue tracker: —` against "ouvrir une issue".** The setting governs defects (Law 7), not harness requests, so I read no contradiction. The owner may still want to confirm that pointing outsiders to GitHub Issues is intended while the project declares no issue tracker.
+- **Every sentence in `README.md`, `docs/installation.md` and `po-help.md` that might say "Claude Code only".** I did not read those files, since the code and docs are out of scope. That is the reason major finding 2 asks the story to name the phrases.
+- **Other harnesses' file layouts** (where Codex looks for skills, and whether it reads `AGENTS.md` and `SKILL.md`). I judged major finding 1 from ADR-0005 and the decisions log only, not from outside sources.
+
+Max severity: major
+Stories ready: yes
+
+> Answered at the next revision, 2026-10-14. Major 1: the criterion now says "conçu pour se porter vers un autre outil", never that it works elsewhere already. Major 2: the test holds the three positive statements in the three owned files and refuses two named phrases there; `method/AGENTS.md` and `docs/conception.md` are left alone, as the notes say. Minors: `Surface: command`; the story owns `docs/parite-killer-saas.md` and updates H03; the notes protect `/po-help` quotes; the milestone says four stories; the ADR-0005 date is not repeated. Not verified: issues are enabled (`gh repo view`: `hasIssuesEnabled` true) and no `.github/` exists yet. Stories ready: yes.
