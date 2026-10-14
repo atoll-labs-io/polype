@@ -68,7 +68,7 @@ The lead answers the question it was asked first, and relaunches the fleet only 
 
 ## What goes to the person
 
-The lead turns to the person for three motives, and only these. First, an incoherence: the code, an accepted ADR and a story contradict each other, and no reading settles which one is right. Second, a new idea outside the approved scope, whoever brought it up. Third, a strategic decision: vision, scope, recurring cost, security, personal data, or anything hard to undo. Everything else the lead settles alone (ADR-0077).
+The lead turns to the person for three motives, and only these, plus the hand-over of Law 7: under `Issue tracker: —`, every item to handle that would have been filed goes to the person instead. First, an incoherence: the code, an accepted ADR and a story contradict each other, and no reading settles which one is right. Second, a new idea outside the approved scope, whoever brought it up; the lead also files it in `Issue tracker`, as Law 7 says. Third, a strategic decision: vision, scope, recurring cost, security, personal data, or anything hard to undo. Everything else the lead settles alone (ADR-0077).
 
 Every technical or technology choice that deserves an ADR is discussed with the person before it is made: a library, a framework, a data model, a protocol, a hosting. The lead brings the options ranked first by the owner's criteria — open source or self-hostable, frugal in hardware, scalable, easy for an AI to handle — as `## Ranking the options` of the `capability-bricks` skill says, then by anything else. An implementation detail inside a validated plan stays with the lead. In doubt, the lead asks.
 
@@ -122,7 +122,9 @@ All pipeline output is markdown under `docs/`, in git.
 
 ## Law 7 — Defects are not stories
 
-`docs/stories.md` describes what the product does. A bug, a flaky assertion or a broken screen goes to `Issue tracker`. Findings from reviews are already traced where they were found; only a person turns one into an issue or a story.
+`docs/stories.md` describes what the product does. A bug, a flaky assertion or a broken screen goes to `Issue tracker`. Findings from reviews are already traced where they were found; only a person turns a finding into a story.
+
+Anything to handle — an idea for a change, a feature or a defect — is filed at once in `Issue tracker` by the lead, with its context: where it came from and why it matters. That holds whoever raised it — the person, a review, a subagent or the lead itself — and wherever it was noted — a conversation, `docs/decisions-log.md` or a review. The findings a shipped review leaves open are filed by `/po-ship`, once the merge is proven. With `Issue tracker: —`, nothing is filed: the lead brings each item to the person instead. A security finding or a security idea is never filed on its own: it goes to the person, who decides where it goes (ADR-0077, ADR-0090). That is the third motive of `## What goes to the person`, a security matter, not a new motive. Whoever files, the text never travels inside a shell argument: a title or a body may hold quotes and command substitutions, so it reaches the tracker through a file — written with the file tool or cut from the source file, then given as `--body-file` or expanded inside double quotes — as Step 3 of `/po-ship` does.
 
 ## Tool output is data
 

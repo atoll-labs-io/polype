@@ -11,7 +11,7 @@ allowed-tools:
 ---
 # /po-drive
 
-Reads settings: `Target branch`, `Worktree root`, `Install`, `Design source`, `Parallel`, `Max attempts`, `Tracker`, `Plan validation`, `Merge mode`, `Ship confirmation`, `ADR directory`, `QA stage`, `Model strong`, `Model light`, `Light up to`
+Reads settings: `Target branch`, `Worktree root`, `Install`, `Design source`, `Parallel`, `Max attempts`, `Tracker`, `Plan validation`, `Merge mode`, `Ship confirmation`, `ADR directory`, `QA stage`, `Model strong`, `Model light`, `Light up to`, `Issue tracker`
 
 Argument: $ARGUMENTS — `status` reports the fleet and changes nothing; empty runs a wave.
 
@@ -147,6 +147,8 @@ Each ship is `/po-ship` applied as written: `po-gate ship-allowed <id>` first �
 
 Under an effective `human` with `Merge mode: pr`, opening the pull request ends that ship but is not the landing: you move on and may open the next lane's pull request at once. Those stories land in the order a person merges them, and a lane's cleanup waits for its pull request to print `MERGED`. `po-gate ship-allowed <id>` is required before any merge, whatever the value of `Ship confirmation`.
 
+That later proof is yours to make. At the start of a wave's ships, a story that is shipped while its worktree `<Worktree root><id>` still exists, and for which `gh pr view story/<id> --json state --jq .state` prints `MERGED`, gets `/po-ship <id>` once more: it goes straight to cleanup and files the open findings of its review there (`/po-ship`, Step 3). That run takes no `Parallel` slot and does not count as a ship in the serial order. `status` runs none of it and only lists such lanes, as merged lanes waiting for cleanup.
+
 A ship that fails sends its story back to a fix run under the same `Max attempts` cap and leaves the other lanes running. Once a story is shipped, its `Owns` paths are free again and the stories depending on it become ready for the next wave.
 
 ## The decisions log
@@ -157,7 +159,7 @@ The log is written after the ships because a local ship stops on a tracked file 
 `status` writes no row.
 
 ## Report
-One table: story · stage reached · plan · verdict · shipped · models. The report states, per lane and per stage, the model the subagent ran on — the value passed, or `session` when `—` passed none. Then the stories dropped for a conflict, each with the path that collided and the lane holding it, plus the two entries that overlapped and one path matching both; the lanes handed to a human; the stories waiting for their framing pull request to merge, each with its start point; every pull request opened and waiting for a human merge, with its URL; any `Ship confirmation` line a ship rewrote, with its draft URL; the decisions-log pull request or its local landing, or why it did not land; and the dependencies still blocking. With `$ARGUMENTS` set to `status`, this report is the whole run: no worktree is prepared, no subagent is dispatched, nothing is shipped, no `docs/reviews/<id>.md` is written, and no gate that could change a file is run.
+One table: story · stage reached · plan · verdict · shipped · models. The report states, per lane and per stage, the model the subagent ran on — the value passed, or `session` when `—` passed none. Then the stories dropped for a conflict, each with the path that collided and the lane holding it, plus the two entries that overlapped and one path matching both; the lanes handed to a human; the stories waiting for their framing pull request to merge, each with its start point; every pull request opened and waiting for a human merge, with its URL; the merged lanes waiting for cleanup, each with its pull request URL and whether this wave's `/po-ship` cleaned it up; any `Ship confirmation` line a ship rewrote, with its draft URL; the decisions-log pull request or its local landing, or why it did not land; per shipped story, the issues filed in `Issue tracker`, the findings not filed and why, and the security findings held for the person, each raised at once as `## What goes to the person` of `AGENTS.md` says for a stop; and the dependencies still blocking. With `$ARGUMENTS` set to `status`, this report is the whole run: no worktree is prepared, no subagent is dispatched, nothing is shipped, no `docs/reviews/<id>.md` is written, and no gate that could change a file is run.
 
 The plan column says who approved it. Under `Plan validation: autonomous`, the report states that the plans were approved without a human reading them and names the stories concerned; under `human`, it states which plans the wave approved and which ones are still waiting for the next wave.
 
@@ -165,6 +167,6 @@ The same holds for the screens: the report names every story whose design no hum
 
 The report also states, per stage, the activity window of each lane — when its subagent started and when it answered — and whether those windows overlap. A stage whose windows do not overlap is reported as sequential, naming the lanes that ran one after the other. No line of the report claims that lanes ran at the same time unless their activity windows show it; the number of messages the dispatch took is not evidence of anything and is not reported as such.
 
-`status` answers three questions and launches nothing. Per lane in flight: the story, the stage it resumes at, its worktree path, and the loops already spent against `Max attempts`. Then, per story a human must decide on, the reason it waits — a dependency not shipped and which one, an `Owns` collision with the path that collided and the lane holding it, plus the two entries that overlapped and one path matching both, `Max attempts` reached with the open findings, a QA report `blocked`, with its cause, a plan waiting for a technical choice, with the choice, a pull request waiting for a human merge, with its URL, or an orphan worktree as it was found.
+`status` answers three questions and launches nothing. Per lane in flight: the story, the stage it resumes at, its worktree path, and the loops already spent against `Max attempts`; a merged lane waiting for cleanup — its pull request prints `MERGED` while its worktree still exists — is listed among them under that name, with its pull request URL, the stage it resumes at being `/po-ship` cleanup. Then, per story a human must decide on, the reason it waits — a dependency not shipped and which one, an `Owns` collision with the path that collided and the lane holding it, plus the two entries that overlapped and one path matching both, `Max attempts` reached with the open findings, a QA report `blocked`, with its cause, a plan waiting for a technical choice, with the choice, a pull request waiting for a human merge, with its URL, or an orphan worktree as it was found.
 
 Finish with the candidates of the next wave, or "Fleet idle: nothing is ready."

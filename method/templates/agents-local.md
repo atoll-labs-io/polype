@@ -53,7 +53,7 @@ Project CLAUDE file: absorbed
 | Build stage | where the production build runs: `ship-if-route` (only when routing or a manifest changed) · `ship` · `ci` · `—` |
 | Platform | what the project builds, one or more of `web` · `mobile` · `cli` · `api` · `lib` · `xr` · `robot`, separated by commas; it decides which boilerplate profiles `/po-setup` offers and which `Surface` a story may declare (ADR-0054, ADR-0055) |
 | QA stage | `screens` — /po-qa walks the screens a story touches before its review · `surfaces` — /po-qa checks every story whose `Surface` is not `—`, with the driver of that surface (ADR-0054) · `—` — no QA stage |
-| Issue tracker | where defects are filed: `github` · `taskwarrior` · `—` |
+| Issue tracker | where ideas, features and defects to handle are filed, and the findings a shipped review leaves open: `github` · `taskwarrior` · `—`; `—` sends them to the person |
 | Worktree root | folder that holds story worktrees, ending with `/`; kept out of git by `.gitignore` |
 | ADR directory | where the project's ADRs live, with its own numbering; ends with `/` |
 | Entry mode | where the project starts: `replace` — build an internal replacement of a paid SaaS · `adapt` — a competing product with its own angle · `new` — an idea from scratch · `—` not chosen yet |

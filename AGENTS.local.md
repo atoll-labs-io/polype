@@ -18,7 +18,7 @@ E2E browsers:      —
 Build stage:       —
 Platform:          cli
 QA stage:          —
-Issue tracker:     —
+Issue tracker:     github
 Worktree root:     .worktrees/
 ADR directory:     docs/decisions/
 Entry mode:        —
