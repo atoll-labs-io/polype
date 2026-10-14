@@ -1974,3 +1974,37 @@ Chaque story ferme, dans les fichiers qu'elle possède, toutes les lignes `HOLDS
 - [ ] `hooks_say_what_they_do` — le commentaire de `po-gate` ne parle plus de squash, le scan de secrets du cadrage compare au `<base>` du commit construit (`po-gate.sh` et l'appel de `/po-setup`), une puce de constat qui commence par `Ship allowed:` ne ferme plus un bloc de verdict (et `templates/review.md` le dit) ; le refus `core.worktree` de `po-bounds` dit « in a throwaway repo » et un test le tient.
 - [ ] `installer_and_docs_agree` — `remove` sans `jq` retire aussi l'entrée `SessionStart` ou le dit ; `docs/installation.md` cite `.claude/settings.json`, explique le passage de `Merge mode: local` à `pr` pour un projet qui a un remote, et respecte la largeur de ligne du fichier ; `README.md` ne parle plus de squash ; `templates/brief.md` ne demande plus de relire tout le brief, comme `templates/prd.md` après s124 ; l'ADR-0080 porte `superseded-by` vers l'ADR-0081 (frontmatter seul).
 - [ ] `drivers_and_doctrine_read_right` — `scene.md` nomme la clé `application/run/main_scene`, le profil Godot ne fige plus `1920x1080` sans dire que c'est un défaut, la phrase de `testing-doctrine` sur `po-run` se lit d'un trait, la cellule H04 de la parité dit sa limite d'emblée et son test tient les trois fichiers cités, et la borne de 30 s de `/po-qa` est tenue par un test.
+
+## M10 — Les artefacts reliés
+
+Objectif : que chaque artefact d'une story porte des liens Markdown vers sa story et vers l'artefact qui le précède, pour naviguer de l'un à l'autre sur GitHub comme dans le vault Obsidian (`~/dev`), où ces fichiers sont aujourd'hui isolés dans le graphe. Proposé en brouillon le 2026-10-14 par un autre agent (`~/dev/atoll/brouillons/polype-s128-artefacts-relies.md`), découpé en deux et intégré après M9 quinquies avec l'accord du porteur. Le porteur accepte, pour ce seul ajout, de retoucher les artefacts des stories déjà livrées : une ligne de navigation ne change rien à ce qu'ils prouvent. Aucune gate de Law 3 ne change.
+
+Les deux stories retouchent la preuve de toutes les stories : elles tournent seules, une fois M9 quinquies livré et sans autre lane en cours. Le rattrapage des artefacts de nautile et pecten est une story de chacun de ces projets, après la réinstallation de Polype.
+
+### s128-artifact-link-templates — Les gabarits d'artefact portent leurs liens
+**En tant que** porteur de projet **je veux** que chaque gabarit d'artefact de story porte une ligne de liens vers sa story et vers l'artefact qui le précède **afin que** tout nouvel artefact se relie dès sa création.
+
+- **Complexité** : 2
+- **Dépend de** : s127-hooks-installer-docs-cleanup
+- **Surface** : —
+- **Owns** : `method/templates/research.md`, `method/templates/plan.md`, `method/templates/plan-flow.md`, `method/templates/review.md`, `method/templates/verification-record.md`, `method/templates/qa.md`, `tests/artifact-link-templates.test.sh`
+
+**Critères d'acceptation**
+- [ ] `templates_carry_links` — sous le titre de chaque gabarit, et après le frontmatter quand il y en a un, une ligne de liens Markdown relatifs : la story (`../stories.md`) toujours, puis l'artefact précédent quand il existe sur ce track (research ← plan ; plan ou plan-flow ← review, verif, QA ; verif ← review). Pas de wikilinks, pour que le lien marche sur GitHub ; pas d'ancre vers un titre, sauf si un test la vérifie.
+- [ ] `gates_still_read_artifacts` — `po-gate`, `po-run`, `/po-review`, `/po-ship` et `/po-status` donnent le même résultat sur un artefact avec et sans la ligne, et un test le tient ; `templates/verification-record.md` dit que la ligne fait partie du gabarit, et non d'une édition de l'implementer.
+- [ ] `links_resolve` — un test échoue si un lien de la ligne, dans un gabarit rendu pour une story jetable, pointe vers un fichier absent.
+
+**Notes pour l'agent** : commencer par lister qui lit ces fichiers par position (première ligne, numéro de ligne, frontmatter) plutôt que par motif : la ligne ajoutée ne doit décaler aucune lecture. Le reviewer rend sa revue dans la forme de `templates/review.md`, et le chef de projet la recopie telle quelle : la ligne de liens fait partie de cette forme.
+
+### s129-artifact-links-backfill — Les artefacts déjà écrits se relient
+**En tant que** porteur de projet **je veux** que les artefacts déjà présents dans le dépôt reçoivent la même ligne de liens **afin que** les anciennes stories se relient comme les nouvelles.
+
+- **Complexité** : 2
+- **Dépend de** : s128-artifact-link-templates
+- **Surface** : —
+- **Owns** : `docs/research/`, `docs/plans/`, `docs/reviews/`, `docs/verif/`, `docs/qa/`, `bin/po-link-artifacts`, `tests/artifact-links-backfill.test.sh`
+
+**Critères d'acceptation**
+- [ ] `backfill_is_a_script` — `bin/po-link-artifacts` ajoute à chaque artefact de story la ligne de s128, seulement vers des fichiers qui existent, et ne change rien d'autre dans ces fichiers ; relancé, il ne change plus rien.
+- [ ] `existing_artifacts_backfilled` — tous les artefacts de story de `docs/research/`, `docs/plans/`, `docs/reviews/`, `docs/verif/` et `docs/qa/` portent la ligne ; les fichiers qui ne sont pas des artefacts d'une story (`docs/reviews/stories*.md`, `docs/reviews/triage-*.md`) ne sont pas touchés.
+- [ ] `links_resolve_everywhere` — un test échoue si un lien de la ligne, dans un artefact existant, pointe vers un fichier absent, et `po-gate` donne le même résultat qu'avant sur les artefacts des stories en cours, s'il y en a.
