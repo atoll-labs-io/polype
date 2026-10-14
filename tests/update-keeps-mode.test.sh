@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# s135 — polype update keeps the activation mode of the project (#73).
+# s135 — polype update keeps the activation mode of the project (#73); s138 — session hint cleanup.
 
 POLYPE="$ROOT/bin/polype"
 HOOK="$METHOD/hooks/po-session.sh"
@@ -25,6 +25,11 @@ run_polype() {
 laid() { wc -l < "$P/.polype/manifest" | tr -d ' '; }
 init_count() { find "$METHOD/templates" "$METHOD/hooks" -type f | wc -l | tr -d ' '; }
 mode_is() { [ "$(cat "$P/.polype/mode" 2>/dev/null)" = "$1" ] || fail "$2: .polype/mode is not $1"; }
+
+absorbed_settings() {
+  printf 'Target branch: main\nWorktree root: .worktrees/\nEntry mode: new\nMax attempts: 2\nMerge mode: pr\nShip confirmation: automatic\nProject CLAUDE file: absorbed\n' \
+    > "$P/AGENTS.local.md"
+}
 
 no_command_copies() {
   local d
@@ -97,9 +102,9 @@ test_init_shrinks_a_full_install() {
 
 test_hints_say_init() {
   fresh_project
-  printf 'Target branch: main\nWorktree root: .worktrees/\nEntry mode: new\nMax attempts: 2\nMerge mode: pr\nShip confirmation: automatic\nProject CLAUDE file: absorbed\n' \
-    > "$P/AGENTS.local.md"
+  absorbed_settings
   run_polype init "$P" >/dev/null
+  mode_is init "before the session hint"
   git -C "$P" add -A && git -C "$P" commit -qm activate
   printf 'note\n' > "$P/CLAUDE.local.md"
   local out; out="$(cd "$P" && CLAUDE_PROJECT_DIR="$P" bash "$HOOK")"
@@ -118,8 +123,7 @@ test_hints_say_init() {
 
 test_session_hint_infers_init_without_mode() {
   fresh_project
-  printf 'Target branch: main\nWorktree root: .worktrees/\nEntry mode: new\nMax attempts: 2\nMerge mode: pr\nShip confirmation: automatic\nProject CLAUDE file: absorbed\n' \
-    > "$P/AGENTS.local.md"
+  absorbed_settings
   run_polype init "$P" >/dev/null
   git -C "$P" add -A && git -C "$P" commit -qm activate
   rm -f "$P/.polype/mode"
@@ -144,4 +148,21 @@ test_adr_records_the_mode() {
   contains "$adr" 'update --init'
   contains "$adr" 'inference'
   frontmatter "$adr" | grep -qx 'status: accepted' || fail "ADR-0091 is not accepted"
+}
+
+test_session_comment_says_why() {
+  if grep -qF 'would lay the commands' "$HOOK"; then fail "po-session still says update would lay the commands"; fi
+  local comments; comments="$(grep -E '^[[:space:]]*#' "$HOOK")"
+  grep -qF 'recorded_mode' <<< "$comments" || fail "no comment of po-session names recorded_mode"
+  grep -qF 'polype init .' <<< "$comments" || fail "no comment of po-session names polype init ."
+}
+
+test_absorbed_settings_helper() {
+  local self="$ROOT/tests/update-keeps-mode.test.sh" n t body
+  n="$(grep -cE '^[[:space:]]*printf .*Project CLAUDE file: absorbed' "$self")"
+  [ "$n" = 1 ] || fail "the absorbed settings appear $n times, expected once"
+  for t in test_hints_say_init test_session_hint_infers_init_without_mode; do
+    body="$(awk -v t="^$t\\(\\)" '$0 ~ t {on=1; next} on && /^}/ {exit} on' "$self")"
+    grep -qF 'absorbed_settings' <<< "$body" || fail "$t does not call absorbed_settings"
+  done
 }
