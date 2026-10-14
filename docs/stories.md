@@ -2097,3 +2097,26 @@ Objectif : qu'aucune idée de modification, de fonctionnalité ou de défaut à 
 - [ ] `adr_records_the_rule` — une ADR nouvelle dit la règle, les options écartées (laisser la personne seule déposer ; ne déposer que les défauts ; déposer aussi la sécurité) et ce que devient un projet dont `Issue tracker` vaut `—`.
 
 **Notes pour l'agent** : `/po-ship` lit déjà la forge (`gh api --hostname github.com`, repli `curl` avec `GH_TOKEN` ou `GITHUB_TOKEN`) : réutiliser ce chemin. Aucune autre commande ne lit `Issue tracker` aujourd'hui (`grep` du 2026-10-14). Les valeurs restent `github` · `taskwarrior` · `—` ; GitLab et Forgejo font l'objet d'une issue à part. `method/skills/agentic-stories/SKILL.md` et `method/skills/stories-review/SKILL.md` citent la règle sur les stories, qui reste. Le backlog déjà existant (portage Codex, fonctionnalités prévues, défauts connus) a été déposé en issues par le chef de projet le 2026-10-14, hors de cette story. Les tests qui citent mot pour mot la Law 7, `/po-ship`, `/po-setup` ou `/po-drive` gardent leurs phrases.
+
+## M13 — La mise à jour garde le mode d'activation
+
+Objectif : qu'un projet activé avec `polype init` le reste à chaque `polype update`, et qu'un projet déjà gonflé par ce défaut puisse revenir à son volet projet. Décidé par le porteur le 2026-10-14 en cadrant l'issue #73. Constat sur `main` à cette date : seul `init` fixe `mode=init` (`bin/polype:754`), aucun fichier d'état n'enregistre le mode (`.polype/` ne tient que `manifest`, `checksums` et `version`), et les manifestes de pecten et de nautile listent 65 fichiers dont 20 commandes `.claude/commands/`.
+
+### s135-update-keeps-init-mode — La mise à jour d'un projet activé par init n'y pose que le volet projet
+**En tant que** porteur d'un projet activé avec `polype init` **je veux** que `polype update <projet>` n'y pose que les gabarits et les hooks **afin que** les commandes, subagents et skills restent dans la pose globale et ne se dupliquent pas dans le dépôt.
+
+- **Complexité** : 2
+- **Dépend de** : s134-everything-to-handle-is-an-issue
+- **Surface** : command
+- **Corrige** : issue #73 (`Issue tracker: github`), reproduite le 2026-10-14 dans un HOME jetable
+- **Owns** : `bin/polype`, `method/hooks/po-session.sh`, `method/commands/po-setup.md`, `docs/installation.md`, `docs/decisions/ADR-0091-*`, `tests/update-keeps-mode.test.sh`, `tests/no-claude-md.test.sh`, `tests/claude-md-setting.test.sh`
+
+**Critères d'acceptation**
+- [ ] `init_then_update_stays_init` — `polype init <projet>` puis `polype update <projet>` laisse le même nombre de fichiers au manifeste (23 aujourd'hui) et aucun fichier sous `.claude/commands/`, `.claude/agents/` ni `.claude/skills/` ; `polype install <projet>` puis `polype update <projet>` garde l'install complète.
+- [ ] `mode_is_recorded` — `install <projet>` et `init` écrivent le mode d'activation dans un fichier d'état de `.polype/`, committé avec les autres, que `update` et `check` lisent ; `remove` l'efface avec le reste de l'état.
+- [ ] `mode_inferred_without_state` — un projet sans ce fichier (posé avant ce correctif) : `update` déduit `init` d'un manifeste sans entrée `.claude/commands/`, et l'install complète sinon, puis écrit le fichier.
+- [ ] `init_shrinks_a_full_install` — `polype init <projet>` sur un projet dont le manifeste liste une install complète le ramène au volet projet (les copies `.claude/` en trop disparaissent du disque et du manifeste) et enregistre le mode `init` ; `docs/installation.md` dit que c'est la réparation d'un projet passé par ce défaut.
+- [ ] `hints_say_init` — l'indication de `po-session` pour `Project CLAUDE file: absorbed` et l'étape 3 de `/po-setup` disent quelle commande relancer selon le mode du projet (`polype init .` pour un projet activé par init) ; les deux tests qui figent l'ancienne phrase changent avec elle, et le rapport le dit.
+- [ ] `adr_records_the_mode` — une ADR nouvelle dit où vit le mode et pourquoi, avec les options écartées : la déduction seule (un projet déjà gonflé se lit comme une install complète) et une option `update --init` (qu'on oublie, et le défaut revient).
+
+**Notes pour l'agent** : `target_is_a_project` (`bin/polype:110`) choisit déjà les `PAIRS` selon `$mode` ; le mécanisme des ghosts d'`update` et la boucle de `cmd_install` (`bin/polype:582`) retirent ce que le manifeste connaît et que le mode ne pose plus, ce qui suffit à faire maigrir un projet une fois le mode connu. Hors périmètre, décidé par le porteur : la protection d'une copie modifiée à la main que `drop_laid_file` supprime (issue #89), et la réparation de pecten et de nautile, faite après le ship par une PR dans chacun de ces dépôts.
