@@ -5,7 +5,7 @@ date: <YYYY-MM-DD>
 ---
 # Brief — <product>
 
-`/po-brief` fills this file theme by theme, following the `interrogation` skill. `status` moves from `interviewing` to `approved` once, when every exit criterion holds and the user has read the whole brief.
+`/po-brief` fills this file theme by theme, following the `interrogation` skill. `status` moves from `interviewing` to `approved` once, at `/po-brief`'s commit, when every exit criterion holds and every theme was approved on its own question; the brief is never shown again for reading.
 
 **One-liner.** <What the product does and for whom, in one sentence a stranger understands.>
 

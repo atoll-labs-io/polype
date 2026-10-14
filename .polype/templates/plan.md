@@ -3,6 +3,8 @@ validated: no
 ---
 # Plan — <id>
 
+[Story](../stories.md) · [Research](../research/<id>.md)
+
 Branch `story/<id>`. Read `docs/research/<id>.md` first; this plan builds on it without repeating it.
 
 ## Story
