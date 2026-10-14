@@ -2008,3 +2008,56 @@ Les deux stories retouchent la preuve de toutes les stories : elles tournent seu
 - [ ] `backfill_is_a_script` — `bin/po-link-artifacts` ajoute à chaque artefact de story la ligne de s128, seulement vers des fichiers qui existent, et ne change rien d'autre dans ces fichiers ; relancé, il ne change plus rien.
 - [ ] `existing_artifacts_backfilled` — tous les artefacts de story de `docs/research/`, `docs/plans/`, `docs/reviews/`, `docs/verif/` et `docs/qa/` portent la ligne ; les fichiers qui ne sont pas des artefacts d'une story (`docs/reviews/stories*.md`, `docs/reviews/triage-*.md`) ne sont pas touchés.
 - [ ] `links_resolve_everywhere` — un test échoue si un lien de la ligne, dans un artefact existant, pointe vers un fichier absent, et `po-gate` donne le même résultat qu'avant sur les artefacts des stories en cours, s'il y en a.
+
+## M11 — Polype s'installe chez quelqu'un d'autre
+
+Objectif : qu'une personne qui a déjà sa configuration Claude Code (agents, skills, `AGENTS.md`, `CLAUDE.md`) installe Polype sans rien perdre ni rien voir écrasé en silence, et qu'elle trouve dans le README tout ce qu'il faut pour l'installer et s'en servir. Cadré le 2026-10-14 avec le porteur, après la question d'un premier testeur extérieur : « possible de charger du contexte custom ? ». Constats sur `main` à cette date : une première pose remplace sans prévenir un fichier du même nom (`lay_down`, `bin/polype:157`) ; un `AGENTS.md` écrit à la main est mis de côté dans `AGENTS.md.before-polype` et n'est plus lu ; la règle « pas de CLAUDE.md » (ADR-0086), choix du porteur, s'impose à tout projet ; l'installeur demande bash 4.2 (`declare -gA`, `bin/polype:359`) sans le dire, comme `po-session` (`declare -A`), alors que macOS livre bash 3.2 ; le README ne dit ni les prérequis, ni comment récupérer Polype (dépôt public `atoll-labs-io/polype`), ni par où commencer. Décision du porteur : la règle « pas de CLAUDE.md » reste le défaut, et devient un réglage qu'un projet peut changer.
+
+Les trois stories touchent l'installeur, ses hooks ou sa documentation : elles passent l'une après l'autre.
+
+### s130-install-refuses-collisions — L'installeur n'écrase rien qu'il n'a pas posé
+**En tant que** personne qui a déjà sa configuration Claude Code **je veux** que l'installeur refuse de remplacer un fichier qu'il n'a pas posé, et que mon `AGENTS.md` rejoigne mes réglages **afin qu'**installer Polype ne me fasse rien perdre.
+
+- **Complexité** : 3
+- **Dépend de** : aucune
+- **Surface** : command
+- **Owns** : `bin/polype`, `method/AGENTS.md`, `method/commands/po-setup.md`, `docs/decisions/ADR-0088-*`, `tests/install.test.sh`, `tests/installer.test.sh`, `tests/global-install.test.sh`, `tests/local-copy-checksums.test.sh`, `tests/install-collisions.test.sh`
+
+**Critères d'acceptation**
+- [ ] `collision_stops_before_writing` — `install`, `init` et `update`, en pose globale comme en pose projet, s'arrêtent en code 1 sans rien écrire ni rien supprimer (les fantômes compris) quand une destination existe déjà, n'est pas dans le manifeste et diffère du fichier livré ; la sortie liste chaque chemin en cause et l'option qui les met de côté. Un fichier identique au fichier livré est repris sans bruit. `AGENTS.md` n'est pas une collision : il suit le critère `hand_written_agents_md_is_absorbed`.
+- [ ] `set_aside_is_explicit_and_undone` — avec `--set-aside`, chaque fichier en collision est déplacé en `<chemin>.before-polype`, la pose continue et le dit ; `remove`, global comme projet, remet chacun à sa place avant de retirer son état.
+- [ ] `hand_written_agents_md_is_absorbed` — un `AGENTS.md` écrit à la main est ajouté à `AGENTS.local.md` sous `## Notes moved from AGENTS.md`, avant que l'`AGENTS.md` assemblé le remplace ; sans `AGENTS.local.md`, il reste mis de côté en `AGENTS.md.before-polype`, l'installeur le dit, et le premier `update` qui trouve `AGENTS.local.md` l'absorbe alors et supprime la copie mise de côté. Relancer `update` ne change plus rien. Les phrases qui disent que l'installeur n'écrit dans `AGENTS.local.md` que pour un `CLAUDE.md` (`method/AGENTS.md`, `/po-setup`, l'en-tête de `bin/polype`) nomment aussi `AGENTS.md`.
+- [ ] `adr_records_the_contract` — une ADR nouvelle dit ce changement du contrat de l'installeur (s'arrêter sur une collision, absorber un `AGENTS.md`) et les options écartées, en face de l'option B écartée par l'ADR-0086 pour un `CLAUDE.md`.
+
+**Notes pour l'agent** : le manifeste et les sommes de contrôle disent déjà ce que Polype a posé (ADR-0087) ; une collision est ce qu'ils ne connaissent pas. Un projet déjà installé ne voit aucune collision à son `update` : ses fichiers sont dans son manifeste. Comparer par `cksum`, comme `sum_of`, et non par `cmp` ou `diff` : `tests/hooks-installer-docs-cleanup.test.sh` lance `remove` avec un `PATH` réduit. La pose globale garde la liste des fichiers mis de côté hors de `$state_dir`, ou la lit avant son `rm -rf`. Le risque de la story est de perdre un fichier de `~/.claude/` : chaque chemin du critère `set_aside_is_explicit_and_undone` a son test aller-retour.
+
+### s131-claude-md-rule-as-setting — La règle « pas de CLAUDE.md » se règle par projet
+**En tant que** porteur d'un projet qui tient à son `CLAUDE.md` **je veux** pouvoir le garder par un réglage, la règle actuelle restant le défaut **afin d'**adopter Polype sans changer ma façon de donner du contexte à Claude.
+
+- **Complexité** : 3
+- **Dépend de** : s130-install-refuses-collisions
+- **Surface** : command
+- **Owns** : `bin/polype`, `method/hooks/po-gate.sh`, `method/hooks/po-session.sh`, `method/templates/agents-local.md`, `method/commands/po-setup.md`, `method/commands/po-architect.md`, `method/AGENTS.md`, `AGENTS.local.md`, `docs/decisions/ADR-0089-*`, `docs/decisions/ADR-0086-l-installeur-absorbe-le-claude-md-dans-agents-local-md.md`, `tests/no-claude-md.test.sh`, `tests/framing-commands-cleanup.test.sh`, `tests/install.test.sh`, `tests/installer.test.sh`, `tests/claude-md-setting.test.sh`
+
+**Critères d'acceptation**
+- [ ] `setting_has_two_values` — `templates/agents-local.md` porte `Project CLAUDE.md: absorbed`, avec ses deux valeurs décrites : `absorbed`, la règle de l'ADR-0086, et `kept` ; `/po-setup` pose la question et écrit le réglage ; le `AGENTS.local.md` de Polype porte `absorbed` ; chaque commande ou hook qui lit le réglage le nomme dans son `Reads settings:` quand il en a un.
+- [ ] `kept_keeps_and_imports` — avec `kept`, l'installeur ne déplace aucun `CLAUDE.md` ni `CLAUDE.local.md`, et dès que l'un des deux existe, il s'assure que le `CLAUDE.md` racine existe et commence par la ligne `@AGENTS.md` (il le crée avec cette seule ligne quand seul un `CLAUDE.local.md` existe), pour que les règles soient toujours lues ; le pre-commit n'en refuse plus ; `po-session` ne les signale plus ; `remove` retire cette seule ligne, et le fichier s'il ne tenait qu'elle.
+- [ ] `missing_setting_changes_nothing` — sans la ligne, l'installeur ne touche à aucun `CLAUDE.md`, le pre-commit refuse comme aujourd'hui, et `check`, l'installeur et `po-session` nomment le réglage manquant au lieu d'annoncer que `polype update` déplacera le fichier : rien n'est choisi à la place du projet. Un projet déjà installé qui n'a pas la ligne cesse donc d'absorber à son `update` tant qu'il ne l'a pas écrite ; l'ADR le dit.
+- [ ] `adr_records_the_choice` — une ADR nouvelle dit le choix, les options écartées et ce que devient un projet déjà installé ; l'ADR-0086 n'est touchée que dans son frontmatter (`superseded-by`) ; la phrase de `method/AGENTS.md` sur le seul `CLAUDE.md`, et « Never commit a `CLAUDE.md` » dans `/po-setup` et `/po-architect`, disent le réglage.
+
+### s132-readme-onboarding — Le README suffit pour installer Polype et s'en servir
+**En tant que** personne qui découvre Polype **je veux** que le README me dise ce qu'il faut, comment l'installer, par où commencer et ce qu'il fait de ma configuration, et qu'un bash trop vieux me le dise clairement **afin de** l'essayer seule, sans risque.
+
+- **Complexité** : 3
+- **Dépend de** : s131-claude-md-rule-as-setting
+- **Surface** : command
+- **Owns** : `README.md`, `docs/installation.md`, `bin/polype`, `method/hooks/po-session.sh`, `tests/readme-onboarding.test.sh`
+
+**Critères d'acceptation**
+- [ ] `old_bash_is_named` — sous un bash plus ancien que 4.2, `bin/polype` s'arrête avant toute écriture, et `po-session` sort sans erreur, chacun avec un message qui nomme la version trouvée et celle qu'il faut, au lieu d'une erreur de `declare`.
+- [ ] `prerequisites_are_listed` — le README liste Claude Code, git, bash 4.2 ou plus (avec la marche à suivre sous macOS), `jq` et ce qu'il permet, et `gh` pour une forge GitHub.
+- [ ] `quickstart_runs_as_written` — le README donne, dans l'ordre, la récupération du dépôt public, la pose globale, le lien sur le `PATH`, l'activation d'un projet, puis les premières commandes Claude Code (`/po-setup`, le cadrage, `/po-drive`) et la mise à jour. Les commandes shell sont dans un bloc `sh` à elles, les commandes Claude Code à part ; un test exécute ce bloc tel qu'écrit, dans un `HOME` et un projet jetables, l'adresse du clone remplacée par le dépôt local, et finit sur un `polype check` sans dérive.
+- [ ] `existing_config_is_explained` — une section dit ce que Polype fait d'agents ou de skills du même nom (`--set-aside`), d'un `AGENTS.md`, d'un `CLAUDE.md` (avec le réglage de s131), l'ordre de grandeur, en Ko, des règles assemblées dans `AGENTS.md` et chargées à chaque session (le test le recalcule et tolère ±25 %, pour qu'une retouche des règles ne le casse pas), et conseille un premier essai dans un clone jetable avec `polype install <clone>`.
+- [ ] `install_doc_tells_the_truth` — `docs/installation.md` décrit les collisions et `--set-aside`, l'absorption d'un `AGENTS.md` et le réglage `Project CLAUDE.md` ; il ne dit plus que l'installeur ne touche jamais aux fichiers qu'on a ajoutés soi-même, ni qu'il absorbe tout `CLAUDE.md` sans condition.
+
+**Notes pour l'agent** : il n'y a pas de bash 3 sur cette machine, et `BASH_VERSINFO` est en lecture seule ; le test atteint la garde par un contrôle statique (elle précède toute construction de bash 4) et en lançant la garde, extraite, avec une version simulée, sans couture ajoutée au code livré pour le seul test. Le comportement sous macOS au-delà de bash (`find`, `sed`, `readlink` BSD) n'est pas promis ; le README le dit. Deux tests que la story ne possède pas lisent `docs/installation.md` : `tests/docs-and-eval-cleanup.test.sh` y tient la phrase « ceux qu'il trouve (ADR-0086) », à garder en y ajoutant la condition du réglage, et `tests/hooks-installer-docs-cleanup.test.sh` y refuse les lignes de prose de plus de 100 caractères.
