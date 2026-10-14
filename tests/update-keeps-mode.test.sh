@@ -116,6 +116,26 @@ test_hints_say_init() {
   done
 }
 
+test_session_hint_infers_init_without_mode() {
+  fresh_project
+  printf 'Target branch: main\nWorktree root: .worktrees/\nEntry mode: new\nMax attempts: 2\nMerge mode: pr\nShip confirmation: automatic\nProject CLAUDE file: absorbed\n' \
+    > "$P/AGENTS.local.md"
+  run_polype init "$P" >/dev/null
+  git -C "$P" add -A && git -C "$P" commit -qm activate
+  rm -f "$P/.polype/mode"
+  printf 'note\n' > "$P/CLAUDE.local.md"
+  local out line='- CLAUDE.local.md: Claude Code reads it instead of AGENTS.md → polype init . moves it into AGENTS.local.md'
+  out="$(cd "$P" && CLAUDE_PROJECT_DIR="$P" bash "$HOOK")"
+  grep -qxF -- "$line" <<< "$out" || fail "po-session does not infer init without .polype/mode: $out"
+
+  run_polype install "$P" >/dev/null
+  grep -q '^\.claude/commands/' "$P/.polype/manifest" || fail "full install laid no command copies"
+  rm -f "$P/.polype/mode"
+  printf 'note\n' > "$P/CLAUDE.local.md"
+  out="$(cd "$P" && CLAUDE_PROJECT_DIR="$P" bash "$HOOK")"
+  grep -qxF -- "${line/polype init ./polype update .}" <<< "$out" || fail "po-session does not infer a full install without .polype/mode: $out"
+}
+
 test_adr_records_the_mode() {
   local adr
   adr="$(ls $ADR_GLOB 2>/dev/null | head -n 1)"
