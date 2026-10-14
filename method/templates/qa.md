@@ -1,5 +1,7 @@
 # QA — <id>
 
+[Story](../../stories.md) · [Plan](../../plans/<id>.md)
+
 Scope: the story's surface, what `git diff <Target branch>...story/<id>` touches on it, and the acceptance criteria its user can observe through it; nothing else was checked.
 Driver: <driver file(s) of qa-drivers> — surface <surface>, platform <platform>
 Evidence: <captures | transcripts | logs and recordings>

@@ -4,6 +4,8 @@ validated: no
 ---
 # Plan (short track) — <id>
 
+[Story](../stories.md)
+
 Written by `/po-flow`. On the short track this one file stands in for both the research and the plan: there is no `docs/research/<id>.md`. Keep it to about 150 lines at most.
 
 ## Verified facts
