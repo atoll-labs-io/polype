@@ -1,5 +1,7 @@
 # Research — <id>
 
+[Story](../stories.md)
+
 ## Structuring facts
 <At most five lines, each with `path:line`. Wrong assumptions of the story first. Someone who reads only this section must still understand what the story really involves.>
 

@@ -1,5 +1,7 @@
 # Review — <id>
 
+[Story](../stories.md) · [Plan](../plans/<id>.md) · [Verification](../verif/<id>.md)
+
 Diff reviewed: `git diff <Target branch>...story/<id>`, in a context that did not write it. Findings rated critical, major or minor.
 
 Review status: <complete | blocked>
