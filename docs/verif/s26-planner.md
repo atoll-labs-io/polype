@@ -1,5 +1,7 @@
 # Verification — s26-planner
 
+[Story](../stories.md) · [Plan](../plans/s26-planner.md)
+
 Tree: b2fa4d2b1804944f6b165d22d641898f3ba471d5
 
 | Check | Command | Outcome | Time (UTC) |

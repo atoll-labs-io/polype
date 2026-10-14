@@ -1,5 +1,7 @@
 # Review — s81-scenario-driver
 
+[Story](../stories.md) · [Plan](../plans/s81-scenario-driver.md) · [Verification](../verif/s81-scenario-driver.md)
+
 Diff reviewed: `git diff main...story/s81-scenario-driver`, in a context that did not write it. Findings rated critical, major or minor.
 
 Review status: complete

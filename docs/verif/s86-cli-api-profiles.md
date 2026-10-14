@@ -1,5 +1,7 @@
 # Verification — s86-cli-api-profiles
 
+[Story](../stories.md) · [Plan](../plans/s86-cli-api-profiles.md)
+
 Tree: 55a5e9ad6fe3c547c37c073055a22ef32f084641
 
 ## Checks

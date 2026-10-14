@@ -3,6 +3,8 @@ validated: yes
 ---
 # Plan — s100-qa-evidence-set-aside
 
+[Story](../stories.md) · [Research](../research/s100-qa-evidence-set-aside.md)
+
 Branch `story/s100-qa-evidence-set-aside`. Read `docs/research/s100-qa-evidence-set-aside.md` first; this plan builds on it without repeating it. Defect story: the root cause and its reproduction are in the research's `## Structuring facts` and `## Diagnostic`.
 
 ## Story

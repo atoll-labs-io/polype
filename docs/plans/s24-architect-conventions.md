@@ -4,6 +4,8 @@ validated: yes
 ---
 # Plan (short track) — s24-architect-conventions
 
+[Story](../stories.md)
+
 ## Verified facts
 
 - `method/commands/po-architect.md:49` is the whole of the defect: « Write the conventions as rules in the `## Conventions` section of `AGENTS.local.md`. Replace only that section's placeholder or body, with Edit; every settings block stays as it is — this command reads settings, it never decides them. » One sentence carries both the replacement (defect 8) and the unguarded settings promise (defect 7).

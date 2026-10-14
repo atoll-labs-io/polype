@@ -1,5 +1,7 @@
 # Verification — s37-global-install
 
+[Story](../stories.md) · [Plan](../plans/s37-global-install.md)
+
 Tree: 4406f473a307d700f4ba722ccc4f5b1f076b01c6
 
 Second run: the review of 2026-09-22 blocked the story (two criticals, two majors, four minors).

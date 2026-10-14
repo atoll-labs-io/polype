@@ -3,6 +3,8 @@ validated: yes
 ---
 # Plan — s113-reuse-ladder
 
+[Story](../stories.md) · [Research](../research/s113-reuse-ladder.md)
+
 Branch `story/s113-reuse-ladder`. Read `docs/research/s113-reuse-ladder.md` first. This plan builds on it and does not repeat it.
 
 

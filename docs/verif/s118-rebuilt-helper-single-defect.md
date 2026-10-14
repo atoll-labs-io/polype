@@ -1,5 +1,7 @@
 # Verification — s118-rebuilt-helper-single-defect
 
+[Story](../stories.md) · [Plan](../plans/s118-rebuilt-helper-single-defect.md)
+
 Tree: d9d1377217c6015c14ae1083a90b2db07365c8a2
 
 ## Checks

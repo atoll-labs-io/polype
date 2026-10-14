@@ -1,5 +1,7 @@
 # Research — s93-qa-contract-holds
 
+[Story](../stories.md)
+
 ## Structuring facts
 - **Root cause 1 (s79 major 1):** walk step 2 of `method/agents/qa.md:43` has one blocking branch only, "A driver file is missing". When no row of the table (`method/skills/qa-drivers/SKILL.md:10-17`) matches the surface and `Platform`, or `Platform` is missing or `—`, zero drivers are picked. Nothing stops the walk, and the report rule `qa.md:51` ("`complete` means every item in scope was reached or listed in `## Not seen`") then allows `complete` with nothing exercised. `SKILL.md:24` blocks only on a missing *file*. `method/commands/po-qa.md:21-28` has no platform precondition either.
 - **Root cause 2 (s81 major 1):** `method/skills/qa-drivers/scenarios.md:12` blocks on "a path the first output did not list" with no exception. The transcripts the same driver writes to `docs/qa/<id>/` (`scenarios.md:30`) are such new paths, so every literal `command`/`endpoint` QA ends `blocked`. `qa.md:48` has the exception (`outside docs/qa/<id>/`); the driver dropped it.

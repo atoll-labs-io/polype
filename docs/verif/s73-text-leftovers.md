@@ -1,5 +1,7 @@
 # Verification — s73-text-leftovers
 
+[Story](../stories.md) · [Plan](../plans/s73-text-leftovers.md)
+
 Tree: 22d95073b69d1f5d1038164f68b870a031b5acbe
 
 ## Checks

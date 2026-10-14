@@ -1,5 +1,7 @@
 # Verification — s81-scenario-driver
 
+[Story](../stories.md) · [Plan](../plans/s81-scenario-driver.md)
+
 Tree: f7edea3fbb96538f43684b567e8aba382778fb7d
 
 ## Checks

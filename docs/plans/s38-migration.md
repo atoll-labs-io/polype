@@ -4,6 +4,8 @@ validated: yes
 ---
 # Plan (short track) — s38-migration
 
+[Story](../stories.md)
+
 ## Verified facts
 
 - **Le tableau de correspondance existe déjà, en partie, dans `docs/conception.md:11-24`** : une ligne par brique (point d'entrée, cadrage, boilerplate, design system, cycle par story, parallélisme, revue, doctrine de tests, gates, suivi, décisions, multi-outil), avec une colonne « `/spec` + `/drive` actuels ». C'est la matière première de `docs/migration.md`, pas le document lui-même : elle compare trois sources pour concevoir Polype, elle ne dit pas au développeur quoi retirer ni comment reprendre un projet.

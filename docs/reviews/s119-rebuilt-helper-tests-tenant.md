@@ -1,5 +1,7 @@
 # Review: s119-rebuilt-helper-tests-tenant
 
+[Story](../stories.md) · [Plan](../plans/s119-rebuilt-helper-tests-tenant.md) · [Verification](../verif/s119-rebuilt-helper-tests-tenant.md)
+
 Review status: complete
 Reviewed tree: a1ca48b4218ba3ec09894ea10f9bbf9de026c81e
 Fix loop: 0

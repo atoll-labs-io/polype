@@ -1,5 +1,7 @@
 # Review — s92-review-tree-gate
 
+[Story](../stories.md) · [Plan](../plans/s92-review-tree-gate.md) · [Verification](../verif/s92-review-tree-gate.md)
+
 Diff reviewed: `git diff main...story/s92-review-tree-gate`, in a context that did not write it. Findings rated critical, major or minor.
 
 Review status: complete

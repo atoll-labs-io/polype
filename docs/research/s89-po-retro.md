@@ -1,5 +1,7 @@
 # Research — s89-po-retro
 
+[Story](../stories.md)
+
 ## Structuring facts
 - **Partly false assumption: "un jalon" is not a concept of the method.** `method/` never says milestone or jalon (grep on `method/`, no hit); `templates/stories.md:7` puts each story at `## <id> — <title>`, with no grouping above it. Only Polype's own `docs/stories.md` groups stories under `## M8 — …` with stories at `###` (`docs/stories.md:1191,1350`). The command has to define what a milestone is itself (ADR-0067); the story needs no rewrite, only that definition.
 - Review files stack several reviews: `docs/reviews/s78-platform-setting.md` holds three (`Ship allowed:` at :84, :193, :289), `s75-post-m7-texts.md` two (one `blocked` at :7, then `complete` at :56). A retro that reads only the last verdict, as `po-gate` does (`method/hooks/po-gate.sh:53`), loses every blocked review and every fix loop.

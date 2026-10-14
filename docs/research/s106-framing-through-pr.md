@@ -1,5 +1,7 @@
 # Research — s106-framing-through-pr
 
+[Story](../stories.md)
+
 ## Structuring facts
 - No story assumption is false. The seven framing commands commit on `Target branch` today, from the root, and none of them pushes: `po-setup.md:56`, `po-brief.md:59`, `po-prd.md:57`, `po-stories.md:60` (and its fix mode, `:56`), `po-stories-review.md:54`, `po-architect.md:72`, `po-design-system.md:74`. The story moves where each commit is made. Each command's checks and approvals stay as they are.
 - The mechanism to reuse already exists twice. `po-ship.md:44` (s102) builds the settings commit beside any checkout: a temporary index (`GIT_INDEX_FILE`) and `git commit-tree … -p origin/<Target branch>`. It pushes that commit with a lease to `framing/ship-confirmation` and opens the PR. `po-ship.md:66-82` (s105, ADR-0081) builds the landing commit with `commit-tree` and merges with `gh pr merge <url> --rebase --match-head-commit <sha>` once the effective `Ship confirmation` allows it. Proof of the merge is `MERGED`. Without a remote, the landing is `git merge --ff-only <sha>` in the root.

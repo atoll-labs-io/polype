@@ -1,5 +1,7 @@
 # Research — s17-design-system
 
+[Story](../stories.md)
+
 ## Structuring facts
 - Killer SaaS has same-named files in the local sources read by `tests/overlap.test.sh:5`: `commands/ks-design-system.md`, `skills/design-doctrine/`, `templates/design-system.md` (and `design-screen.md`, `design-brief.md` for s18). The overlap check runs for real: write only from the French description C09 (`docs/parite-killer-saas.md:44`) and D03 (`:52`, for the doctrine), never from those sources.
 - `po-help` must list every command: `tests/pilot.test.sh:38-46` fails as soon as `method/commands/po-design-system.md` exists without `/po-design-system` in `method/commands/po-help.md`. `po-help.md` is owned by s20 (`docs/stories.md:302`), but s12–s16 each added one line in « Mise en place » (`po-help.md:13-18`); same here, outside Owns.

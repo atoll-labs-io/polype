@@ -1,5 +1,7 @@
 # Review: s75-post-m7-texts
 
+[Story](../stories.md) · [Plan](../plans/s75-post-m7-texts.md) · [Verification](../verif/s75-post-m7-texts.md)
+
 Reviewed tree: 15a12ea83167670ce78ebfba7776e252fd143120
 Fix loop: 0
 Lenses run: none (only markdown and bash text tests changed; no auth/route, migration, lockfile or server code path or content in the diff)

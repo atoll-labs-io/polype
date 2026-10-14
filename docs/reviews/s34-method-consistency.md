@@ -1,5 +1,7 @@
 # Review — s34-method-consistency
 
+[Story](../stories.md) · [Plan](../plans/s34-method-consistency.md) · [Verification](../verif/s34-method-consistency.md)
+
 Diff reviewed: `git diff m5-distribution...story/s34-method-consistency`, in a context that did not write it. Findings rated critical, major or minor.
 
 Review status: complete

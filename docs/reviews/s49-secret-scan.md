@@ -1,5 +1,7 @@
 # Review — s49-secret-scan
 
+[Story](../stories.md) · [Plan](../plans/s49-secret-scan.md) · [Verification](../verif/s49-secret-scan.md)
+
 Diff reviewed: `git diff main...story/s49-secret-scan`, in a context that did not write it. Findings are rated critical, major or minor.
 
 Review status: complete

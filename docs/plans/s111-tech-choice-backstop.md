@@ -3,6 +3,8 @@ validated: yes
 ---
 # Plan — s111-tech-choice-backstop
 
+[Story](../stories.md) · [Research](../research/s111-tech-choice-backstop.md)
+
 Branch `story/s111-tech-choice-backstop`. Read `docs/research/s111-tech-choice-backstop.md` first. This plan builds on it and does not repeat it.
 
 "The marker" below means the exact string of `MARKER` in `tests/escalation-contract.test.sh:14`. Wherever this plan says "write the marker", the implementer copies that exact string.

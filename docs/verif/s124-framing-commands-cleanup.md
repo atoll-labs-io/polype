@@ -1,5 +1,7 @@
 # Verification — s124-framing-commands-cleanup
 
+[Story](../stories.md) · [Plan](../plans/s124-framing-commands-cleanup.md)
+
 Tree: b01cb545e8179506e99a63a7a0e16872b154a33e
 
 ## Checks

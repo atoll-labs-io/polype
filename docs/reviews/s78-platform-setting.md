@@ -1,5 +1,7 @@
 # Review: s78-platform-setting
 
+[Story](../stories.md) · [Plan](../plans/s78-platform-setting.md) · [Verification](../verif/s78-platform-setting.md)
+
 I found no critical issue, so the ship can go ahead. There are two findings: one major and one minor.
 
 - Story: s78-platform-setting, "Le projet déclare ses plateformes, la story sa surface"

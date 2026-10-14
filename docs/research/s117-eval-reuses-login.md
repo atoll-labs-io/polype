@@ -1,5 +1,7 @@
 # Research — s117-eval-reuses-login
 
+[Story](../stories.md)
+
 ## Structuring facts
 - **Assumption not holding, story to correct before any plan:** the story takes for granted that Claude Code reads a `.credentials.json` that is a symbolic link, and that the OAuth refresh "writes into the real file" through it. The installed Claude Code (`~/.local/share/claude/versions/2.1.296`, read from its embedded JS) has a credentials store, `storePath: join(<config dir>, ".credentials.json")`, that opens the file `O_RDONLY|O_NOFOLLOW` and maps `ELOOP` to `{state:"refused-symlink"}`. Its `probeCredentials()` returns `ELOOP` for any `isSymbolicLink()`, and the `readStrict` path turns `refused-symlink` into an error. That store sits behind a runtime gate (`j()&&e!==void 0`). The legacy `plaintext` store next to it reads with `readFileSync`, which follows links. So the link is refused on one path and followed on the other, and static reading cannot say which path a real `claude -p` takes.
 - The write side does not prove "the link carries the refresh" either: the gated store writes through `writeCredentials` → `Ape(path, …, {mode:384, exactMode:384})`, whose body was not read (see Open questions). A write by temp file and rename would replace the link inside the temporary config and leave the real file untouched. If the refresh token rotates, the person's real login then holds a spent refresh token: the risk is a broken login on the machine, not just a failed eval.

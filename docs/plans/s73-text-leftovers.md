@@ -4,6 +4,8 @@ validated: yes
 ---
 # Plan (short track) — s73-text-leftovers
 
+[Story](../stories.md)
+
 Written by the planner on the short track (`Story track: auto`, complexity 1 ≤ `Flow threshold: 2`). This file stands in for both the research and the plan: there is no `docs/research/s73-text-leftovers.md`. Validated autonomously (`Plan validation: autonomous`): no human reviewed it.
 
 ## Verified facts

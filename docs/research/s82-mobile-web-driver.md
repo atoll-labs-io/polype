@@ -1,5 +1,7 @@
 # Research — s82-mobile-web-driver
 
+[Story](../stories.md)
+
 ## Structuring facts
 - No assumption of the story is false. The driver file is already routed: `qa-drivers` maps `screen` on `mobile` to `mobile-web.md` (`method/skills/qa-drivers/SKILL.md:13`), and `tests/qa-drivers.test.sh:25` already checks that row; only the file is missing, so a `mobile` project's screen QA ends `blocked` today (`SKILL.md:24`, ADR-0057 "Bad").
 - "Le rapport QA le reporte comme non vu" needs no template change: `## Not seen` exists (`method/templates/qa.md:27-28`), `qa-drivers` sends out-of-reach items there (`SKILL.md:36-37`), and the review carries every `## Not seen` item into `## Not verified` (`method/skills/review-antihallu/SKILL.md:28`, `method/agents/reviewer.md:51`).

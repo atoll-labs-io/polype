@@ -1,5 +1,7 @@
 # Verification — s22-brief-order
 
+[Story](../stories.md) · [Plan](../plans/s22-brief-order.md)
+
 Tree: d85b3dbeedabece1e6b0d1ca16d3be8725d42784
 
 | Check | Command | Outcome | Time (UTC) |

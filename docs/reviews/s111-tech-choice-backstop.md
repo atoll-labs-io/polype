@@ -1,5 +1,7 @@
 # Review — s111-tech-choice-backstop
 
+[Story](../stories.md) · [Plan](../plans/s111-tech-choice-backstop.md) · [Verification](../verif/s111-tech-choice-backstop.md)
+
 Diff reviewed: `git diff main...story/s111-tech-choice-backstop`, in a context that did not write it. Findings rated critical, major or minor.
 
 Review status: complete

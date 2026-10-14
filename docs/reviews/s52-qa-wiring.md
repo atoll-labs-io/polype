@@ -1,5 +1,7 @@
 # Review — s52-qa-wiring
 
+[Story](../stories.md) · [Plan](../plans/s52-qa-wiring.md) · [Verification](../verif/s52-qa-wiring.md)
+
 Reviewed tree: e2f26bd5ed2a90103e0d12b717aa27deb5ec589a
 Review status: complete
 Fix loop: 0

@@ -1,5 +1,7 @@
 # Research — s19-flow
 
+[Story](../stories.md)
+
 ## Structuring facts
 - The short track has no `docs/research/<id>.md`, yet `implementer` reads it (`method/agents/implementer.md:19`) and `reviewer` lists it among its inputs (`method/agents/reviewer.md:17`). Both files are outside Owns (`reviewer.md` belongs to s20): `/po-flow` must say, in its delegation prompts, that the plan's verified facts replace the research.
 - `Story track` and `Flow threshold` already exist in the settings template (`method/templates/agents-local.md:27-28`, rows `:50-51`, added by s11): no new setting is needed.

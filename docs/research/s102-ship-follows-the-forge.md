@@ -1,5 +1,7 @@
 # Research — s102-ship-follows-the-forge
 
+[Story](../stories.md)
+
 ## Structuring facts
 - **One AC pair needs a reading, not a correction.** `forge_tightening_switches_to_human` says a forge that now requires review moves "the setting" to `human (forge)`; `chosen_value_never_moves` says a `(chosen)` value is never rewritten. ADR-0075 already bounds the rewrite ("ne touche jamais un (choisi)"). Resolved in ADR-0079: only a `(forge)` value is rewritten; the forge's requirement still governs the ship's *effective* value whatever the line says.
 - **ADR-0075 leaves four points open** — meaning of a value with no suffix (this repo's own `Ship confirmation: automatic`, `AGENTS.local.md`), how the forge is read, the `automatic (chosen)` vs. required-review case, where the rewritten line is committed. All four settled in `docs/decisions/ADR-0079-ship-confirmation-porte-son-origine-et-la-forge-se-lit-par-gh.md` (reserved number).

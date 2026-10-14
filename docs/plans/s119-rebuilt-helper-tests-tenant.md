@@ -3,6 +3,8 @@ validated: yes
 ---
 # Plan — s119-rebuilt-helper-tests-tenant
 
+[Story](../stories.md) · [Research](../research/s119-rebuilt-helper-tests-tenant.md)
+
 Branch `story/s119-rebuilt-helper-tests-tenant`. Read `docs/research/s119-rebuilt-helper-tests-tenant.md` first. This plan builds on it.
 
 ## Story

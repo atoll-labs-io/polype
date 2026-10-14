@@ -1,5 +1,7 @@
 # Research — s27-drive
 
+[Story](../stories.md)
+
 ## Structuring facts
 - **Wrong assumption — `Owns` is too narrow.** Creating `method/commands/po-drive.md` turns `test_every_command_listed_in_help` red at once: it loops over `method/commands/po-*.md` and demands each name in `po-help.md` (`tests/pilot.test.sh:38-46`). That file belongs to s31 (`docs/stories.md:466`), which ships after s27 and even carries `help_lists_po_drive` (`docs/stories.md:471`). s27 must own the one `/po-drive` line of `po-help.md`, or it ships a red suite.
 - **Wrong assumption — "no Write, no Edit" leaves nobody to record the verdict.** `/po-review` writes `docs/reviews/<id>.md` with Write (`method/commands/po-review.md:9,33`), and `reviewer` declares `Read, Grep, Glob, Bash, Edit` (`method/agents/reviewer.md:4`) — Edit cannot create a missing file. Either the driver records through Bash, or the verdict is lost. See Open questions.

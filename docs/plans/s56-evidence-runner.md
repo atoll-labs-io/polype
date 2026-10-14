@@ -3,6 +3,8 @@ validated: yes
 ---
 # Plan — s56-evidence-runner
 
+[Story](../stories.md) · [Research](../research/s56-evidence-runner.md)
+
 Branch `story/s56-evidence-runner`. Read `docs/research/s56-evidence-runner.md` first; this plan builds on it without repeating it. Decision: `docs/decisions/ADR-0035-le-releve-tient-un-registre-ecrit-par-po-run.md` (settles research Q1–Q5).
 
 ## Story

@@ -4,6 +4,8 @@ validated: yes
 ---
 # Plan (short track) — s22-brief-order
 
+[Story](../stories.md)
+
 ## Verified facts
 
 - `method/commands/po-brief.md:45-49` — `## Finish` runs in this order: (1) show the brief and write `status: approved`, (2) write the first ADR, (3) commit *and only then* check the branch and `git status --porcelain` for an environment file. The blocking checks are the last step, after the approval is already on disk. Defect n° 4 confirmed.

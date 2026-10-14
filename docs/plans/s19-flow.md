@@ -3,6 +3,8 @@ validated: yes
 ---
 # Plan — s19-flow
 
+[Story](../stories.md) · [Research](../research/s19-flow.md)
+
 Branch `story/s19-flow`. Read `docs/research/s19-flow.md` first; this plan builds on it without repeating it.
 
 ## Story

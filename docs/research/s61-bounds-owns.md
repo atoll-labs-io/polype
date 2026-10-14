@@ -1,5 +1,7 @@
 # Research — s61-bounds-owns
 
+[Story](../stories.md)
+
 ## Structuring facts
 - **The story assumes "the branch the story started from" is known to the hook; nothing records it.** `po-bounds.sh` reads no setting (`method/hooks/po-bounds.sh:15`, ADR-0024 consequences), the hook input carries no story or branch (ADR-0024 context), and `/po-research` forks from `origin/<Target branch>` or the local `Target branch` (`method/commands/po-research.md`, "The worktree" step 1): the upstream is set only in the first case (git's `branch.autoSetupMerge`). The hook has to derive the start branch; ADR-0038 decides how (main worktree's branch and its upstream).
 - `Owns` is read from `HEAD:docs/stories.md` of the story worktree (`po-bounds.sh:57`); `docs/` is always writable (`:84`) and `git commit` is allowed on `story/*` (`:156-160`), so a committed edit of `docs/stories.md` widens the bounds — reproduced by the s50 review (`docs/reviews/s50-implementer-bounds.md:72`).

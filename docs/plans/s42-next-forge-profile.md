@@ -3,6 +3,8 @@ validated: yes
 ---
 # Plan — s42-next-forge-profile
 
+[Story](../stories.md) · [Research](../research/s42-next-forge-profile.md)
+
 Branch `story/s42-next-forge-profile`. Read `docs/research/s42-next-forge-profile.md` first; this plan builds on it without repeating it.
 
 Validated autonomously (`Plan validation: autonomous`): no human reviewed this plan.

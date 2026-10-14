@@ -3,6 +3,8 @@ validated: yes
 ---
 # Plan — s70-reviewer-bounds
 
+[Story](../stories.md) · [Research](../research/s70-reviewer-bounds.md)
+
 Branch `story/s70-reviewer-bounds`. Read `docs/research/s70-reviewer-bounds.md` first; this plan builds on it without repeating it. The design is fixed by `docs/decisions/ADR-0047-le-reviewer-tenu-par-po-bounds-en-mode-reviewer.md`, which the planner wrote and the implementer commits with the code.
 
 ## Story

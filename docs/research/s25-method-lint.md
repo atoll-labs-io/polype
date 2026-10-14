@@ -1,5 +1,7 @@
 # Research — s25-method-lint
 
+[Story](../stories.md)
+
 ## Structuring facts
 - **Criterion 1 already exists as a test.** `tests/structure.test.sh:31-44` (`test_every_setting_read_by_a_command_exists_in_template`) already walks `method/commands/*.md` and `method/agents/*.md`, fails on a missing `Reads settings:` line and on a setting absent from the template. `tests/structure.test.sh` is **outside `Owns`**: `bin/po-lint` re-implements the rule rather than moving it, and the duplicate stays green.
 - **`tests/lib.sh:29-40` already holds the parsing the lint needs** — `tools_of` (both `allowed-tools:` list and `tools: A, B` inline), `template_settings`, `settings_read_by`. `bin/po-lint` must be standalone (story note), so it re-implements these in awk; `lib.sh` is outside `Owns` anyway.

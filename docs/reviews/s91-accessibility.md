@@ -1,5 +1,7 @@
 # Review: s91-accessibility
 
+[Story](../stories.md) · [Plan](../plans/s91-accessibility.md) · [Verification](../verif/s91-accessibility.md)
+
 Reviewed tree: 7987b3b4f0470b1572120156dcfe44ee1192fbeb
 Fix loop: 0
 Branch: story/s91-accessibility (one commit, af1f736). Worktree: /home/lecrabe/dev/atoll/polype/.worktrees/s91-accessibility

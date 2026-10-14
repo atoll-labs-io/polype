@@ -1,5 +1,7 @@
 # Research — s70-reviewer-bounds
 
+[Story](../stories.md)
+
 ## Structuring facts
 - No false assumption, but two that need a reading. AC3 lists `commit`, `reset`, `branch`, `merge` as refused, while the Notes ask that the M6/M7 probes in throwaway repos under `/tmp` keep working, and those probes commit and branch. The only reading that keeps both: the verb list holds **in the story worktree**; a throwaway repo of the temp dir takes any verb except `push` (ADR-0047).
 - The reviewer has no Write tool (`method/agents/reviewer.md:4`, guarded by `tests/review.test.sh:11` `lacks_tool "$AGENT" Write`). AC1/AC2 still name Write: the matcher covers it and the mode bounds it, but `tools:` must not gain Write.

@@ -1,5 +1,7 @@
 # Research — s94-scene-and-simulation-drivers
 
+[Story](../stories.md)
+
 ## Structuring facts
 - No assumption of the story is false. The plan templates ask only for "where it looks from, what it must show, and its framing, scale and light" (`method/templates/plan.md:16`, `method/templates/plan-flow.md:34`), but `scene.md:26` reads "a scene, a position, a target and a framing" and sends a line that lacks one to `## Not seen` (`scene.md:30`). Root cause of the s87 major: the producer and the consumer of a viewpoint line were written in two stories, and nothing ties them together.
 - Root cause of the s88 major: `simulation.md:30` triggers with a bare `ros2 topic pub`, which publishes at 1 Hz until killed (ros2cli jazzy `ros2topic/verb/pub.py:79-90`). The `echo`/`bag record`/`pub` processes started at `:28-30` are outside the one `setsid` group that `:21` stops. The end check at `:21` (`ros2 node list --no-daemon`) hides hidden nodes such as the CLI's own `_ros2cli_*`: `ros2node/verb/list.py:29-31,38` shows them only with `-a/--all`.

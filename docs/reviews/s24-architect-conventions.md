@@ -1,5 +1,7 @@
 # Review — s24-architect-conventions
 
+[Story](../stories.md) · [Plan](../plans/s24-architect-conventions.md) · [Verification](../verif/s24-architect-conventions.md)
+
 Diff reviewed: `git diff m3-flotte...story/s24-architect-conventions`, in a context that did not write it. Findings rated critical, major or minor.
 
 Review status: complete

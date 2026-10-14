@@ -1,5 +1,7 @@
 # Research — s101-conversational-framing
 
+[Story](../stories.md)
+
 ## Structuring facts
 - **False assumption — the six commands are not the only texts asking to read the whole brief.** `method/skills/interrogation/SKILL.md:86` ("the user's explicit agreement after reading the whole brief"), which `po-brief.md:26` makes the agent read first, and `method/templates/brief.md:8` ("the user has read the whole brief") both say it. Neither is in `Owns`, and `po-bounds` keeps the implementer's writes inside the `Owns` read at the fork point (`method/hooks/po-bounds.sh:5`, `:152-172`). The story should list both files in `Owns`; until a story does, `po-brief.md` has to say outright that its one-section approvals take the place of that line of the skill.
 - **False assumption — `/po-stories` can take a story back from the review.** It has no argument and no fix path, and it forbids rewriting an existing story: "Existing ids and stories are never renumbered or rewritten" (`method/commands/po-stories.md:33`). The answer `Fix` of `stories_review_surfaces_criticals_only` sends a story back to `/po-stories`, so that command needs a narrow way in: a story the review sent back that has no `story/<id>` branch yet may be rewritten in place, or set aside, and it keeps its id.

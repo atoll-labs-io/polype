@@ -3,6 +3,8 @@ validated: yes
 ---
 # Plan — s127-hooks-installer-docs-cleanup
 
+[Story](../stories.md) · [Research](../research/s127-hooks-installer-docs-cleanup.md)
+
 Branch `story/s127-hooks-installer-docs-cleanup`. Read `docs/research/s127-hooks-installer-docs-cleanup.md` first; this plan builds on it without repeating it.
 
 ## Story

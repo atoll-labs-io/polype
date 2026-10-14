@@ -3,6 +3,8 @@ validated: yes
 ---
 # Plan — s98-bounds-messages
 
+[Story](../stories.md) · [Research](../research/s98-bounds-messages.md)
+
 Branch `story/s98-bounds-messages`. Read `docs/research/s98-bounds-messages.md` first. This plan builds on it without repeating it. Decision: ADR-0072 (`docs/decisions/ADR-0072-l-implementer-explore-un-depot-jetable-du-repertoire-temporaire.md`, already written by the planner).
 
 ## Story

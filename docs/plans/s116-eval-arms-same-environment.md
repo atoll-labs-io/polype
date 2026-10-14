@@ -3,6 +3,8 @@ validated: yes
 ---
 # Plan — s116-eval-arms-same-environment
 
+[Story](../stories.md) · [Research](../research/s116-eval-arms-same-environment.md)
+
 Branch `story/s116-eval-arms-same-environment`. Read `docs/research/s116-eval-arms-same-environment.md` first; this plan builds on it without repeating it. Full track: the story carries a `Corrige` line (major and minor of `docs/reviews/s114-reuse-ladder-eval.md`).
 
 ## Story

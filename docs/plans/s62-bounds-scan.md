@@ -3,6 +3,8 @@ validated: yes
 ---
 # Plan — s62-bounds-scan
 
+[Story](../stories.md) · [Research](../research/s62-bounds-scan.md)
+
 Branch `story/s62-bounds-scan`. Read `docs/research/s62-bounds-scan.md` first; this plan builds on it without repeating it. The design is fixed by `docs/decisions/ADR-0039-po-bounds-lit-les-commandes-hors-guillemets-et-heredocs.md`, which the planner wrote and the implementer commits with the code.
 
 ## Story

@@ -1,5 +1,7 @@
 # Research — s35-fleet-design
 
+[Story](../stories.md)
+
 ## Structuring facts
 - **Assumption corrected**: the story's `Owns` is incomplete. `tests/drive.test.sh:129-130` asserts the very clauses this story removes (`no design subagent exists`, `` `/po-design <id>` to run in `<Worktree root><id>` ``); that file must change or the suite goes red, and it is not in `Owns`.
 - `method/commands/po-drive.md:84` is the whole design stage today: a stage the lane **stops at**, justified by "a command does not run inside a subagent (ADR-0016)".

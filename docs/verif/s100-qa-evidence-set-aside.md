@@ -1,5 +1,7 @@
 # Verification — s100-qa-evidence-set-aside
 
+[Story](../stories.md) · [Plan](../plans/s100-qa-evidence-set-aside.md)
+
 Tree: 7191f22b1b29d42574817203599d7954919cc8f0
 
 ## Checks

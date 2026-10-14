@@ -3,6 +3,8 @@ validated: yes
 ---
 # Plan — s29-resume
 
+[Story](../stories.md) · [Research](../research/s29-resume.md)
+
 Branch `story/s29-resume`. Read `docs/research/s29-resume.md` first; this plan builds on it without repeating it.
 
 ## Story

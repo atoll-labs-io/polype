@@ -1,5 +1,7 @@
 # Verification — s112-short-subject-shipped
 
+[Story](../stories.md) · [Plan](../plans/s112-short-subject-shipped.md)
+
 Tree: 66dd5800e5d2138c5f97b51eeef2e9cbc55a8405
 
 ## Checks

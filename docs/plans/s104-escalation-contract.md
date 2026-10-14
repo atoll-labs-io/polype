@@ -3,6 +3,8 @@ validated: yes
 ---
 # Plan — s104-escalation-contract
 
+[Story](../stories.md) · [Research](../research/s104-escalation-contract.md)
+
 Branch `story/s104-escalation-contract`. Read `docs/research/s104-escalation-contract.md` first; this plan builds on it without repeating it.
 
 ## Story

@@ -4,6 +4,8 @@ validated: yes
 ---
 # Plan (short track) — s72-overlap-direction
 
+[Story](../stories.md)
+
 Written by the planner on the short track (`Story track: auto`, complexity 2 ≤ `Flow threshold` 2). This one file stands in for the research and the plan: there is no `docs/research/s72-overlap-direction.md`. Validated autonomously (`Plan validation: autonomous`): no human reviewed it.
 
 ## Verified facts

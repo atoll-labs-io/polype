@@ -1,5 +1,7 @@
 # Review — s31-fleet-wiring
 
+[Story](../stories.md) · [Plan](../plans/s31-fleet-wiring.md) · [Verification](../verif/s31-fleet-wiring.md)
+
 Diff reviewed: `git diff m3-flotte...story/s31-fleet-wiring`, in a context that did not write it. Findings rated critical, major or minor.
 
 Review status: complete

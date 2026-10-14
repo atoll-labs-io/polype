@@ -1,5 +1,7 @@
 # Research — s76-bounds-guard-against-mistakes
 
+[Story](../stories.md)
+
 ## Structuring facts
 - The lexer drops every redirection operator but keeps its fd number and its target as ordinary words (`method/hooks/po-bounds.sh:523` `else if (c == "<" || c == ">") { endword(sp); i++ }`). So `2>/dev/null` gives the git call two more words, `2` and `/dev/null`, and `check_temp_paths` (`:600-621`) refuses `/dev/null`. Checked: exit 2 today.
 - `2>&1 | head` already passes today, by luck: `&` ends the command at `:486`, so `1` becomes a separate command. `&>/dev/null` passes the same way. The story's list of cases is broader than the actual bug.

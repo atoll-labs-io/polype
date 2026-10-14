@@ -1,5 +1,7 @@
 # Research — s57-qa-in-the-fleet
 
+[Story](../stories.md)
+
 ## Structuring facts
 - No assumption of the story is false. Two are already half true: `/po-help` already lists `/po-qa` (`method/commands/po-help.md:31`), only `README.md` lacks the stage (`README.md:111-118`).
 - "Ce retour ne consomme aucune unité de `Max attempts`" is impossible under today's loop rule: each review takes the previous `Fix loop:` + 1 (`method/commands/po-review.md:25`), and `Max attempts` is read from that line (`method/commands/po-drive.md:65`). `po-review.md` must change its counting, not only its conclusion.

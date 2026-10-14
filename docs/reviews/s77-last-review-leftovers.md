@@ -1,5 +1,7 @@
 # Review — s77-last-review-leftovers
 
+[Story](../stories.md) · [Plan](../plans/s77-last-review-leftovers.md) · [Verification](../verif/s77-last-review-leftovers.md)
+
 Reviewed tree: 2efed951e0a667f55d43c36033f486694fc746bb
 Fix loop: 0
 Branch: story/s77-last-review-leftovers (commit 45bbf40), worktree /home/lecrabe/dev/atoll/polype/.worktrees/s77-last-review-leftovers

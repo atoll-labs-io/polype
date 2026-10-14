@@ -1,5 +1,7 @@
 # Verification — s23-stories-review-nongoals
 
+[Story](../stories.md) · [Plan](../plans/s23-stories-review-nongoals.md)
+
 Tree: eba83e5b030091f4b4fefc48adbfc7b367e629db
 
 | Check | Command | Outcome | Time (UTC) |

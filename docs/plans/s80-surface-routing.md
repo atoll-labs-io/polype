@@ -3,6 +3,8 @@ validated: yes
 ---
 # Plan — s80-surface-routing
 
+[Story](../stories.md) · [Research](../research/s80-surface-routing.md)
+
 Branch `story/s80-surface-routing`. Read `docs/research/s80-surface-routing.md` first; this plan builds on it without repeating it. The structural choice is settled in `docs/decisions/ADR-0058-la-regle-de-routage-par-surface-est-ecrite-une-fois-dans-agents.md` (ADR-0058), written by the planner and committed with the story.
 
 ## Story

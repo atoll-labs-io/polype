@@ -1,5 +1,7 @@
 # Research — s81-scenario-driver
 
+[Story](../stories.md)
+
 ## Structuring facts
 - No assumption of the story is false. The driver table of s79 already routes `command`/`cli` and `endpoint`/`api`, `lib` to `scenarios.md` (`method/skills/qa-drivers/SKILL.md:14-15`), and only that file is missing; until it exists a `command` or `endpoint` QA ends `blocked` (`SKILL.md:24`, `method/agents/qa.md:43`).
 - In mode `qa`, `po-bounds` refuses the Write tool everywhere but `docs/qa/<id>/` (`method/hooks/po-bounds.sh:271-278`), the temp dir included, and lets git run only the reading verbs of `QA_GIT_VERBS` (`po-bounds.sh:310`, `:728-729`) in every directory: scratch files are written through Bash only, and `git init` is refused, so no test repository can be built.

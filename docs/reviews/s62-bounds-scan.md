@@ -1,5 +1,7 @@
 # Review: s62-bounds-scan
 
+[Story](../stories.md) · [Plan](../plans/s62-bounds-scan.md) · [Verification](../verif/s62-bounds-scan.md)
+
 I reviewed `git diff main...story/s62-bounds-scan` in a context that did not write it. Findings are rated critical, major or minor.
 
 Review status: complete

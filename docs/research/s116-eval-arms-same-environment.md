@@ -1,5 +1,7 @@
 # Research — s116-eval-arms-same-environment
 
+[Story](../stories.md)
+
 ## Structuring facts
 - Root cause (major): under `--control` the rule arm is launched with an empty config argument (`bin/po-eval:219`), so `run_arm` exports no `CLAUDE_CONFIG_DIR` (`bin/po-eval:140`) and `claude -p` reads the user's real `~/.claude/` (global `CLAUDE.md`, settings, plugins, hooks), while the control arm reads a fresh `$ctl/config` (`bin/po-eval:223`, `:126`). Proof: `tests/reuse-ladder-eval.test.sh:97` asserts the rule arm's `CLAUDE_CONFIG_DIR` equals the inherited one, and it passes today.
 - Root cause (major, model half): `--model` is optional (`bin/po-eval:159`, `:209-210`); without it the rule arm takes the default model of the user's `settings.json` and the control arm, on an empty config, Claude Code's default.

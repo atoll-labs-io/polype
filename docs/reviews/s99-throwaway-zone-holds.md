@@ -1,5 +1,7 @@
 # Review: s99-throwaway-zone-holds
 
+[Story](../stories.md) · [Plan](../plans/s99-throwaway-zone-holds.md) · [Verification](../verif/s99-throwaway-zone-holds.md)
+
 Reviewed tree: ea5b8c07cd7bb30ccc34a33a6544ed09d472eea8
 Fix loop: 0
 Branch: `story/s99-throwaway-zone-holds` (commit 6491849), worktree `/home/lecrabe/dev/atoll/polype/.worktrees/s99-throwaway-zone-holds`

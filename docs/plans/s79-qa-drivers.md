@@ -3,6 +3,8 @@ validated: yes
 ---
 # Plan — s79-qa-drivers
 
+[Story](../stories.md) · [Research](../research/s79-qa-drivers.md)
+
 Branch `story/s79-qa-drivers`. Read `docs/research/s79-qa-drivers.md` first; this plan builds on it without repeating it. The open structural choices are settled in `docs/decisions/ADR-0057-qa-choisit-son-pilote-par-surface-et-plateforme.md` (written by the planner, uncommitted; commit it with the code).
 
 ## Story

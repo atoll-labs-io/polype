@@ -4,6 +4,8 @@ validated: yes
 ---
 # Plan (short track) — s28-ownership
 
+[Story](../stories.md)
+
 ## Verified facts
 
 - `method/skills/review-antihallu/SKILL.md:9-30` holds the whole procedure: `## Six steps, all of them, in this order`, then six bold-numbered steps. Step 2 (`:19`) is the first that reads the diff (« Open everything the diff refers to »). The scope check must sit above it.

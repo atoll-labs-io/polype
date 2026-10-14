@@ -3,6 +3,8 @@ validated: yes
 ---
 # Plan — s51-qa-agent
 
+[Story](../stories.md) · [Research](../research/s51-qa-agent.md)
+
 Branch `story/s51-qa-agent`. Read `docs/research/s51-qa-agent.md` first; this plan builds on it without repeating it. Structural choices: `docs/decisions/ADR-0026-qa-herite-le-navigateur-et-lit-git-par-liste-blanche.md`.
 
 ## Story

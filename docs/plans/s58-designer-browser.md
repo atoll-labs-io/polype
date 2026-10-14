@@ -3,6 +3,8 @@ validated: yes
 ---
 # Plan — s58-designer-browser
 
+[Story](../stories.md) · [Research](../research/s58-designer-browser.md)
+
 Branch `story/s58-designer-browser`. Read `docs/research/s58-designer-browser.md` first; this plan builds on it without repeating it. Decision recorded in `docs/decisions/ADR-0027-designer-herite-le-navigateur-de-la-session.md`.
 
 Track: full. The story is complexity 2 (≤ `Flow threshold`), but it widens the tools of a subagent and a command — an authorization signal — so `auto` escalates it.

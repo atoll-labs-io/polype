@@ -1,5 +1,7 @@
 # Review — s37-global-install
 
+[Story](../stories.md) · [Plan](../plans/s37-global-install.md) · [Verification](../verif/s37-global-install.md)
+
 Diff reviewed: `git diff m5-distribution...story/s37-global-install`, in a context that did not write it. Findings rated critical, major or minor.
 
 Review status: complete

@@ -1,5 +1,7 @@
 # Review: s101-conversational-framing
 
+[Story](../stories.md) · [Plan](../plans/s101-conversational-framing.md) · [Verification](../verif/s101-conversational-framing.md)
+
 I reviewed `git diff main...story/s101-conversational-framing` in a context that did not write it. Each finding is rated critical, major or minor.
 
 Review status: complete

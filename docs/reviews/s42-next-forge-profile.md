@@ -1,5 +1,7 @@
 # Review — s42-next-forge-profile
 
+[Story](../stories.md) · [Plan](../plans/s42-next-forge-profile.md) · [Verification](../verif/s42-next-forge-profile.md)
+
 Diff reviewed: `git diff m4-catalogue...story/s42-next-forge-profile` (one commit, c131c24), in a context that did not write it. Findings rated critical, major or minor.
 
 Review status: complete

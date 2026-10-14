@@ -3,6 +3,8 @@ validated: yes
 ---
 # Plan — s95-profiles-hold
 
+[Story](../stories.md) · [Research](../research/s95-profiles-hold.md)
+
 Branch `story/s95-profiles-hold`. Read `docs/research/s95-profiles-hold.md` first; this plan builds on it without repeating it. Decision: `docs/decisions/ADR-0069-la-commande-test-d-un-profil-echoue-quand-un-test-echoue.md` (written by the planner, committed by the implementer with the code).
 
 ## Story

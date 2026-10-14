@@ -3,6 +3,8 @@ validated: yes
 ---
 # Plan — s82-mobile-web-driver
 
+[Story](../stories.md) · [Research](../research/s82-mobile-web-driver.md)
+
 Branch `story/s82-mobile-web-driver`. Read `docs/research/s82-mobile-web-driver.md` first; this plan builds on it without repeating it. Decisions left open by ADR-0054 and ADR-0057 are settled in ADR-0060 (`docs/decisions/ADR-0060-le-pilote-mobile-web-bloque-sans-largeur-de-telephone-et-nomme-le-natif-non-vu.md`), written with this plan.
 
 ## Story

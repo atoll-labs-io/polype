@@ -1,5 +1,7 @@
 # Research — s115-no-claude-md
 
+[Story](../stories.md)
+
 ## Structuring facts
 - **The installer never creates `AGENTS.local.md`, and must not start now.** `bin/polype` only reads it (`bin/polype:12`, `:171-174`, `:181-183`, `:194`); `/po-setup` creates it and refuses to run when it already exists (`method/commands/po-setup.md:15-17`). So the story's alternative "create it from `templates/agents-local.md`" would break `/po-setup`; the installer takes the other branch: no `AGENTS.local.md` → the absorption is skipped and said, the install goes on. Aborting the whole command instead would deadlock a fresh project, since `/po-setup` copies `templates/agents-local.md`, which is `.polype/templates/agents-local.md` laid down by `init` (`method/AGENTS.md:145`).
 - **Two texts the story makes false**: `method/AGENTS.md:4` says the installer "leaves alone" `AGENTS.local.md`, and `method/commands/po-setup.md:17` says "the installer never writes it". Both must change in this story, or the rules contradict the installer.

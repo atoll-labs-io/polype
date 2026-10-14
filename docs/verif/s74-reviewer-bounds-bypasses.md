@@ -1,5 +1,7 @@
 # Verification — s74-reviewer-bounds-bypasses
 
+[Story](../stories.md) · [Plan](../plans/s74-reviewer-bounds-bypasses.md)
+
 Tree: e36860d63123fea7143c8f23494b0ef01cc6d5d9
 
 ## Checks

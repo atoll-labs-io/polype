@@ -1,5 +1,7 @@
 # Review — s68-docs-catch-up
 
+[Story](../stories.md) · [Plan](../plans/s68-docs-catch-up.md) · [Verification](../verif/s68-docs-catch-up.md)
+
 Diff reviewed: `git diff main...story/s68-docs-catch-up`, by a reviewer that did not write it. Each finding is rated critical, major or minor.
 
 Review status: complete

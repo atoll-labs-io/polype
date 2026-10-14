@@ -1,5 +1,7 @@
 # Review: s93-qa-contract-holds
 
+[Story](../stories.md) · [Plan](../plans/s93-qa-contract-holds.md) · [Verification](../verif/s93-qa-contract-holds.md)
+
 Reviewed tree: b0dff26dea0681f63c2356de28927dba062d15a3
 Fix loop: 0
 Scope: `git diff main...story/s93-qa-contract-holds`. One commit, `dfd1eff`.

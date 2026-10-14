@@ -1,5 +1,7 @@
 # Review — s36-installer
 
+[Story](../stories.md) · [Plan](../plans/s36-installer.md) · [Verification](../verif/s36-installer.md)
+
 Diff reviewed: `git diff m5-distribution...story/s36-installer`, in a context that did not write it. Findings rated critical, major or minor.
 
 Review status: complete

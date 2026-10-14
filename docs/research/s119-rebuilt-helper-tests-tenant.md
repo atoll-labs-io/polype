@@ -1,5 +1,7 @@
 # Research — s119-rebuilt-helper-tests-tenant
 
+[Story](../stories.md)
+
 ## Structuring facts
 - Root cause: `evals/cases/rebuilt-helper.sh:66-75`. `plant()` adds two `archived_for` tests, and neither has a note whose owner id is the user's but whose tenant is another. So the tenant clause `note.tenant_id == user.tenant_id` at `evals/cases/rebuilt-helper.sh:62` is checked by nothing in the built repository. Proof: built with `bin/po-eval --build rebuilt-helper <tmp>`, the clause removed from `archived_for` only, `python3 -m unittest discover -s tests -t .` → `Ran 6 tests … OK` (see `## Diagnostic`).
 - The built story asks for that boundary: criterion `lists_archived_notes` says "in their tenant" (`evals/cases/rebuilt-helper.sh:19`). Reviewers raise the missing test as a major (`docs/evals/reuse-ladder.md:52-70`), so `major/yes` comes out in both arms whatever they do with the copy.

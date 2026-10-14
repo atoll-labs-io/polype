@@ -1,5 +1,7 @@
 # Review — s124-framing-commands-cleanup
 
+[Story](../stories.md) · [Plan](../plans/s124-framing-commands-cleanup.md) · [Verification](../verif/s124-framing-commands-cleanup.md)
+
 Review status: complete
 Reviewed tree: e30f8fb3b1e3fd5070651d5d7f2da1286a6da8cb
 Fix loop: 0

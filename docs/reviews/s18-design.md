@@ -1,5 +1,7 @@
 # Review — s18-design
 
+[Story](../stories.md) · [Plan](../plans/s18-design.md) · [Verification](../verif/s18-design.md)
+
 Diff reviewed: `git diff m2-cadrage...story/s18-design` (one commit, d9b9f3a), read in a context that did not write it. Findings are rated critical, major or minor.
 
 Review status: complete

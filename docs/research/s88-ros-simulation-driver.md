@@ -1,5 +1,7 @@
 # Research — s88-ros-simulation-driver
 
+[Story](../stories.md)
+
 Sources opened in clones under `/tmp/s88src`, outside the repository, on 2026-10-08:
 `RG:` = `https://github.com/gazebosim/ros_gz_project_template` at `045e981d03aac1cc3712ab6bb086f52ea79aebf9` (HEAD of `main`, no tag in the repository, 19 commits). `RGZ:` = `gazebosim/ros_gz` branch `jazzy` at `0fa70cb7`. `VS:` = `gazebo-release/gz_sim_vendor` branch `jazzy` at `2c82e303`. `GZ:` = `gazebosim/gz-sim` branch `gz-sim8` at `5db0607b`. `GT:` = `gazebosim/gz-transport` branch `gz-transport13` at `869cb2ee`. `CLI:` = `ros2/ros2cli` `jazzy` at `9ac47fae`. `BAG:` = `ros2/rosbag2` `jazzy` at `29996807`. `RCL:` = `ros2/rcl` `jazzy` at `18d96c9c`. `LOG:` = `ros2/rcl_logging` `jazzy` at `727920c2`.
 

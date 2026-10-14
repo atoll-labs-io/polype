@@ -3,6 +3,8 @@ validated: yes
 ---
 # Plan — s115-no-claude-md
 
+[Story](../stories.md) · [Research](../research/s115-no-claude-md.md)
+
 Branch `story/s115-no-claude-md`. Read `docs/research/s115-no-claude-md.md` first; this plan builds on it without repeating it. Decision record: `docs/decisions/ADR-0086-l-installeur-absorbe-le-claude-md-dans-agents-local-md.md` (`accepted`, the person's choice of 2026-10-13, written with this plan); it supersedes ADR-0073.
 
 ## Story

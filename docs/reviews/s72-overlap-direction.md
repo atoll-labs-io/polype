@@ -1,5 +1,7 @@
 # Review: s72-overlap-direction
 
+[Story](../stories.md) · [Plan](../plans/s72-overlap-direction.md) · [Verification](../verif/s72-overlap-direction.md)
+
 Reviewed tree: 4d7e87d43fa65f6c61144926ca766ca2f3db9403
 Fix loop: 0
 Review status: complete

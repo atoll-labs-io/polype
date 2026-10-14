@@ -4,6 +4,8 @@ validated: yes
 ---
 # Plan (short track) — s54-untrusted-output
 
+[Story](../stories.md)
+
 Written by the planner on the short track (`Story track: auto`, complexity 1 ≤ `Flow threshold` 2). This one file stands in for both the research and the plan: there is no `docs/research/s54-untrusted-output.md`. Validated autonomously (`Plan validation: autonomous`): no human reviewed it.
 
 ## Verified facts

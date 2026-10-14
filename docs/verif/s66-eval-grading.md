@@ -1,5 +1,7 @@
 # Verification — s66-eval-grading
 
+[Story](../stories.md) · [Plan](../plans/s66-eval-grading.md)
+
 Tree: f93346e61d2325f06e5d2d29166c18b15dc1d017
 
 ## Checks

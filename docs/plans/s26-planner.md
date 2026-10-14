@@ -3,6 +3,8 @@ validated: yes
 ---
 # Plan — s26-planner
 
+[Story](../stories.md) · [Research](../research/s26-planner.md)
+
 Branch `story/s26-planner`. Read `docs/research/s26-planner.md` first; this plan builds on it without repeating it.
 
 ## Story

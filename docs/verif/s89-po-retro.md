@@ -1,5 +1,7 @@
 # Verification — s89-po-retro
 
+[Story](../stories.md) · [Plan](../plans/s89-po-retro.md)
+
 Tree: 97d5ae00bdf5e79e6cd6f53c75f26b626cffa7fc
 
 ## Checks

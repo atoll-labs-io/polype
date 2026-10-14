@@ -4,6 +4,8 @@ validated: yes
 ---
 # Plan (short track) — s128-artifact-link-templates
 
+[Story](../stories.md)
+
 Written by the `planner` subagent on the short track. On the short track this one file stands in for both the research and the plan: there is no `docs/research/s128-artifact-link-templates.md`.
 
 ## Verified facts

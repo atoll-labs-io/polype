@@ -1,5 +1,7 @@
 # Review: s86-cli-api-profiles
 
+[Story](../stories.md) · [Plan](../plans/s86-cli-api-profiles.md) · [Verification](../verif/s86-cli-api-profiles.md)
+
 Reviewed tree: 1b91472bc6d5c802174d6e920e355d357554101f
 Fix loop: 0
 Scope: `git diff main...story/s86-cli-api-profiles`, one commit (75e7e7a)

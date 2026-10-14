@@ -1,5 +1,7 @@
 # Research — s97-commands-and-texts
 
+[Story](../stories.md)
+
 ## Structuring facts
 - **False assumption of the story:** an exact match on the full heading text does not make `/po-retro M8` or `M7` work. `M8` is a prefix of `## M8 — Toutes les plateformes` (`docs/stories.md:1191`) and `## M8 bis — Les restes de M8` (`:1408`), and equals neither. So the example at `method/commands/po-retro.md:24` ("`M8` matches `## M8 — Toutes les plateformes`") has been false since M8 bis was added: today the command lists headings and stops. Only `Correctifs hors jalon` (`:882` vs `:1390`) is fixed by full-text equality alone.
 - Root cause, retro milestone: `method/commands/po-retro.md:24` matches by prefix only, and `:20` stops on several matches. No exact match takes precedence.

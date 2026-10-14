@@ -1,5 +1,7 @@
 # Research — s108-ship-resumes-cleanly
 
+[Story](../stories.md)
+
 ## Structuring facts
 - **Root cause (M1 of s105):** `method/commands/po-ship.md:74` skips the push when `origin/story/<id>` already holds a commit of parent `<base>` and tree `<tree>`, but never rebinds `<sha>`. `<sha>` stays the one `git commit-tree` just printed at `po-ship.md:70`, which stamps the current time, so `po-ship.md:77` passes `--match-head-commit` a SHA the pull request head does not carry, and the merge is refused. Proof: two `commit-tree` calls on the same tree and parent, five minutes apart, gave `bc38ed2…` and `c40dc0a…` (scratch repo `/tmp/tmp.sOfjIwO04U`).
 - **Root cause (M2 of s105):** `tests/ship-through-pr.test.sh:31-34` only asks that each `git push` line name `story/<id>` somewhere; the push line `po-ship.md:74` names it three times outside the refspec. Rewriting the refspec to `<sha>:refs/heads/<Target branch>` left the file at 5 passed, 0 failed (temp copy `/tmp/tmp.ArYOH96YW0`).

@@ -3,6 +3,8 @@ validated: yes
 ---
 # Plan — s65-upgrade-path
 
+[Story](../stories.md) · [Research](../research/s65-upgrade-path.md)
+
 Branch `story/s65-upgrade-path`. Read `docs/research/s65-upgrade-path.md` first; this plan builds on it without repeating it. The structural choice is settled in `docs/decisions/ADR-0043-l-installeur-signale-les-reglages-manquants-sans-les-ecrire.md` (written by the planner, on this branch).
 
 ## Story

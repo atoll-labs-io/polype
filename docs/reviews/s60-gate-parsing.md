@@ -1,5 +1,7 @@
 # Review: s60-gate-parsing
 
+[Story](../stories.md) · [Plan](../plans/s60-gate-parsing.md) · [Verification](../verif/s60-gate-parsing.md)
+
 Reviewed tree: 6dd6d5d4622acdb70c8aa84cbab8eb8c2514a46e
 Fix loop: 0
 Worktree: /home/lecrabe/dev/atoll/polype/.worktrees/s60-gate-parsing (branch `story/s60-gate-parsing`, one commit 235a736)

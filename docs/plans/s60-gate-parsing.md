@@ -3,6 +3,8 @@ validated: yes
 ---
 # Plan — s60-gate-parsing
 
+[Story](../stories.md) · [Research](../research/s60-gate-parsing.md)
+
 Branch `story/s60-gate-parsing`. Read `docs/research/s60-gate-parsing.md` first; this plan builds on it without repeating it. Line numbers below are those of `method/hooks/po-gate.sh` before any edit.
 
 ## Story

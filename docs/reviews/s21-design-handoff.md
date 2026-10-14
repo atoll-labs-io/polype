@@ -1,5 +1,7 @@
 # Review — s21-design-handoff
 
+[Story](../stories.md) · [Plan](../plans/s21-design-handoff.md) · [Verification](../verif/s21-design-handoff.md)
+
 Diff reviewed: `git diff m2-cadrage...story/s21-design-handoff` (one commit, 435d0d2), in a context that did not write it. Findings are rated critical, major or minor.
 
 Review status: complete

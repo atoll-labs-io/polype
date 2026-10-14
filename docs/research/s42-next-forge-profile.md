@@ -1,5 +1,7 @@
 # Research — s42-next-forge-profile
 
+[Story](../stories.md)
+
 Clone read: `git clone --depth 1 https://github.com/vercel/next-forge` into `/tmp/nextforge.uQ1I/next-forge`, commit `f189de79ceef7c1ef69f61f12e272f99b4cdb699` (2026-05-28), package version 6.0.2. `NF:` below means a path of that clone.
 
 ## Structuring facts

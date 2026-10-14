@@ -1,5 +1,7 @@
 # Verification — s99-throwaway-zone-holds
 
+[Story](../stories.md) · [Plan](../plans/s99-throwaway-zone-holds.md)
+
 Tree: 3feb98759500dc845b60918410414f5e3d621a68
 
 ## Checks

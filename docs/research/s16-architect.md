@@ -1,5 +1,7 @@
 # Research — s16-architect
 
+[Story](../stories.md)
+
 ## Structuring facts
 - **Wrong assumption — `AGENTS.local.md` is said to be written by `/po-setup` alone**: `method/commands/po-setup.md:17` ends "no other command and not the installer ever writes this file". `/po-architect` must write its « Conventions » section (criterion 2). One clause of `po-setup.md` has to admit it — outside Owns, like the `po-help` line below. The installer only reads the file (`bin/polype-dev-install:57-63`), so conventions reach `AGENTS.md` only after a reinstall.
 - `po-help` must list every command: `tests/pilot.test.sh:38-46` fails when `method/commands/po-architect.md` exists without `/po-architect` in `method/commands/po-help.md`. Outside Owns; s12–s15 each added one line in « Mise en place » (`po-help.md:13-16`).

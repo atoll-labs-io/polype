@@ -1,5 +1,7 @@
 # Review — s83-expo-profile
 
+[Story](../stories.md) · [Plan](../plans/s83-expo-profile.md) · [Verification](../verif/s83-expo-profile.md)
+
 Diff reviewed: `git diff main...story/s83-expo-profile`, in a context that did not write it. Findings rated critical, major or minor.
 
 Review status: complete

@@ -1,5 +1,7 @@
 # Research — s52-qa-wiring
 
+[Story](../stories.md)
+
 ## Structuring facts
 - **False assumption, blocks planning: `/po-qa` cannot commit anything.** The story says "/po-qa committe `docs/qa/<id>/` … comme /po-ship committe la revue" (`docs/stories.md:798`). But s51 built `/po-qa` without Bash on purpose (`method/commands/po-qa.md:4-8`, description `:2` "cannot edit files or run a shell, by construction"), and `tests/qa.test.sh:49` holds that clause (`lacks_tool "$PO_QA" Bash`). `tests/qa.test.sh` is **not** in s52's `Owns` (`docs/stories.md:791`), so the implementer's po-bounds hook refuses to write it (`method/hooks/po-bounds.sh:5`, Owns check). Giving `/po-qa` Bash also trips `bin/po-lint:142-146` while the description keeps "cannot … run a shell".
 - The qa subagent cannot commit either: mode `qa` allows reading git verbs only (`method/hooks/po-bounds.sh:142-150`), `tests/bounds.test.sh:167` checks that `git commit` is refused, and `method/agents/qa.md:52` says "No commit". `po-bounds.sh` and `tests/bounds.test.sh` are outside `Owns` too.

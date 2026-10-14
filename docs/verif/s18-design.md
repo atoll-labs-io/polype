@@ -1,5 +1,7 @@
 # Verification — s18-design
 
+[Story](../stories.md) · [Plan](../plans/s18-design.md)
+
 Commands are copied exactly from `AGENTS.local.md`. Order that produced `Tree:` — `git add -A`, then `git write-tree`.
 
 Tree: 0c3761f9e2be47491a730d8fa78f2197c48cccb9

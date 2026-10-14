@@ -1,5 +1,7 @@
 # Verification — s108-ship-resumes-cleanly
 
+[Story](../stories.md) · [Plan](../plans/s108-ship-resumes-cleanly.md)
+
 Tree: 98aa38993332c1080843fbe34a237fb900d02529
 
 ## Checks

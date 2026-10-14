@@ -1,5 +1,7 @@
 # Review — s104-escalation-contract
 
+[Story](../stories.md) · [Plan](../plans/s104-escalation-contract.md) · [Verification](../verif/s104-escalation-contract.md)
+
 Diff reviewed: `git diff main...story/s104-escalation-contract` (one commit, 0235fac), read in a context that did not write it. Findings are graded critical, major or minor.
 
 Review status: complete

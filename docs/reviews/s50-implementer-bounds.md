@@ -1,5 +1,7 @@
 # Review: s50-implementer-bounds
 
+[Story](../stories.md) · [Plan](../plans/s50-implementer-bounds.md) · [Verification](../verif/s50-implementer-bounds.md)
+
 Diff reviewed: `git diff main...story/s50-implementer-bounds`, in a context that did not write it. Findings are rated critical, major or minor.
 
 Review status: complete

@@ -1,5 +1,7 @@
 # Research — s125-ship-and-fleet-cleanup
 
+[Story](../stories.md)
+
 ## Structuring facts
 - No assumption of the story is false. Every HOLDS row of `docs/reviews/triage-2026-10-14.md` that points to an `Owns` file still holds on `story/s125-ship-and-fleet-cleanup` (rows `:90`, `:91`, `:118`, `:120`, `:126`, `:129`, `:154`, `:155`, `:156`, `:170`). This is a defect story (`Corrige`), and each row's root cause is a missing clause or an assertion that does not bite, shown below.
 - Root cause, ship text: `method/commands/po-ship.md:74` puts the skip condition on `origin/story/<id>` without saying what happens when that ref is missing, and checks parent and tree but not the message `<id>: <story title>`. Reproduced: with no remote branch, `git push --force-with-lease=story/x origin <sha>:refs/heads/story/x` creates the branch and exits 0 (git 2.56, throwaway repo in `/tmp`).

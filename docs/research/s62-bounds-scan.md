@@ -1,5 +1,7 @@
 # Research — s62-bounds-scan
 
+[Story](../stories.md)
+
 ## Structuring facts
 - No false assumption in the story. Every claim was opened and confirmed: the word analysis (`method/hooks/po-bounds.sh:224-228`), the qa holes (`:248-257`) and the movable base (`:58-80`, ADR-0038 Neutral).
 - `check_bash` removes every quote, turns `$(`, `;&|()`{}` and newlines into spaces, then reads the whole command as one list of words (`method/hooks/po-bounds.sh:224-228`). It does not know about quotes, heredocs or simple commands. So `grep -rn "git checkout" docs` and a heredoc body citing `git push` exit 2 (probed).

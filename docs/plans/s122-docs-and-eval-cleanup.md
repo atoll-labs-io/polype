@@ -3,6 +3,8 @@ validated: yes
 ---
 # Plan — s122-docs-and-eval-cleanup
 
+[Story](../stories.md) · [Research](../research/s122-docs-and-eval-cleanup.md)
+
 Branch `story/s122-docs-and-eval-cleanup`. Read `docs/research/s122-docs-and-eval-cleanup.md` first; this plan builds on it without repeating it.
 
 ## Story

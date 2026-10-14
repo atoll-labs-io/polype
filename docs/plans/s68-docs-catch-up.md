@@ -4,6 +4,8 @@ validated: yes
 ---
 # Plan (short track) — s68-docs-catch-up
 
+[Story](../stories.md)
+
 Written by the planner on the short track (`Story track: auto`, complexity 1 ≤ `Flow threshold: 2`). This file stands in for both the research and the plan: there is no `docs/research/s68-docs-catch-up.md`.
 
 ## Verified facts

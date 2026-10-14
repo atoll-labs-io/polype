@@ -1,5 +1,7 @@
 # Research — s71-bounds-heredoc-expansion
 
+[Story](../stories.md)
+
 ## Structuring facts
 - **Story assumption false:** `bash <(…)` is not an accepted gap, it is refused today: `<(` marks the word as holding a substitution (`method/hooks/po-bounds.sh:479`, `:302`) and a substitution handed to an interpreter fails (`:336`). Probed: `bash <(cat f)` → exit 2. The real member of that family that passes is `source <(cat f)` (exit 0): `source` and `.` are not interpreters (`:500-502`). The ADR must say so; `docs/stories.md` needs the same correction by a human.
 - **Second gap, not in the story:** a heredoc a shell reads is lexed only as the inner shell sees it; the substitutions the *outer* bash runs while building the body are skipped (`:390`, `qi[qh-1]` jumps past the `hd` frame). Probed: `bash <<EOF` + `echo '$(git push)'` + `EOF` → exit 0, yet bash runs `git push` before `bash` starts. The same fix family closes it.

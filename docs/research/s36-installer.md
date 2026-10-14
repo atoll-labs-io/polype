@@ -1,5 +1,7 @@
 # Research — s36-installer
 
+[Story](../stories.md)
+
 ## Structuring facts
 - **Owns is incomplete.** `docs/stories.md:539` lists `bin/polype`, `tests/installer.test.sh`, `docs/installation.md`, but `docs/stories.md:549` orders keeping `bin/polype-dev-install` as an alias — a path outside Owns. Owns must gain `bin/polype-dev-install`; no other running lane claims it.
 - **The manifest format is frozen by a test this story may not edit.** `tests/install.test.sh:72` appends a bare path line to `.polype/manifest` and expects the next run to delete that ghost. Checksums cannot replace the one-path-per-line format; they need their own file.

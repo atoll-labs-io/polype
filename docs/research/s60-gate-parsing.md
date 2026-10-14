@@ -1,5 +1,7 @@
 # Research — s60-gate-parsing
 
+[Story](../stories.md)
+
 ## Structuring facts
 - **False assumption — `Owns` is not enough for AC5.** `po-drive`'s resume table relies on `qa-current` passing an uncommitted current report: row "`po-gate qa-current <id>` passes and `git … status --porcelain -- docs/qa/<id>/` lists the report → the evidence commit of `/po-qa`, without a new walk" (`method/commands/po-drive.md:53`), and the paragraph "It reads the working tree, so a current report left uncommitted passes it" (`method/commands/po-drive.md:62`). Once AC5 lands, row 53 can never match and row 52 (`qa-current` fails → the QA stage) sends such a lane to a new walk. `po-drive.md` and `tests/qa-fleet.test.sh:81` (which quotes row 53) belong to s64-qa-routing (`docs/stories.md:988`), not s60. Correction needed in the story set: s64 (or a follow-up) rewrites row 53 and line 62; s60 stays inside its `Owns`.
 - AC5 reverses the "Neutral" consequence of an accepted ADR: "`qa-current` n'exige pas que le rapport soit committé" (`docs/decisions/ADR-0029-po-qa-committe-les-preuves-qa.md`, Consequences). It needs a new ADR (ADR-0037 reserved), which does not supersede ADR-0029's decision itself.

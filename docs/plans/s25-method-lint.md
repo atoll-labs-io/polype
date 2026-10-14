@@ -3,6 +3,8 @@ validated: yes
 ---
 # Plan — s25-method-lint
 
+[Story](../stories.md) · [Research](../research/s25-method-lint.md)
+
 Branch `story/s25-method-lint`. Read `docs/research/s25-method-lint.md` first; this plan builds on it without repeating it.
 
 ## Story

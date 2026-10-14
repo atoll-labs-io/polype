@@ -1,5 +1,7 @@
 # Review — s123-local-copy-checksums
 
+[Story](../stories.md) · [Plan](../plans/s123-local-copy-checksums.md) · [Verification](../verif/s123-local-copy-checksums.md)
+
 Diff reviewed: `git diff main...story/s123-local-copy-checksums`, in a context that did not write it. Findings rated critical, major or minor.
 
 Review status: complete

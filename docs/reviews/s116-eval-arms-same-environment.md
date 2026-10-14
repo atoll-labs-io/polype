@@ -1,5 +1,7 @@
 # Review — s116-eval-arms-same-environment
 
+[Story](../stories.md) · [Plan](../plans/s116-eval-arms-same-environment.md) · [Verification](../verif/s116-eval-arms-same-environment.md)
+
 Review status: complete
 Fix loop: 0
 Reviewed tree: b5a9cedc733020f8edb43bc0d186d98f689599d7

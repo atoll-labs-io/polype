@@ -4,6 +4,8 @@ validated: yes
 ---
 # Plan (short track) — s91-accessibility
 
+[Story](../stories.md)
+
 Validated autonomously (`Plan validation: autonomous`): no human reviewed it. Branch `story/s91-accessibility`. Short track (`Story track: auto`, complexity 2 ≤ `Flow threshold` 2): there is no `docs/research/s91-accessibility.md`; the facts below stand in for it. No ADR: the reserved ADR-0069 is left unused, no structural choice is open.
 
 ## Verified facts

@@ -1,5 +1,7 @@
 # Review: s97-commands-and-texts
 
+[Story](../stories.md) · [Plan](../plans/s97-commands-and-texts.md) · [Verification](../verif/s97-commands-and-texts.md)
+
 Reviewed tree: bbd6e06c258a8dbd33732f25991db5e7ee995a90
 Fix loop: 0
 Review status: complete

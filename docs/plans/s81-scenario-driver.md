@@ -3,6 +3,8 @@ validated: yes
 ---
 # Plan — s81-scenario-driver
 
+[Story](../stories.md) · [Research](../research/s81-scenario-driver.md)
+
 Branch `story/s81-scenario-driver`. Read `docs/research/s81-scenario-driver.md` first; this plan builds on it without repeating it. The two choices the ADRs left open are settled in `docs/decisions/ADR-0059-le-pilote-scenarios-joue-sur-une-copie-dans-le-repertoire-temporaire.md` (written by the planner, uncommitted, status `accepted`: commit it with the code, never edit its body).
 
 ## Story

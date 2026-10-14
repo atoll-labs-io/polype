@@ -1,5 +1,7 @@
 # Verification — s125-ship-and-fleet-cleanup
 
+[Story](../stories.md) · [Plan](../plans/s125-ship-and-fleet-cleanup.md)
+
 Tree: 9d62756dfd9cce88861e2380863a188afd025a43
 
 ## Checks

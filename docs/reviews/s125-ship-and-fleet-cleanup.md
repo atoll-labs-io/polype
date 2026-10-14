@@ -1,5 +1,7 @@
 # Review — s125-ship-and-fleet-cleanup
 
+[Story](../stories.md) · [Plan](../plans/s125-ship-and-fleet-cleanup.md) · [Verification](../verif/s125-ship-and-fleet-cleanup.md)
+
 The diff reviewed is `git diff main...story/s125-ship-and-fleet-cleanup`, in a context that did not write it. Findings are rated critical, major or minor.
 
 Review status: complete

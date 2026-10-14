@@ -1,5 +1,7 @@
 # Research — s98-bounds-messages
 
+[Story](../stories.md)
+
 ## Structuring facts
 - Root cause 1 (raw byte): `deny()` at `method/hooks/po-bounds.sh:53` prints its arguments as they are. The lexer marks a substitution with `\036` (`SM`, `:557`, written at `:328`), and that byte stays in `vals[]`. `readable()` (`:299`) is applied at two sites only (`:633`, `:648`). Every other refusal that prints a word of the command prints the byte: `:636` (m1, `$a`), the verb at `:586`, `:633`, `:636`, `:648`, `:650`, `:653`, `:732`, `:746`, and `:577`, `:581`, `:594`, `:611`.
 - Root cause 2 (`{fd}`): the lexer drops the word before `<` or `>` only when it is all digits (`:538`, `wv[sp] ~ /^[0-9]+$/`). `{fd}` goes through `endword` and becomes a `u` word of the command.

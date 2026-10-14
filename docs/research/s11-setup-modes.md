@@ -1,5 +1,7 @@
 # Research — s11-setup-modes
 
+[Story](../stories.md)
+
 ## Structuring facts
 - No false assumption: `po-setup` does ask exactly three questions today (`method/commands/po-setup.md:29-34`) and the template has none of the six framing settings (`method/templates/agents-local.md:9-50`).
 - The frontmatter `description` also says "three answers" (`method/commands/po-setup.md:2`): it must follow the count, or the command contradicts itself.

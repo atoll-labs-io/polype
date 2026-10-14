@@ -1,5 +1,7 @@
 # Review: s17-design-system
 
+[Story](../stories.md) · [Plan](../plans/s17-design-system.md) · [Verification](../verif/s17-design-system.md)
+
 Diff reviewed: `git diff m2-cadrage...story/s17-design-system` (one commit, e5dbc57). I did not write this code. Findings are rated critical, major or minor.
 
 Review status: complete

@@ -3,6 +3,8 @@ validated: yes
 ---
 # Plan — s36-installer
 
+[Story](../stories.md) · [Research](../research/s36-installer.md)
+
 Branch `story/s36-installer`. Read `docs/research/s36-installer.md` first; this plan builds on it without repeating it.
 
 ## Story

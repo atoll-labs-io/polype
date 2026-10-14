@@ -1,5 +1,7 @@
 # Research — s103-project-lead
 
+[Story](../stories.md)
+
 ## Structuring facts
 - **Tension, not a false assumption:** `/po-drive status` knows a PR "waiting for a human merge" only through `gh pr view story/<id> --json state` (`method/commands/po-drive.md:64-65`, `method/commands/po-status.md:31`), while the story's note limits `po-session.sh` to bash and git. The hook can therefore only *presume* such a PR from local state (favourable review + `Merge mode: pr` + `Ship confirmation` reading `human` + `refs/remotes/origin/story/<id>` + not shipped), and must say it did not ask the forge. The plan settles it that way; it does not contradict the story.
 - Every project pose goes through `wire_the_project` (`bin/polype:235-242`), called by `cmd_install` (`:308`, hence `init` `:312-315` and `update` without manifest `:318`) and `cmd_update` (`:351`); it returns at once in global mode (`:236`). That is the one place to wire the `SessionStart` hook.

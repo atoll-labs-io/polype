@@ -1,5 +1,7 @@
 # Review: s53-review-lenses
 
+[Story](../stories.md) · [Plan](../plans/s53-review-lenses.md) · [Verification](../verif/s53-review-lenses.md)
+
 Reviewed tree: 0f1746303ae37b633d9193c7f37bb0abb10fcbf8
 Fix loop: 0
 Worktree: /home/lecrabe/dev/atoll/polype/.worktrees/s53-review-lenses (branch `story/s53-review-lenses`, one commit `8fac9ed`)

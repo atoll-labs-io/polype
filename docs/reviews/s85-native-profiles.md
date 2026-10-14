@@ -1,5 +1,7 @@
 # Review: s85-native-profiles
 
+[Story](../stories.md) · [Plan](../plans/s85-native-profiles.md) · [Verification](../verif/s85-native-profiles.md)
+
 Reviewed tree: 791a83aa205e393ceb61f5c8134629df07376eee
 Fix loop: 0
 Track: flow (short track; the plan's `## Verified facts` stands in for research)

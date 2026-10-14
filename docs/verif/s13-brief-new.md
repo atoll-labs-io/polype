@@ -1,5 +1,7 @@
 # Verification — s13-brief-new
 
+[Story](../stories.md) · [Plan](../plans/s13-brief-new.md)
+
 Tree: 5d7471b73545e7dd282e95376087feea295f10b3
 
 | Check | Command | Outcome | Time (UTC) |

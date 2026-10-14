@@ -3,6 +3,8 @@ validated: yes
 ---
 # Plan — s17-design-system
 
+[Story](../stories.md) · [Research](../research/s17-design-system.md)
+
 Branch `story/s17-design-system`. Read `docs/research/s17-design-system.md` first; this plan builds on it without repeating it.
 
 ## Story

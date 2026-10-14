@@ -1,5 +1,7 @@
 # Review — s110-framing-second-landing
 
+[Story](../stories.md) · [Plan](../plans/s110-framing-second-landing.md) · [Verification](../verif/s110-framing-second-landing.md)
+
 I added the `Review status:` line under the title, where `templates/review.md` puts it, and laid the header out like the template. The findings and verdict are unchanged. The tree has not moved: `git rev-parse 'story/s110-framing-second-landing^{tree}'` still prints 7016ddd52df8d9b30686209a8dd6441260e5a42a.
 
 Diff reviewed: `git diff main...story/s110-framing-second-landing` (commit 20348c8), in a context that did not write it. Findings rated critical, major or minor.

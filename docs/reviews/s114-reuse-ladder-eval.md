@@ -1,5 +1,7 @@
 # Review — s114-reuse-ladder-eval
 
+[Story](../stories.md) · [Plan](../plans/s114-reuse-ladder-eval.md) · [Verification](../verif/s114-reuse-ladder-eval.md)
+
 I reviewed `git diff main...story/s114-reuse-ladder-eval` in a context that did not write it. Findings are rated critical, major or minor.
 
 Review status: complete

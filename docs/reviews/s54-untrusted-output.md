@@ -1,5 +1,7 @@
 # Review: s54-untrusted-output
 
+[Story](../stories.md) · [Plan](../plans/s54-untrusted-output.md) · [Verification](../verif/s54-untrusted-output.md)
+
 Reviewed tree: 1493812b0fa25791b45fd2d0d5a1520fb0525b17
 Fix loop: 0
 Worktree: /home/lecrabe/dev/atoll/polype/.worktrees/s54-untrusted-output, branch `story/s54-untrusted-output`, 1 commit (5abdbf7)

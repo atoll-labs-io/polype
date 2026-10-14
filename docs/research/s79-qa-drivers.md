@@ -1,5 +1,7 @@
 # Research — s79-qa-drivers
 
+[Story](../stories.md)
+
 ## Structuring facts
 - No assumption of the story is false. Every file it names exists; `method/skills/qa-drivers/` does not yet and is created here.
 - `bin/po-lint` already requires every `## ` heading and every command name of the profile template (`bin/po-lint:242-257`): adding `## QA driver` and `Dev:` to `method/templates/profile.md` makes the lint demand them with no new code. Only a check of the *value* of a `- QA driver:` line would be new code.

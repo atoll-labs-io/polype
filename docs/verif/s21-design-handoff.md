@@ -1,5 +1,7 @@
 # Verification — s21-design-handoff
 
+[Story](../stories.md) · [Plan](../plans/s21-design-handoff.md)
+
 The implementer writes this file last, just before committing the story, and commits it with the code. The reviewer compares `Tree:` with the commit: if they match, the results below count as proven and are not rerun. Commands are copied exactly from `AGENTS.local.md`.
 
 Order that produces `Tree:` — `git add -A`, then `git write-tree`. The hash therefore names the exact code the checks ran on. This file and the plan's ticks are written afterwards, inside `docs/`, which the comparison leaves out.

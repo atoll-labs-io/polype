@@ -1,5 +1,7 @@
 # Review — s16-architect
 
+[Story](../stories.md) · [Plan](../plans/s16-architect.md) · [Verification](../verif/s16-architect.md)
+
 Diff reviewed: `git diff m2-cadrage...story/s16-architect`, one commit (77ed0cf), read by a context that did not write it. Findings are rated critical, major or minor.
 
 Review status: complete

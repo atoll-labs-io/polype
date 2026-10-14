@@ -4,6 +4,8 @@ validated: yes
 ---
 # Plan (short track) — s44-catalogue-wiring
 
+[Story](../stories.md)
+
 Written by `/po-flow`. On the short track this one file stands in for both the research and the plan: there is no `docs/research/s44-catalogue-wiring.md`.
 
 ## Verified facts

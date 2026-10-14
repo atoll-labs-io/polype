@@ -3,6 +3,8 @@ validated: yes
 ---
 # Plan — s120-session-and-gate-checks
 
+[Story](../stories.md) · [Research](../research/s120-session-and-gate-checks.md)
+
 Branch `story/s120-session-and-gate-checks`. Read `docs/research/s120-session-and-gate-checks.md` first; this plan builds on it without repeating it.
 
 ## Story

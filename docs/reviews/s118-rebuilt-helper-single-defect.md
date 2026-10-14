@@ -1,5 +1,7 @@
 # Review: s118-rebuilt-helper-single-defect
 
+[Story](../stories.md) · [Plan](../plans/s118-rebuilt-helper-single-defect.md) · [Verification](../verif/s118-rebuilt-helper-single-defect.md)
+
 Diff reviewed: `git diff main...story/s118-rebuilt-helper-single-defect`, in a context that did not write it. Findings rated critical, major or minor.
 
 Review status: complete

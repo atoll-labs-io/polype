@@ -3,6 +3,8 @@ validated: yes
 ---
 # Plan — s96-defect-and-routing-paths
 
+[Story](../stories.md) · [Research](../research/s96-defect-and-routing-paths.md)
+
 Branch `story/s96-defect-and-routing-paths`. Read `docs/research/s96-defect-and-routing-paths.md` first; this plan builds on it without repeating it. The structural choice (the marker line) is settled in `docs/decisions/ADR-0070-une-recherche-sans-cause-racine-porte-une-ligne-et-va-a-un-humain.md`, written by the planner under the number the driver reserved; commit it with the story.
 
 ## Story

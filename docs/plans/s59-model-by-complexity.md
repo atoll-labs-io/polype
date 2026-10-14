@@ -3,6 +3,8 @@ validated: yes
 ---
 # Plan — s59-model-by-complexity
 
+[Story](../stories.md) · [Research](../research/s59-model-by-complexity.md)
+
 Branch `story/s59-model-by-complexity`. Read `docs/research/s59-model-by-complexity.md` first; this plan builds on it without repeating it. Decisions: ADR-0032 (the routing), ADR-0036 (in-context plan and design stay on the session model).
 
 `tests/execute.test.sh` is in the story's `Owns` since `101cf2a` (on this lane's HEAD), so task 2 is inside `po-bounds`.

@@ -1,5 +1,7 @@
 # Review — s25-method-lint
 
+[Story](../stories.md) · [Plan](../plans/s25-method-lint.md) · [Verification](../verif/s25-method-lint.md)
+
 Diff reviewed: `git diff m3-flotte...story/s25-method-lint`, in a context that did not write it. Findings rated critical, major or minor.
 
 Review status: complete

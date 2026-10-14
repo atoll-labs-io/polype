@@ -1,5 +1,7 @@
 # Verification — s49-secret-scan
 
+[Story](../stories.md) · [Plan](../plans/s49-secret-scan.md)
+
 Tree: 561cc7dd55e3f08c256d5792577cb8ddc630c1cc
 
 | Check | Command | Outcome | Time (UTC) |

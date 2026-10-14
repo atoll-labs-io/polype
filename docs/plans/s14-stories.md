@@ -3,6 +3,8 @@ validated: yes
 ---
 # Plan — s14-stories
 
+[Story](../stories.md) · [Research](../research/s14-stories.md)
+
 Branch `story/s14-stories`. Read `docs/research/s14-stories.md` first; this plan builds on it without repeating it.
 
 ## Story

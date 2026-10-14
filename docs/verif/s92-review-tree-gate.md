@@ -1,5 +1,7 @@
 # Verification — s92-review-tree-gate
 
+[Story](../stories.md) · [Plan](../plans/s92-review-tree-gate.md)
+
 Tree: 501f0decfbec782a97cc373b40f83806ba5e78a9
 
 ## Checks

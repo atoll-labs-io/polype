@@ -4,6 +4,8 @@ validated: yes
 ---
 # Plan (short track) — s30-grouped-validation
 
+[Story](../stories.md)
+
 ## Verified facts
 
 - `method/commands/po-drive.md:73` already says, in one clause of the dispatch list: "under `human`, group the wave's plans into one AskUserQuestion before any implementer starts". It names the grouping but settles none of what the story asks: no answer set, no rule on which plans get `validated: yes`, nothing under `autonomous`.

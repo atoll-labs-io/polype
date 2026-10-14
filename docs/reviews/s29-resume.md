@@ -1,5 +1,7 @@
 # Review — s29-resume
 
+[Story](../stories.md) · [Plan](../plans/s29-resume.md) · [Verification](../verif/s29-resume.md)
+
 Diff reviewed: `git diff m3-flotte...story/s29-resume`, in a context that did not write it. Findings rated critical, major or minor.
 
 Review status: complete

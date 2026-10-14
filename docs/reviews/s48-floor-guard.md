@@ -1,5 +1,7 @@
 # Review: s48-floor-guard
 
+[Story](../stories.md) · [Plan](../plans/s48-floor-guard.md) · [Verification](../verif/s48-floor-guard.md)
+
 Diff reviewed: `git diff main...story/s48-floor-guard`, in a context that did not write it. Findings are rated critical, major or minor.
 
 Review status: complete

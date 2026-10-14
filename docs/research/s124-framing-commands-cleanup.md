@@ -1,5 +1,7 @@
 # Research — s124-framing-commands-cleanup
 
+[Story](../stories.md)
+
 ## Structuring facts
 - Defect story (`Corrige` line, `docs/stories.md:1928`): eleven `HOLDS` rows of `docs/reviews/triage-2026-10-14.md` point into its `Owns` (rows 112-115, 119, 141, 143, 160, 161, 164, 177). All eleven reproduce on the worktree as it stands; each root cause is one line of text, listed in `## Diagnostic`.
 - Wrong assumption: the rows' line numbers are stale. The fix-path "Next" is `method/commands/po-stories.md:62` (Finish) reached through `:56`; the Outcome overlap is `method/commands/po-stories-review.md:56-59`; `po-architect.md:72` is right.

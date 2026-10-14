@@ -3,6 +3,8 @@ validated: yes
 ---
 # Plan — s20-wiring
 
+[Story](../stories.md) · [Research](../research/s20-wiring.md)
+
 Branch `story/s20-wiring`. Read `docs/research/s20-wiring.md` first; this plan builds on it without repeating it.
 
 ## Story

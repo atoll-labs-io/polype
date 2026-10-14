@@ -3,6 +3,8 @@ validated: yes
 ---
 # Plan — s47-review-tree
 
+[Story](../stories.md) · [Research](../research/s47-review-tree.md)
+
 Branch `story/s47-review-tree`. Read `docs/research/s47-review-tree.md` first; this plan builds on it without repeating it.
 
 ## Story

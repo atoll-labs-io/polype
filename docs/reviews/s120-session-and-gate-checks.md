@@ -1,5 +1,7 @@
 # Review — s120-session-and-gate-checks
 
+[Story](../stories.md) · [Plan](../plans/s120-session-and-gate-checks.md) · [Verification](../verif/s120-session-and-gate-checks.md)
+
 Diff reviewed: `git diff main...story/s120-session-and-gate-checks` (merge base 9404c10; `main` has since gained 550fa73, which touches `docs/stories.md` only), in a context that did not write it. Findings rated critical, major or minor.
 
 Review status: complete

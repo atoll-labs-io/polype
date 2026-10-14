@@ -3,6 +3,8 @@ validated: yes
 ---
 # Plan — s50-implementer-bounds
 
+[Story](../stories.md) · [Research](../research/s50-implementer-bounds.md)
+
 Branch `story/s50-implementer-bounds`. Read `docs/research/s50-implementer-bounds.md` first; this plan builds on it without repeating it. ADR-0024 (written by this plan) settles how the script finds the story, its `Owns`, its input and how far it reads a Bash command.
 
 ## Story

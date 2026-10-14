@@ -1,5 +1,7 @@
 # Verification — s15-stories-review
 
+[Story](../stories.md) · [Plan](../plans/s15-stories-review.md)
+
 Commands copied from `AGENTS.local.md`. `Tree:` was taken after `git add -A`; this file and the plan's ticks sit in `docs/`, which the comparison leaves out.
 
 Tree: ad8321314f3c4de2060db9cdc986e2e293eccb0c

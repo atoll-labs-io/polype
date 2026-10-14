@@ -1,5 +1,7 @@
 # Verification — s119-rebuilt-helper-tests-tenant
 
+[Story](../stories.md) · [Plan](../plans/s119-rebuilt-helper-tests-tenant.md)
+
 Tree: c17e4cc48c7eb5977ad2ba687f9d2e4fe55eaf1a
 
 ## Checks

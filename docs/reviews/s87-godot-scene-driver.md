@@ -1,5 +1,7 @@
 # Review — s87-godot-scene-driver
 
+[Story](../stories.md) · [Plan](../plans/s87-godot-scene-driver.md) · [Verification](../verif/s87-godot-scene-driver.md)
+
 Diff reviewed: `git diff main...story/s87-godot-scene-driver`, in a context that did not write it. Findings rated critical, major or minor.
 
 Review status: complete

@@ -1,5 +1,7 @@
 # Review: s98-bounds-messages
 
+[Story](../stories.md) · [Plan](../plans/s98-bounds-messages.md) · [Verification](../verif/s98-bounds-messages.md)
+
 I reviewed `git diff main...story/s98-bounds-messages` in a context that did not write it. Findings are rated critical, major or minor.
 
 Review status: complete

@@ -3,6 +3,8 @@ validated: yes
 ---
 # Plan — s93-qa-contract-holds
 
+[Story](../stories.md) · [Research](../research/s93-qa-contract-holds.md)
+
 Branch `story/s93-qa-contract-holds`. Read `docs/research/s93-qa-contract-holds.md` first. This plan builds on it without repeating it. It is a defect story (`Corrige`), and the root causes are written at the top of the research.
 
 ## Story

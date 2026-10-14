@@ -1,5 +1,7 @@
 # Research — s121-framing-realign-and-orchestrator-log
 
+[Story](../stories.md)
+
 ## Structuring facts
 - **Root cause 1 (s110 major):** the root's fast-forward in `**Base.**` sits inside the `Merged →` bullet (`method/commands/po-setup.md:71`). That bullet is reached only when `origin/framing/<slug>` exists for **this** command's slug (`:66`) and is proven merged (`:67-69`). A landing whose own slug has no remote branch takes `<base>` = `origin/<Target branch>` at `:66` and never touches the root. Yet the `human` bullet promises "the next landing of any framing command realigns the root as **Base** says" (`:85`). Each command names its own slug (`:61`), so a merge of `framing/architect` is never seen by a `/po-stories` landing.
 - **Root cause 2 (s109 minors):** `## The decisions log` of `method/commands/po-orchestrator.md:84` lists two kinds of lone decision only (plans approved under `autonomous`, fix runs). `AGENTS.md:79` and `po-drive.md:153` list more. Its timing (`:88`) names "shipped or the run stopped" only, while the finish (`:92`) treats "Pull request ready: <url>." as a third outcome. It lacks the `local` + `human` "Not now" caveat that `po-drive.md:155` carries.

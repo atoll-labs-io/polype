@@ -3,6 +3,8 @@ validated: yes
 ---
 # Plan — s52-qa-wiring
 
+[Story](../stories.md) · [Research](../research/s52-qa-wiring.md)
+
 Branch `story/s52-qa-wiring`. Read `docs/research/s52-qa-wiring.md` first; this plan builds on it without repeating it.
 
 Track: full — the story is rated 3, above `Flow threshold: 2`; none of the five full-track signals is present (no migration, screen, authorization, API contract or dependency). The research's blocking question (who commits `docs/qa/<id>/`) was settled by the story revision 9ab575a: `/po-qa` gets Bash for that one commit, and `tests/qa.test.sh` joined `Owns`. ADR-0029 records the choice and the options turned down. Plan validated autonomously: no human reviewed it.

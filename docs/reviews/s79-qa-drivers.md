@@ -1,5 +1,7 @@
 # Review: s79-qa-drivers
 
+[Story](../stories.md) · [Plan](../plans/s79-qa-drivers.md) · [Verification](../verif/s79-qa-drivers.md)
+
 Reviewed tree: e661b87faecab13b1b36868fcc2aeb439e1e20d5
 Fix loop: 0
 Scope: `git diff main...story/s79-qa-drivers` (commit 9ac38da)

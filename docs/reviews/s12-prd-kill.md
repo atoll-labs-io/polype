@@ -1,5 +1,7 @@
 # Review — s12-prd-kill
 
+[Story](../stories.md) · [Plan](../plans/s12-prd-kill.md) · [Verification](../verif/s12-prd-kill.md)
+
 Diff reviewed: `git diff m2-cadrage...story/s12-prd-kill`, in a context that did not write it. Findings rated critical, major or minor.
 
 Review status: complete

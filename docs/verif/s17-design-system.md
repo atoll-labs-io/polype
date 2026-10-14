@@ -1,5 +1,7 @@
 # Verification — s17-design-system
 
+[Story](../stories.md) · [Plan](../plans/s17-design-system.md)
+
 Tree: 9cb84c2e21e47dcd698f01418a9b7a95b55a69e9
 
 | Check | Command | Outcome | Time (UTC) |

@@ -1,5 +1,7 @@
 # Research — s59-model-by-complexity
 
+[Story](../stories.md)
+
 ## Structuring facts
 - **False assumption, corrected — Owns was incomplete.** Moving the implementer to `model: inherit` breaks `tests/execute.test.sh:34`, which asserts the exact line `model: opus`; `po-bounds` lets the implementer write only `docs/` and the committed `Owns` of its story (`method/hooks/po-bounds.sh:4-6`, `owns_line` reads `HEAD:docs/stories.md`). Commit `101cf2a` added `tests/execute.test.sh` to the `Owns` line (`docs/stories.md:904`), and this lane's HEAD is that commit.
 - **False assumption — not every listed command launches a planner or designer.** Only `/po-drive` dispatches `subagent_type: planner` and `designer` (`method/commands/po-drive.md:91-92`). `/po-orchestrator` writes research, design and plan in its own context (`method/commands/po-orchestrator.md:43-52`), `/po-flow` writes research and plan in its own (`method/commands/po-flow.md:53-61`), and `/po-design` dispatches no agent at all. No command can choose its own context's model: settled by ADR-0036.

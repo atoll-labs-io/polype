@@ -1,5 +1,7 @@
 # Review — s127-hooks-installer-docs-cleanup
 
+[Story](../stories.md) · [Plan](../plans/s127-hooks-installer-docs-cleanup.md) · [Verification](../verif/s127-hooks-installer-docs-cleanup.md)
+
 Diff reviewed: `git diff main...story/s127-hooks-installer-docs-cleanup` (merge base 553700b, s124; `main` has since moved to fc8caf4 with s126, and none of s126's paths overlap this diff). The review ran in a context that did not write the code. Findings are rated critical, major or minor.
 
 Review status: complete

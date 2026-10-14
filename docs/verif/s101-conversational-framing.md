@@ -1,5 +1,7 @@
 # Verification — s101-conversational-framing
 
+[Story](../stories.md) · [Plan](../plans/s101-conversational-framing.md)
+
 Tree: a585d80daaaba5a4787c24b4c4942d0f9c49d2dd
 
 ## Checks

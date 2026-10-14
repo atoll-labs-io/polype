@@ -1,5 +1,7 @@
 # Review: s59-model-by-complexity
 
+[Story](../stories.md) · [Plan](../plans/s59-model-by-complexity.md) · [Verification](../verif/s59-model-by-complexity.md)
+
 Diff reviewed: `git diff main...story/s59-model-by-complexity`, read in a context that did not write it. Findings are rated critical, major or minor.
 
 Review status: complete

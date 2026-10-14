@@ -1,5 +1,7 @@
 # Review — s23-stories-review-nongoals
 
+[Story](../stories.md) · [Plan](../plans/s23-stories-review-nongoals.md) · [Verification](../verif/s23-stories-review-nongoals.md)
+
 Diff reviewed: `git diff m3-flotte...story/s23-stories-review-nongoals`, in a context that did not write it. Findings rated critical, major or minor.
 
 Review status: complete

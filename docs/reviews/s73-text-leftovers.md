@@ -1,5 +1,7 @@
 # Review — s73-text-leftovers
 
+[Story](../stories.md) · [Plan](../plans/s73-text-leftovers.md) · [Verification](../verif/s73-text-leftovers.md)
+
 Diff reviewed: `git diff main...story/s73-text-leftovers` (one commit, af1f9cf). I did not write this code. Findings are graded critical, major or minor.
 
 Review status: complete

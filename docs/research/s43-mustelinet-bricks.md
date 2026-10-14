@@ -1,5 +1,7 @@
 # Research — s43-mustelinet-bricks
 
+[Story](../stories.md)
+
 ## Structuring facts
 - The only source on mustelinet is `docs/references/mustelinet.md:1-11` (tenant doc read 2026-09-18): VMs, block volumes, networks, floating IPs, security groups, managed Kubernetes via Terraform; **no** managed database or object storage; publication on HTTP 80 / HTTPS 443 only, through an SNI-routing edge where the app presents its own certificate (`:7`); Kubernetes section of the doc unpublished, custom domains undocumented (`:9`); missing capabilities are asked for, not worked around (`:10`). Anything a note claims beyond these lines is an assumption and must be written as one.
 - Outbound SMTP, volume snapshots and any off-site backup target are **not documented** anywhere in the repo. The story asks each note for "ses sauvegardes" and for email: the notes must say these are unverified and to be asked of the host, not state them as facts.

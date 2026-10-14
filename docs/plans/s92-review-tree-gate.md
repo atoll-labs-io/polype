@@ -4,6 +4,8 @@ validated: yes
 ---
 # Plan (short track) — s92-review-tree-gate
 
+[Story](../stories.md)
+
 Written by the planner on the short track (`Story track: auto`, complexity 2 ≤ `Flow threshold` 2). This file stands in for both research and plan: there is no `docs/research/s92-review-tree-gate.md`. Built on the story as revised by `83b446d`. Decision recorded in ADR-0056 (`docs/decisions/ADR-0056-le-hash-d-une-gate-est-lu-dans-le-bloc-de-son-dernier-verdict.md`). Validated autonomously (`Plan validation: autonomous`); no human reviewed it.
 
 ## Verified facts

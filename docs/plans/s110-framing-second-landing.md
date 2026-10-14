@@ -3,6 +3,8 @@ validated: yes
 ---
 # Plan — s110-framing-second-landing
 
+[Story](../stories.md) · [Research](../research/s110-framing-second-landing.md)
+
 Branch `story/s110-framing-second-landing`. Read `docs/research/s110-framing-second-landing.md` first; this plan builds on it without repeating it.
 
 ## Story

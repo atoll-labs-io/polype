@@ -1,5 +1,7 @@
 # Research — s37-global-install
 
+[Story](../stories.md)
+
 ## Structuring facts
 - `bin/polype:22` résout la méthode par `method="$(cd "$(dirname "$0")/../method" && pwd)"` : si l'installation globale copie `bin/` **et** `method/` sous `~/.claude/polype/`, alors `~/.claude/polype/bin/polype init <projet>` trouve sa charge utile sans variable ni chemin en dur.
 - `bin/polype:27-42` (`parse_project`) exige un répertoire de projet et sort en 2 sans lui : `install --global` n'a pas de projet, donc l'analyse des arguments doit se dédoubler avant toute autre chose.

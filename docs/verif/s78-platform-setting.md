@@ -1,5 +1,7 @@
 # Verification — s78-platform-setting
 
+[Story](../stories.md) · [Plan](../plans/s78-platform-setting.md)
+
 Tree: b2999f9d9c71fc38a9ff3e41653d783a572ec57f
 
 ## Checks

@@ -1,5 +1,7 @@
 # Review: s20-wiring
 
+[Story](../stories.md) · [Plan](../plans/s20-wiring.md) · [Verification](../verif/s20-wiring.md)
+
 Diff reviewed: `git diff m2-cadrage...story/s20-wiring` (commits baf3952 and 77b1005). I did not write this code. Findings are rated critical, major or minor.
 
 Review status: complete

@@ -1,5 +1,7 @@
 # Review — s32-fleet-consistency
 
+[Story](../stories.md) · [Plan](../plans/s32-fleet-consistency.md) · [Verification](../verif/s32-fleet-consistency.md)
+
 Diff reviewed: `git diff m3-flotte...story/s32-fleet-consistency`, in a context that did not write it. Findings rated critical, major or minor.
 
 Review status: complete

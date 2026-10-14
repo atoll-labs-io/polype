@@ -1,5 +1,7 @@
 # Research — s15-stories-review
 
+[Story](../stories.md)
+
 ## Structuring facts
 - `po-help` must list every command: `tests/pilot.test.sh:38-46` fails when `method/commands/po-stories-review.md` exists without `/po-stories-review` in `method/commands/po-help.md`. Outside Owns; s12–s14 each added one line there (`method/commands/po-help.md:13-15`). s15 needs the same one-line exception, on top of the `po-research.md` sentence the story already allows.
 - Killer SaaS has files with the very same names (`stories-reviewer.md`, `ks-stories-review.md`, `skills/stories-review`, `templates/stories-review-checklist.md`) and its sources are present locally, so `tests/overlap.test.sh` runs for real: every new file must be written from the French description of C06 (`docs/parite-killer-saas.md:41`), never from those sources.
