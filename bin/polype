@@ -9,7 +9,8 @@
 # $CLAUDE_CONFIG_DIR), and the payload — bin/ and method/ — under ~/.claude/polype/, so that
 # ~/.claude/polype/bin/polype finds its own method through ../method. In a project, templates and
 # the gate land in .polype/, AGENTS.md is regenerated from the method's rules followed by the
-# project's AGENTS.local.md, which is only read, except to append the notes moved out of a CLAUDE.md.
+# project's AGENTS.local.md, which is only read, except to append the notes moved out of a CLAUDE.md
+# or a hand-written AGENTS.md.
 #
 # State files describe an install. Three sit next to each other: manifest (what was laid down),
 # checksums (what it contained) and version, in .polype/ for a project, in ~/.claude/polype/ for
@@ -31,14 +32,15 @@ base="$(cd "$(dirname "$self")/.." && pwd)"
 method="$base/method"
 home="${CLAUDE_CONFIG_DIR:-$HOME/.claude}"
 marker='<!-- Assembled by Polype.'
-project="" hooks=no global=no mode=project
+project="" hooks=no global=no mode=project set_aside=no
 root="" state_dir="" local_sums="" prune_mindepth=0
 PAIRS=() PRUNE_DIRS=() SHIPPED_LINES=()
 
 usage() {
   cat <<'USAGE'
-usage: polype <install|update|check|remove> (--global | <project-dir>) [--hooks]
-       polype init <project-dir> [--hooks]
+usage: polype <install|update> (--global | <project-dir>) [--hooks] [--set-aside]
+       polype init <project-dir> [--hooks] [--set-aside]
+       polype <check|remove> (--global | <project-dir>)
        polype help
 
   --global              lay commands, agents and skills down in ~/.claude (CLAUDE_CONFIG_DIR
@@ -47,6 +49,8 @@ usage: polype <install|update|check|remove> (--global | <project-dir>) [--hooks]
   init <project-dir>    activate a project served by a global install: templates, gate,
                         AGENTS.md, .gitignore — no copy of the commands
   --hooks               point core.hooksPath at .polype/hooks (projects only)
+  --set-aside           move each file Polype did not lay down to <path>.before-polype instead of
+                        stopping; remove puts it back
 USAGE
 }
 
@@ -60,6 +64,7 @@ parse_target() {
         [ "$allow_global" = yes ] || { echo "polype: init takes a project directory, not --global" >&2; die_usage; }
         global=yes ;;
       --hooks) hooks=yes ;;
+      --set-aside) set_aside=yes ;;
       -*) echo "polype: unknown option $arg" >&2; die_usage ;;
       *) project="$arg" ;;
     esac
@@ -162,12 +167,94 @@ lay_down() {
   mv -f "$target.polype-next" "$target"
 }
 
-# A hand-written AGENTS.md is kept aside rather than silently replaced.
-assemble_agents_md() {
-  if [ -f "$project/AGENTS.md" ] && ! head -n 1 "$project/AGENTS.md" | grep -qF "$marker"; then
-    cp "$project/AGENTS.md" "$project/AGENTS.md.before-polype"
-    echo "polype: existing AGENTS.md saved as AGENTS.md.before-polype" >&2
+# A collision is a shipped destination the old manifest does not know and whose content differs
+# from the shipped file: the person's own file, which only the person may decide to move (ADR-0088).
+# A symlink is one whatever it points to: laying a file over it would drop the person's link.
+# Every check runs before the first write, so a stop leaves the target exactly as it was.
+refuse_collisions() {
+  declare -A KNOWN=()
+  local line src dest t old collisions=()
+  if [ -f "$manifest" ]; then
+    while IFS= read -r old; do KNOWN["$old"]=1; done < "$manifest"
   fi
+  for line in "${SHIPPED_LINES[@]}"; do
+    src="${line%%$'\t'*}" dest="${line#*$'\t'}" t="$root/$dest"
+    [ -z "${KNOWN[$dest]-}" ] || continue
+    if [ -L "$t" ] || { [ -e "$t" ] && [ "$(sum_of "$t")" != "$(sum_of "$src")" ]; }; then
+      collisions+=("$dest")
+    fi
+  done
+  # Without AGENTS.local.md, keeping AGENTS.md aside would overwrite a different older copy.
+  local aside="$project/AGENTS.md.before-polype"
+  if [ "$mode" != global ] && hand_written_agents_md && [ ! -f "$project/AGENTS.local.md" ] \
+      && { [ -L "$aside" ] || { [ -e "$aside" ] && [ "$(sum_of "$aside")" != "$(sum_of "$project/AGENTS.md")" ]; }; }; then
+    echo "polype: a hand-written AGENTS.md and a different AGENTS.md.before-polype both exist in $project, and no AGENTS.local.md to move them into; nothing written" >&2
+    echo "polype: run /po-setup first to create AGENTS.local.md, then rerun; --set-aside does not apply to AGENTS.md" >&2
+    exit 1
+  fi
+  [ ${#collisions[@]} -gt 0 ] || return 0
+  if [ "$set_aside" = no ]; then
+    for dest in "${collisions[@]}"; do
+      echo "polype: not laid down by Polype, left untouched: $root/$dest" >&2
+    done
+    echo "polype: nothing written; rerun with --set-aside to move each one to <path>.before-polype" >&2
+    exit 1
+  fi
+  local taken=no
+  for dest in "${collisions[@]}"; do
+    t="$root/$dest.before-polype"
+    if [ -e "$t" ] || [ -L "$t" ]; then
+      echo "polype: $t already exists; nothing set aside, nothing written" >&2
+      taken=yes
+    fi
+  done
+  [ "$taken" = no ] || exit 1
+  for dest in "${collisions[@]}"; do
+    mv "$root/$dest" "$root/$dest.before-polype"
+    echo "polype: set aside: $root/$dest -> $root/$dest.before-polype" >&2
+  done
+}
+
+# A laid-down file goes, and the person's file it had set aside comes back in its place.
+drop_laid_file() {
+  local dest="$1"
+  rm -f "$root/$dest"
+  if [ -e "$root/$dest.before-polype" ] || [ -L "$root/$dest.before-polype" ]; then
+    mv "$root/$dest.before-polype" "$root/$dest"
+    echo "polype: put back: $root/$dest" >&2
+  fi
+}
+
+hand_written_agents_md() {
+  [ -f "$project/AGENTS.md" ] && ! head -n 1 "$project/AGENTS.md" | grep -qF "$marker"
+}
+
+# A hand-written AGENTS.md joins the settings as a CLAUDE.md does (ADR-0086, ADR-0088). Without an
+# AGENTS.local.md it waits as AGENTS.md.before-polype, and the first run that finds one absorbs it.
+absorb_agents_md() {
+  local aside="$project/AGENTS.md.before-polype" sources=()
+  [ -f "$aside" ] && sources+=("$aside")
+  if hand_written_agents_md && { [ ! -f "$aside" ] || [ "$(sum_of "$project/AGENTS.md")" != "$(sum_of "$aside")" ]; }; then
+    sources+=("$project/AGENTS.md")
+  fi
+  [ ${#sources[@]} -gt 0 ] || return 0
+  if [ -f "$project/AGENTS.local.md" ]; then
+    {
+      cat "$project/AGENTS.local.md"
+      [ -z "$(tail -c 1 "$project/AGENTS.local.md")" ] || printf '\n'
+      printf '\n## Notes moved from AGENTS.md\n\n'
+      cat "${sources[@]}"
+    } > "$project/AGENTS.local.md.polype-next"
+    mv -f "$project/AGENTS.local.md.polype-next" "$project/AGENTS.local.md"
+    rm -f "$aside"
+    echo "polype: AGENTS.md moved into AGENTS.local.md under ## Notes moved from AGENTS.md" >&2
+  elif hand_written_agents_md; then
+    mv "$project/AGENTS.md" "$aside"
+    echo "polype: AGENTS.md kept as AGENTS.md.before-polype: no AGENTS.local.md to move it into; run /po-setup, then polype update ." >&2
+  fi
+}
+
+assemble_agents_md() {
   # Assembled aside: a redirect straight onto AGENTS.md truncates it before the first read,
   # so a missing method would leave the project with an empty file.
   {
@@ -343,6 +430,7 @@ unwire_session_hook() {
 wire_the_project() {
   [ "$mode" = global ] && return 0
   absorb_claude_md
+  absorb_agents_md
   assemble_agents_md
   ignore_worktrees_and_env
   ignore_local_sums
@@ -419,6 +507,7 @@ done_message() {
 
 cmd_install() {
   collect_shipped
+  refuse_collisions
   mkdir -p "$root" "$state_dir"
 
   local line src dest old
@@ -428,7 +517,7 @@ cmd_install() {
   # its replacement is ready, so a global install never removes the payload it is reading.
   if [ -f "$manifest" ]; then
     while IFS= read -r old; do
-      [ -n "${SHIPPED[$old]-}" ] || rm -f "$root/$old"
+      [ -n "${SHIPPED[$old]-}" ] || drop_laid_file "$old"
     done < "$manifest"
   fi
 
@@ -457,6 +546,7 @@ cmd_init() {
 cmd_update() {
   if [ ! -f "$manifest" ]; then cmd_install; return; fi
   collect_shipped
+  refuse_collisions
   load_checksums
   local line src dest old
   declare -A SHIPPED=()
@@ -467,7 +557,7 @@ cmd_update() {
 
   local ghosts=0
   while IFS= read -r old; do
-    [ -n "${SHIPPED[$old]-}" ] || { rm -f "$root/$old"; ghosts=$((ghosts + 1)); }
+    [ -n "${SHIPPED[$old]-}" ] || { drop_laid_file "$old"; ghosts=$((ghosts + 1)); }
   done < "$manifest"
 
   : > "$manifest.next"
@@ -558,12 +648,30 @@ unwire_the_project() {
 
 cmd_remove() {
   require_install
-  local path
-  while IFS= read -r path; do rm -f "$root/$path"; done < "$manifest"
+  local path held=() hold="$root/.polype-restore.$$"
+  while IFS= read -r path; do
+    # A file set aside under the payload directory would be put back, then lost with it: it waits
+    # outside until the directory is gone.
+    if [ "$mode" = global ] && [ "${path#polype/}" != "$path" ] \
+        && { [ -e "$root/$path.before-polype" ] || [ -L "$root/$path.before-polype" ]; }; then
+      rm -f "$root/$path"
+      mkdir -p "$(dirname "$hold/$path")"
+      mv "$root/$path.before-polype" "$hold/$path"
+      held+=("$path")
+    else
+      drop_laid_file "$path"
+    fi
+  done < "$manifest"
   rm -f "$manifest" "$checksums" "$version_file"
   if [ -n "$local_sums" ]; then rm -f "$local_sums"; fi
   # The payload lives there too, and nothing else does.
   if [ "$mode" = global ]; then rm -rf "$state_dir"; else unwire_session_hook; fi
+  for path in ${held[@]+"${held[@]}"}; do
+    mkdir -p "$(dirname "$root/$path")"
+    mv "$hold/$path" "$root/$path"
+    echo "polype: put back: $root/$path" >&2
+  done
+  if [ ${#held[@]} -gt 0 ]; then rm -rf "$hold"; fi
   prune_empty_dirs
   unwire_the_project
 
