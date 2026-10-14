@@ -40,6 +40,90 @@ Trois gates mécaniques bornent la traversée : pas de code sans plan marqué va
 
 `/po-drive` ouvre une lane par story prête et les fait avancer en même temps, chacune dans son worktree. Deux limites gardent le parallélisme honnête : les ships restent sériels, dans l'ordre où les revues sont passées, et la ligne `Owns` d'une story borne les chemins que sa lane peut toucher — deux stories qui partagent un chemin ne tournent jamais ensemble. `/po-drive status` donne le même état sans rien lancer.
 
+## Prérequis
+
+- **Claude Code**, qui fait tourner les commandes, les subagents et les hooks.
+- **git** : chaque story vit dans son worktree, et toute la trace du travail est en git.
+- **bash 4.2 ou plus récent** : l'installeur et le hook de session s'arrêtent en le disant sur une
+  version plus ancienne. Sur macOS, `/bin/bash` est en 3.2 : `brew install bash`, ouvrir un nouveau
+  shell, puis vérifier avec `bash --version`. Rien d'autre que bash n'est promis sur macOS : les
+  scripts supposent les outils GNU, et `find`, `sed` ou `readlink` BSD peuvent s'y comporter autrement.
+- **jq** : il fusionne le hook `SessionStart` dans `.claude/settings.json`, et sans lui les hooks des
+  bornes d'`implementer`, de `qa` et de `reviewer` refusent tout appel, donc aucune story n'avance.
+- **gh**, connecté (`gh auth login`), pour un projet dont la forge est GitHub : `/po-ship` y livre
+  chaque story par une pull request.
+
+## Démarrage rapide
+
+D'abord, récupérer Polype :
+
+```sh
+git clone https://github.com/atoll-labs-io/polype.git ~/src/polype
+```
+
+Ton `~/.claude/` porte déjà tes propres agents ou skills ? Arrête-toi ici et essaie d'abord sans rien
+poser de global : fais un clone jetable de ton projet, `git clone ~/mon-projet ~/essai`, puis lance
+`~/src/polype/bin/polype install ~/essai` : tout est posé dans ce seul dépôt, rien dans
+`~/.claude/`, et `~/src/polype/bin/polype remove ~/essai` le reprend. Une collision avec un de tes
+fichiers arrête la pose avant toute écriture (voir
+[ce que Polype fait de ta configuration](#ce-que-polype-fait-de-ta-configuration)).
+
+Puis installer Polype pour tous ses projets, le mettre sur le `PATH` et activer un dépôt :
+
+```sh
+~/src/polype/bin/polype install --global
+mkdir -p ~/.local/bin
+ln -sf "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/polype/bin/polype" ~/.local/bin/polype
+export PATH="$HOME/.local/bin:$PATH"   # à mettre aussi dans le profil du shell
+cd ~/mon-projet                        # ton dépôt git
+polype init .
+```
+
+Puis, dans une session Claude Code ouverte dans ce dépôt, le cadrage une fois, et la flotte :
+
+```text
+/po-setup
+/po-brief            (ou /po-prd pour remplacer ou adapter un SaaS existant)
+/po-stories
+/po-stories-review
+/po-architect
+/po-design-system
+/po-drive
+```
+
+`/po-setup` relance l'installeur une fois les réglages écrits, si bien que l'`AGENTS.md` du projet
+porte ces réglages.
+
+### Mettre à jour
+
+```sh
+git -C ~/src/polype pull
+~/src/polype/bin/polype update --global
+cd ~/mon-projet
+polype init .
+```
+
+Un projet activé par `init` se rafraîchit par `polype init .`, jamais par `polype update .` : sur un
+tel projet, `update` y poserait aussi les commandes, les subagents et les skills.
+
+## Ce que Polype fait de ta configuration
+
+- **Un fichier du même nom qu'un des siens** — un agent `reviewer.md`, une skill, dans `~/.claude/`
+  ou dans le `.claude/` d'un projet — arrête la pose avant toute écriture, et Polype le nomme.
+  Relancée avec `--set-aside`, la pose déplace chacun en `<chemin>.before-polype` ; `polype remove`
+  le remet à sa place.
+- **Un `AGENTS.md` écrit à la main** va à la fin d'`AGENTS.local.md`, sous
+  `## Notes moved from AGENTS.md`. Tant que `/po-setup` n'a pas créé `AGENTS.local.md`, il attend
+  en `AGENTS.md.before-polype`.
+- **Un `CLAUDE.md` ou un `CLAUDE.local.md`** suit le réglage `Project CLAUDE file` : `absorbed`
+  verse leur contenu dans `AGENTS.local.md` puis les supprime ; `kept` les garde et met
+  `@AGENTS.md` en tête du `CLAUDE.md` ; sans la ligne, Polype n'y touche pas et le dit.
+- **Le poids** : les règles de Polype font environ 20 Ko, et elles sont chargées à chaque session,
+  suivies des réglages du projet.
+- **Pour essayer sans risque**, avant tout `--global` : `~/src/polype/bin/polype install <clone>`
+  sur un clone jetable pose tout dans ce seul dépôt, et `~/src/polype/bin/polype remove <clone>` le
+  reprend (voir le démarrage rapide).
+
 ## Installation
 
 `bin/polype` pose la méthode, la rafraîchit, l'ausculte et la retire, sans jamais toucher aux réglages ni aux documents d'un projet.

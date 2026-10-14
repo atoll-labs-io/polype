@@ -1,14 +1,17 @@
 # Installer Polype
 
-`bin/polype` pose la méthode, la rafraîchit, l'ausculte et la retire. Il ne touche jamais aux
-réglages d'un projet (`AGENTS.local.md`), ni à ses documents, ni aux fichiers qu'on a ajoutés
-soi-même à côté des siens.
+`bin/polype` pose la méthode, la rafraîchit, l'ausculte et la retire. Il ne réécrit jamais les
+réglages d'un projet (`AGENTS.local.md`), sauf pour y ajouter des notes déplacées, ni ses documents.
+Un fichier à soi qui porte le nom d'un des siens l'arrête avant toute écriture : il ne le déplace
+qu'avec `--set-aside` (voir « Les collisions »).
 
 Deux poses, deux rôles. La pose **globale** met les commandes, les subagents et les skills dans
 `~/.claude/`, donc dans tous les projets à la fois. La pose **projet** met dans le dépôt ce qui lui
-appartient : les templates, le gate, `AGENTS.md`, `.gitignore`. Le projet ne garde ni `CLAUDE.md`
+appartient : les templates, le gate, `AGENTS.md`, `.gitignore`. Avec
+`Project CLAUDE file: absorbed`, le projet ne garde ni `CLAUDE.md`
 ni `CLAUDE.local.md` : Claude Code ne lit `AGENTS.md` que tant qu'aucun de ces deux fichiers
-n'existe, et l'installeur absorbe ceux qu'il trouve (ADR-0086).
+n'existe, et l'installeur absorbe ceux qu'il trouve (ADR-0086). Avec `kept`, il les garde et met
+`@AGENTS.md` en tête du `CLAUDE.md` pour que les règles soient lues aussi (ADR-0089).
 
 ```
 polype install --global                pose commandes, subagents, skills et charge utile dans ~/.claude
@@ -50,7 +53,7 @@ cette copie-là qu'on lance au quotidien, indépendamment du dépôt cloné — 
 `PATH`, à quoi un lien symbolique répond :
 
 ```
-ln -s ~/.claude/polype/bin/polype ~/.local/bin/polype
+ln -sf "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/polype/bin/polype" ~/.local/bin/polype
 ```
 
 L'installeur suit les liens symboliques pour retrouver sa méthode : lancé par `~/.local/bin/polype`,
@@ -59,7 +62,8 @@ il travaille avec la charge utile qui se trouve à côté du script pointé, jam
 La pose globale n'écrit ni `AGENTS.md`, ni `.gitignore`, et ne touche pas à `core.hooksPath` : ces
 trois-là appartiennent à un projet. Elle ne retire jamais un fichier qu'elle
 n'a pas posé — une commande personnelle dans `~/.claude/commands/` survit à `remove --global` — et
-elle ne supprime pas `~/.claude` lui-même.
+elle ne supprime pas `~/.claude` lui-même. Un agent, une commande ou une skill à soi qui porte le
+nom d'un des siens l'arrête avant toute écriture, comme dans un projet (voir « Les collisions »).
 
 ## Activer un projet
 
@@ -183,17 +187,26 @@ empreintes locales ; la charge utile se repose sur elle-même sans se détruire.
 
 En plus des copies, `init` comme `install <projet>` :
 - réécrit `AGENTS.md` = les règles de la méthode, puis `---`, puis l'`AGENTS.local.md` du projet ;
-  un `AGENTS.md` écrit à la main est d'abord sauvegardé en `AGENTS.md.before-polype` ;
-- absorbe, avant d'assembler `AGENTS.md`, le `CLAUDE.md` et le `CLAUDE.local.md` de la racine du
-  projet (ADR-0086) : leur contenu, sans la ligne `@AGENTS.md`, va à la fin d'`AGENTS.local.md` sous
+  un `AGENTS.md` écrit à la main va d'abord à la fin d'`AGENTS.local.md`, sous
+  `## Notes moved from AGENTS.md`, quel que soit `Project CLAUDE file` (ADR-0088). Sans
+  `AGENTS.local.md`, il attend en `AGENTS.md.before-polype`, et la première pose qui trouve un
+  `AGENTS.local.md` l'y absorbe ;
+- traite le `CLAUDE.md` et le `CLAUDE.local.md` de la racine selon `Project CLAUDE file` (ADR-0089).
+  Avec `absorbed`, la valeur du template, il les absorbe avant d'assembler `AGENTS.md` (ADR-0086) :
+  leur contenu, sans la ligne `@AGENTS.md`, va à la fin d'`AGENTS.local.md` sous
   le titre `## Notes moved from CLAUDE.md`, puis le fichier est supprimé et l'installeur le dit sur
   `stderr`. Un `CLAUDE.local.md`, même privé et ignoré par git, est déplacé lui aussi dans
   `AGENTS.local.md`, qui est commité, puis dans `AGENTS.md` : c'est la décision du propriétaire
   consignée dans `docs/decisions-log.md`. Un fichier qui ne contenait que l'import est supprimé sans
-  rien ajouter. Sans `AGENTS.local.md`, un fichier qui contient autre chose est laissé tel quel,
-  l'installeur le dit et la pose continue : lancer `/po-setup`, puis `polype update .`. Le
-  `CLAUDE.md` global de l'utilisateur (`~/.claude/CLAUDE.md`) n'est jamais touché ; tant qu'un
-  `CLAUDE.md` existe dans le projet, Claude Code le lit **à la place** d'`AGENTS.md` ;
+  rien ajouter. Avec `kept`, les deux fichiers restent : `@AGENTS.md` est mis en tête du
+  `CLAUDE.md`, créé s'il n'existe qu'un `CLAUDE.local.md`, et un `CLAUDE.md` lien symbolique est
+  laissé tel quel, signalé sur `stderr`. Sans la ligne, sans `AGENTS.local.md` ou avec une autre
+  valeur, l'installeur ne touche à aucun des deux, le dit sur `stderr` et la pose continue : lancer
+  `/po-setup`, puis reposer de la même façon, `polype init .` pour un projet activé par `init`
+  (jamais `polype update .`, qui y poserait les commandes), `polype update .` après un
+  `install <projet>`. Le `CLAUDE.md` global de l'utilisateur (`~/.claude/CLAUDE.md`) n'est jamais
+  touché ; tant qu'un `CLAUDE.md` sans `@AGENTS.md` existe dans le projet, Claude Code le lit
+  **à la place** d'`AGENTS.md` ;
 - ajoute au `.gitignore` la racine des worktrees (`Worktree root` lu dans `AGENTS.local.md`,
   `.worktrees/` par défaut) et `.env*`, une seule fois chacun ;
 - avec `--hooks`, pointe `core.hooksPath` sur `.polype/hooks` — et seulement si ce réglage est vide
@@ -209,6 +222,20 @@ En plus des copies, `init` comme `install <projet>` :
 
 Ces fichiers, `.claude/settings.json` compris, se commitent sur la branche cible pour que les
 worktrees de story en héritent.
+
+### Les collisions
+
+Une collision est un fichier que Polype s'apprête à poser, que son manifeste ne connaît pas et dont
+le contenu diffère du sien : le fichier de quelqu'un, par exemple un agent `reviewer.md` ou une
+skill écrits à la main. Un lien symbolique à cet endroit en est toujours une, où qu'il pointe.
+Toutes sont cherchées avant la première écriture : la pose s'arrête en **1**, nomme chacune sur
+`stderr` et ne change rien (ADR-0088).
+
+Relancée avec `--set-aside`, la pose déplace chaque collision en `<chemin>.before-polype`, puis pose
+les siens. Si un `<chemin>.before-polype` existe déjà, rien n'est déplacé et rien n'est écrit. La
+règle vaut à l'identique dans `~/.claude/` pour la pose globale et dans `.claude/` ou `.polype/`
+pour un projet. `remove` remet chaque fichier mis de côté à sa place. Un `AGENTS.md` écrit à la main
+n'est pas une collision : il est absorbé, comme le dit la liste ci-dessus.
 
 ## Les fichiers d'état
 

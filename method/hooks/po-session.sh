@@ -11,6 +11,10 @@ top="$(git -C "$dir" rev-parse --show-toplevel 2>/dev/null)" || exit 0
 top="$(cd "$top" 2>/dev/null && pwd -P)" || exit 0
 [ -f "$top/AGENTS.local.md" ] || [ -f "$top/.polype/version" ] || exit 0
 case "$(git -C "$top" rev-parse --abbrev-ref HEAD 2>/dev/null)" in story/*) exit 0 ;; esac
+if [ "${BASH_VERSINFO[0]}" -lt 4 ] || { [ "${BASH_VERSINFO[0]}" -eq 4 ] && [ "${BASH_VERSINFO[1]}" -lt 2 ]; }; then
+  echo "po-session: bash ${BASH_VERSINFO[0]}.${BASH_VERSINFO[1]} found, bash 4.2 or newer needed; project state not read (on macOS: brew install bash)"
+  exit 0
+fi
 
 local_md="$top/AGENTS.local.md"
 id_re='s[0-9]+-[a-z0-9-]+'
