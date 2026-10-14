@@ -2061,3 +2061,18 @@ Les trois stories touchent l'installeur, ses hooks ou sa documentation : elles p
 - [ ] `install_doc_tells_the_truth` — `docs/installation.md` décrit les collisions et `--set-aside`, l'absorption d'un `AGENTS.md` et le réglage `Project CLAUDE file` ; il ne dit plus que l'installeur ne touche jamais aux fichiers qu'on a ajoutés soi-même, ni qu'il absorbe tout `CLAUDE.md` sans condition.
 
 **Notes pour l'agent** : il n'y a pas de bash 3 sur cette machine, et `BASH_VERSINFO` est en lecture seule ; le test atteint la garde par un contrôle statique (elle précède toute construction de bash 4) et en lançant la garde, extraite, avec une version simulée, sans couture ajoutée au code livré pour le seul test. Le comportement sous macOS au-delà de bash (`find`, `sed`, `readlink` BSD) n'est pas promis ; le README le dit. Deux tests que la story ne possède pas lisent `docs/installation.md` : `tests/docs-and-eval-cleanup.test.sh` y tient la phrase « ceux qu'il trouve (ADR-0086) », à garder en y ajoutant la condition du réglage, et `tests/hooks-installer-docs-cleanup.test.sh` y refuse les lignes de prose de plus de 100 caractères.
+
+### s133-any-harness-docs — Polype se présente pour tout harness, Claude Code d'abord
+**En tant que** personne qui utilise un autre agent que Claude Code **je veux** que la documentation dise que Polype vise tout agent ou harness, lequel est pris en charge aujourd'hui, lequel vient ensuite, et comment demander le mien **afin de** savoir tout de suite si je peux l'utiliser, sans croire à une prise en charge qui n'existe pas.
+
+- **Complexité** : 2
+- **Dépend de** : s132-readme-onboarding
+- **Surface** : —
+- **Owns** : `README.md`, `docs/installation.md`, `method/commands/po-help.md`, `.github/ISSUE_TEMPLATE/`, `tests/any-harness-docs.test.sh`
+
+**Critères d'acceptation**
+- [ ] `docs_name_any_harness` — le README (accroche comprise), `docs/installation.md` et `/po-help` disent que Polype vise tout agent ou harness : pris en charge aujourd'hui, Claude Code ; prévu ensuite, Codex (ADR-0005) ; pour un autre, ouvrir une issue. Aucune phrase ne présente Polype comme réservé à Claude Code, ni n'annonce une prise en charge qui n'existe pas. Un test le tient.
+- [ ] `portable_and_specific_parts_are_named` — le README dit en quelques lignes ce qui sert déjà tout harness (`AGENTS.md`, le standard `SKILL.md`, les gates en scripts shell et hooks git) et ce qui demande Claude Code aujourd'hui (les subagents, les hooks `PreToolUse` et `SessionStart`, la pose dans `~/.claude/`).
+- [ ] `harness_issue_template_exists` — `.github/ISSUE_TEMPLATE/` porte un modèle « prise en charge d'un harness » (nom de l'outil, version, ce qu'il sait faire : sous-agents, hooks, lecture d'`AGENTS.md`), et le README y renvoie par un lien qui existe.
+
+**Notes pour l'agent** : cadrée le 2026-10-14 à la demande du porteur (« c'est pour Claude Code et tous les autres types d'agent/harness, le demander en issue si pas disponible »). Ne rien promettre au-delà de ce que le code fait : le portage Codex lui-même est hors de cette story. Les phrases de `docs/installation.md` qui décrivent un comportement de Claude Code (lecture d'`AGENTS.md` et de `CLAUDE.md`, `CLAUDE_CONFIG_DIR`, dialogue de confiance) restent : elles sont justes et propres à cet outil. Les tests qui citent le README et `docs/installation.md` mot pour mot (voir la recherche de s132) gardent leurs phrases ; lignes de prose de `docs/installation.md` sous 100 caractères.
