@@ -80,11 +80,24 @@ parse_target() {
   else
     [ -n "$project" ] || die_usage
     [ -d "$project" ] || { echo "polype: no such directory: $project" >&2; exit 2; }
+    [ "$command" != update ] || mode="$(recorded_mode "$project/.polype")"
     target_is_a_project
   fi
   manifest="$state_dir/manifest"
   checksums="$state_dir/checksums"
   version_file="$state_dir/version"
+  mode_file="$state_dir/mode"
+}
+
+# Only update reads it: an explicit `install <project>` must stay able to turn an init project
+# into a full install. Without the mode file, a manifest with no command copies means init.
+recorded_mode() {
+  local recorded=""
+  [ -f "$1/mode" ] && recorded="$(head -n1 "$1/mode")"
+  case "$recorded" in
+    init|project) echo "$recorded" ;;
+    *) if [ -f "$1/manifest" ] && ! grep -q '^\.claude/commands/' "$1/manifest"; then echo init; else echo project; fi ;;
+  esac
 }
 
 target_is_the_user_home() {
@@ -504,6 +517,7 @@ wire_the_project() {
 }
 
 stamp_version() { printf '%s\n' "$POLYPE_VERSION" > "$version_file"; }
+stamp_mode() { [ "$mode" = global ] || printf '%s\n' "$mode" > "$mode_file"; }
 
 # RECORDED[path] = the checksum the installer wrote down for that file. The local sums are read
 # last so that they win over .claude/ lines an older .polype/checksums may still hold.
@@ -597,6 +611,7 @@ cmd_install() {
   mv "$manifest.next" "$manifest"
   finish_sums
   stamp_version
+  stamp_mode
   prune_empty_dirs
   wire_the_project
   done_message
@@ -646,6 +661,7 @@ cmd_update() {
   mv "$manifest.next" "$manifest"
   finish_sums
   stamp_version
+  stamp_mode
   prune_empty_dirs
   wire_the_project
 
@@ -726,7 +742,7 @@ cmd_remove() {
       drop_laid_file "$path"
     fi
   done < "$manifest"
-  rm -f "$manifest" "$checksums" "$version_file"
+  rm -f "$manifest" "$checksums" "$version_file" "$mode_file"
   if [ -n "$local_sums" ]; then rm -f "$local_sums"; fi
   # The payload lives there too, and nothing else does.
   if [ "$mode" = global ]; then rm -rf "$state_dir"; else unwire_session_hook; fi
