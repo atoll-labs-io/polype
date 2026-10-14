@@ -1906,3 +1906,71 @@ Objectif : fermer la dernière dette connue de Polype : le majeur de s110, les t
 - [ ] `first_update_migrates` — un projet installé avant cette story, sans fichier local, est migré au premier `update` : les copies qui correspondent à `.polype/checksums` comptent comme intactes, le fichier local est écrit, et l'installeur le dit.
 
 **Notes pour l'agent** : option A, choisie par le porteur le 2026-10-14 ; option écartée : reconnaître toute version déjà publiée de la méthode (plus lourd, demande l'historique). La pose globale (`~/.claude/`) n'est pas concernée, puisqu'elle n'est pas dans un dépôt. `docs/installation.md` décrit le nouveau fichier.
+
+## M9 quinquies — La dette à zéro
+
+Objectif : fermer les 42 constats de revue encore vrais sur `main` au 2026-10-14. Le tri des 147 constats laissés par les revues de s66 à s123 est dans `docs/reviews/triage-2026-10-14.md`, avec pour chacun le fichier et la ligne qui le montrent. Cadré le 2026-10-14 avec le porteur (« on finit à 100 % »). Aucune gate de Law 3 ne change de sens.
+
+Écartés du jalon, et dits tels dans le tri :
+- les compromis déjà acceptés : `po-eval` qui compte une revue complète citant un `blocked`, l'angle mort de `scenarios.md`, `GIT_DIR` entre guillemets (ADR-0052), les refus plus fréquents du réalignement de s121 ;
+- les preuves figées des stories livrées : plans et records de s83, s105, s107, s110, recherche de s113, et le corps de l'ADR-0081, acceptée ;
+- les 30 s de l'enregistreur du pilote de simulation, qui ne se mesurent qu'avec ROS ;
+- le `source <(sed …)` inoffensif de `tests/review-tree-gate.test.sh`.
+
+Chaque story ferme, dans les fichiers qu'elle possède, toutes les lignes `HOLDS` du tri qui y pointent. Un critère est tenu quand le constat ne se reproduit plus sur le code livré et que, pour un constat de test qui ne mordait pas, retirer la règle fait échouer un test.
+
+### s124-framing-commands-cleanup — Les commandes de cadrage disent juste
+**En tant que** porteur de projet **je veux** que les commandes de cadrage ne se contredisent plus et que leurs règles soient tenues par des tests **afin que** le cadrage d'un nouveau projet suive un seul chemin clair.
+
+- **Complexité** : 2
+- **Dépend de** : aucune
+- **Surface** : —
+- **Corrige** : les lignes `HOLDS` du tri qui pointent vers les fichiers de son `Owns` (s101, s102, s106, s110, s115)
+- **Owns** : `method/commands/po-stories.md`, `method/commands/po-stories-review.md`, `method/templates/prd.md`, `method/commands/po-setup.md`, `method/commands/po-architect.md`, `tests/framing-second-landing.test.sh`, `tests/conversational-framing.test.sh`, `tests/framing-through-pr.test.sh`, `tests/framing-commands-cleanup.test.sh`
+
+**Critères d'acceptation**
+- [ ] `stories_paths_agree` — le chemin de correction de `/po-stories` annonce `/po-stories-review` comme étape suivante, une story écartée relance « Before writing » sur les autres, et un résultat bloqué de `/po-stories-review` ne correspond plus qu'à une seule sortie ; `templates/prd.md` ne demande plus de relire tout le document.
+- [ ] `setup_landing_holds` — `/po-setup` lit la forge une fois `Target branch` connue, dit ce qui se passe quand `git merge --ff-only framing/<slug>` est refusé en mode `local`, et la règle « never commits to `Target branch` directly and never pushes it » est tenue par un test.
+- [ ] `framing_wording_is_clean` — la clause « means not merged » est tenue par un test, le test d'ordre structurel de `test_root_realigns_after_a_merge` vérifie une vraie règle, la majuscule après deux-points n'existe plus pour un test, et « (ADR-0086) » est à l'intérieur de sa phrase dans `/po-setup` et `/po-architect`.
+
+### s125-ship-and-fleet-cleanup — Le ship et la flotte disent juste
+**En tant que** porteur de projet **je veux** que `/po-ship`, `/po-drive`, `/po-status` et les règles disent exactement ce qu'ils font et que leurs tests mordent **afin qu'**aucune lane ne dépende d'une phrase ambiguë.
+
+- **Complexité** : 2
+- **Dépend de** : aucune
+- **Surface** : —
+- **Corrige** : les lignes `HOLDS` du tri qui pointent vers les fichiers de son `Owns` (s96, s102, s104, s108, s112)
+- **Owns** : `method/commands/po-ship.md`, `method/commands/po-drive.md`, `method/AGENTS.md`, `method/commands/po-status.md`, `tests/ship-through-pr.test.sh`, `tests/ship-follows-forge.test.sh`, `tests/short-subject-shipped.test.sh`, `tests/escalation-contract.test.sh`, `tests/defect-and-routing-paths.test.sh`, `tests/ship-and-fleet-cleanup.test.sh`
+
+**Critères d'acceptation**
+- [ ] `ship_text_is_complete` — `/po-ship` dit ce qui se passe quand `origin/story/<id>` n'existe pas encore et vérifie aussi le message `<id>: <story title>` du commit repris ; un test tient Step 2 sur la valeur effective de `Ship confirmation` ; le critère `push_targets_only_the_story_ref` a un test de son nom.
+- [ ] `fleet_rules_agree` — l'ordre des ships (ordre des revues, ordre des merges humains) se lit sans contradiction dans `/po-drive` et `method/AGENTS.md` ; `Root cause: not found` est une ligne entière (`grep -x`, ADR-0070) dans `/po-drive` ; `/po-status` montre un plan qui attend un choix technique.
+- [ ] `fleet_tests_bite` — les tests de `escalation-contract`, `short-subject-shipped` et `defect-and-routing-paths` que le tri dit creux échouent quand on retire leur règle.
+
+### s126-plan-and-defect-paths-cleanup — Le plan et les chemins de défaut disent juste
+**En tant que** porteur de projet **je veux** que le plan, le planner, la recherche et l'orchestrateur décrivent les mêmes arrêts avec les mêmes mots, tenus par des tests **afin qu'**un défaut sans cause trouvée ou un choix technique arrête toujours la lane.
+
+- **Complexité** : 2
+- **Dépend de** : aucune
+- **Surface** : —
+- **Corrige** : les lignes `HOLDS` du tri qui pointent vers les fichiers de son `Owns` (s90, s96, s104, s111)
+- **Owns** : `method/commands/po-plan.md`, `method/commands/po-flow.md`, `method/agents/planner.md`, `method/commands/po-research.md`, `method/commands/po-orchestrator.md`, `method/templates/plan-flow.md`, `tests/tech-choice-backstop.test.sh`, `tests/diagnostic-skill.test.sh`, `tests/plan-and-defect-paths-cleanup.test.sh`
+
+**Critères d'acceptation**
+- [ ] `defect_stops_agree` — `/po-research` et `/po-orchestrator` placent `Root cause: not found` là où le skill `diagnostic` le met, `/po-plan` et le planner le lisent comme une ligne entière, et les trois arrêts que le tri dit non testés échouent quand on les retire.
+- [ ] `tech_choice_paths_agree` — `templates/plan-flow.md` ne dit plus qu'un plan court avec un signal ne doit pas exister, le repli « No number there » du planner répète la ligne d'attente, et la consigne « name that ADR in the plan » de `/po-flow` est tenue par un test.
+- [ ] `plan_tests_bite` — la garde de mutation de `tech-choice-backstop` et la clause `Fixes` du planner sont tenues par des tests qui échouent quand on retire la règle.
+
+### s127-hooks-installer-docs-cleanup — Les hooks, l'installeur et la documentation disent juste
+**En tant que** porteur de projet **je veux** que les hooks, l'installeur et la documentation ne gardent aucune trace d'un ancien fonctionnement **afin que** ce qui est écrit soit ce qui tourne.
+
+- **Complexité** : 3
+- **Dépend de** : aucune
+- **Surface** : —
+- **Corrige** : les lignes `HOLDS` du tri qui pointent vers les fichiers de son `Owns` (s68, s73, s92, s94, s99, s100, s103, s105, s106, s123)
+- **Owns** : `method/hooks/po-gate.sh`, `method/hooks/po-bounds.sh`, `method/templates/review.md`, `bin/polype`, `docs/installation.md`, `README.md`, `docs/decisions/ADR-0080-tout-arrive-sur-la-branche-cible-par-une-pr-en-fast-forward.md`, `method/skills/qa-drivers/scene.md`, `boilerplates/godot/profile.md`, `method/skills/testing-doctrine/SKILL.md`, `docs/parite-killer-saas.md`, `tests/distribution-wiring.test.sh`, `tests/throwaway-zone-holds.test.sh`, `tests/qa-evidence-set-aside.test.sh`, `tests/hooks-installer-docs-cleanup.test.sh`
+
+**Critères d'acceptation**
+- [ ] `hooks_say_what_they_do` — le commentaire de `po-gate` ne parle plus de squash, le scan de secrets du cadrage compare au `<base>` du commit construit, une puce de constat qui commence par `Ship allowed:` ne ferme plus un bloc de verdict (et `templates/review.md` le dit) ; le refus `core.worktree` de `po-bounds` dit « in a throwaway repo » et un test le tient.
+- [ ] `installer_and_docs_agree` — `remove` sans `jq` retire aussi l'entrée `SessionStart` ou le dit ; `docs/installation.md` cite `.claude/settings.json`, explique le passage de `Merge mode: local` à `pr` pour un projet qui a un remote, et respecte la largeur de ligne du fichier ; `README.md` ne parle plus de squash ; l'ADR-0080 porte `superseded-by` vers l'ADR-0081 (frontmatter seul).
+- [ ] `drivers_and_doctrine_read_right` — `scene.md` nomme la clé `application/run/main_scene`, le profil Godot ne fige plus `1920x1080` sans dire que c'est un défaut, la phrase de `testing-doctrine` sur `po-run` se lit d'un trait, la cellule H04 de la parité dit sa limite d'emblée et son test tient les trois fichiers cités, et la borne de 30 s de `/po-qa` est tenue par un test.
