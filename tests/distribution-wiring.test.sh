@@ -159,5 +159,11 @@ test_parity_h04_matches_the_model_rule() {
   ! grep -qF 'Identique' <<< "$cell" || fail 'H04 still says the models are identical'
   grep -qF 'fait' <<< "$status" || fail "H04 is not done: $status"
   grep -qF 'method/commands/po-execute.md' <<< "$status" || fail 'H04 does not name where the rule lives'
+  grep -qF 'method/commands/po-drive.md' <<< "$status" || fail 'H04 does not name po-drive.md'
+  grep -qF 'method/templates/agents-local.md' <<< "$status" || fail 'H04 does not name agents-local.md'
+  local limit strong
+  limit=$(awk '{print index(tolower($0), "hors flotte")}' <<< "$cell")
+  strong=$(awk '{print index($0, "`Model strong`")}' <<< "$cell")
+  [ "$limit" -gt 0 ] && [ "$limit" -lt "$strong" ] || fail 'H04 does not open with the out-of-fleet limit'
   ! grep -qF 'partiel' <<< "$status" || fail "H04 is still partial: $status"
 }

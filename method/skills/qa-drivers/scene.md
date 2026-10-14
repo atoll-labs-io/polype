@@ -23,7 +23,7 @@ When the walk ends, whatever its outcome, stop every process group the walk star
 Browser route: start `Dev` from the worktree in the background and read the origin it prints. It prints none, or nothing answers there → `QA status: blocked` with that reason. Stop that server when the walk ends.
 
 ## Exercising a criterion
-Each viewpoint line gives its scene, its position, its target, what it must show, and its framing, scale and light. A line that names no scene aims at the project's main scene — for Godot, the `run/main_scene` setting of `project.godot`. The framing sets the field of view; the resolution is 1920×1080 unless the line asks for another.
+Each viewpoint line gives its scene, its position, its target, what it must show, and its framing, scale and light. A line that names no scene aims at the project's main scene — for Godot, the `application/run/main_scene` setting of `project.godot`. The framing sets the field of view; the resolution is 1920×1080 unless the line asks for another.
 
 For each viewpoint, write a capture script under the temporary directory that loads the scene, adds one camera at the viewpoint and makes it current, waits until a frame has been rendered, then saves the image. For Godot, a `--script` file extends `SceneTree`, which has no `get_viewport()`: its viewport is `root`. Await `RenderingServer.frame_post_draw`, then call `root.get_texture().get_image().save_png()`, then `quit()` so the engine exits once its image is saved. Nothing else in the scene changes: no light, material or node is added, moved or removed apart from that camera.
 

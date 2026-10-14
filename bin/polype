@@ -314,6 +314,14 @@ wire_session_hook() {
 unwire_session_hook() {
   local settings="$project/.claude/settings.json"
   [ -f "$settings" ] || return 0
+  # remove has already deleted the script, so a hook left in place would run a missing file at every session.
+  if ! command -v jq >/dev/null 2>&1; then
+    if grep -qF .polype/hooks/po-session.sh "$settings"; then
+      echo "polype: jq not found; .claude/settings.json still runs .polype/hooks/po-session.sh at SessionStart," \
+        "which remove has just deleted: take that entry out by hand" >&2
+    fi
+    return 0
+  fi
   settings_file_is_usable "$settings" "the SessionStart hook was left in .claude/settings.json" || return 0
   jq -e '[.hooks.SessionStart[]?.hooks[]?.command? // empty | select(contains(".polype/hooks/po-session.sh"))] | length > 0' \
     "$settings" >/dev/null 2>&1 || return 0

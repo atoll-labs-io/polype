@@ -5,7 +5,7 @@ status: accepted
 date: 2026-10-13
 scope: framing
 supersedes: [ADR-0015]
-superseded-by: []
+superseded-by: [ADR-0081]
 ---
 
 # ADR-0080 — Tout arrive sur la branche cible par une PR, en fast-forward

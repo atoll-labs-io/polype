@@ -30,7 +30,7 @@ Une story traverse ces étapes, aucune sautée, aucune inversée :
 | Exécution | `/po-execute` | le code, ses tests, un relevé de vérification, un commit |
 | QA (story que `QA stage` envoie en QA) | `/po-qa` | la surface vérifiée avec son pilote, preuves dans `docs/qa/<id>/` |
 | Revue | `/po-review` | une relecture en contexte frais, avec un verdict |
-| Ship | `/po-ship` | un squash sur la branche cible |
+| Ship | `/po-ship` | un commit `<id>: <titre>` sur la branche cible, par une pull request |
 
 Trois gates mécaniques bornent la traversée : pas de code sans plan marqué validé, pas de revue qui s'appuie sur un relevé de vérification périmé, pas de ship sans verdict explicite. Un hook de pre-commit refuse, sur toutes les branches, un commit qui ajoute un secret — fichier d'environnement, clé privée ou jeton connu — et, sur une branche de story, un commit de code dont le plan n'est pas validé. Seul un défaut critique bloque le ship ; un majeur est tracé et repris plus tard.
 

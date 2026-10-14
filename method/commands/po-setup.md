@@ -76,7 +76,7 @@ Every framing command lands its commit this way: this one, `/po-brief`, `/po-prd
 
 **The commit, built beside the checkout** (as the settings commit of `/po-ship`):
 - Build a temporary index: `GIT_INDEX_FILE=<tmp> git read-tree <base>`, then `GIT_INDEX_FILE=<tmp> git add -- <paths>`.
-- When `core.hooksPath` is `.polype/hooks`, run `GIT_INDEX_FILE=<tmp> .polype/hooks/po-gate.sh pre-commit`; a refusal stops the landing, since `commit-tree` runs no hook and this is the only secret scan the commit gets.
+- When `core.hooksPath` is `.polype/hooks`, run `GIT_INDEX_FILE=<tmp> .polype/hooks/po-gate.sh pre-commit <base>`, so the scan reads exactly what the commit adds over `<base>`; a refusal stops the landing, since `commit-tree` runs no hook and this is the only secret scan the commit gets.
 - `GIT_INDEX_FILE=<tmp> git write-tree` prints `<tree>`; `git commit-tree <tree> -p <base> -m "<message>"` prints `<sha>`. Remove the temporary index.
 - Then `git add -- <paths>` in the root's own index: the root keeps these files uncommitted, and a later fast-forward of the root refuses untracked or modified copies of them unless they are staged.
 
