@@ -2134,3 +2134,42 @@ Objectif : qu'un projet activé avec `polype init` le reste à chaque `polype up
 - [ ] `session_hint_infers_init_without_mode` — sur un projet activé par `init` dont `.polype/mode` a été retiré (manifeste sans entrée `.claude/commands/`), `po-session` écrit pour un `CLAUDE.local.md` sous `Project CLAUDE file: absorbed` la ligne `… → polype init . moves it into AGENTS.local.md` ; sur une install complète sans `.polype/mode`, la ligne dit `polype update .`. Le test échoue quand la branche de déduction est désactivée.
 
 **Notes pour l'agent** : `test_hints_say_init` (`tests/update-keeps-mode.test.sh:98`) ne couvre qu'un projet qui a son fichier de mode ; s'en inspirer. Aucun changement de code attendu : si le test révèle un défaut de la branche, le rapport le dit et la story s'arrête pour la personne. Hors périmètre : les commentaires périmés (#95, #96) et l'écart de formulation (#97).
+
+## M14 — L'installeur ne perd rien de ce que la personne a modifié
+
+Objectif : qu'aucune commande de l'installeur ne supprime une copie que la personne a modifiée, et solder les constats mineurs laissés par s135 et s136. Décidé par le porteur le 2026-10-14 en cadrant les issues #89, #95, #96, #97 et #102 : une copie modifiée que le mode ou la version ne pose plus **reste en place** et devient un fichier de la personne, `remove` compris ; #97 est fermée sans story (écart assumé par le plan de s135, comportement livré). Constat sur `main` (058d6a2) : `drop_laid_file` (`bin/polype:236`) supprime sans comparer de somme, et `cmd_install` (`bin/polype:597`), les ghosts d'`update` (`bin/polype:639`) et `cmd_remove` (`bin/polype:742`) y passent ; `cmd_install` n'appelle pas `load_checksums`, si bien que `has_drifted` (`bin/polype:560`) n'y a rien à comparer.
+
+### s137-modified-copy-survives-drop — Une copie modifiée que Polype ne pose plus reste en place
+**En tant que** porteur d'un projet où j'ai retouché une copie posée par Polype **je veux** que `init`, `install`, `update` et `remove` la laissent en place quand ils ne la posent plus, et me le disent **afin de** ne jamais perdre une retouche sans le savoir.
+
+- **Complexité** : 3
+- **Dépend de** : s136-session-hint-infers-init
+- **Surface** : command
+- **Corrige** : issue #89 (`Issue tracker: github`), et issue #96 (en-tête de `bin/polype` périmé), même fichier
+- **Owns** : `bin/polype`, `docs/installation.md`, `docs/decisions/ADR-0092-*`, `docs/decisions/ADR-0088-*`, `tests/drop-keeps-modified.test.sh`
+
+**Critères d'acceptation**
+- [ ] `init_keeps_a_modified_copy` — sur un projet posé par `polype install <projet>` dont une copie `.claude/commands/` a été modifiée, `polype init <projet>` laisse cette copie sur le disque octet pour octet, la retire du manifeste et des deux fichiers de sommes (`.polype/checksums`, `.claude/.polype-checksums`), écrit sur stderr `polype: modified, kept: <chemin>` ; les autres copies en trop, non modifiées, disparaissent comme avant et le manifeste revient à 23 fichiers.
+- [ ] `update_ghost_keeps_a_modified_copy` — une entrée du manifeste que la version ne livre plus et dont la copie a été modifiée reste sur le disque, sort du manifeste, est signalée par la même ligne et n'est pas comptée dans « removed » du message final ; une telle entrée non modifiée est supprimée et comptée comme avant.
+- [ ] `remove_keeps_a_modified_copy` — `polype remove <projet>` laisse en place une copie modifiée, le dit par la même ligne, et retire les autres comme avant.
+- [ ] `modified_copy_over_a_set_aside_file` — quand une copie modifiée a aussi un `<chemin>.before-polype` (fichier de la personne mis de côté par `--set-aside`), les deux restent tels quels et la ligne nomme les deux ; rien n'est écrasé. C'est le seul cas où le fichier mis de côté n'est pas remis en place : ADR-0092 remplace en partie ADR-0088 sur ce point, et seul le `superseded-by` de l'ADR-0088 change.
+- [ ] `kept_copy_becomes_the_persons` — une install suivante qui livre de nouveau ce chemin le traite comme un fichier que Polype n'a pas posé : elle s'arrête sur la collision (sortie 1, rien d'écrit) et `--set-aside` le met de côté, comme ADR-0088 le dit.
+- [ ] `header_lists_the_mode_file` — le commentaire d'en-tête de `bin/polype` compte `.polype/mode` parmi les fichiers d'état d'un projet (issue #96).
+- [ ] `adr_records_the_choice` — une ADR nouvelle dit qu'une copie modifiée que Polype ne pose plus reste en place et devient un fichier de la personne, avec les options écartées : la mettre de côté sous un nouveau suffixe (un fichier de plus à trier), arrêter la commande comme pour une collision (un `init` de réparation bloqué par une seule retouche), exempter `remove` (la retouche se perd au moment où l'on retire Polype). Elle nomme aussi deux limites : une copie sans somme enregistrée se supprime comme avant (cas d'un clone neuf, les sommes de `.claude/` vivant hors git depuis ADR-0087 : git garde alors la retouche), et la charge utile de `~/.claude/polype/` part entière avec son dossier au `remove` global, sans ligne « kept ». `docs/installation.md` le dit.
+
+**Notes pour l'agent** : « modifiée » a le sens de `has_drifted` : la somme enregistrée existe et diffère de celle du fichier ; une copie sans somme enregistrée se supprime comme avant. `cmd_install` et `cmd_remove` doivent charger les sommes avant leur boucle de retrait (ni l'un ni l'autre n'appelle `load_checksums` aujourd'hui ; `cmd_remove` efface les fichiers de sommes juste après, `bin/polype:745-746`) ; la protection vit dans le seul point de suppression, `drop_laid_file`. Au `remove` global, un fichier de la charge utile (sous `polype/`) n'est jamais déclaré gardé, puisque `rm -rf "$state_dir"` (`bin/polype:748`) l'emporte ; le chemin propre de la mise de côté (`bin/polype:733-741`) reste tel quel. Tests hors `Owns` qui figent `docs/installation.md` et gardent leurs phrases : `tests/docs-and-eval-cleanup.test.sh`, `tests/hooks-installer-docs-cleanup.test.sh` (pas de ligne de prose au-delà de 100 caractères). Ne renomme pas `recorded_mode` (`bin/polype:94`) : le commentaire de s138 y renvoie. Hors périmètre : le commentaire de `po-session` (#95) et le helper de test (#102), portés par s138.
+
+### s138-mode-hint-cleanup — Le commentaire de po-session et ses tests disent juste
+**En tant que** mainteneur de Polype **je veux** que le commentaire de `po-session` donne la vraie raison de son indication et que ses deux tests partagent leurs réglages **afin que** le prochain lecteur ne soit pas trompé et que les deux tests ne divergent pas.
+
+- **Complexité** : 1
+- **Dépend de** : s136-session-hint-infers-init
+- **Surface** : —
+- **Corrige** : issues #95 et #102 (`Issue tracker: github`), constats mineurs des revues de s135 et s136
+- **Owns** : `method/hooks/po-session.sh`, `tests/update-keeps-mode.test.sh`
+
+**Critères d'acceptation**
+- [ ] `session_comment_says_why` — le commentaire au-dessus du choix de l'indication (`method/hooks/po-session.sh:241`) ne dit plus qu'`update` poserait les commandes sur un projet init ; il dit que `polype init .` est la commande conseillée et celle qui répare un projet gonflé, et renvoie à la règle `recorded_mode` de l'installeur. Aucune ligne de code du hook ne change. Le test lit le commentaire : plus de « would lay the commands », `recorded_mode` présent.
+- [ ] `absorbed_settings_helper` — `test_hints_say_init` et `test_session_hint_infers_init_without_mode` écrivent leur `AGENTS.local.md` par un seul helper du fichier de test (par exemple `absorbed_settings`) ; les deux tests passent ; `test_session_hint_infers_init_without_mode` échoue toujours quand la branche de déduction de `po-session` est désactivée, et `test_hints_say_init` tient toujours le chemin du mode enregistré (`.polype/mode` à `init`).
+
+**Notes pour l'agent** : `recorded_mode` est la fonction de `bin/polype` que s137 ne renomme pas. Hors périmètre : `bin/polype` (s137).
