@@ -1,5 +1,7 @@
 # Research — s58-designer-browser
 
+[Story](../stories.md)
+
 ## Structuring facts
 - **False assumption of the story**: its notes say `tests/qa.test.sh` checks that no `mcp__`, `playwright` or `chrome` appears in `method/`. No test does: `grep -rniE "mcp__|playwright|chrome" tests/ method/` returns nothing. The rule is held only by prose today; this story adds the check (plan, task 3).
 - The designer restricts itself with `tools: Read, Write, Edit, Bash, Grep, Glob` (`method/agents/designer.md:4`) yet must open its mockup "with the browser tool the session has" (`method/agents/designer.md:33`). ADR-0026 recorded the gap as out of s51 (its `Neutral` consequence) and gave the QA agent the form to copy: no `tools:`, `disallowedTools:` (`method/agents/qa.md:4`).

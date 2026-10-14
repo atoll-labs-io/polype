@@ -1,5 +1,7 @@
 # Review — s103-project-lead
 
+[Story](../stories.md) · [Plan](../plans/s103-project-lead.md) · [Verification](../verif/s103-project-lead.md)
+
 Diff reviewed: `git diff main...story/s103-project-lead`, in a context that did not write it. Findings rated critical, major or minor.
 
 Review status: complete

@@ -1,5 +1,7 @@
 # Review: s71-bounds-heredoc-expansion
 
+[Story](../stories.md) · [Plan](../plans/s71-bounds-heredoc-expansion.md) · [Verification](../verif/s71-bounds-heredoc-expansion.md)
+
 Fix loop: 0
 Reviewed tree: 37da3ac7d09443cec99eaceeb5819b9915963a9b
 Branch: story/s71-bounds-heredoc-expansion (worktree /home/lecrabe/dev/atoll/polype/.worktrees/s71-bounds-heredoc-expansion), diff `git diff main...story/s71-bounds-heredoc-expansion`, one commit (291ffe0).

@@ -1,5 +1,7 @@
 # Review — s102-ship-follows-the-forge
 
+[Story](../stories.md) · [Plan](../plans/s102-ship-follows-the-forge.md) · [Verification](../verif/s102-ship-follows-the-forge.md)
+
 Reviewed tree: 1a5f711b2f85354c6e87ac903d6eb3c0279a45e8
 Fix loop: 0
 Review status: complete

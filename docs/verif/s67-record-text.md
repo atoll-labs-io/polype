@@ -1,5 +1,7 @@
 # Verification — s67-record-text
 
+[Story](../stories.md) · [Plan](../plans/s67-record-text.md)
+
 Tree: 9600fb684434e10534d18b906590ba23d579d942
 
 ## Checks

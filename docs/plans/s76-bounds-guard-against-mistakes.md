@@ -3,6 +3,8 @@ validated: yes
 ---
 # Plan — s76-bounds-guard-against-mistakes
 
+[Story](../stories.md) · [Research](../research/s76-bounds-guard-against-mistakes.md)
+
 Branch `story/s76-bounds-guard-against-mistakes`. Read `docs/research/s76-bounds-guard-against-mistakes.md` first. This plan builds on it and does not repeat it. ADR-0052 (`docs/decisions/ADR-0052-po-bounds-est-un-garde-fou-contre-les-erreurs.md`) is already written by the planner and settles every rule below. The implementer commits it with the code and does not rewrite its body.
 
 ## Story

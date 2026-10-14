@@ -3,6 +3,8 @@ validated: yes
 ---
 # Plan — s61-bounds-owns
 
+[Story](../stories.md) · [Research](../research/s61-bounds-owns.md)
+
 Branch `story/s61-bounds-owns`. Read `docs/research/s61-bounds-owns.md` first; this plan builds on it without repeating it. The structural choices are settled in `docs/decisions/ADR-0038-po-bounds-lit-les-owns-au-point-de-depart-de-la-story.md` (written by the planner, reserved number, outside `Owns` by Law 6); implement it as written.
 
 ## Story

@@ -1,5 +1,7 @@
 # Research — s13-brief-new
 
+[Story](../stories.md)
+
 ## Structuring facts
 - **False assumption (same as s12)**: the notes treat `docs/references/spec-interrogation.md` as the source. That file exists only in this repository; the installer copies `method/` alone (`bin/polype-dev-install:46`), so a target project never has it. The `interrogation` skill must carry the whole procedure itself, rewritten in English in our own words, with `docs/brief.md` replacing the vault path (`docs/references/spec-interrogation.md:83`).
 - `po-help` lists every command: `tests/pilot.test.sh:38-46` fails when `method/commands/po-brief.md` exists without `/po-brief` in `method/commands/po-help.md`. That file is outside Owns; s12 hit the same wall and added one line (`docs/plans/s12-prd-kill.md:25`). s13 needs the same one-line exception.

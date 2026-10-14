@@ -3,6 +3,8 @@ validated: yes
 ---
 # Plan — s121-framing-realign-and-orchestrator-log
 
+[Story](../stories.md) · [Research](../research/s121-framing-realign-and-orchestrator-log.md)
+
 Branch `story/s121-framing-realign-and-orchestrator-log`. Read `docs/research/s121-framing-realign-and-orchestrator-log.md` first. This plan builds on it without repeating it.
 
 ## Story

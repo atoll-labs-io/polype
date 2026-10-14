@@ -3,6 +3,8 @@ validated: yes
 ---
 # Plan — s107-forge-token-bound-to-host
 
+[Story](../stories.md) · [Research](../research/s107-forge-token-bound-to-host.md)
+
 Branch `story/s107-forge-token-bound-to-host`. Read `docs/research/s107-forge-token-bound-to-host.md` first; this plan builds on it without repeating it.
 
 **Waiting for the owner.** The research found the story's assumption false: `glab` (and probably `tea`) prefers a token from the environment over the one stored for the host, for every host. How to close that is a security choice the story does not settle, so it goes to the owner (ADR-0077). Options, ranked in the proposed `docs/decisions/ADR-0083-un-jeton-ne-part-que-vers-l-hote-qui-l-a-emis.md`:

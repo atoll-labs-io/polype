@@ -1,5 +1,7 @@
 # Review: s46-adr-directory
 
+[Story](../stories.md) · [Plan](../plans/s46-adr-directory.md) · [Verification](../verif/s46-adr-directory.md)
+
 Diff reviewed: `git diff m4-catalogue...story/s46-adr-directory` (one commit, 505681f), read in a context that did not write it. Findings are rated critical, major or minor.
 
 Review status: complete

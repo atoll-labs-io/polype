@@ -1,5 +1,7 @@
 # Research — s20-wiring
 
+[Story](../stories.md)
+
 ## Structuring facts
 - `help_lists_every_command` is already true: `method/commands/po-help.md:11-32` lists all 16 other commands (s11–s19 each added their line) and `every_command_listed_in_help` passes (`tests/pilot.test.sh:38-46`). The help only needs its wording aligned (orchestrator "enchaîne les cinq étapes", `:30`, ignores track and design).
 - `tests/pilot.test.sh:11-12` counts exactly two `## Stage .* — checkpoint` headings in the orchestrator. The design stage has its own approval (`method/commands/po-design.md:157-158`) but must not be headed `— checkpoint`, or that test breaks.

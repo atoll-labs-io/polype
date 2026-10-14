@@ -1,5 +1,7 @@
 # Verification — s68-docs-catch-up
 
+[Story](../stories.md) · [Plan](../plans/s68-docs-catch-up.md)
+
 Tree: 7258ff31a9f156ef0dad79f40b2ff3ede196a5e8
 
 ## Checks

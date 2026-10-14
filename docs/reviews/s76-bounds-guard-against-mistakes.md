@@ -1,5 +1,7 @@
 # Review: s76-bounds-guard-against-mistakes
 
+[Story](../stories.md) · [Plan](../plans/s76-bounds-guard-against-mistakes.md) · [Verification](../verif/s76-bounds-guard-against-mistakes.md)
+
 Reviewed tree: 861b7af31ff8dd2f541b46bb938bc9cc1f48af33
 Fix loop: 0
 Worktree: /home/lecrabe/dev/atoll/polype/.worktrees/s76-bounds-guard-against-mistakes

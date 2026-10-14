@@ -1,5 +1,7 @@
 # Review: s51-qa-agent
 
+[Story](../stories.md) · [Plan](../plans/s51-qa-agent.md) · [Verification](../verif/s51-qa-agent.md)
+
 Fix loop: 0
 Scope: `git diff main...story/s51-qa-agent`, which is one commit, d5c8e8c, touching 14 files.
 Worktree: /home/lecrabe/dev/atoll/polype/.worktrees/s51-qa-agent, on branch `story/s51-qa-agent`. It was clean before the review and is clean after it (`git diff --exit-code` and `git status --porcelain` both print nothing).

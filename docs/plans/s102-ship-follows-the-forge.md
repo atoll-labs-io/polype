@@ -3,6 +3,8 @@ validated: yes
 ---
 # Plan — s102-ship-follows-the-forge
 
+[Story](../stories.md) · [Research](../research/s102-ship-follows-the-forge.md)
+
 Branch `story/s102-ship-follows-the-forge`. Read `docs/research/s102-ship-follows-the-forge.md` first, then ADR-0075, ADR-0080, ADR-0081 and ADR-0079 (`docs/decisions/ADR-0079-le-ship-suit-la-forge-lue-par-son-api-et-un-choix-solo-ne-bouge-pas.md`, rewritten with the owner on 2026-10-13). This plan builds on them without repeating them.
 
 **Where this plan departs from the research.** The research predates the story's amendment and the owner's ADR-0079. Three of its statements no longer hold: a value with no suffix now reads `(forge)`, not `(chosen)`; the forge is GitHub, GitLab or Forgejo/Gitea read through its API, not GitHub alone; the rewritten line goes on a branch and a draft PR, never on `Target branch`. The story now depends on s105 (shipped, `d50dd0b`), which rewrote `po-ship.md` Step 2 and `method/AGENTS.md:115`: the line numbers below are those of `d50dd0b`, not the research's.

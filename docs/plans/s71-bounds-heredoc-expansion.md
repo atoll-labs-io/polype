@@ -3,6 +3,8 @@ validated: yes
 ---
 # Plan — s71-bounds-heredoc-expansion
 
+[Story](../stories.md) · [Research](../research/s71-bounds-heredoc-expansion.md)
+
 Branch `story/s71-bounds-heredoc-expansion`. Read `docs/research/s71-bounds-heredoc-expansion.md` first; this plan builds on it without repeating it.
 
 Validation: autonomous (`Plan validation: autonomous`), checked against each acceptance criterion below by the planner; no human reviewed it.

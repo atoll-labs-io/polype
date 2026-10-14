@@ -1,5 +1,7 @@
 # Verification — s120-session-and-gate-checks
 
+[Story](../stories.md) · [Plan](../plans/s120-session-and-gate-checks.md)
+
 Tree: 471472de786af1884d73442d4b8ae26a14415798
 
 ## Checks

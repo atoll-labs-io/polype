@@ -1,5 +1,7 @@
 # Research — s26-planner
 
+[Story](../stories.md)
+
 ## Structuring facts
 - No assumption of the story proved wrong; every piece it relies on exists.
 - `method/agents/` holds three subagents (`implementer.md`, `reviewer.md`, `stories-reviewer.md`); all share one shape: frontmatter `name/description/tools/model/skills`, then a body opening on `Reads settings:` — `method/agents/implementer.md:1-13`.

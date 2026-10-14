@@ -1,5 +1,7 @@
 # Research — s78-platform-setting
 
+[Story](../stories.md)
+
 ## Structuring facts
 - **Nuance on `polype_declares_its_platform`**: in a story worktree `bin/polype check .` exits 1 whatever the settings, because `.claude/` is untracked and so absent from the worktree (it lists 34 `missing: .claude/...` lines). The criterion can only mean "no `missing setting:` line", which is how `tests/leftovers.test.sh:20-27` already checks it. That test turns red the moment the template gains `Platform` and `AGENTS.local.md` does not.
 - `bin/po-lint` already requires every `## ` heading of the profile template (`bin/po-lint:222,229-231`). So adding `## Platform` to `method/templates/profile.md` is enough for the lint to demand the section. What the lint cannot see today is the platform *value*, and that value is what `/po-setup` will filter on.

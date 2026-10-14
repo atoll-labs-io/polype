@@ -3,6 +3,8 @@ validated: yes
 ---
 # Plan — s94-scene-and-simulation-drivers
 
+[Story](../stories.md) · [Research](../research/s94-scene-and-simulation-drivers.md)
+
 Branch `story/s94-scene-and-simulation-drivers`. Read `docs/research/s94-scene-and-simulation-drivers.md` first. This plan builds on it without repeating it, and each root cause cited here is shown there under `## Diagnostic`.
 
 Validated autonomously against the three acceptance criteria (`Plan validation: autonomous`): no human reviewed this plan.

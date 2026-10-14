@@ -3,6 +3,8 @@ validated: yes
 ---
 # Plan — s118-rebuilt-helper-single-defect
 
+[Story](../stories.md) · [Research](../research/s118-rebuilt-helper-single-defect.md)
+
 Branch `story/s118-rebuilt-helper-single-defect`. Read `docs/research/s118-rebuilt-helper-single-defect.md` first: this plan builds on it and does not repeat it. Defect story: the cause is `_owned()` copying `get()`'s owner-only scope (research, `## Structuring facts`). The fix moves the copy onto `list_for()`'s scope, which already holds the tenant.
 
 ## Story

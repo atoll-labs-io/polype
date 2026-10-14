@@ -1,5 +1,7 @@
 # Review — s112-short-subject-shipped
 
+[Story](../stories.md) · [Plan](../plans/s112-short-subject-shipped.md) · [Verification](../verif/s112-short-subject-shipped.md)
+
 Diff reviewed: `git diff main...story/s112-short-subject-shipped` (one commit, 2e39495), in a context that did not write it. Findings rated critical, major or minor.
 
 Review status: complete

@@ -1,5 +1,7 @@
 # Verification — s25-method-lint
 
+[Story](../stories.md) · [Plan](../plans/s25-method-lint.md)
+
 Tree: 33b0def2fc8bfaab714f3e805c00cefbb66012f8
 
 | Check | Command | Outcome | Time (UTC) |

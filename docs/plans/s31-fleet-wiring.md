@@ -4,6 +4,8 @@ validated: yes
 ---
 # Plan (short track) — s31-fleet-wiring
 
+[Story](../stories.md)
+
 Written by `/po-flow`. On the short track this one file stands in for both the research and the plan: there is no `docs/research/s31-fleet-wiring.md`.
 
 ## Verified facts

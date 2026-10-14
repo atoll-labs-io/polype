@@ -3,6 +3,8 @@ validated: yes
 ---
 # Plan — s35-fleet-design
 
+[Story](../stories.md) · [Research](../research/s35-fleet-design.md)
+
 Branch `story/s35-fleet-design`. Read `docs/research/s35-fleet-design.md` first; this plan builds on it without repeating it.
 
 ## Story

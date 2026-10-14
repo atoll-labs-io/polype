@@ -1,5 +1,7 @@
 # Review: s69-owns-overlap-globs
 
+[Story](../stories.md) · [Plan](../plans/s69-owns-overlap-globs.md) · [Verification](../verif/s69-owns-overlap-globs.md)
+
 Diff reviewed: `git diff main...story/s69-owns-overlap-globs`, by a context that did not write it. Findings are rated critical, major or minor.
 
 Review status: complete

@@ -1,5 +1,7 @@
 # Verification — s121-framing-realign-and-orchestrator-log
 
+[Story](../stories.md) · [Plan](../plans/s121-framing-realign-and-orchestrator-log.md)
+
 Tree: fc245f7be1d240d9e2f804a099437197994c74a2
 
 ## Checks

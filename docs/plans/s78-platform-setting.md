@@ -3,6 +3,8 @@ validated: yes
 ---
 # Plan — s78-platform-setting
 
+[Story](../stories.md) · [Research](../research/s78-platform-setting.md)
+
 Branch `story/s78-platform-setting`. Read `docs/research/s78-platform-setting.md` first; this plan builds on it without repeating it. The three details ADR-0054 leaves open are settled in `docs/decisions/ADR-0055-chaque-plateforme-admet-ses-surfaces.md`, which is written, uncommitted, and travels with this story:
 - how the list is written: commas, template value `web`;
 - which surfaces each platform admits;

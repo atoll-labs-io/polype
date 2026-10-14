@@ -1,5 +1,7 @@
 # Research — s12-prd-kill
 
+[Story](../stories.md)
+
 ## Structuring facts
 - **False assumption**: criterion `prd_challenges_the_angle_in_adapt_mode` says the probes are "tirées de `docs/references/spec-interrogation.md`". That file exists only in this repository (`docs/references/spec-interrogation.md:25-29`); the installer copies `method/` only (`bin/polype-dev-install:47`), so in a target project the path does not exist. The probes must be written into `po-prd.md` itself (adapted, in our own words), not read from that path at run time.
 - `/po-brief` does not exist yet (s13, `docs/stories.md:190`): `po-prd` can name it as the redirect for `new`, but nothing tests it exists.

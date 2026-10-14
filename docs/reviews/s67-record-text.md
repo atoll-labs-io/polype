@@ -1,5 +1,7 @@
 # Review: s67-record-text
 
+[Story](../stories.md) · [Plan](../plans/s67-record-text.md) · [Verification](../verif/s67-record-text.md)
+
 Reviewed tree: 6883246c8cee99fc1c089393deca596f79a884a0
 Fix loop: 0
 Scope: `git diff main...story/s67-record-text`

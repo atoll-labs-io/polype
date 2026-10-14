@@ -1,5 +1,7 @@
 # Verification — s36-installer
 
+[Story](../stories.md) · [Plan](../plans/s36-installer.md)
+
 Tree: 173becfd21eea782c8d8ecef036d4aac5015f767
 
 | Check | Command | Outcome | Time (UTC) |

@@ -3,6 +3,8 @@ validated: yes
 ---
 # Plan — s87-godot-scene-driver
 
+[Story](../stories.md) · [Research](../research/s87-godot-scene-driver.md)
+
 Validated autonomously (`Plan validation: autonomous`): no human reviewed it. Branch `story/s87-godot-scene-driver`. Read `docs/research/s87-godot-scene-driver.md` first; this plan builds on it without repeating it (`XT:`, `GD:` as defined there). The capture route and the starter are settled in `docs/decisions/ADR-0065-le-pilote-scene-rend-chaque-point-de-vue-sur-un-affichage-virtuel.md`, written by the planner, `accepted`, uncommitted: commit it with the code, never edit its body.
 
 ## Story

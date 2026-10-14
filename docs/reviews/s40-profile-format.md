@@ -1,5 +1,7 @@
 # Review — s40-profile-format
 
+[Story](../stories.md) · [Plan](../plans/s40-profile-format.md) · [Verification](../verif/s40-profile-format.md)
+
 Diff reviewed: `git diff m4-catalogue...story/s40-profile-format` (one commit, 2e026ce), read in a context that did not write it. Findings are rated critical, major or minor.
 
 Review status: complete

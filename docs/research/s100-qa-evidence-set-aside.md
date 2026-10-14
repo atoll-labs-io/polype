@@ -1,5 +1,7 @@
 # Research — s100-qa-evidence-set-aside
 
+[Story](../stories.md)
+
 ## Structuring facts
 - **Root cause (first QA blocks on its own evidence):** `method/agents/qa.md:49`, `method/skills/qa-drivers/scenarios.md:12`, `scene.md:21` and `simulation.md:21` set aside only "a path outside `docs/qa/<id>/`". When `docs/qa/` is not tracked yet (a project's first QA), `git status --porcelain` collapses the whole untracked folder into one line, `?? docs/qa/` — a parent of `docs/qa/<id>/`, not a path inside it — so a literal comparison ends `QA status: blocked` on the walk's own report. Input: any first QA. Proof: reproduced below (`## Diagnostic`).
 - **Root cause (untested consequences):** two clauses share their line with another `QA status: blocked`, so a same-line check finds `blocked` even when the clause is gone: `scenarios.md:14` (60-second bound, then the port sentence) and `qa.md:44` (missing driver file, then the zero-row rule). `tests/qa-contract-holds.test.sh:33` and `:21` only pin `within 60 seconds` and `No row matches`.

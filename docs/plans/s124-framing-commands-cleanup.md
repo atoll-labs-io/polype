@@ -3,6 +3,8 @@ validated: yes
 ---
 # Plan — s124-framing-commands-cleanup
 
+[Story](../stories.md) · [Research](../research/s124-framing-commands-cleanup.md)
+
 Branch `story/s124-framing-commands-cleanup`. Read `docs/research/s124-framing-commands-cleanup.md` first; this plan builds on it without repeating it. Full track: the story carries a `Corrige` line.
 
 ## Story

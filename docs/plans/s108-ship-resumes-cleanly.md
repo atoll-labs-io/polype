@@ -3,6 +3,8 @@ validated: yes
 ---
 # Plan — s108-ship-resumes-cleanly
 
+[Story](../stories.md) · [Research](../research/s108-ship-resumes-cleanly.md)
+
 Branch `story/s108-ship-resumes-cleanly`. Read `docs/research/s108-ship-resumes-cleanly.md` first; this plan builds on it without repeating it. Defect story (`Corrige` line): full track, root causes in the research's `## Structuring facts`.
 
 ## Story

@@ -1,5 +1,7 @@
 # Research — s123-local-copy-checksums
 
+[Story](../stories.md)
+
 ## Structuring facts
 - **Root cause.** `update` and `check` call `has_drifted` (`bin/polype:341-345`), which compares a copy against `RECORDED`, loaded from `$checksums` = `.polype/checksums` (`bin/polype:75`, `:334-339`). That file is committed, `.claude/` is not in Polype, pecten or nautile. A commit that refreshes `.polype/` therefore brings the sums of the *new* version while each checkout's `.claude/` still holds the *old* copies, so every changed copy reads as hand-modified. `update` then keeps it and writes the recorded (new) sum back (`bin/polype:422-426`), so the copy stays stuck at the old version for good. Reproduced below.
 - **False assumption: `.claude/` is ignored by git.** Not by the projects. Polype's `.gitignore:1-6` ignores only `.claude/worktrees/`. `.claude/` is ignored on this machine by the user's global excludes (`~/.config/git/ignore:7`, shown by `git check-ignore -v`). The installer even tells `install <project>` users to **commit** `.claude/` (`bin/polype:363`, `docs/installation.md:209`). So the fix must work both ways: an ignored `.claude/` (Polype, pecten, nautile: 0 tracked `.claude/` files, 42 manifest entries each) and a committed one. The story should say "`.claude/` is not committed in these checkouts", not "ignored by git".

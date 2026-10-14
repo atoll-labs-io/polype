@@ -1,5 +1,7 @@
 # Verification — s38-migration
 
+[Story](../stories.md) · [Plan](../plans/s38-migration.md)
+
 Tree: 7afbf380b772544eca56d6e3833cf407ee75ba0b
 
 | Check | Command | Outcome | Time (UTC) |

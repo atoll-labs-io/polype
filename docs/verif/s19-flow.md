@@ -1,5 +1,7 @@
 # Verification — s19-flow
 
+[Story](../stories.md) · [Plan](../plans/s19-flow.md)
+
 Commands are copied exactly from `AGENTS.local.md`. Order that produced `Tree:` — `git add -A`, then `git write-tree`.
 
 Tree: ae1b2bc999d5d64d78e88ebde6fe8392de358d53

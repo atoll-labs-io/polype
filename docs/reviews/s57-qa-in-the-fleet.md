@@ -1,5 +1,7 @@
 # Review: s57-qa-in-the-fleet
 
+[Story](../stories.md) · [Plan](../plans/s57-qa-in-the-fleet.md) · [Verification](../verif/s57-qa-in-the-fleet.md)
+
 Diff reviewed: `git diff main...story/s57-qa-in-the-fleet`, one commit (9c1609f), read by a context that did not write it. Findings are rated critical, major or minor.
 
 Review status: complete

@@ -1,5 +1,7 @@
 # Verification — s28-ownership
 
+[Story](../stories.md) · [Plan](../plans/s28-ownership.md)
+
 Tree: da30d9ac28cd1ace91018ede09cbbaee97f8f441
 
 | Check | Command | Outcome | Time (UTC) |

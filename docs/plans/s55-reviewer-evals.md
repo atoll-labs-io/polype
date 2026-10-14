@@ -3,6 +3,8 @@ validated: yes
 ---
 # Plan — s55-reviewer-evals
 
+[Story](../stories.md) · [Research](../research/s55-reviewer-evals.md)
+
 Branch `story/s55-reviewer-evals`. Read `docs/research/s55-reviewer-evals.md` first; this plan builds on it without repeating it.
 
 Track: full — the story is rated 4, above `Flow threshold: 2`. Of the five signals, none concerns the product: no migration, no screen, no API contract, no dependency added (`python3` is already a repository tool, `claude` is the runtime Polype assumes); "authorization" and "tenant" appear only as defects planted in throwaway fixtures. Structural choice recorded in `docs/decisions/ADR-0033-evals-du-reviewer-en-depot-jetable.md` (written with this plan, commit it with the code). Plan validated autonomously (`Plan validation: autonomous`), checked against each criterion: AC1 → tasks 1-2, AC2 → task 3, AC3 → task 4 grading, AC4 → task 4 confirmation and report plus the untouched `tests/run.sh`, AC5 → task 5; no human reviewed it.

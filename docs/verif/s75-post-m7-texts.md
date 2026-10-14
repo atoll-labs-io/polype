@@ -1,5 +1,7 @@
 # Verification — s75-post-m7-texts
 
+[Story](../stories.md) · [Plan](../plans/s75-post-m7-texts.md)
+
 Tree: 3f945afa27c152684434a98fe2de95f6fb8e8963
 
 ## Checks

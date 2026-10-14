@@ -3,6 +3,8 @@ validated: yes
 ---
 # Plan — s77-last-review-leftovers
 
+[Story](../stories.md) · [Research](../research/s77-last-review-leftovers.md)
+
 Branch `story/s77-last-review-leftovers`. Read `docs/research/s77-last-review-leftovers.md` first; this plan builds on it without repeating it. ADR-0053 (`docs/decisions/ADR-0053-dev-fd-1-et-2-valent-stdout-et-stderr.md`) is already written by the planner and settles the `/dev/fd` rule; the implementer commits it with the code and does not rewrite it.
 
 Track: full. The story is rated 2 (≤ `Flow threshold`), but `po-bounds` is the access policy of the subagents and AC1 widens what it allows: the "authorization scope" signal.

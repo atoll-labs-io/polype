@@ -1,5 +1,7 @@
 # Research — s127-hooks-installer-docs-cleanup
 
+[Story](../stories.md)
+
 ## Structuring facts
 - **Wrong assumption (AC 3):** "la borne de 30 s de `/po-qa`" lives in no `/po-qa` file: the phrase "wait at most 30 seconds of real time" is in the simulation driver, `method/skills/qa-drivers/simulation.md:30` (outside `Owns`, read only); the test to add pins it there, from `tests/qa-evidence-set-aside.test.sh` (owned).
 - **Wrong assumption (Corrige vs AC):** triage row 96 (s99, `git_env_word` forks once per word, `method/hooks/po-bounds.sh:696`, `:711`) is a `HOLDS` row in an owned file that no criterion names and the M9 quinquies intro (`docs/stories.md:1914-1918`) does not exclude. The `Corrige` line takes it in; the plan closes it.

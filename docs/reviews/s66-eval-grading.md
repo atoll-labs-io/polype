@@ -1,5 +1,7 @@
 # Review — s66-eval-grading
 
+[Story](../stories.md) · [Plan](../plans/s66-eval-grading.md) · [Verification](../verif/s66-eval-grading.md)
+
 Diff reviewed: `git diff main...story/s66-eval-grading`, by a reviewer that did not write it. Findings are rated critical, major or minor.
 
 Review status: complete

@@ -1,5 +1,7 @@
 # Review — s61-bounds-owns
 
+[Story](../stories.md) · [Plan](../plans/s61-bounds-owns.md) · [Verification](../verif/s61-bounds-owns.md)
+
 Diff reviewed: `git diff main...story/s61-bounds-owns`, in a context that did not write it. Findings rated critical, major or minor.
 
 Review status: complete

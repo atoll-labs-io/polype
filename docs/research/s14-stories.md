@@ -1,5 +1,7 @@
 # Research — s14-stories
 
+[Story](../stories.md)
+
 ## Structuring facts
 - `po-help` must list every command: `tests/pilot.test.sh:38-46` fails when `method/commands/po-stories.md` exists without `/po-stories` in `method/commands/po-help.md`. That file is outside Owns; s12 and s13 each added one line there (`method/commands/po-help.md:13-14`). s14 needs the same one-line exception.
 - The two sources are contracts written by earlier stories: `docs/prd.md` has frontmatter `mode: <replace | adapt>`, `status: draft|approved` and the sections `## Core loop`, `## Graveyard`, `## Angle` (`method/templates/prd.md:1-35`); `docs/brief.md` has `status: interviewing|approved` and `## Wedge & non-goals`, `## Premises`, `## Gap map` (`method/templates/brief.md:1-88`). `/po-prd` writes `approved` only after a full read (`method/commands/po-prd.md:52`), `/po-brief` only after its exit criteria (`method/commands/po-brief.md:33-41`).

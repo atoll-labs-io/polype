@@ -1,5 +1,7 @@
 # Research — s47-review-tree
 
+[Story](../stories.md)
+
 ## Structuring facts
 - **Assumption corrected (who writes the line):** `/po-review` cannot read a tree: it has no Bash (`method/commands/po-review.md:4-9`), and `tests/review.test.sh:38` pins `lacks_tool "$CMD" Bash`. The hash can only come from the `reviewer` subagent, which has Bash (`method/agents/reviewer.md:4`), and reaches the file because `/po-review` and `/po-drive` record its answer whole (`po-review.md:33`, `po-drive.md:110`).
 - `ship_allowed` reads only the last `Ship allowed:` line (`method/hooks/po-gate.sh:24-31`); `verif_current` already holds the tree comparison the story wants shared: `git diff --quiet "$tree" HEAD -- . ':(exclude)docs'` (`po-gate.sh:43`), after a 40-hex extraction (`:39`) and an existence check (`:41`).

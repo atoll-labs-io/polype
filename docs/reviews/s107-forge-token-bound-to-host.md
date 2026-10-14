@@ -1,5 +1,7 @@
 # Review — s107-forge-token-bound-to-host
 
+[Story](../stories.md) · [Plan](../plans/s107-forge-token-bound-to-host.md) · [Verification](../verif/s107-forge-token-bound-to-host.md)
+
 Diff reviewed: `git diff main...story/s107-forge-token-bound-to-host`, in a context that did not write it. Findings rated critical, major or minor.
 
 Review status: complete

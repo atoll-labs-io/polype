@@ -1,5 +1,7 @@
 # Review: s90-diagnostic-skill
 
+[Story](../stories.md) · [Plan](../plans/s90-diagnostic-skill.md) · [Verification](../verif/s90-diagnostic-skill.md)
+
 I reviewed the diff `git diff main...story/s90-diagnostic-skill` in a context that did not write it. Findings are rated critical, major or minor.
 
 Review status: complete

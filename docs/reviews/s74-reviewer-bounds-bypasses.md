@@ -1,5 +1,7 @@
 # Review: s74-reviewer-bounds-bypasses
 
+[Story](../stories.md) · [Plan](../plans/s74-reviewer-bounds-bypasses.md) · [Verification](../verif/s74-reviewer-bounds-bypasses.md)
+
 Reviewed tree: 0706c1dae28182a50cbe44d48cb0fd6e7f7bc5d1
 Fix loop: 0
 Worktree: /home/lecrabe/dev/atoll/polype/.worktrees/s74-reviewer-bounds-bypasses (branch `story/s74-reviewer-bounds-bypasses`, commit cf3a9de)

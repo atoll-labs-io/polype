@@ -3,6 +3,8 @@ validated: yes
 ---
 # Plan — s41-capability-bricks
 
+[Story](../stories.md) · [Research](../research/s41-capability-bricks.md)
+
 Branch `story/s41-capability-bricks`. Read `docs/research/s41-capability-bricks.md` first; this plan builds on it without repeating it.
 
 Validated autonomously (`Plan validation: autonomous`): no human reviewed this plan.

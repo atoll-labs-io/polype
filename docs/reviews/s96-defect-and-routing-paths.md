@@ -1,5 +1,7 @@
 # Review: s96-defect-and-routing-paths
 
+[Story](../stories.md) · [Plan](../plans/s96-defect-and-routing-paths.md) · [Verification](../verif/s96-defect-and-routing-paths.md)
+
 Reviewed tree: 903f7b2f4e47a40aaab5fe7283fb4bc218e7c41e
 Fix loop: 0
 Worktree: /home/lecrabe/dev/atoll/polype/.worktrees/s96-defect-and-routing-paths (branch `story/s96-defect-and-routing-paths`, one commit, aca0428)

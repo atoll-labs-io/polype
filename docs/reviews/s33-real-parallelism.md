@@ -1,5 +1,7 @@
 # Review — s33-real-parallelism
 
+[Story](../stories.md) · [Plan](../plans/s33-real-parallelism.md) · [Verification](../verif/s33-real-parallelism.md)
+
 Diff reviewed: `git diff m3-flotte...story/s33-real-parallelism`, in a context that did not write it. Findings rated critical, major or minor.
 
 Review status: complete

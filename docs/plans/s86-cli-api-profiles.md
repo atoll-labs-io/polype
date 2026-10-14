@@ -4,6 +4,8 @@ validated: yes
 ---
 # Plan (short track) — s86-cli-api-profiles
 
+[Story](../stories.md)
+
 Short track: this file stands in for the research. Validated autonomously (`Plan validation: autonomous`): no human reviewed it. The choice of the two starters is settled in `docs/decisions/ADR-0061-profils-cli-et-api-depuis-rust-starter-et-le-gabarit-node-de-hono.md` (written by the planner, uncommitted, `accepted`: commit it with the code, never edit its body).
 
 `RS:` = `https://github.com/rust-starter/rust-starter` at `51ebb2f55f2a79a5c6ccad11aa90dea4f081d400` (2025-05-07). `HS:` = `https://github.com/honojs/starter` at `110fb1c4dc34e050665ca89e0a2fa1a00fde29ef` (2026-10-04), template `templates/nodejs/` (`HN:`). Both opened in a clone outside the repository on 2026-10-08.

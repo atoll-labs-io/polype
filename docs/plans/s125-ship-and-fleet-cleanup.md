@@ -3,6 +3,8 @@ validated: yes
 ---
 # Plan — s125-ship-and-fleet-cleanup
 
+[Story](../stories.md) · [Research](../research/s125-ship-and-fleet-cleanup.md)
+
 Branch `story/s125-ship-and-fleet-cleanup`. Read `docs/research/s125-ship-and-fleet-cleanup.md` first; this plan builds on it without repeating it.
 
 ## Story

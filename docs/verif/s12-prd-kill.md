@@ -1,5 +1,7 @@
 # Verification — s12-prd-kill
 
+[Story](../stories.md) · [Plan](../plans/s12-prd-kill.md)
+
 Order that produced `Tree:` — `git add -A`, then `git write-tree`, after the last code edit. This file and the plan's ticks were written afterwards, inside `docs/`.
 
 Tree: 0e8f6bd63be7ca1e653221c6f93c294ce88578a4

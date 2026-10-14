@@ -1,5 +1,7 @@
 # Verification — s79-qa-drivers
 
+[Story](../stories.md) · [Plan](../plans/s79-qa-drivers.md)
+
 Tree: 16dbd6689a2ae4c27bca9a6db0dd684febdde042
 
 ## Checks

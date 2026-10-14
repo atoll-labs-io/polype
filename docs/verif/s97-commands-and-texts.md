@@ -1,5 +1,7 @@
 # Verification — s97-commands-and-texts
 
+[Story](../stories.md) · [Plan](../plans/s97-commands-and-texts.md)
+
 Tree: 76f0d6e92a1f50f721ebefda00c07b02b9c64af9
 
 ## Checks

@@ -3,6 +3,8 @@ validated: yes
 ---
 # Plan — s99-throwaway-zone-holds
 
+[Story](../stories.md) · [Research](../research/s99-throwaway-zone-holds.md)
+
 Branch `story/s99-throwaway-zone-holds`. Read `docs/research/s99-throwaway-zone-holds.md` first. This plan builds on it without repeating it, and its root cause and reproduction table are the starting point.
 
 ## Story

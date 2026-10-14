@@ -3,6 +3,8 @@ validated: yes
 ---
 # Plan — s57-qa-in-the-fleet
 
+[Story](../stories.md) · [Research](../research/s57-qa-in-the-fleet.md)
+
 Branch `story/s57-qa-in-the-fleet`. Read `docs/research/s57-qa-in-the-fleet.md` first; this plan builds on it without repeating it. Decision: ADR-0034 (`docs/decisions/ADR-0034-la-flotte-committe-la-preuve-qa-et-le-retour-en-qa-ne-coute-aucune-boucle.md`), written by the planner, committed with the story.
 
 ## Story

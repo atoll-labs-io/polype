@@ -3,6 +3,8 @@ validated: yes
 ---
 # Plan — s43-mustelinet-bricks
 
+[Story](../stories.md) · [Research](../research/s43-mustelinet-bricks.md)
+
 Branch `story/s43-mustelinet-bricks`. Read `docs/research/s43-mustelinet-bricks.md` first; this plan builds on it without repeating it.
 
 Validated autonomously (`Plan validation: autonomous`): no human reviewed this plan.

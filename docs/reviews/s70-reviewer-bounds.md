@@ -1,5 +1,7 @@
 # Review — s70-reviewer-bounds
 
+[Story](../stories.md) · [Plan](../plans/s70-reviewer-bounds.md) · [Verification](../verif/s70-reviewer-bounds.md)
+
 Diff reviewed: `git diff main...story/s70-reviewer-bounds`, in a context that did not write it. Findings rated critical, major or minor.
 
 Review status: complete

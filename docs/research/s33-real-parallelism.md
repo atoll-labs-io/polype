@@ -1,5 +1,7 @@
 # Research — s33-real-parallelism
 
+[Story](../stories.md)
+
 ## Structuring facts
 - **Wrong assumption, the story's `Corrige` line.** The numbers 22, 23 and 24 each name two different defects: `docs/defauts.md:37-39` (M3 reviews, opened by s32's research, about ADR-0003, ADR-0016 and the missing design subagent) and `docs/defauts.md:45-47` (fleet validation, the three this story fixes). The ids the story cites are ambiguous, and no row can be marked corrected without saying which of the two. The story is corrected by renumbering, not worked around: `docs/defauts.md` is in `Owns`, the fleet-validation rows become 25, 26, 27, and the story's `Corrige` line then reads those.
 - Criterion 1 is half there: `method/commands/po-drive.md:71` already says "in a single message" and "one Agent call per lane, all of them in that one message". What is missing is the scope (*every* subagent of one stage), the prohibition (never one call per message), and the reason — the three strings of `tests/drive.test.sh:36-38` are pinned and must survive unchanged.

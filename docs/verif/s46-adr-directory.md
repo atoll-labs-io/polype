@@ -1,5 +1,7 @@
 # Verification — s46-adr-directory
 
+[Story](../stories.md) · [Plan](../plans/s46-adr-directory.md)
+
 Tree: a28fdde0ac7a383e069fdc1c990d8e9c391980cb
 
 | Check | Command | Outcome | Time (UTC) |

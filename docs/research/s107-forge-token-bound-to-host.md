@@ -1,5 +1,7 @@
 # Research — s107-forge-token-bound-to-host
 
+[Story](../stories.md)
+
 ## Structuring facts
 - **False assumption of the story.** Criterion `other_forges_through_their_cli_only` says `glab` binds each token to its host in its configuration. It does only when no token sits in the environment: glab's documented token precedence (docs.gitlab.com/cli/authentication, "Token precedence", read 2026-10-13) uses `GITLAB_TOKEN`, then `GITLAB_ACCESS_TOKEN`, then `OAUTH_TOKEN` **before** the credentials stored for the host, for every host. With `GITLAB_TOKEN` exported, `glab api` on a clone from `gitlab.attacker.tld` sends that token there. Dropping the `curl` fallback alone does not close the leak.
 - `tea` 1.0 (README of gitea/tea, main, read 2026-10-13) also takes credentials from the environment: `GITEA_TOKEN` with its instance in `TEA_HOST` or `GITEA_INSTANCE_URL`. What tea does with `GITEA_TOKEN` and no instance variable is not documented there (open question 1).

@@ -1,5 +1,7 @@
 # Review — s30-grouped-validation
 
+[Story](../stories.md) · [Plan](../plans/s30-grouped-validation.md) · [Verification](../verif/s30-grouped-validation.md)
+
 Diff reviewed: `git diff m3-flotte...story/s30-grouped-validation`, in a context that did not write it. Findings rated critical, major or minor.
 
 Review status: complete

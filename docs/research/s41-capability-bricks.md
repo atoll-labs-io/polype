@@ -1,5 +1,7 @@
 # Research — s41-capability-bricks
 
+[Story](../stories.md)
+
 ## Structuring facts
 - No story assumption is false. Nothing exists yet under `method/skills/capability-bricks/` or `tests/capability-bricks.test.sh`; the skill is new, `po-architect.md` and `docs/catalogue.md` are amended.
 - ADR-0020's table is in French (`docs/decisions/ADR-0020-briques-par-defaut-des-capacites.md:25-38`) but method files are in English (AGENTS.local.md, Conventions): the skill "reproduces" it translated, and its capability names must be the twelve English names the profile template already fixes (`method/templates/profile.md:40-51`), which `bin/po-lint:203-250` enforces for profiles.

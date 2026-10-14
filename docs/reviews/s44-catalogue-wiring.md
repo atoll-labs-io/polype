@@ -1,5 +1,7 @@
 # Review — s44-catalogue-wiring
 
+[Story](../stories.md) · [Plan](../plans/s44-catalogue-wiring.md) · [Verification](../verif/s44-catalogue-wiring.md)
+
 Diff reviewed: `git diff m4-catalogue...story/s44-catalogue-wiring` (one commit, a432e44), in a context that did not write it. Findings are rated critical, major or minor.
 
 Review status: complete

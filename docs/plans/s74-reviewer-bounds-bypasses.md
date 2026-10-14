@@ -3,6 +3,8 @@ validated: yes
 ---
 # Plan — s74-reviewer-bounds-bypasses
 
+[Story](../stories.md) · [Research](../research/s74-reviewer-bounds-bypasses.md)
+
 Branch `story/s74-reviewer-bounds-bypasses`. Read `docs/research/s74-reviewer-bounds-bypasses.md` first; this plan builds on it without repeating it. The decisions are in `docs/decisions/ADR-0051-le-reviewer-juge-la-commande-git-que-git-executera.md`, written with this plan. It supersedes ADR-0047 in part.
 
 ## Story

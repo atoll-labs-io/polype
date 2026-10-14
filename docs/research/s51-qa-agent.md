@@ -1,5 +1,7 @@
 # Research — s51-qa-agent
 
+[Story](../stories.md)
+
 ## Structuring facts
 - **Hidden assumption, false as the story could be read**: "l'agent QA n'a pas Edit" cannot be written as a `tools:` allowlist. A subagent with `tools:` gets only the tools it names, MCP ones included; the designer lists `tools: Read, Write, Edit, Bash, Grep, Glob` (`method/agents/designer.md:4`) and so reaches no browser tool, although it is told to use "the browser tool the session has" (`method/agents/designer.md:33`). Claude Code 2.1.292 accepts `disallowedTools` in agent frontmatter ("Tools removed from the default set. Ignored if `tools` is set"), parsed by the same comma-string parser as `tools`; with `tools` omitted the agent "inherits all tools from parent". The QA agent must therefore carry **no `tools:` line** and `disallowedTools: Edit, NotebookEdit`.
 - `po-bounds.sh` has one mode, `implementer` (`method/hooks/po-bounds.sh:142-146`); any other `mode:tool` pair already falls into a refusal (`:162`), so `qa:Edit` is refused with no new code. `check_write` lets the whole of `docs/` through before reading `Owns` (`:80`), which `qa` must not inherit.

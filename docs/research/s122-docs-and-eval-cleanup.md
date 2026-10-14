@@ -1,5 +1,7 @@
 # Research — s122-docs-and-eval-cleanup
 
+[Story](../stories.md)
+
 ## Structuring facts
 - Root cause (the one major): `method/commands/po-drive.md:64` sends back to review only a favourable review whose `Reviewed tree:` the gate refuses, while `method/hooks/po-gate.sh:68-71` (s120) also refuses a missing or non-`complete` `Review status:`. A review `Reviewed tree: <current>` + `Ship allowed: yes` with no status matches no row before `:67` "the ship", and `/po-ship` Step 0 stops it — the loop the s120 review describes. Reproduced (see `## Diagnostic`).
 - Root cause (the minors): texts left behind by the stories that changed the rule under them — `docs/installation.md:10` still cites the superseded ADR-0073; `bin/po-eval:84` keeps a pre-s116 message; `evals/cases/rebuilt-helper.sh:51` predates s119's third test; `method/commands/po-status.md:31` keeps the arrow `→ shipped` after s112's sentence; `method/commands/po-status.md:21` predates po-session's `not needed` (s120); `method/AGENTS.md:87` and `method/hooks/po-gate.sh:35-37` predate s120's final shape.

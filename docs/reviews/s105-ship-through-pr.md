@@ -1,5 +1,7 @@
 # Review — s105-ship-through-pr
 
+[Story](../stories.md) · [Plan](../plans/s105-ship-through-pr.md) · [Verification](../verif/s105-ship-through-pr.md)
+
 Reviewed tree: edc4db3a33d1e441893ab0b4265c482157f1d567
 Fix loop: 0
 Lenses run: none (the diff has no auth, migration, lockfile, manifest or server-side path, and no triggering content)

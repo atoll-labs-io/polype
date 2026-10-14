@@ -4,6 +4,8 @@ validated: yes
 ---
 # Plan (short track) — s85-native-profiles
 
+[Story](../stories.md)
+
 Short track: this file stands in for the research. Validated autonomously (`Plan validation: autonomous`): no human reviewed it. Sources, commits, commands and the `—` driver are settled in `docs/decisions/ADR-0064-profils-natifs-depuis-ios-templates-de-nimble-et-architecture-templates-d-android.md` (written by the planner, uncommitted, `accepted`: commit it with the code, never edit its body).
 
 `IOS:` = `https://github.com/nimblehq/ios-templates` at `f009d02ebaacf3c789c84bd31d9baa2b2447d654` (branch `develop`, the default, 2026-06-22). `T:` = `IOS:template/`. `AND:` = `https://github.com/android/architecture-templates` at `5467a8dcca30a81b4e31fda5863dd6c65836de0d` (branch `base`, 2026-10-05). Both opened in shallow clones under `/tmp` on 2026-10-08. No JDK, Android SDK or Xcode on this machine: no command below was run.

@@ -1,5 +1,7 @@
 # Research — s110-framing-second-landing
 
+[Story](../stories.md)
+
 ## Structuring facts
 - **Root cause (s106 major 2):** `method/commands/po-setup.md:66` decides whether to stack only from `gh pr list --head framing/<slug> --state open`. When that finds nothing (non-GitHub forge, `gh` unusable, PR never opened), `<base>` is `origin/<Target branch>`. The push at `po-setup.md:77` then replaces the branch, because after the fetch the lease matches the remote-tracking ref. Reproduced below: the branch lost the first run's file.
 - **Root cause (s106 minor 3):** only the automatic pr path realigns the root (`po-setup.md:83`). The `human` path stops at `po-setup.md:80`, and nothing later checks whether the person merged.

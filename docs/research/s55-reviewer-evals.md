@@ -1,5 +1,7 @@
 # Research — s55-reviewer-evals
 
+[Story](../stories.md)
+
 ## Structuring facts
 - **Partly false assumption: the story takes "the expected severity" of each planted defect as already settled by the method. Only two of the four are.** A missing authorization check is critical (`method/skills/review-lenses/SKILL.md:38`), so the other-user's-resource and missing-tenant-filter cases expect `critical` / `no`. A skipped test the plan does not justify is a floor-guard flag graded **major** (`method/skills/review-antihallu/SKILL.md:38`), so the neutralized-test case expects `major` / `yes`. For an **untested guard** the method only says "that is a finding" (`SKILL.md:41`) and gives no grade; the scale (`SKILL.md:53-55`) puts correct code with a missing test at **major** (contained, no silent damage). The plan fixes that grade in the recipe and says so; it is a choice, not something the method states.
 - **The reviewer can be launched alone**: `claude --help` lists `--agent <agent>` ("Agent for the current session"), plus `--allowedTools`, `--model`, `--no-session-persistence`. A per-project install (`bin/polype install <dir>`) puts `method/agents`, `method/skills`, `method/hooks` into `<dir>/.claude/` and `<dir>/.polype/` (`bin/polype:97-100`), so the eval measures the `method/` of this checkout, not some other copy.

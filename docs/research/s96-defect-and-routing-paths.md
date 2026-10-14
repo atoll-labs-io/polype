@@ -1,5 +1,7 @@
 # Research — s96-defect-and-routing-paths
 
+[Story](../stories.md)
+
 ## Structuring facts
 - **Root cause, major 1 (s90 review)**: `method/commands/po-research.md:39-47` and `method/commands/po-orchestrator.md:45-46` never name the `diagnostic` skill (0 occurrences of `diagnostic`, `Fixes` or `root cause` in either file). A `Fixes`/`Corrige` story that `/po-flow` escalates (`po-flow.md:43-47`) is then researched by `/po-research` or by `/po-orchestrator` stage 2 in the main context, which loads only the skills its text names. Only `method/agents/planner.md:9` preloads it.
 - **Root cause, major 2 (s90 review)**: `method/skills/diagnostic/SKILL.md:24-25` ends a failed diagnostic with "write no plan" but leaves no line a reader can match. `method/commands/po-drive.md:50` maps "research present, plan absent" to the plan stage, and `method/agents/planner.md:42` builds the plan on any research on disk; `method/commands/po-plan.md:22-34` has no check on the research's content. So a lane with no root cause is re-planned on a guess.

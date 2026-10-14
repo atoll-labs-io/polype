@@ -1,5 +1,7 @@
 # Review — s88-ros-simulation-driver
 
+[Story](../stories.md) · [Plan](../plans/s88-ros-simulation-driver.md) · [Verification](../verif/s88-ros-simulation-driver.md)
+
 I reviewed the diff `git diff main...story/s88-ros-simulation-driver` (commit ff74e66). I did not write this code. Each finding is rated critical, major or minor.
 
 Review status: complete

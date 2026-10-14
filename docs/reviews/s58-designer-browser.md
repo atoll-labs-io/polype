@@ -1,5 +1,7 @@
 # Review: s58-designer-browser
 
+[Story](../stories.md) · [Plan](../plans/s58-designer-browser.md) · [Verification](../verif/s58-designer-browser.md)
+
 Diff reviewed: `git diff main...story/s58-designer-browser` (one commit, 582f833). The reviewer did not write this code. Each finding is rated critical, major or minor.
 
 Review status: complete

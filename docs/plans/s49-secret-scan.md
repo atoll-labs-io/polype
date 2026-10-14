@@ -4,6 +4,8 @@ validated: yes
 ---
 # Plan (short track) — s49-secret-scan
 
+[Story](../stories.md)
+
 Written by the planner on the short track: this file stands in for both the research and the plan; there is no `docs/research/s49-secret-scan.md`. Decision recorded in `docs/decisions/ADR-0028-secrets-refuses-par-po-gate-sans-dependance.md`.
 
 Track: flow. `Story track: auto`, complexity 2 written in `docs/stories.md` ≤ `Flow threshold: 2`, no escalation signal, five tasks.

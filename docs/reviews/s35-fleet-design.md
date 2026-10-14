@@ -1,5 +1,7 @@
 # Review — s35-fleet-design
 
+[Story](../stories.md) · [Plan](../plans/s35-fleet-design.md) · [Verification](../verif/s35-fleet-design.md)
+
 Diff reviewed: `git diff m5-distribution...story/s35-fleet-design`, in a context that did not write it. Findings rated critical, major or minor.
 
 Review status: complete

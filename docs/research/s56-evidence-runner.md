@@ -1,5 +1,7 @@
 # Research — s56-evidence-runner
 
+[Story](../stories.md)
+
 ## Structuring facts
 - No false assumption found. One silent gap: the story's literal rule for `verif-current` ("a row on the same code" **or** "last row non-zero") accepts a check whose run on the final code failed and whose later passing run was on other code; the plan narrows it (see Open questions, Q1).
 - Today the record is pure prose written by the implementer: `method/agents/implementer.md:42` asks it to "list each command you ran with its exit code", and `verif_current` (`method/hooks/po-gate.sh:52-63`) only reads `Verification status:` and `Tree:` — no table is parsed anywhere.

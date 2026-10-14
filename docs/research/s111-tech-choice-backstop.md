@@ -1,5 +1,7 @@
 # Research — s111-tech-choice-backstop
 
+[Story](../stories.md)
+
 ## Structuring facts
 - Root cause 1 (s104 major 1): `method/commands/po-flow.md:74`. When the Approval clause finds an ADR-worthy choice, it sends the story to `/po-research <id>`. It leaves `docs/plans/<id>.md` on disk with no marker (the `MARKER` string of `tests/escalation-contract.test.sh:14`) and no drafted ADR. `/po-plan` then sees "A plan file already present? Skip to Approval" (`po-plan.md:30`). Its marker paragraph (`po-plan.md:50`) only fires on the marker, so under `autonomous` the bullet at `:53` validates the plan.
 - Root cause 2 (s104 major 2): `tests/escalation-contract.test.sh:47-50` checks the marker and `status: proposed` with `contains` on the whole of `po-plan.md`. The bullet at `po-plan.md:45` satisfies both checks, and `:46` also finds `whatever \`Plan validation\` says` there. So deleting the Approval paragraph at `:50` fails nothing.

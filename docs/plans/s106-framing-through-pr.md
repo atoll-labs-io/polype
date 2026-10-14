@@ -3,6 +3,8 @@ validated: yes
 ---
 # Plan — s106-framing-through-pr
 
+[Story](../stories.md) · [Research](../research/s106-framing-through-pr.md)
+
 Branch `story/s106-framing-through-pr`. Read `docs/research/s106-framing-through-pr.md` first; this plan builds on it without repeating it.
 
 ## Story

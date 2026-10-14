@@ -1,5 +1,7 @@
 # Review — s19-flow
 
+[Story](../stories.md) · [Plan](../plans/s19-flow.md) · [Verification](../verif/s19-flow.md)
+
 Diff reviewed: `git diff m2-cadrage...story/s19-flow` (commit 608ed34), in a context that did not write it. Findings are rated critical, major or minor.
 
 Review status: complete

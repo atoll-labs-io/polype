@@ -1,5 +1,7 @@
 # Verification — s63-review-texts
 
+[Story](../stories.md) · [Plan](../plans/s63-review-texts.md)
+
 Tree: b1c16dfb9ad836226f291017c84221b9acea8b42
 
 ## Checks

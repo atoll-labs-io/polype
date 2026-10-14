@@ -4,6 +4,8 @@ validated: yes
 ---
 # Plan (short track) — s34-method-consistency
 
+[Story](../stories.md)
+
 Six documented inconsistencies, each with its source review. No research file: this section stands in for it.
 
 ## Verified facts

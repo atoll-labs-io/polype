@@ -1,5 +1,7 @@
 # Review — s41-capability-bricks
 
+[Story](../stories.md) · [Plan](../plans/s41-capability-bricks.md) · [Verification](../verif/s41-capability-bricks.md)
+
 Diff reviewed: `git diff m4-catalogue...story/s41-capability-bricks` (one commit, eb8d0a8). I did not write this code. Findings are rated critical, major or minor.
 
 Review status: complete

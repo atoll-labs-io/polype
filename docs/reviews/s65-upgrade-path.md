@@ -1,5 +1,7 @@
 # Review — s65-upgrade-path
 
+[Story](../stories.md) · [Plan](../plans/s65-upgrade-path.md) · [Verification](../verif/s65-upgrade-path.md)
+
 Reviewed tree: e517ed65e15ccaa47e0a49a83dd0f299acc72de7
 Fix loop: 0
 Worktree: /home/lecrabe/dev/atoll/polype/.worktrees/s65-upgrade-path (branch `story/s65-upgrade-path`, commit 87d19a7)

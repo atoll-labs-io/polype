@@ -1,5 +1,7 @@
 # Review — s22-brief-order
 
+[Story](../stories.md) · [Plan](../plans/s22-brief-order.md) · [Verification](../verif/s22-brief-order.md)
+
 Diff reviewed: `git diff m3-flotte...story/s22-brief-order`, in a context that did not write it. Findings rated critical, major or minor.
 
 Review status: complete

@@ -1,5 +1,7 @@
 # Research — s120-session-and-gate-checks
 
+[Story](../stories.md)
+
 ## Structuring facts
 - **False assumption: the `Owns` line is too narrow.** `tests/review-tree-gate.test.sh:24` and `:34` expect `po-gate ship-allowed` to **pass** on reviews that have no `Review status:` line. Criterion `ship_gate_needs_review_status` makes them fail, and five of the refusals in that file (`:26`, `:28`, `:36-44`) would then pass for the wrong reason. That file is not in `Owns`, and `po-bounds` refuses any Write/Edit outside the `Owns` read at the fork point (`method/hooks/po-bounds.sh:152-178`, ADR-0038). So the story as written cannot be implemented with a green suite. Fix: add `tests/review-tree-gate.test.sh` to `Owns` on `main`, then fork the lane again from that commit (or fast-forward `story/s120-…` onto it).
 - Root cause 1: `ship_allowed` (`method/hooks/po-gate.sh:55-65`) reads only `Ship allowed:` and `Reviewed tree:`. `grep -c "Review status" method/hooks/po-gate.sh` → 0. When a review has a valid tree and `Ship allowed: yes` but no `Review status:`, the gate exits 0 (reproduced, see Diagnostic).

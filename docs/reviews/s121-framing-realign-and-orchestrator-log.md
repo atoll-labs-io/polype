@@ -1,5 +1,7 @@
 # Review — s121-framing-realign-and-orchestrator-log
 
+[Story](../stories.md) · [Plan](../plans/s121-framing-realign-and-orchestrator-log.md) · [Verification](../verif/s121-framing-realign-and-orchestrator-log.md)
+
 I reviewed the diff `git diff main...story/s121-framing-realign-and-orchestrator-log` without having written it. Each finding is rated critical, major or minor.
 
 Review status: complete

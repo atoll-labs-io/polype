@@ -1,5 +1,7 @@
 # Verification — s116-eval-arms-same-environment
 
+[Story](../stories.md) · [Plan](../plans/s116-eval-arms-same-environment.md)
+
 Tree: 66ddec2b125a6cc2e88449b53c9b02aa6d1eefde
 
 ## Checks

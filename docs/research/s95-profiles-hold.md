@@ -1,5 +1,7 @@
 # Research — s95-profiles-hold
 
+[Story](../stories.md)
+
 ## Structuring facts
 - **False assumption (iOS Test, partly):** the story wants the iOS `Test` command itself to fail on red, but the lane it names cannot: `scan(... failBuild: .userDefined(false))` is hard-coded in the generated project (`ios-templates@f009d02:template/fastlane/Helpers/Test.swift:33`). A passed parameter beats `SCAN_FAIL_BUILD`, so no flag fixes it; the profile command has to check the result bundle after the lane (ADR-0069). `xcodebuild test` direct stays out, as ADR-0064 said: the scheme is `"<project name> Staging"` (`template/fastlane/Constants/Constant.swift:101-108`).
 - **Root cause, skipped grounding:** `tests/run.sh:17-18` prints `ok` for any test that exits 0 and drops its captured output; the grounding tests exit 0 after writing `not reachable: grounding not checked` to stderr (`tests/expo-profile.test.sh:78` and six other files, see Current code).

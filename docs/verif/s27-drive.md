@@ -1,5 +1,7 @@
 # Verification — s27-drive
 
+[Story](../stories.md) · [Plan](../plans/s27-drive.md)
+
 Tree: 242227c76c82b478d2f0a2a196bfdf2cd41670b9
 
 | Check | Command | Outcome | Time (UTC) |

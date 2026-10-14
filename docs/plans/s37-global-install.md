@@ -3,6 +3,8 @@ validated: yes
 ---
 # Plan — s37-global-install
 
+[Story](../stories.md) · [Research](../research/s37-global-install.md)
+
 Branche `story/s37-global-install`. Lire `docs/research/s37-global-install.md` d'abord ; ce plan s'appuie dessus sans le répéter.
 
 ## Story

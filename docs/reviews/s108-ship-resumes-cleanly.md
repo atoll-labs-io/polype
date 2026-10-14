@@ -1,5 +1,7 @@
 # Review — s108-ship-resumes-cleanly
 
+[Story](../stories.md) · [Plan](../plans/s108-ship-resumes-cleanly.md) · [Verification](../verif/s108-ship-resumes-cleanly.md)
+
 Diff reviewed: `git diff main...story/s108-ship-resumes-cleanly`, in a context that did not write it. Findings rated critical, major or minor.
 
 Review status: complete

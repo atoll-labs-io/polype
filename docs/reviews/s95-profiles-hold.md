@@ -1,5 +1,7 @@
 # Review: s95-profiles-hold
 
+[Story](../stories.md) · [Plan](../plans/s95-profiles-hold.md) · [Verification](../verif/s95-profiles-hold.md)
+
 Story: s95-profiles-hold. Les profils disent vrai et leurs tests le prouvent
 Reviewed tree: f5408108929b2eae21cd6bb1e5a5fa493183eb75
 Fix loop: 0

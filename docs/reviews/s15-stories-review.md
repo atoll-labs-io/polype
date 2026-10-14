@@ -1,5 +1,7 @@
 # Review — s15-stories-review
 
+[Story](../stories.md) · [Plan](../plans/s15-stories-review.md) · [Verification](../verif/s15-stories-review.md)
+
 Diff reviewed: `git diff m2-cadrage...story/s15-stories-review` (HEAD 0cca379). I did not write this code. Findings are rated critical, major or minor.
 
 Review status: complete

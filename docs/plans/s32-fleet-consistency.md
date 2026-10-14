@@ -3,6 +3,8 @@ validated: yes
 ---
 # Plan — s32-fleet-consistency
 
+[Story](../stories.md) · [Research](../research/s32-fleet-consistency.md)
+
 Branch `story/s32-fleet-consistency`. Read `docs/research/s32-fleet-consistency.md` first; this plan builds on it without repeating it.
 
 ## Story

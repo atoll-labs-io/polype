@@ -1,5 +1,7 @@
 # Verification — s33-real-parallelism
 
+[Story](../stories.md) · [Plan](../plans/s33-real-parallelism.md)
+
 Tree: 36068ddcd93e511ca451ec5282bd832848cb83ab
 
 | Check | Command | Outcome | Time (UTC) |

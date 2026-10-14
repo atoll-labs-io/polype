@@ -1,5 +1,7 @@
 # Review — s43-mustelinet-bricks
 
+[Story](../stories.md) · [Plan](../plans/s43-mustelinet-bricks.md) · [Verification](../verif/s43-mustelinet-bricks.md)
+
 Diff reviewed: `git diff m4-catalogue...story/s43-mustelinet-bricks` (one commit, ec8184d), in a context that did not write it. Findings rated critical, major or minor.
 
 Review status: complete

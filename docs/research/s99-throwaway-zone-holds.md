@@ -1,5 +1,7 @@
 # Research — s99-throwaway-zone-holds
 
+[Story](../stories.md)
+
 ## Structuring facts
 - **Root cause.** In implementer mode, a git call in a throwaway repo is checked only after its verb. `check_temp_paths` starts at word `j + 1` (`method/hooks/po-bounds.sh:626`). The global options that point git at another tree are refused only when `$mode` is `reviewer`: see `--git-dir`/`--work-tree` at `:713-718`, `-c`/`--config-env` at `:719-724`, and the `GIT_*=` assignment scan at `:686-693`. In implementer mode the option loop skips over them, and the throwaway block (`:779-782`) never looks at them. The input that reaches this code is `git -C <clone> --work-tree=<WT> checkout main -- .`. The proof is the reproduction below, which exits 0 in implementer mode and 2 in reviewer mode, and a sandbox run of git 2.56.0 showing that `--work-tree` and `GIT_WORK_TREE` really write into the other tree.
 - **The story's assumptions hold.** `check_config_key` exists and can be reused (`:662-666`). Its message hard-codes "forbidden to the reviewer" (`:665`), so the wording has to change if the implementer reuses it. The rule "a story worktree is judged first" exists (`:754`), and with no test behind it, the review's bite E took nothing down.

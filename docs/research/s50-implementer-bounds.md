@@ -1,5 +1,7 @@
 # Research — s50-implementer-bounds
 
+[Story](../stories.md)
+
 ## Structuring facts
 - **False assumption: `bin/polype` needs no change.** The installer already ships every file of `method/hooks/` to `.polype/hooks/` for both `init` and `install <project>` (`bin/polype:98`, `bin/polype:101`) and marks anything under `*/hooks/*` executable (`bin/polype:143`, `bin/polype:157`). Adding `method/hooks/po-bounds.sh` is enough; `installer_ships_the_bounds_hook` is a test, not a code change.
 - **False assumption: the hook can say `.polype/hooks/po-bounds.sh` as a relative path.** A command hook runs "in the current directory" of the session (hooks reference, `code.claude.com/docs/en/hooks.md:414`), and a subagent's shell does not keep its `cd`. The path must be anchored on `$CLAUDE_PROJECT_DIR`, which Claude Code exports to every command hook (`hooks.md:495`, `hooks.md:603`).

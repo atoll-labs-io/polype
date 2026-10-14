@@ -1,5 +1,7 @@
 # Research — s64-qa-routing
 
+[Story](../stories.md)
+
 ## Structuring facts
 - **Gap the story leaves out**: a review blocked on a report that is current but not committed carries a `Next action:` that is the evidence commit and "does not name `/po-qa`" (`method/skills/review-antihallu/SKILL.md:28`, s63). Every command then reads it as "any other `Ship allowed: no`" → a fix run (`method/commands/po-review.md:42`, `po-drive.md:57`, `po-orchestrator.md:72`). Fixing criterion 4 alone would commit the evidence, then still send the lane to a fix run. The plan must route this second QA case too.
 - QA-blocked is recognised today by `Next action:` alone, in four places: `po-review.md:26,41`, `po-orchestrator.md:57,70`, `po-drive.md:56,125` — and `po-status.md:39`. `templates/review.md:13` puts a `Next action:` line in every review, so a complete review can match (s57 major).

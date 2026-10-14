@@ -1,5 +1,7 @@
 # Review — s26-planner
 
+[Story](../stories.md) · [Plan](../plans/s26-planner.md) · [Verification](../verif/s26-planner.md)
+
 Diff reviewed: `git diff m3-flotte...story/s26-planner`, in a context that did not write it. Findings rated critical, major or minor.
 
 Review status: complete

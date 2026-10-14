@@ -1,5 +1,7 @@
 # Review: s109-drive-guards
 
+[Story](../stories.md) · [Plan](../plans/s109-drive-guards.md) · [Verification](../verif/s109-drive-guards.md)
+
 The diff was `git diff main...story/s109-drive-guards`, read in a context that did not write it. Findings are rated critical, major or minor.
 
 Review status: complete

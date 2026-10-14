@@ -1,5 +1,7 @@
 # Review — s14-stories
 
+[Story](../stories.md) · [Plan](../plans/s14-stories.md) · [Verification](../verif/s14-stories.md)
+
 Review status: complete
 Fix loop: 0
 Scope: `git diff m2-cadrage...story/s14-stories`, commit 03f60a3. It adds 3 files (`method/commands/po-stories.md`, `method/skills/agentic-stories/SKILL.md`, `tests/stories.test.sh`), one line in `method/commands/po-help.md`, the C05 line in `docs/parite-killer-saas.md`, and the research, plan and verification files under `docs/`.

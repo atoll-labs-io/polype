@@ -1,5 +1,7 @@
 # Review — s82-mobile-web-driver
 
+[Story](../stories.md) · [Plan](../plans/s82-mobile-web-driver.md) · [Verification](../verif/s82-mobile-web-driver.md)
+
 Story: s82-mobile-web-driver — Le mobile vérifié par son rendu web d'abord
 Worktree: /home/lecrabe/dev/atoll/polype/.worktrees/s82-mobile-web-driver
 Reviewed tree: 7834a091dbbacedc72a272493e6dbafbd3442ae6

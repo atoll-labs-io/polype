@@ -1,5 +1,7 @@
 # Review — s38-migration
 
+[Story](../stories.md) · [Plan](../plans/s38-migration.md) · [Verification](../verif/s38-migration.md)
+
 Diff reviewed: `git diff m5-distribution...story/s38-migration`, in a context that did not write it. Findings rated critical, major or minor.
 
 Review status: complete

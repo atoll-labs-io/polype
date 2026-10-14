@@ -1,5 +1,7 @@
 # Verification — s39-distribution-wiring
 
+[Story](../stories.md) · [Plan](../plans/s39-distribution-wiring.md)
+
 Tree: 613aea31f8151a0592b23739a367cde7d700230b
 
 | Check | Command | Outcome | Time (UTC) |

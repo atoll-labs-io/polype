@@ -1,5 +1,7 @@
 # Review: s80-surface-routing
 
+[Story](../stories.md) · [Plan](../plans/s80-surface-routing.md) · [Verification](../verif/s80-surface-routing.md)
+
 Reviewed tree: 2c80c8fcc6643ed164e294de6de5fd7d75e246d1
 Fix loop: 0
 Worktree: /home/lecrabe/dev/atoll/polype/.worktrees/s80-surface-routing (branch `story/s80-surface-routing`, one commit 506eadd)

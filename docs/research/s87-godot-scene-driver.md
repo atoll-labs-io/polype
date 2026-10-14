@@ -1,5 +1,7 @@
 # Research — s87-godot-scene-driver
 
+[Story](../stories.md)
+
 `XT:` = `https://github.com/GodotVR/godot-xr-template` at `7d8261cd37b07bbf28638cad39cf4b2d6cedd936` (tag `4.6.0`, HEAD of `main`, commit dated 2026-10-09 UTC). `GD:` = `https://github.com/godotengine/godot` at `ed1daf0bf001b61586d9930840f2f1394092c079` (tag `4.7.2-stable`, the version `XT:` CI pins). Both opened in clones under `/tmp`, outside the repository, on 2026-10-08.
 
 ## Structuring facts

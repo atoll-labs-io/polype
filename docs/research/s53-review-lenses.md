@@ -1,5 +1,7 @@
 # Research — s53-review-lenses
 
+[Story](../stories.md)
+
 ## Structuring facts
 - No assumption of the story is false. Everything it names exists and fits in `Owns` (`docs/stories.md:806`): the reviewer preloads its skills from a frontmatter list (`method/agents/reviewer.md:6-9`), and the installer copies `method/skills/` wholesale (`bin/polype:86`, `:100`), so a new `method/skills/review-lenses/` reaches every install pose without any registration.
 - The lenses cannot become a seventh numbered step: `tests/review.test.sh:29-30` counts exactly six `**[1-6]. ` lines, and the heading `## Six steps, all of them, in this order` is pinned (`tests/ownership.test.sh:52`). `tests/review.test.sh` is outside `Owns`. They attach as an unnumbered section of `review-antihallu` after step 6 (`method/skills/review-antihallu/SKILL.md:45`) and before `## Severity` (`:47`).

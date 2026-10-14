@@ -1,5 +1,7 @@
 # Review — s122-docs-and-eval-cleanup
 
+[Story](../stories.md) · [Plan](../plans/s122-docs-and-eval-cleanup.md) · [Verification](../verif/s122-docs-and-eval-cleanup.md)
+
 Diff reviewed: `git diff main...story/s122-docs-and-eval-cleanup`, in a context that did not write it. Findings rated critical, major or minor.
 
 Review status: complete

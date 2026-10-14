@@ -1,5 +1,7 @@
 # Review: s100-qa-evidence-set-aside
 
+[Story](../stories.md) · [Plan](../plans/s100-qa-evidence-set-aside.md) · [Verification](../verif/s100-qa-evidence-set-aside.md)
+
 Diff reviewed: `git diff main...story/s100-qa-evidence-set-aside`, by a reviewer that did not write it. Each finding is rated critical, major or minor.
 
 Review status: complete

@@ -4,6 +4,8 @@ validated: yes
 ---
 # Plan (short track) — s83-expo-profile
 
+[Story](../stories.md)
+
 Written by the planner on the short track: there is no `docs/research/s83-expo-profile.md`; this file stands in for it. Source facts were read in a sparse clone of `https://github.com/expo/expo` at `345ae1660abdeb7e43ebca0e41b63e72b30969e8` (head of branch `sdk-57`, committed 2026-10-08); paths marked `tpl:` are relative to `templates/expo-template-default/` there.
 
 ## Verified facts

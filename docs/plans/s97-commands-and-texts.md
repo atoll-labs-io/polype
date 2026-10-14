@@ -3,6 +3,8 @@ validated: yes
 ---
 # Plan — s97-commands-and-texts
 
+[Story](../stories.md) · [Research](../research/s97-commands-and-texts.md)
+
 Branch `story/s97-commands-and-texts`. Read `docs/research/s97-commands-and-texts.md` first. This plan builds on it and does not repeat it.
 
 ## Story

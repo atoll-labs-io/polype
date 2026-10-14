@@ -1,5 +1,7 @@
 # Review — s39-distribution-wiring
 
+[Story](../stories.md) · [Plan](../plans/s39-distribution-wiring.md) · [Verification](../verif/s39-distribution-wiring.md)
+
 Diff reviewed: `git diff m5-distribution...story/s39-distribution-wiring`, in a context that did not write it. Findings rated critical, major or minor.
 
 Review status: complete

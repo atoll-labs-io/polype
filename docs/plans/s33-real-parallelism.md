@@ -3,6 +3,8 @@ validated: yes
 ---
 # Plan — s33-real-parallelism
 
+[Story](../stories.md) · [Research](../research/s33-real-parallelism.md)
+
 Branch `story/s33-real-parallelism`. Read `docs/research/s33-real-parallelism.md` first; this plan builds on it without repeating it.
 
 ## Story

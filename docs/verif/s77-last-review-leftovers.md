@@ -1,5 +1,7 @@
 # Verification — s77-last-review-leftovers
 
+[Story](../stories.md) · [Plan](../plans/s77-last-review-leftovers.md)
+
 Tree: db3a969617bc80d88d49d69418b9d944e4a65049
 
 ## Checks

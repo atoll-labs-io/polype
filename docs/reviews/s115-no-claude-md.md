@@ -1,5 +1,7 @@
 # Review — s115-no-claude-md
 
+[Story](../stories.md) · [Plan](../plans/s115-no-claude-md.md) · [Verification](../verif/s115-no-claude-md.md)
+
 Review status: complete
 Reviewed tree: ffe24897ddedcfaac311542c2c77e6975d713e68
 Fix loop: 0

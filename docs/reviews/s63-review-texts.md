@@ -1,5 +1,7 @@
 # Review — s63-review-texts
 
+[Story](../stories.md) · [Plan](../plans/s63-review-texts.md) · [Verification](../verif/s63-review-texts.md)
+
 Reviewed tree: 51ad33f5b55728cf4bed26e826b7a7006f2d8917
 Fix loop: 0
 Worktree: /home/lecrabe/dev/atoll/polype/.worktrees/s63-review-texts (branch `story/s63-review-texts`, commit 0766e22)

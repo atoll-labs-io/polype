@@ -1,5 +1,7 @@
 # Verification — s114-reuse-ladder-eval
 
+[Story](../stories.md) · [Plan](../plans/s114-reuse-ladder-eval.md)
+
 Tree: 34122d9c924b4156cba211e177f1b892f9b177a6
 
 ## Checks

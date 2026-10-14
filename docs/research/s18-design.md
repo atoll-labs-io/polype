@@ -1,5 +1,7 @@
 # Research — s18-design
 
+[Story](../stories.md)
+
 ## Structuring facts
 - `/po-design` is a **story stage**, not a framing command: it runs inside `<Worktree root><id>/` on `story/<id>` (criterion `design_lives_in_the_story_worktree`), so its checks copy `/po-plan`'s worktree contract (`method/commands/po-plan.md:23`), not `/po-architect`'s "repository root on `Target branch`" (`method/commands/po-architect.md:19-20`).
 - The stop on `Design source: —` is already promised: `method/commands/po-setup.md:38` "every design command stops on it and asks for the source again". `/po-design` must keep that promise literally (stop, ask, write nothing).

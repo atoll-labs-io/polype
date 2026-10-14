@@ -1,5 +1,7 @@
 # Verification — s90-diagnostic-skill
 
+[Story](../stories.md) · [Plan](../plans/s90-diagnostic-skill.md)
+
 Tree: e5123f6d0689c7a510bd7a76bf5abb78322b2a9e
 
 ## Checks

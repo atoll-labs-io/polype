@@ -1,5 +1,7 @@
 # Research — s29-resume
 
+[Story](../stories.md)
+
 ## Structuring facts
 - `/po-drive` already reads state from files (`method/commands/po-drive.md:26`) but its dispatch is unconditional: the "Per lane, in this order" list (`:47-51`) always sends `planner`, then `implementer`, then `reviewer`. Nothing tells it to skip a stage already done — **this is the whole gap of the story**.
 - `status` is half there: the argument exists (`method/commands/po-drive.md:9,15`) and the Report section forbids side effects for it (`:72`), but the report names neither the running lanes nor the attempts.

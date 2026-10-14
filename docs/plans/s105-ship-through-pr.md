@@ -3,6 +3,8 @@ validated: yes
 ---
 # Plan — s105-ship-through-pr
 
+[Story](../stories.md) · [Research](../research/s105-ship-through-pr.md)
+
 Branch `story/s105-ship-through-pr`. Read `docs/research/s105-ship-through-pr.md` first; this plan builds on it without repeating it.
 
 **Waiting for the owner.** The plan follows the recommendation of ADR-0081 (`proposed`). The owner has not yet decided how a story lands on each forge, nor how the ship builds the landing commit (ADR-0077). Until they do, the plan stays at `validated: no`. If the owner picks another option, `## The pivot` lists the tasks that change.

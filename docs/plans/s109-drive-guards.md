@@ -3,6 +3,8 @@ validated: yes
 ---
 # Plan — s109-drive-guards
 
+[Story](../stories.md) · [Research](../research/s109-drive-guards.md)
+
 Branch `story/s109-drive-guards`. Read `docs/research/s109-drive-guards.md` first. This plan builds on it without repeating it.
 
 ## Story

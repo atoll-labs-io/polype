@@ -1,5 +1,7 @@
 # Research — s126-plan-and-defect-paths-cleanup
 
+[Story](../stories.md)
+
 ## Structuring facts
 - Root cause: each HOLDS row is wording that s96, s104 and s111 left behind when they moved the rule elsewhere — the `diagnostic` skill puts the marker at the top of `## Structuring facts` (`method/skills/diagnostic/SKILL.md:25`) and s125 made po-drive read it as a whole line (`method/commands/po-drive.md:52`, `:103`), but `method/commands/po-research.md:55` and `method/commands/po-orchestrator.md:48` still say "opens with", and `method/commands/po-plan.md:26` and `method/agents/planner.md:39` still say "holding the line" without `grep -x`.
 - The tests that should hold these rules check the whole file or a phrase that survives the deletion: `tests/diagnostic-skill.test.sh:42` passes on the planner's Defect bullet (`planner.md:39`) even with the escalation clause of `planner.md:33` gone; `tests/tech-choice-backstop.test.sh:73` uses `Stories ready:` as the "only the sentence went" guard, but that phrase is inside the removed sentence (`method/commands/po-stories-review.md:49`) and also appears 6 other times in that file.

@@ -1,5 +1,7 @@
 # Review — s126-plan-and-defect-paths-cleanup
 
+[Story](../stories.md) · [Plan](../plans/s126-plan-and-defect-paths-cleanup.md) · [Verification](../verif/s126-plan-and-defect-paths-cleanup.md)
+
 Diff reviewed: `git diff main...story/s126-plan-and-defect-paths-cleanup` (merge base 258e693), in a context that did not write it. Findings rated critical, major or minor.
 
 Review status: complete

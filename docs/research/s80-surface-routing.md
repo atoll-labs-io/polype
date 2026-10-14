@@ -1,5 +1,7 @@
 # Research — s80-surface-routing
 
+[Story](../stories.md)
+
 ## Structuring facts
 - No assumption of the story is false. Three things it leaves out: `/po-flow` does not read `QA stage` today (`method/commands/po-flow.md:14`); `tests/fleet-design.test.sh:56` also freezes a routing phrase ("for a story whose text shows a screen"), not only `qa-gate` and `qa-fleet`; and `/po-review` holds no routing phrase at all (`method/commands/po-review.md:26,41-42` only handle a review blocked on QA), so it needs no change.
 - The old rule ("a story whose text shows a screen", "when `QA stage` is `screens`") is written separately in 8 owned files, ~20 places (list under Current code). The rule ADR-0054 adds (Surface line, `surfaces` value, fallback to the text) would double that. ADR-0058 (this lane) defines two terms once in `method/AGENTS.md`, "has a screen" and "goes to QA", and every routing file uses them.

@@ -1,5 +1,7 @@
 # Research — s48-floor-guard
 
+[Story](../stories.md)
+
 ## Structuring facts
 - No assumption of the story is false. One is incomplete: the story never says what the review does with exit 2; `reviewer.md:28-37` already answers it — a command that prevents a complete review gives `Review status: blocked`, so exit 2 maps to a blocked review, never to a "not verified" line under a passing verdict.
 - `po-gate.sh` maps every refusal to exit 1 (`refuse`, `po-gate.sh:15`) and `set -euo pipefail` (`po-gate.sh:12`) turns any internal error into exit 1 too; `${2:?}` (`po-gate.sh:76-78`) exits 1 as well (checked: bash prints the message and exits 1). For `floor-guard`, 1 means "flags found", so every failure path — missing argument, unknown ref, failing `git diff`, failing `awk` — must exit 2 explicitly.

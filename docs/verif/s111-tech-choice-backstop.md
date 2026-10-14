@@ -1,5 +1,7 @@
 # Verification — s111-tech-choice-backstop
 
+[Story](../stories.md) · [Plan](../plans/s111-tech-choice-backstop.md)
+
 Tree: 3ee2925dea3d6d33828efd234338a9a5707b0998
 
 ## Checks

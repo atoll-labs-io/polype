@@ -3,6 +3,8 @@ validated: yes
 ---
 # Plan — s123-local-copy-checksums
 
+[Story](../stories.md) · [Research](../research/s123-local-copy-checksums.md)
+
 Branch `story/s123-local-copy-checksums`. Read `docs/research/s123-local-copy-checksums.md` first; this plan builds on it without repeating it. Decision: ADR-0087 (accepted, option A chosen by the owner on 2026-10-14).
 
 ## Story

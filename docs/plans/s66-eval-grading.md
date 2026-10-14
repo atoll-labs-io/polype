@@ -4,6 +4,8 @@ validated: yes
 ---
 # Plan (short track) — s66-eval-grading
 
+[Story](../stories.md)
+
 Written by the planner on the short track (`Story track: auto`, complexity 2 ≤ `Flow threshold: 2`, no escalation signal). This one file stands in for both research and plan. Validated autonomously (`Plan validation: autonomous`): no human reviewed it.
 
 ## Verified facts

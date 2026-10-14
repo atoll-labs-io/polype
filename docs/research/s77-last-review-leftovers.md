@@ -1,5 +1,7 @@
 # Research — s77-last-review-leftovers
 
+[Story](../stories.md)
+
 ## Structuring facts
 - **Unstated by the story:** ADR-0052 (accepted) fixes the redirection allowlist to `/dev/null`, `/dev/stdout`, `/dev/stderr` (`docs/decisions/ADR-0052-po-bounds-est-un-garde-fou-contre-les-erreurs.md:40`). Adding `/dev/fd/1|2` changes an accepted decision → ADR-0053 (written by the planner) supersedes it in part, and ADR-0052's `superseded-by:` gets `[ADR-0053]`, a docs/ path outside `Owns`.
 - **Track:** complexity 2 ≤ `Flow threshold` 2, but po-bounds is the subagents' access policy and AC1 widens what it allows → "authorization scope" signal → full track.

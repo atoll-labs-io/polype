@@ -3,6 +3,8 @@ validated: yes
 ---
 # Plan — s101-conversational-framing
 
+[Story](../stories.md) · [Research](../research/s101-conversational-framing.md)
+
 Branch `story/s101-conversational-framing`. Read `docs/research/s101-conversational-framing.md` first. This plan builds on it and does not repeat it.
 
 ## Story

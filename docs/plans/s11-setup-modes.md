@@ -3,6 +3,8 @@ validated: yes
 ---
 # Plan — s11-setup-modes
 
+[Story](../stories.md) · [Research](../research/s11-setup-modes.md)
+
 Branch `story/s11-setup-modes`. Read `docs/research/s11-setup-modes.md` first; this plan builds on it without repeating it.
 
 ## Story

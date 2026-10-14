@@ -1,5 +1,7 @@
 # Research — s104-escalation-contract
 
+[Story](../stories.md)
+
 ## Structuring facts
 - **Gap in the story: nothing on disk tells a plan waiting for a technical choice from a plan merely unvalidated.** The resume table routes every `validated: no` plan to "the plan" (`method/commands/po-drive.md:53`), and under `Plan validation: human` to the grouped question (`po-drive.md:115`). The row the story asks for needs a marker line in the plan, read like `Root cause: not found` is read in the research (`po-drive.md:52`, ADR-0070).
 - **Today the planner and `/po-plan` settle structural choices alone**: "A structural choice ... is decided here, in the plan, with an ADR" (`method/agents/planner.md:135`) and "A structural choice with alternatives (library, pattern, data model) gets an ADR" (`method/commands/po-plan.md:45`). Both contradict ADR-0077 and are the clauses to rewrite.

@@ -1,5 +1,7 @@
 # Verification — s110-framing-second-landing
 
+[Story](../stories.md) · [Plan](../plans/s110-framing-second-landing.md)
+
 Tree: 5eb300571411e08f37c7e8ada3845ac4f78e20f1
 
 ## Checks

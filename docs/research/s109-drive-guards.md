@@ -1,5 +1,7 @@
 # Research — s109-drive-guards
 
+[Story](../stories.md)
+
 ## Structuring facts
 - Partly false assumption: criterion `pr_wait_needs_effective_human` reads as if the condition were missing. It is already there, at `method/commands/po-drive.md:65` (s102 added it). The defect is that no test checks it. Removing it leaves 38 of 38 runnable tests green (see `## Diagnostic`). The fix is a test, plus one sentence for the `automatic` case.
 - Root cause 1: `method/commands/po-drive.md:87` restates `/po-research`'s worktree steps inline: fetch, start point, `git worktree add`, `.env*`, `Install`. It skips step 2 of `method/commands/po-research.md:34`, which s106 added after this line was written. A story still sitting in an unmerged framing PR therefore gets a lane.

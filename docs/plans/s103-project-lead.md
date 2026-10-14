@@ -3,6 +3,8 @@ validated: yes
 ---
 # Plan — s103-project-lead
 
+[Story](../stories.md) · [Research](../research/s103-project-lead.md)
+
 Branch `story/s103-project-lead`. Read `docs/research/s103-project-lead.md` first; this plan builds on it without repeating it.
 
 ## Story

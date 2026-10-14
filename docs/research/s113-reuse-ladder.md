@@ -1,5 +1,7 @@
 # Research — s113-reuse-ladder
 
+[Story](../stories.md)
+
 ## Structuring facts
 - No story assumption is false. Every file of `Owns` exists, and none of them holds a reuse ladder or a `## Reuse` section today (`grep -n Reuse method/templates/*.md method/agents/*.md`: no hit).
 - The change is prose in six method files plus one new test file. There is no code, no setting, no gate and no hook. `method/agents/implementer.md:51` ("Do what the plan says and nothing else") stays as it is, so the plan carries the ladder, as the story notes want.

@@ -4,6 +4,8 @@ validated: yes
 ---
 # Plan (short track) — s90-diagnostic-skill
 
+[Story](../stories.md)
+
 Written by the `planner` subagent on the short track. On the short track this one file stands in for both the research and the plan: there is no `docs/research/s90-diagnostic-skill.md`. Decision recorded in `docs/decisions/ADR-0068-une-story-de-defaut-porte-une-ligne-fixes-et-passe-par-le-diagnostic.md` (written by the planner, uncommitted).
 
 ## Verified facts

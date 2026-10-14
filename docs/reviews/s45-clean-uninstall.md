@@ -1,5 +1,7 @@
 # Review — s45-clean-uninstall
 
+[Story](../stories.md) · [Plan](../plans/s45-clean-uninstall.md) · [Verification](../verif/s45-clean-uninstall.md)
+
 Diff reviewed: `git diff m4-catalogue...story/s45-clean-uninstall` (one commit, 3c5d5b7), by a reviewer that did not write it. Findings are rated critical, major or minor.
 
 Review status: complete

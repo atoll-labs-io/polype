@@ -1,5 +1,7 @@
 # Research — s118-rebuilt-helper-single-defect
 
+[Story](../stories.md)
+
 ## Structuring facts
 - **Root cause**: `evals/cases/rebuilt-helper.sh:16-20` plants `_owned()`, a line-for-line copy of `get()` (`evals/lib.sh:71-75`), which checks the owner only, while `list_for()` checks owner **and** tenant (`evals/lib.sh:81`). So the copied lookup carries a tenant gap as well as the duplication, and a reviewer rightly calls that gap `critical`. Proof: the built case lets `User(id=1, tenant_id=20)` archive note 1 of tenant 10 through `archive()`/`_owned()`, while `list_for()` returns `[]` for that same user (reproduction below). 4 of the 6 measured reviews class a missing tenant check `critical` (`docs/evals/reuse-ladder.md:32-39`).
 - No story assumption is false. The story wants a fix that leaves `get()` alone, because `missing-tenant-filter` depends on it (`docs/evals/reuse-ladder.md:50`). The fix gives `rebuilt-helper` a story of its own (listing archived notes), and the plant copies `list_for()`'s filter, which is tenant-safe.

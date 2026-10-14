@@ -4,6 +4,8 @@ validated: yes
 ---
 # Plan (short track) — s23-stories-review-nongoals
 
+[Story](../stories.md)
+
 ## Verified facts
 
 - `method/skills/stories-review/SKILL.md:11` (check 1, Coverage) lists, for a brief, « the `## Wedge & non-goals` and each entry of `## Premises` » as items **to cover**. The non-goals are therefore counted as scope to deliver — the defect itself.

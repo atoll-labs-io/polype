@@ -1,5 +1,7 @@
 # Verification — s72-overlap-direction
 
+[Story](../stories.md) · [Plan](../plans/s72-overlap-direction.md)
+
 Tree: 5ba5b93364a7c312f3b1d956e8f68c89f6dfcc33
 
 ## Checks

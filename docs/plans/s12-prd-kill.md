@@ -3,6 +3,8 @@ validated: yes
 ---
 # Plan — s12-prd-kill
 
+[Story](../stories.md) · [Research](../research/s12-prd-kill.md)
+
 Branch `story/s12-prd-kill`. Read `docs/research/s12-prd-kill.md` first; this plan builds on it without repeating it.
 
 ## Story

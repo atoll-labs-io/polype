@@ -1,5 +1,7 @@
 # Review — s84-flutter-profile
 
+[Story](../stories.md) · [Plan](../plans/s84-flutter-profile.md) · [Verification](../verif/s84-flutter-profile.md)
+
 Story: s84-flutter-profile — Le profil Flutter
 Worktree: /home/lecrabe/dev/atoll/polype/.worktrees/s84-flutter-profile
 Reviewed tree: 58a3ced233bbb5910634cb3bc0d52184b7657bdb

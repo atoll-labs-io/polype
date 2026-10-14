@@ -1,0 +1,57 @@
+#!/usr/bin/env bash
+# po-link-artifacts — adds, under the title of each story artefact that lacks it, the link
+# line its template carries (research, plan, review, verification record, QA report).
+# A link whose target does not exist is left out; a file already linked is untouched.
+# Prints one line per file changed.
+# Usage: po-link-artifacts [repository root]   (default: .)
+set -u
+
+ROOT="${1:-.}"
+TPL="$(dirname "$0")/../method/templates"
+[ -d "$ROOT/docs" ] || { echo "po-link-artifacts: no docs/ in: $ROOT" >&2; exit 2; }
+[ -d "$TPL" ] || { echo "po-link-artifacts: no templates in: $TPL" >&2; exit 2; }
+ROOT="$(cd "$ROOT" && pwd)"
+
+template_line() { awk '/^# / && !t {t=1; next} t && NF {print; exit}' "$TPL/$1.md"; }
+
+is_flow() { awk 'NR==1 && $0!="---" {exit} NR>1 && $0=="---" {exit} /^track: flow[[:space:]]*$/ {f=1} END {exit !f}' "$1"; }
+
+# Keeps the links of a template line whose target exists relative to $2.
+resolvable() {
+  local line="$1" dir="$2" out="" part target
+  while [ -n "$line" ]; do
+    case "$line" in
+      *' · '*) part="${line%% · *}"; line="${line#* · }" ;;
+      *) part="$line"; line="" ;;
+    esac
+    target="${part#*](}"; target="${target%)}"
+    [ -e "$dir/$target" ] && out="${out:+$out · }$part"
+  done
+  printf '%s' "$out"
+}
+
+for f in "$ROOT"/docs/research/s[0-9]*-*.md "$ROOT"/docs/plans/s[0-9]*-*.md \
+         "$ROOT"/docs/reviews/s[0-9]*-*.md "$ROOT"/docs/verif/s[0-9]*-*.md \
+         "$ROOT"/docs/qa/s[0-9]*-*/report.md; do
+  [ -f "$f" ] || continue
+  dir="$(dirname "$f")"
+  case "$f" in
+    */docs/qa/*/report.md) id="$(basename "$dir")"; tpl=qa ;;
+    */docs/research/*) id="$(basename "$f" .md)"; tpl=research ;;
+    */docs/plans/*) id="$(basename "$f" .md)"; if is_flow "$f"; then tpl=plan-flow; else tpl=plan; fi ;;
+    */docs/reviews/*) id="$(basename "$f" .md)"; tpl=review ;;
+    */docs/verif/*) id="$(basename "$f" .md)"; tpl=verification-record ;;
+  esac
+
+  first="$(awk '/^# / && !t {t=1; next} t && NF {print; exit}' "$f")"
+  grep -q '^# ' "$f" || continue
+  case "$first" in '[Story]('*) continue ;; esac
+
+  line="$(template_line "$tpl" | sed "s/<id>/$id/g")"
+  line="$(resolvable "$line" "$dir")"
+  [ -n "$line" ] || continue
+
+  awk -v l="$line" '{print} /^# / && !t {t=1; print ""; print l}' "$f" > "$f.tmp" && mv "$f.tmp" "$f"
+  echo "${f#"$ROOT"/}"
+done
+exit 0

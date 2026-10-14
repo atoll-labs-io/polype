@@ -1,5 +1,7 @@
 # Review: s47-review-tree
 
+[Story](../stories.md) · [Plan](../plans/s47-review-tree.md) · [Verification](../verif/s47-review-tree.md)
+
 Diff reviewed: `git diff main...story/s47-review-tree` (commit 3a451a5), by a reviewer that did not write it.
 
 Review status: complete

@@ -3,6 +3,8 @@ validated: yes
 ---
 # Plan — s48-floor-guard
 
+[Story](../stories.md) · [Research](../research/s48-floor-guard.md)
+
 Branch `story/s48-floor-guard`. Read `docs/research/s48-floor-guard.md` first; this plan builds on it without repeating it. The structural choices are settled in `docs/decisions/ADR-0025-garde-de-plancher-lit-le-diff.md` (diff only, patterns inside `po-gate.sh`, POSIX awk, exit 2 blocks the review).
 
 ## Story

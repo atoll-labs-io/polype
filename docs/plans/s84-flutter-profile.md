@@ -4,6 +4,8 @@ validated: yes
 ---
 # Plan (short track) — s84-flutter-profile
 
+[Story](../stories.md)
+
 Short track: this file stands in for the research. Validated autonomously (`Plan validation: autonomous`): no human reviewed it. The source, commit and the `Dev`/`Build` commands are settled in `docs/decisions/ADR-0063-profil-flutter-depuis-le-gabarit-app-de-flutter-create.md` (written by the planner, uncommitted, `accepted`: commit it with the code, never edit its body).
 
 `FL:` = `https://github.com/flutter/flutter` at `5fc346839b5d0eef006ed8404392afb4dfae428d` (tag `3.47.6`, branch `stable`, 2026-09-30). `T:` = `FL:packages/flutter_tools/templates/`. Opened in a sparse clone outside the repository on 2026-10-08.

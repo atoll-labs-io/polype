@@ -1,5 +1,7 @@
 # Review: s106-framing-through-pr
 
+[Story](../stories.md) · [Plan](../plans/s106-framing-through-pr.md) · [Verification](../verif/s106-framing-through-pr.md)
+
 Reviewed tree: 5a299950f9b7fa53c2bcd81eb41497a00adc8dac
 Fix loop: 0
 Branch: `story/s106-framing-through-pr` (worktree `/home/lecrabe/dev/atoll/polype/.worktrees/s106-framing-through-pr`)

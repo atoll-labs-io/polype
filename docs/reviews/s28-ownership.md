@@ -1,5 +1,7 @@
 # Review — s28-ownership
 
+[Story](../stories.md) · [Plan](../plans/s28-ownership.md) · [Verification](../verif/s28-ownership.md)
+
 Diff reviewed: `git diff m3-flotte...story/s28-ownership`, in a context that did not write it. Findings rated critical, major or minor.
 
 Review status: complete

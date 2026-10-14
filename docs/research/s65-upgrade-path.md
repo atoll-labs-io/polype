@@ -1,5 +1,7 @@
 # Research — s65-upgrade-path
 
+[Story](../stories.md)
+
 ## Structuring facts
 - **False assumption 1 — `update` is not the only upgrade path.** A project served by the global install is refreshed with `polype init <projet>` (`docs/installation.md:91-94`, `:122-123`), and `init` runs `cmd_install`, not `cmd_update` (`bin/polype:281-284`). A listing hooked into `cmd_update` alone would never reach those projects: it must run on every project-mode pose (`wire_the_project`, `bin/polype:206-211`) and in `check`.
 - **False assumption 2 — not every dispatching command carries its own model-refusal sentence.** `/po-flow` and `/po-orchestrator` have none (`grep -n reject method/commands/*.md` hits only po-execute:37, po-review:33, po-qa:37, po-stories-review:33, po-drive:101); they delegate by reference to `/po-execute`'s `## Model` (`po-flow.md:75`, `po-orchestrator.md:57`) and to `/po-review` (`po-flow.md:77`, `po-orchestrator.md:68`). Both files are outside `Owns`: the test pins the reference plus the referenced sentence, it cannot add text there.

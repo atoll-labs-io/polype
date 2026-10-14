@@ -1,5 +1,7 @@
 # Verification — s113-reuse-ladder
 
+[Story](../stories.md) · [Plan](../plans/s113-reuse-ladder.md)
+
 Tree: 58e9a25a6ef81bb090c955450643cbae4b2668e2
 
 ## Checks

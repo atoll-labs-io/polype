@@ -3,6 +3,8 @@ validated: yes
 ---
 # Plan — s64-qa-routing
 
+[Story](../stories.md) · [Research](../research/s64-qa-routing.md)
+
 Branch `story/s64-qa-routing`. Read `docs/research/s64-qa-routing.md` first; this plan builds on it without repeating it. The decision it rests on is ADR-0041 (`docs/decisions/ADR-0041-le-retour-en-qa-exige-une-revue-bloquee-et-reconnait-la-preuve-non-committee.md`, written by the planner, committed with the story).
 
 ## Story

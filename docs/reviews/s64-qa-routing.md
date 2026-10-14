@@ -1,5 +1,7 @@
 # Review: s64-qa-routing
 
+[Story](../stories.md) · [Plan](../plans/s64-qa-routing.md) · [Verification](../verif/s64-qa-routing.md)
+
 Reviewed tree: a489cc68c5b6884614b89edeeced0a06615699dc
 Fix loop: 0
 Review status: complete

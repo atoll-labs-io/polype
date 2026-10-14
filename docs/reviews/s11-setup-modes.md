@@ -1,5 +1,7 @@
 # Review — s11-setup-modes
 
+[Story](../stories.md) · [Plan](../plans/s11-setup-modes.md) · [Verification](../verif/s11-setup-modes.md)
+
 Diff reviewed: `git diff m2-cadrage...story/s11-setup-modes` (commit 8ce9bdc), in a context that did not write it. Findings rated critical, major or minor.
 
 Review status: complete

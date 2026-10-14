@@ -1,5 +1,7 @@
 # Verification — s69-owns-overlap-globs
 
+[Story](../stories.md) · [Plan](../plans/s69-owns-overlap-globs.md)
+
 Tree: 7730faaaccfa5ade20f31d6421fd13f45f1d33b8
 
 ## Checks

@@ -1,5 +1,7 @@
 # Verification — s24-architect-conventions
 
+[Story](../stories.md) · [Plan](../plans/s24-architect-conventions.md)
+
 Tree: f9d573309b529cad1188c93da67b5c9e1e2215a6
 
 | Check | Command | Outcome | Time (UTC) |

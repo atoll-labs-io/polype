@@ -1,5 +1,7 @@
 # Review — s113-reuse-ladder
 
+[Story](../stories.md) · [Plan](../plans/s113-reuse-ladder.md) · [Verification](../verif/s113-reuse-ladder.md)
+
 Diff reviewed: `git diff main...story/s113-reuse-ladder`, in a context that did not write it. Findings rated critical, major or minor.
 
 Review status: complete

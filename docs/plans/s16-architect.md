@@ -3,6 +3,8 @@ validated: yes
 ---
 # Plan — s16-architect
 
+[Story](../stories.md) · [Research](../research/s16-architect.md)
+
 Branch `story/s16-architect`. Read `docs/research/s16-architect.md` first; this plan builds on it without repeating it.
 
 ## Story

@@ -3,6 +3,8 @@ validated: yes
 ---
 # Plan — s88-ros-simulation-driver
 
+[Story](../stories.md) · [Research](../research/s88-ros-simulation-driver.md)
+
 Validated autonomously (`Plan validation: autonomous`): no human reviewed it. Branch `story/s88-ros-simulation-driver`. Read `docs/research/s88-ros-simulation-driver.md` first; this plan builds on it without repeating it (`RG:`, `GZ:`, `RCL:`… as defined there). The launch route, the isolation and the starter are settled in `docs/decisions/ADR-0066-le-pilote-simulation-lance-la-simulation-isolee-sur-un-affichage-virtuel.md`, written by the planner, `accepted`, uncommitted: commit it with the code, never edit its body.
 
 ## Story

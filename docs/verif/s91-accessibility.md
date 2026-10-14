@@ -1,5 +1,7 @@
 # Verification — s91-accessibility
 
+[Story](../stories.md) · [Plan](../plans/s91-accessibility.md)
+
 Tree: 3beb2fed4212571eea2a5d65a67190d2eb68cfe6
 
 ## Checks

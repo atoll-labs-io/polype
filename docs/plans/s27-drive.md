@@ -3,6 +3,8 @@ validated: yes
 ---
 # Plan — s27-drive
 
+[Story](../stories.md) · [Research](../research/s27-drive.md)
+
 Branch `story/s27-drive`. Read `docs/research/s27-drive.md` first; this plan builds on it without repeating it.
 
 ## Story

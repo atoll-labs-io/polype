@@ -1,5 +1,7 @@
 # Review — s13-brief-new
 
+[Story](../stories.md) · [Plan](../plans/s13-brief-new.md) · [Verification](../verif/s13-brief-new.md)
+
 Diff reviewed: `git diff m2-cadrage...story/s13-brief-new` (commit 8afef38), in a context that did not write it. Findings are rated critical, major or minor.
 
 Review status: complete

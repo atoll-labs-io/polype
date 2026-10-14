@@ -1,5 +1,7 @@
 # Research — s105-ship-through-pr
 
+[Story](../stories.md)
+
 ## Structuring facts
 - **False assumption: on GitHub, « Rebase and merge » is not a fast-forward.** PR #6 (`gh pr view 6`): head `33e887b…`, landed commit `a380428…`, same tree `f8e542d…`, and `git merge-base --is-ancestor 33e887b main` exits 1. GitHub recreates every commit with new committer data and a new SHA. ADR-0080 (`docs/decisions/ADR-0080-…md:22`) and criterion `ship_opens_a_pr_and_fast_forwards` both equate the two. How to land "in fast-forward" per forge is a technology choice: ADR-0081 sets out the options, ranked, with status `proposed`. The owner decides (ADR-0077).
 - **A trap the story does not name:** if `/po-ship` squashed and rebased `story/<id>` in place, `po-gate ship-allowed` would refuse the branch as soon as `Target branch` has moved. The gate compares `Reviewed tree:` with `HEAD` outside `docs/` (`method/hooks/po-gate.sh:51,62`). The drive's resume table would then send the lane back to review (`method/commands/po-drive.md:61`) rather than to the ship. A resumed human ship would always hit this.

@@ -1,5 +1,7 @@
 # Research — s114-reuse-ladder-eval
 
+[Story](../stories.md)
+
 ## Structuring facts
 - No assumption of the story is false. Its one blind spot: a temporary `CLAUDE_CONFIG_DIR` holds no login. This machine logs in through `~/.claude/.credentials.json` (present), so a `claude -p` launched with an empty config dir has no credentials unless the environment carries a token. The plan has to settle this without copying a secret or touching `~/.claude/`.
 - The sentence the control arm swaps sits alone on `method/skills/review-antihallu/SKILL.md:38`. ADR-0085 (Consequences, Neutral) keeps it on its own line so the swap can be exact.

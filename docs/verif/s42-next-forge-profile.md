@@ -1,5 +1,7 @@
 # Verification — s42-next-forge-profile
 
+[Story](../stories.md) · [Plan](../plans/s42-next-forge-profile.md)
+
 Tree: c9754924b1ad5f1dfdc0ad2d340864617dbe28e2
 
 | Check | Command | Outcome | Time (UTC) |

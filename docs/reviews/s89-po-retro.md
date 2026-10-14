@@ -1,5 +1,7 @@
 # Review — s89-po-retro
 
+[Story](../stories.md) · [Plan](../plans/s89-po-retro.md) · [Verification](../verif/s89-po-retro.md)
+
 Diff reviewed: `git diff main...story/s89-po-retro`, in a context that did not write it. Findings rated critical, major or minor.
 
 Review status: complete

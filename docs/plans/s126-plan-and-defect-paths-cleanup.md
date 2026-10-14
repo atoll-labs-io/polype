@@ -3,6 +3,8 @@ validated: yes
 ---
 # Plan — s126-plan-and-defect-paths-cleanup
 
+[Story](../stories.md) · [Research](../research/s126-plan-and-defect-paths-cleanup.md)
+
 Branch `story/s126-plan-and-defect-paths-cleanup`. Read `docs/research/s126-plan-and-defect-paths-cleanup.md` first; this plan builds on it without repeating it.
 
 ## Story

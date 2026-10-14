@@ -4,6 +4,8 @@ validated: yes
 ---
 # Plan (short track) — s69-owns-overlap-globs
 
+[Story](../stories.md)
+
 Written by the planner on the short track (`Story track: auto`, complexity 2 ≤ `Flow threshold` 2). This one file stands in for both the research and the plan: there is no `docs/research/s69-owns-overlap-globs.md`. Validated autonomously (`Plan validation: autonomous`): no human reviewed it.
 
 ## Verified facts

@@ -3,6 +3,8 @@ validated: yes
 ---
 # Plan — s89-po-retro
 
+[Story](../stories.md) · [Research](../research/s89-po-retro.md)
+
 Validated autonomously (`Plan validation: autonomous`): no human reviewed it. Branch `story/s89-po-retro`. Read `docs/research/s89-po-retro.md` first; this plan builds on it without repeating it. What a milestone is, what counts as a figure, what "still open" means and why nothing is written are settled in `docs/decisions/ADR-0067-la-retro-ne-chiffre-que-les-lignes-ecrites-par-le-cycle.md`, written by the planner, `accepted`, uncommitted: commit it with the code, never edit its body.
 
 ## Story

@@ -3,6 +3,8 @@ validated: yes
 ---
 # Plan — s53-review-lenses
 
+[Story](../stories.md) · [Research](../research/s53-review-lenses.md)
+
 Branch `story/s53-review-lenses`. Read `docs/research/s53-review-lenses.md` first; this plan builds on it without repeating it.
 
 Track: full — the story is rated 3, above `Flow threshold: 2`. None of the five full-track signals is present, on the story text or in the code (no migration, screen, authorization, API contract or dependency in this repository; those words are subjects of the lens text). Structural choice recorded in ADR-0030 (preloaded skill, applied after step 6, triggered by the reviewer's reading of the diff). Plan validated autonomously: no human reviewed it.

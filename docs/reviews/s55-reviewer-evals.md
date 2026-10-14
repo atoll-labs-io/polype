@@ -1,5 +1,7 @@
 # Review — s55-reviewer-evals
 
+[Story](../stories.md) · [Plan](../plans/s55-reviewer-evals.md) · [Verification](../verif/s55-reviewer-evals.md)
+
 Diff reviewed: `git diff main...story/s55-reviewer-evals`, by a reviewer that did not write it. Each finding is rated critical, major or minor.
 
 Review status: complete

@@ -1,5 +1,7 @@
 # Research — s74-reviewer-bounds-bypasses
 
+[Story](../stories.md)
+
 ## Structuring facts
 - **The story's list of detours is incomplete.** Two more of the same kind reproduce on the current script, which allows both with exit 0 (sandbox, TMPDIR separate from the "main" repo). First, a substitution vanishes from the word that holds it (`method/hooks/po-bounds.sh:304`), so `git -C "$(echo <main>)" commit` is judged in the cwd. Second, `--attr-source` and `--config-env` take a separate value that `-*) j+1` (`:625`) reads as the verb, so `git --attr-source HEAD push` passes from a probe. Both are folded into this story (ADR-0051).
 - **A third detour is left out: the scope of `cd`** (subshell, substitution, `&`, pipeline, `pushd`/`popd`). `cur` is one variable across every line (`:608-611`), and the lexer's output says nothing about context. Fixing it changes the lexer's output format; it needs a story of its own (Open questions).

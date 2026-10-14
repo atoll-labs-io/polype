@@ -1,5 +1,7 @@
 # Research — s32-fleet-consistency
 
+[Story](../stories.md)
+
 ## Structuring facts
 - **Wrong assumption, criterion 1.** A lane cannot *perform* the design stage. ADR-0016 records that "une commande ne peut pas s'exécuter dans un subagent" (`docs/decisions/ADR-0016-flotte-un-driver-des-subagents.md:26`) — that is why `planner` exists at all — and `method/agents/` holds only `planner`, `implementer`, `reviewer`, `stories-reviewer`. `/po-drive` has no Write (`method/commands/po-drive.md:4-11`). So the lane can insert the design stage only as a named stop for a human `/po-design <id>`, unless the story buys a `designer` subagent, which lives outside its `Owns`.
 - The lane's dispatch list is unconditional: "Per lane, in this order" sends `planner`, `implementer`, `reviewer` (`method/commands/po-drive.md:72-76`), and the Resuming table (`:42-50`) has no design row — a story with a screen goes straight from plan to code. That is defect 12.

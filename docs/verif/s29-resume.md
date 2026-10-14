@@ -1,5 +1,7 @@
 # Verification — s29-resume
 
+[Story](../stories.md) · [Plan](../plans/s29-resume.md)
+
 Tree: 01ddd3964b1895912705f6dd55886c04cb29f6fa
 
 | Check | Command | Outcome | Time (UTC) |
