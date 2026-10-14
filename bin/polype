@@ -18,6 +18,10 @@
 # .claude/ copies: they describe this checkout's copies, so they are never committed, and a
 # refresh pulled from another checkout cannot make these copies look hand-edited (ADR-0087).
 set -euo pipefail
+if [ "${BASH_VERSINFO[0]}" -lt 4 ] || { [ "${BASH_VERSINFO[0]}" -eq 4 ] && [ "${BASH_VERSINFO[1]}" -lt 2 ]; }; then
+  echo "polype: bash ${BASH_VERSINFO[0]}.${BASH_VERSINFO[1]} found, bash 4.2 or newer needed; nothing written (on macOS: brew install bash)" >&2
+  exit 1
+fi
 
 POLYPE_VERSION="0.2.0"
 
@@ -250,8 +254,10 @@ absorb_agents_md() {
     rm -f "$aside"
     echo "polype: AGENTS.md moved into AGENTS.local.md under ## Notes moved from AGENTS.md" >&2
   elif hand_written_agents_md; then
+    local again='polype update .'
+    [ "$mode" = init ] && again='polype init .'
     mv "$project/AGENTS.md" "$aside"
-    echo "polype: AGENTS.md kept as AGENTS.md.before-polype: no AGENTS.local.md to move it into; run /po-setup, then polype update ." >&2
+    echo "polype: AGENTS.md kept as AGENTS.md.before-polype: no AGENTS.local.md to move it into; run /po-setup, then $again" >&2
   fi
 }
 
@@ -406,7 +412,8 @@ keep_claude_md() {
 
 # Only the exact values act: a missing line, a missing AGENTS.local.md or a typo touches nothing.
 handle_claude_md() {
-  local name
+  local name again='polype update .'
+  [ "$mode" = init ] && again='polype init .'
   case "$(local_setting 'Project CLAUDE file')" in
     absorbed) absorb_claude_md ;;
     kept) keep_claude_md ;;
@@ -416,7 +423,7 @@ handle_claude_md() {
         if [ -f "$project/AGENTS.local.md" ]; then
           echo "polype: $name left in place: Project CLAUDE file is not set to absorbed or kept in AGENTS.local.md" >&2
         else
-          echo "polype: $name left in place: Project CLAUDE file is not set to absorbed or kept: no AGENTS.local.md; run /po-setup, then polype update ." >&2
+          echo "polype: $name left in place: Project CLAUDE file is not set to absorbed or kept: no AGENTS.local.md; run /po-setup, then $again" >&2
         fi
       done
       ;;
