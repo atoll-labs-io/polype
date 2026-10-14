@@ -10,6 +10,8 @@ Reads settings: none
 
 Ouvrir une session sur le projet suffit : le chef de projet reprend où il en est, sans commande à taper.
 
+Polype vise tout agent ou harness ; pris en charge aujourd'hui : Claude Code ; prévu ensuite : Codex (ADR-0005 de Polype), sans date ; pour un autre outil, il faut ouvrir une issue sur `atoll-labs-io/polype`.
+
 ## Installation
 - `polype install --global` puis `polype init <projet>` — la méthode dans `~/.claude` pour tous les projets, puis l'activation d'un dépôt ; `polype install <projet>` pose tout dans un seul dépôt.
 - `polype check` — la version posée et les fichiers qui ont dérivé depuis.
