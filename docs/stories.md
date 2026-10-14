@@ -2120,3 +2120,17 @@ Objectif : qu'un projet activé avec `polype init` le reste à chaque `polype up
 - [ ] `adr_records_the_mode` — une ADR nouvelle dit où vit le mode et pourquoi, avec les options écartées : la déduction seule (un projet déjà gonflé se lit comme une install complète) et une option `update --init` (qu'on oublie, et le défaut revient).
 
 **Notes pour l'agent** : `target_is_a_project` (`bin/polype:110`) choisit déjà les `PAIRS` selon `$mode` ; le mécanisme des ghosts d'`update` et la boucle de `cmd_install` (`bin/polype:582`) retirent ce que le manifeste connaît et que le mode ne pose plus, ce qui suffit à faire maigrir un projet une fois le mode connu. Hors périmètre, décidé par le porteur : la protection d'une copie modifiée à la main que `drop_laid_file` supprime (issue #89), et la réparation de pecten et de nautile, faite après le ship par une PR dans chacun de ces dépôts. Tests hors `Owns` qui figent `docs/installation.md` et gardent leurs phrases : `tests/docs-and-eval-cleanup.test.sh` (« ceux qu'il trouve (ADR-0086) »), `tests/hooks-installer-docs-cleanup.test.sh` (pas de ligne de prose au-delà de 100 caractères) ; `tests/installer.test.sh:179` fige « relance `polype init <projet>` ou `polype update <projet>` », d'où sa place dans `Owns`.
+
+### s136-session-hint-infers-init — L'indication de po-session devine init sans fichier de mode
+**En tant que** porteur d'un projet activé avec `polype init` avant M13 **je veux** que l'indication de `po-session` dise `polype init .` même quand `.polype/mode` manque **afin que** la commande conseillée ne regonfle pas un projet posé avant ce fichier.
+
+- **Complexité** : 1
+- **Dépend de** : s135-update-keeps-init-mode
+- **Surface** : command
+- **Corrige** : issue #94 (`Issue tracker: github`), constat majeur de la revue de s135 : la mutation qui désactive la branche de déduction de `po-session` (`method/hooks/po-session.sh:244-245`) ne fait échouer aucun test
+- **Owns** : `tests/update-keeps-mode.test.sh`
+
+**Critères d'acceptation**
+- [ ] `session_hint_infers_init_without_mode` — sur un projet activé par `init` dont `.polype/mode` a été retiré (manifeste sans entrée `.claude/commands/`), `po-session` écrit pour un `CLAUDE.local.md` sous `Project CLAUDE file: absorbed` la ligne `… → polype init . moves it into AGENTS.local.md` ; sur une install complète sans `.polype/mode`, la ligne dit `polype update .`. Le test échoue quand la branche de déduction est désactivée.
+
+**Notes pour l'agent** : `test_hints_say_init` (`tests/update-keeps-mode.test.sh:98`) ne couvre qu'un projet qui a son fichier de mode ; s'en inspirer. Aucun changement de code attendu : si le test révèle un défaut de la branche, le rapport le dit et la story s'arrête pour la personne. Hors périmètre : les commentaires périmés (#95, #96) et l'écart de formulation (#97).
