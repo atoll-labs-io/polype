@@ -1,5 +1,7 @@
 # Review: s135-update-keeps-init-mode
 
+[Story](../stories.md) · [Plan](../plans/s135-update-keeps-init-mode.md) · [Verification](../verif/s135-update-keeps-init-mode.md)
+
 Reviewed tree: 023c630f40a4adb5ea8c56e52f35754a2ffdc019
 Fix loop: 0
 Scope: `git diff origin/main...story/s135-update-keeps-init-mode` (origin/main = 0ebfc94; the local `main` ref lags, as the caller said)
