@@ -58,3 +58,33 @@ Max severity: minor
 Stories ready: yes
 
 > Answered at the next revision, 2026-10-14. Minor 1: `README.md`, `tests/readme-onboarding.test.sh` and `tests/installer.test.sh` join `Owns`; `hints_say_init` now has both texts say that `update` keeps the mode, `polype init .` staying the advised command and the repair. Minor 2: `check` is dropped from `mode_is_recorded`. Minor 3: `po-session` applies the same inference rule; `update` sets `$mode` from the recorded mode, so the installer's own hints say `polype init .`, held by a test (`mode_inferred_without_state`). `/po-setup` runs before or right after the install, so it names the command per mode without reading state. Minor 4: the Notes list the pinning tests outside `Owns`. Minor 5: complexity raised to 3. Verified: #73 is an issue (read through `octo` on 2026-10-14), not a pull request. Stories ready: yes.
+
+## s136-session-hint-infers-init (added 2026-10-14)
+
+A one-off review of the story added to M13 from issue #94 (major finding of the s135 review), turned into a story by the owner. Same reviewer, fresh context; scope source: issue #94.
+
+Review status: complete
+
+### Coverage
+| Scope item | Source section | Covered by | Covered |
+| --- | --- | --- | --- |
+| A po-session case on an init project with `.polype/mode` removed, failing when the inference branch at `po-session.sh:244-245` is disabled (mutation d) | issue #94 | s136 (`session_hint_infers_init_without_mode`) | yes |
+| The rule of `mode_inferred_without_state` ("po-session applique la même règle"), both outcomes | issue #94, quoting s135 | s136 (full install without mode → `polype update .`) | yes |
+
+### Exclusions
+| Excluded item | Source section | Revived by | Revived |
+| --- | --- | --- | --- |
+| Stale comments (#95, #96) and the wording gap (#97) | story notes | none | no |
+
+### Checks
+- [x] Exclusions, no disguised layer, one testable criterion with input, action and exact output, dependency on s135, complexity 1, id unique, `Owns` overlaps only s135 (its dependency), surface `command` admitted by `cli`, `Corrige` names GitHub issue #94.
+
+### Findings
+none
+
+### Not verified
+- That the new test fails under mutation (d): no shell; the execute or review stage repeats it.
+- That an uncommitted deletion of `.polype/mode` changes nothing: the hook reads the file tree, not git (`po-session.sh:243-245`).
+
+Max severity: none
+Stories ready: yes
