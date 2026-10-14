@@ -24,7 +24,7 @@ test_setup_landing_holds() {
   require_file "$setup"
   local s1; s1=$(section_of "$setup" 'Step 1 — Look before asking')
   holds "$s1" 'once question 1 of Step 2 has given `Target branch`' 'Step 1'
-  local s2; s2=$(section_of "$setup" 'Step 2 — Five questions, one AskUserQuestion call each, plus the Platform, design, QA stage and Ship confirmation follow-ups and the catalogue offer')
+  local s2; s2=$(section_of "$setup" 'Step 2 — Five questions, one AskUserQuestion call each, plus the Platform, design, QA stage, Ship confirmation and Project CLAUDE file follow-ups and the catalogue offer')
   holds "$s2" 'from that reading of the forge, made once `Target branch` is known' 'Step 2'
   local land; land=$(section_of "$setup" 'Landing the framing')
   holds "$land" 'It never commits to `Target branch` directly and never pushes it.' 'landing'
@@ -39,7 +39,7 @@ test_framing_wording_is_clean() {
   if grep -qF -- 'stop: Ancestry' "$setup"; then fail "po-setup.md still capitalises after the colon"; fi
   local f
   for f in "$setup" "$arch"; do
-    contains "$f" 'Never commit a `CLAUDE.md` (ADR-0086).' || fail "$f lacks the ADR reference inside its sentence"
+    contains "$f" 'Never commit a `CLAUDE.md` (ADR-0086)' || fail "$f lacks the ADR reference inside its sentence"
     if grep -qF -- '`AGENTS.local.md`. (ADR-0086)' "$f"; then fail "$f leaves ADR-0086 outside a sentence"; fi
   done
 }

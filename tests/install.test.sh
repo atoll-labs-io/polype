@@ -56,9 +56,11 @@ test_install_creates_no_claude_md_and_spares_one_without_settings() {
 
 test_install_drops_the_legacy_claude_md_import() {
   project
+  printf 'Project CLAUDE file: absorbed\n' > "$P/AGENTS.local.md"
   printf '@AGENTS.md\n' > "$P/CLAUDE.md"
   install "$P"
   if [ -e "$P/CLAUDE.md" ]; then fail "a CLAUDE.md holding only the old import survived"; fi
+  rm "$P/AGENTS.local.md"
   printf '# Project notes\n@AGENTS.md\n' > "$P/CLAUDE.md"
   local notes; notes="$(cksum < "$P/CLAUDE.md")"
   install "$P"

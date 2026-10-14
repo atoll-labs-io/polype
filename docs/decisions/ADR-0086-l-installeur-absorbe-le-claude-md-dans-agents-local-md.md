@@ -5,7 +5,7 @@ status: accepted
 date: 2026-10-13
 scope: story s115-no-claude-md
 supersedes: [ADR-0073]
-superseded-by: []
+superseded-by: [ADR-0089]
 ---
 
 # ADR-0086 — Aucun CLAUDE.md dans un projet : l'installeur l'absorbe
