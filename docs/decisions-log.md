@@ -61,3 +61,6 @@ A decision the person took is not logged here: it is an ADR or a story.
 | 2026-10-14 | — | Framed M10 from another agent's draft, split into s128 (templates) and s129 (backfill), after M9 quinquies | The owner approved; it touches every story's evidence, so it runs alone |
 | 2026-10-14 | — | Repointed the remotes of polype, pecten and nautile to the renamed org `atoll-labs-io` | The owner renamed the GitHub org |
 | 2026-10-14 | s124, s125, s126, s127 | Merged by the agent (PRs #53, #55, #56, #57) | Effective `Ship confirmation: automatic`, solo repository |
+| 2026-10-14 | s128-artifact-link-templates, s129-artifact-links-backfill | Ran each alone, after M9 quinquies, with no other lane in flight | Both touch every story's evidence; the `Owns` overlap check cannot see files other lanes create |
+| 2026-10-14 | s128, s129 | Ran fix loops on reviews that allowed the ship (s128 once, s129 twice; the last one a plan-text fix under `docs/`, shipped without a third review since the reviewed code did not change) | The owner asked to finish at 100 % |
+| 2026-10-14 | s128, s129 | Merged by the agent (PRs #59, #60) | Effective `Ship confirmation: automatic`, solo repository |

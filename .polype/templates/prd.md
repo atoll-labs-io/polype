@@ -6,7 +6,7 @@ date: <YYYY-MM-DD>
 ---
 # PRD — <product>
 
-`/po-prd` fills this file one validated section at a time. `status` stays `draft` until the user has read the whole document; it then becomes `approved`.
+`/po-prd` fills this file one validated section at a time. `status` stays `draft` until every section has been approved on its own question; `/po-prd` then sets it to `approved` at its commit, and never asks for the document to be read again.
 
 ## Target
 <The SaaS in question, its vendor, and which of its plans or modules are in view.>
