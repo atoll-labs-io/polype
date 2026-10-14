@@ -54,8 +54,8 @@ Majors and minors stay in the report and are not asked. With no critical finding
 Check `git status --porcelain` first: an environment file listed there → stop. Commit `docs/reviews/stories.md` alone as `docs: stories review`, on the branch `framing/stories-review`, landed as `## Landing the framing` of `/po-setup` says (`method/commands/po-setup.md`).
 
 ## Outcome
-- `Stories ready: yes` → "Stories reviewed. Next: /po-research <first story id>"
-- `Stories ready: no` → list the story ids answered Fix or Set the story aside, then: "Run /po-stories <ids>, then /po-stories-review again." When every critical finding was answered Accept the risk, say that those risks stay open in the report.
-- A blocked review → list what it says is missing, then: "Run /po-stories-review again once that is fixed."
+- A blocked review (`Review status: blocked`, which also ends on `Stories ready: no`) → list what it says is missing, then: "Run /po-stories-review again once that is fixed." Only this bullet applies to it.
+- With a complete review, `Stories ready: yes` → "Stories reviewed. Next: /po-research <first story id>"
+- With a complete review, `Stories ready: no` → list the story ids answered Fix or Set the story aside, then: "Run /po-stories <ids>, then /po-stories-review again." When every critical finding was answered Accept the risk, say that those risks stay open in the report.
 
 The verdict is a soft gate: `/po-research` warns when `docs/reviews/stories.md` is missing or says `Stories ready: no`, and carries on anyway.

@@ -21,7 +21,7 @@ test_framing_merge_is_proven_per_forge() {
   local s
   for s in 'gh pr view framing/<slug> --json state --jq .state' '`MERGED`' \
     'git merge-base --is-ancestor origin/framing/<slug> origin/<Target branch>' \
-    'Ancestry is never the proof of a merge on GitHub' 'step 3 of `/po-ship`'; do
+    'ancestry is never the proof of a merge on GitHub' 'Any other state, or no pull request from that branch, means not merged.' 'step 3 of `/po-ship`'; do
     holds "$b" "$s" 'Base'
   done
 }
@@ -50,7 +50,7 @@ test_root_realigns_after_a_merge() {
   done
   local land; land=$(section_of "$SETUP" 'Landing the framing')
   local endb rt
-  endb=$(offset "$land" '**The commit, built beside the checkout**')
+  endb=$(offset "$land" 'In the root, `git merge --ff-only origin/<Target branch>`, whatever the slug')
   rt=$(offset "$land" 'GIT_INDEX_FILE=<tmp> git read-tree <base>')
   [ -n "$endb" ] && [ -n "$rt" ] && [ "$endb" -lt "$rt" ] || fail "the realignment does not precede the commit build"
 }
