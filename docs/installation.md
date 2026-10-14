@@ -239,8 +239,9 @@ Toutes sont cherchées avant la première écriture : la pose s'arrête en **1**
 Relancée avec `--set-aside`, la pose déplace chaque collision en `<chemin>.before-polype`, puis pose
 les siens. Si un `<chemin>.before-polype` existe déjà, rien n'est déplacé et rien n'est écrit. La
 règle vaut à l'identique dans `~/.claude/` pour la pose globale et dans `.claude/` ou `.polype/`
-pour un projet. `remove` remet chaque fichier mis de côté à sa place. Un `AGENTS.md` écrit à la main
-n'est pas une collision : il est absorbé, comme le dit la liste ci-dessus.
+pour un projet. `remove` remet chaque fichier mis de côté à sa place, sauf quand la copie qui le
+couvrait a été modifiée à la main : les deux restent alors en place (ADR-0092). Un `AGENTS.md` écrit
+à la main n'est pas une collision : il est absorbé, comme le dit la liste ci-dessus.
 
 ## Les fichiers d'état
 
@@ -301,6 +302,26 @@ sans `.claude/.polype-checksums`, il juge les copies sur les lignes `.claude/` d
 `.polype/checksums`, écrit le fichier local, retire ces lignes de `.polype/checksums` et le dit sur
 `stderr`. Un checkout déjà bloqué avant la migration, dont les copies sont plus anciennes que les
 empreintes commitées, se répare avec `polype install <projet>`.
+
+### Une copie modifiée que Polype ne pose plus
+
+Une copie est modifiée quand son empreinte enregistrée existe et diffère de son contenu. Quand
+`init`, `install`, `update` ou `remove` ne posent plus une telle copie, ils la laissent en place,
+octet pour octet, et la nomment sur `stderr` (ADR-0092) :
+
+```
+polype: modified, kept: <chemin>
+```
+
+Elle sort du manifeste et des deux fichiers d'empreintes : elle devient le fichier de la personne.
+La pose suivante qui la livre à nouveau s'arrête dessus comme sur une collision ; `--set-aside` la
+déplace en `<chemin>.before-polype`. `update` ne la compte pas dans « removed ». Si elle couvrait un
+`<chemin>.before-polype`, celui-ci reste aussi, et la ligne nomme les deux chemins.
+
+Deux limites. Une copie sans empreinte enregistrée est supprimée comme avant : un clone frais, dont
+les empreintes de `.claude/` sont hors de git (ADR-0087) ; git garde alors la modification. Et
+`remove --global` emporte la charge utile sous `~/.claude/polype/` avec son répertoire, même
+modifiée, sans ligne `modified, kept:`.
 
 ## Après une mise à jour
 
@@ -374,4 +395,5 @@ vidé par lui.
 
 Restent intacts : `AGENTS.local.md`, `docs/`, le `.gitignore` (les deux lignes ajoutées y restent —
 un worktree encore en place ne doit pas se retrouver suivi), et tout fichier que le projet a ajouté
-sous `.claude/`, y compris ses propres commandes.
+sous `.claude/`, y compris ses propres commandes, ainsi que chaque copie modifiée à la main, nommée
+`modified, kept:` sur `stderr` (ADR-0092).

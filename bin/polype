@@ -14,9 +14,10 @@
 #
 # State files describe an install. Three sit next to each other: manifest (what was laid down),
 # checksums (what it contained) and version, in .polype/ for a project, in ~/.claude/polype/ for
-# the global one. A project has a fourth, .claude/.polype-checksums, holding the sums of the
-# .claude/ copies: they describe this checkout's copies, so they are never committed, and a
-# refresh pulled from another checkout cannot make these copies look hand-edited (ADR-0087).
+# the global one. A project adds .polype/mode, the activation mode (init or project) that update
+# keeps (ADR-0091), and .claude/.polype-checksums, holding the sums of the .claude/ copies: they
+# describe this checkout's copies, so they are never committed, and a refresh pulled from another
+# checkout cannot make these copies look hand-edited (ADR-0087).
 set -euo pipefail
 if [ "${BASH_VERSINFO[0]}" -lt 4 ] || { [ "${BASH_VERSINFO[0]}" -eq 4 ] && [ "${BASH_VERSINFO[1]}" -lt 2 ]; }; then
   echo "polype: bash ${BASH_VERSINFO[0]}.${BASH_VERSINFO[1]} found, bash 4.2 or newer needed; nothing written (on macOS: brew install bash)" >&2
@@ -232,14 +233,24 @@ refuse_collisions() {
   done
 }
 
-# A laid-down file goes, and the person's file it had set aside comes back in its place.
+# A laid-down file goes, and the person's file it had set aside comes back in its place. A copy
+# the person edited is kept and becomes theirs (ADR-0092): returns 1, nothing moved. Needs RECORDED.
 drop_laid_file() {
   local dest="$1"
+  if [ -f "$root/$dest" ] && has_drifted "$dest"; then
+    if [ -e "$root/$dest.before-polype" ] || [ -L "$root/$dest.before-polype" ]; then
+      echo "polype: modified, kept: $root/$dest; $root/$dest.before-polype left as it is" >&2
+    else
+      echo "polype: modified, kept: $root/$dest" >&2
+    fi
+    return 1
+  fi
   rm -f "$root/$dest"
   if [ -e "$root/$dest.before-polype" ] || [ -L "$root/$dest.before-polype" ]; then
     mv "$root/$dest.before-polype" "$root/$dest"
     echo "polype: put back: $root/$dest" >&2
   fi
+  return 0
 }
 
 hand_written_agents_md() {
@@ -586,6 +597,7 @@ done_message() {
 cmd_install() {
   collect_shipped
   refuse_collisions
+  load_checksums
   mkdir -p "$root" "$state_dir"
 
   local line src dest old
@@ -595,7 +607,7 @@ cmd_install() {
   # its replacement is ready, so a global install never removes the payload it is reading.
   if [ -f "$manifest" ]; then
     while IFS= read -r old; do
-      [ -n "${SHIPPED[$old]-}" ] || drop_laid_file "$old"
+      if [ -z "${SHIPPED[$old]-}" ]; then drop_laid_file "$old" || true; fi
     done < "$manifest"
   fi
 
@@ -636,7 +648,7 @@ cmd_update() {
 
   local ghosts=0
   while IFS= read -r old; do
-    [ -n "${SHIPPED[$old]-}" ] || { drop_laid_file "$old"; ghosts=$((ghosts + 1)); }
+    if [ -z "${SHIPPED[$old]-}" ] && drop_laid_file "$old"; then ghosts=$((ghosts + 1)); fi
   done < "$manifest"
 
   : > "$manifest.next"
@@ -729,6 +741,7 @@ unwire_the_project() {
 cmd_remove() {
   require_install
   local path held=() hold="$root/.polype-restore.$$"
+  load_checksums
   while IFS= read -r path; do
     # A file set aside under the payload directory would be put back, then lost with it: it waits
     # outside until the directory is gone.
@@ -738,8 +751,11 @@ cmd_remove() {
       mkdir -p "$(dirname "$hold/$path")"
       mv "$root/$path.before-polype" "$hold/$path"
       held+=("$path")
+    elif [ "$mode" = global ] && [ "${path#polype/}" != "$path" ]; then
+      # The payload goes whole with its directory below: nothing there is kept.
+      rm -f "$root/$path"
     else
-      drop_laid_file "$path"
+      drop_laid_file "$path" || true
     fi
   done < "$manifest"
   rm -f "$manifest" "$checksums" "$version_file" "$mode_file"
