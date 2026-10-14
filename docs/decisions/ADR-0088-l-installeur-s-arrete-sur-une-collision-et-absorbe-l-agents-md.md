@@ -5,7 +5,7 @@ status: accepted
 date: 2026-10-14
 scope: story s130-install-refuses-collisions
 supersedes: []
-superseded-by: []
+superseded-by: [ADR-0092]
 ---
 
 # ADR-0088 — L'installeur s'arrête sur une collision et absorbe l'`AGENTS.md`
