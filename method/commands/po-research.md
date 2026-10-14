@@ -52,6 +52,6 @@ Fill `templates/research.md` into `docs/research/<id>.md`, **200 lines at most**
 
 Leave it uncommitted; the implementer commits it with the code.
 
-When the research opens with `Root cause: not found`, finish instead with: "No root cause found for <id>: the story goes to a human, and no plan is written on this research."
+When the research holds `Root cause: not found` as a whole line (`grep -x`, ADR-0070), the line the `diagnostic` skill writes first in its `## Structuring facts`, finish instead with: "No root cause found for <id>: the story goes to a human, and no plan is written on this research."
 
 Finish with: "Research written to docs/research/<id>.md in <path>. Next: /po-plan <id>"
