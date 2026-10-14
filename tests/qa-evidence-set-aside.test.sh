@@ -27,5 +27,6 @@ test_scene_and_recorder_stop_cleanly() {
   contains "$SCENE" 'then `quit()`'
   lacks "$SCENE" 'the process group you started, and only that one'
   contains "$SIMULATION" 'a recorder still running after 30 seconds is a finding'
+  contains "$SIMULATION" 'wait at most 30 seconds of real time'
   lacks "$SIMULATION" 'wait until it exits, so the bag'
 }

@@ -55,6 +55,9 @@
 # code through, so every failure ends in a refusal. Reads no setting; needs jq (ADR-0024).
 set -uo pipefail
 
+# Set by git_env_word: the variable name of the last word it recognised.
+ENV_WORD=""
+
 # The lexer marks a substitution with \036; no refusal may print that byte (ADR-0072).
 deny() { local msg="$*" m=$'\036'; echo "po-bounds: ${msg//$m/<substitution>}" >&2; exit 2; }
 
@@ -660,26 +663,27 @@ check_redirects() {
   done
 }
 
-# Refuses a command-line config entry ($1: key[=value]) that sets core.worktree. tr, not ${key,,}:
-# macOS ships bash 3.2.
+# Refuses a command-line config entry ($1: key[=value]) that sets core.worktree; $2, when given, follows the role
+# in the message. tr, not ${key,,}: macOS ships bash 3.2.
 check_config_key() {
   local key
   key="$(printf '%s' "${1%%=*}" | tr '[:upper:]' '[:lower:]')"
-  [ "$key" != core.worktree ] || deny "core.worktree points git elsewhere, forbidden to the $mode: $cmd"
+  [ "$key" != core.worktree ] || deny "core.worktree points git elsewhere, forbidden to the $mode${2-}: $cmd"
 }
 
-# Succeeds, printing the variable name, when the typed word ($1) assigns a variable that points git
-# elsewhere. A quoted value is still an assignment (GIT_DIR="/x" git log), so q words count too.
+# Succeeds, setting ENV_WORD to the variable name, when the typed word ($1) assigns a variable that points git
+# elsewhere. A quoted value is still an assignment (GIT_DIR="/x" git log), so q words count too. No subshell:
+# it runs once per word of every command.
 git_env_word() {
   case "${1:0:1}:${1:1}" in
     [uq]:GIT_DIR=*|[uq]:GIT_WORK_TREE=*|[uq]:GIT_CONFIG_PARAMETERS=*|[uq]:GIT_CONFIG_COUNT=*)
-      printf '%s' "${1:1}" | sed 's/=.*//'; return 0 ;;
+      ENV_WORD="${1:1}"; ENV_WORD="${ENV_WORD%%=*}"; return 0 ;;
   esac
   return 1
 }
 
 check_bash() {
-  local cmd="$1" cur="$2" mode="$3" lexed line i j k n w a verb dir nonopt re throwaway pointer envpoint="" ev
+  local cmd="$1" cur="$2" mode="$3" lexed line i j k n w a verb dir nonopt re throwaway pointer envpoint=""
   local -a cfgs=()
   local -a words=() vals=() all=() redirs=()
   lexed="$(printf '%s' "$cmd" | lex_command)" || deny "po-bounds cannot read this command: the lexer failed: $cmd"
@@ -693,7 +697,7 @@ check_bash() {
     while IFS= read -r line; do
       IFS=$'\037' read -ra all <<< "$line"
       for a in ${all[@]+"${all[@]}"}; do
-        [ -z "$envpoint" ] && envpoint="$(git_env_word "$a")" || true
+        if [ -z "$envpoint" ] && git_env_word "$a"; then envpoint="$ENV_WORD"; fi
       done
     done <<< "$lexed"
   fi
@@ -708,8 +712,8 @@ check_bash() {
     for ((k = 0; k < n; k++)); do vals[k]="${words[k]#?}"; done
     if [ "$mode" = reviewer ]; then
       for ((k = 0; k < n; k++)); do
-        ev="$(git_env_word "${words[k]}")" || continue
-        deny "$ev points git elsewhere, forbidden to the reviewer: $cmd"
+        git_env_word "${words[k]}" || continue
+        deny "$ENV_WORD points git elsewhere, forbidden to the reviewer: $cmd"
       done
     fi
     i=0
@@ -803,7 +807,7 @@ check_bash() {
           esac
           if [ "$throwaway" = yes ]; then
             [ -z "$pointer" ] || deny "git $pointer points git elsewhere, forbidden to the implementer in a throwaway repo: $cmd"
-            for a in ${cfgs[@]+"${cfgs[@]}"}; do check_config_key "$a"; done
+            for a in ${cfgs[@]+"${cfgs[@]}"}; do check_config_key "$a" " in a throwaway repo"; done
             [ -z "$envpoint" ] || deny "$envpoint points git elsewhere, forbidden to the implementer in a throwaway repo: $cmd"
             check_temp_paths "$dir" "$j"
             check_redirects "$cur"

@@ -6,8 +6,8 @@ soi-même à côté des siens.
 
 Deux poses, deux rôles. La pose **globale** met les commandes, les subagents et les skills dans
 `~/.claude/`, donc dans tous les projets à la fois. La pose **projet** met dans le dépôt ce qui lui
-appartient : les templates, le gate, `AGENTS.md`, `.gitignore`. Le projet ne garde ni
-`CLAUDE.md` ni `CLAUDE.local.md` : Claude Code ne lit `AGENTS.md` que tant qu'aucun de ces deux fichiers
+appartient : les templates, le gate, `AGENTS.md`, `.gitignore`. Le projet ne garde ni `CLAUDE.md`
+ni `CLAUDE.local.md` : Claude Code ne lit `AGENTS.md` que tant qu'aucun de ces deux fichiers
 n'existe, et l'installeur absorbe ceux qu'il trouve (ADR-0086).
 
 ```
@@ -71,8 +71,9 @@ plus :
 | `method/templates/` | `.polype/templates/` |
 | `method/hooks/` | `.polype/hooks/` (rendus exécutables) |
 
-plus `AGENTS.md` et les deux lignes de `.gitignore` décrites
-plus bas. Aucune copie des commandes, des subagents ni des skills : ils sont déjà globaux. Si
+plus `AGENTS.md`, les deux lignes de `.gitignore` décrites plus bas et le hook `SessionStart`
+fusionné dans `.claude/settings.json` : fusionné, jamais posé, ce fichier reste hors du manifeste.
+Aucune copie des commandes, des subagents ni des skills : ils sont déjà globaux. Si
 `~/.claude/polype/version` manque, `init` le dit sur `stderr` et pose quand même le volet projet.
 
 `polype install <projet>` reste la pose complète dans un seul dépôt, sans rien de global : elle
@@ -103,8 +104,8 @@ Ce qu'il ne voit pas (ADR-0050) : un texte entre guillemets, ou le corps d'un he
 cité, n'est pas lu comme une commande — c'est voulu, une citation n'est pas un ordre, sauf si un
 shell lit ce corps. Il ne lit pas non plus une variable `$VAR` qui contient `git`, ni un alias git.
 Pour `implementer` et `qa`, il ne refuse pas `GIT_DIR=… git reset`, `git --git-dir=… reset` ou
-`git fetch . HEAD:main`. Il ne voit pas davantage les redirections du
-shell hors du dépôt jetable, ni un `cp`. Pour tout cela, la revue garde son propre contrôle d'ownership.
+`git fetch . HEAD:main`. Il ne voit pas davantage les redirections du shell hors du dépôt jetable,
+ni un `cp`. Pour tout cela, la revue garde son propre contrôle d'ownership.
 
 Le script a besoin de `jq` ; sans lui, il refuse tout.
 
@@ -129,10 +130,10 @@ nouveau s'y ajoute par une ADR.
 
 Le reviewer travaille dans deux zones. Dans le worktree de la story, il écrit hors de `.git` et n'a
 de git que les verbes de lecture, plus `git checkout -- <chemin>` et `git restore`. Dans un dépôt
-jetable sous `${TMPDIR:-/tmp}`, il écrit librement et lance tout verbe sauf `push` et `send-pack`,
-à condition que chaque chemin nommé après le verbe (un mot, `--opt=valeur`, `-o<valeur>`)
-se résolve sous le répertoire temporaire. Pour lire un dépôt hors de cette zone, il passe par une URL
-`file://<chemin>`.
+jetable sous `${TMPDIR:-/tmp}`, il écrit librement et lance tout verbe sauf `push` et `send-pack`, à
+condition que chaque chemin nommé après le verbe (un mot, `--opt=valeur`, `-o<valeur>`)
+se résolve sous le répertoire temporaire. Pour lire un dépôt hors de cette zone, il passe par une
+URL `file://<chemin>`.
 
 Une redirection n'est pas un chemin de git : `2>/dev/null` et `2>&1` passent. Dans le dépôt jetable,
 la cible d'une redirection vers un fichier, lue depuis le dossier du shell, doit elle aussi rester
@@ -190,9 +191,9 @@ En plus des copies, `init` comme `install <projet>` :
   `AGENTS.local.md`, qui est commité, puis dans `AGENTS.md` : c'est la décision du propriétaire
   consignée dans `docs/decisions-log.md`. Un fichier qui ne contenait que l'import est supprimé sans
   rien ajouter. Sans `AGENTS.local.md`, un fichier qui contient autre chose est laissé tel quel,
-  l'installeur le dit et la pose continue : lancer `/po-setup`, puis `polype update .`. Le `CLAUDE.md` global de
-  l'utilisateur (`~/.claude/CLAUDE.md`) n'est jamais touché ; tant qu'un `CLAUDE.md` existe dans le
-  projet, Claude Code le lit **à la place** d'`AGENTS.md` ;
+  l'installeur le dit et la pose continue : lancer `/po-setup`, puis `polype update .`. Le
+  `CLAUDE.md` global de l'utilisateur (`~/.claude/CLAUDE.md`) n'est jamais touché ; tant qu'un
+  `CLAUDE.md` existe dans le projet, Claude Code le lit **à la place** d'`AGENTS.md` ;
 - ajoute au `.gitignore` la racine des worktrees (`Worktree root` lu dans `AGENTS.local.md`,
   `.worktrees/` par défaut) et `.env*`, une seule fois chacun ;
 - avec `--hooks`, pointe `core.hooksPath` sur `.polype/hooks` — et seulement si ce réglage est vide
@@ -206,7 +207,8 @@ En plus des copies, `init` comme `install <projet>` :
   `jq`, la pose continue, saute ce seul hook et le dit sur `stderr` ; un `settings.json` qui n'est
   pas un objet JSON valide n'est pas touché.
 
-Ces fichiers, `.claude/settings.json` compris, se commitent sur la branche cible pour que les worktrees de story en héritent.
+Ces fichiers, `.claude/settings.json` compris, se commitent sur la branche cible pour que les
+worktrees de story en héritent.
 
 ## Les fichiers d'état
 
@@ -219,19 +221,20 @@ globale ; un projet en a un quatrième, `.claude/.polype-checksums`, décrit plu
 | `checksums` | le `cksum` de chaque fichier au moment où il a été posé |
 | `version` | la version installée |
 
-Aucun de ces fichiers n'est listé dans le manifeste : ils ne s'effacent donc jamais eux-mêmes au passage
-suivant. Le manifeste est ce qui permet de supprimer les fichiers d'une version précédente sans
-toucher à ceux du projet ; les empreintes sont ce qui permet de distinguer un fichier intact d'un
-fichier modifié à la main.
+Aucun de ces fichiers n'est listé dans le manifeste : ils ne s'effacent donc jamais eux-mêmes au
+passage suivant. Le manifeste est ce qui permet de supprimer les fichiers d'une version précédente
+sans toucher à ceux du projet ; les empreintes sont ce qui permet de distinguer un fichier intact
+d'un fichier modifié à la main.
 
 Ce quatrième fichier existe parce que, dans un projet, les empreintes des copies de `.claude/` ne
-sont pas dans `.polype/checksums` mais à côté d'elles, dans `.claude/.polype-checksums` (ADR-0087) : le `cksum` de chaque copie de `.claude/`
-au moment où ce checkout l'a posée. Ce fichier appartient à un seul checkout et reste
-ignoré par git : quand git ne l'ignore pas déjà, l'installeur ajoute la ligne
-`.claude/.polype-checksums` au `.gitignore`. Il n'entre jamais dans le manifeste, et `check` lit les deux fichiers d'empreintes.
-`.polype/checksums` ne garde que les fichiers de `.polype/`. `init` ne pose aucune copie sous
-`.claude/`, donc n'écrit pas ce fichier. Une actualisation de `.polype/` arrivée par une pull
-request ne fait donc plus passer les copies d'un autre checkout pour modifiées à la main.
+sont pas dans `.polype/checksums` mais à côté d'elles, dans `.claude/.polype-checksums` (ADR-0087) :
+le `cksum` de chaque copie de `.claude/` au moment où ce checkout l'a posée. Ce fichier appartient à
+un seul checkout et reste ignoré par git : quand git ne l'ignore pas déjà, l'installeur ajoute la
+ligne `.claude/.polype-checksums` au `.gitignore`. Il n'entre jamais dans le manifeste, et `check`
+lit les deux fichiers d'empreintes. `.polype/checksums` ne garde que les fichiers de `.polype/`.
+`init` ne pose aucune copie sous `.claude/`, donc n'écrit pas ce fichier. Une actualisation de
+`.polype/` arrivée par une pull request ne fait donc plus passer les copies d'un autre checkout pour
+modifiées à la main.
 
 ## `install` ou `update`
 
@@ -248,10 +251,10 @@ place** ceux qui ont été modifiés à la main et les nomme sur `stderr`. Un fi
 garde l'empreinte de la version posée, donc `check` continue de le signaler tant qu'il diffère. Sur
 un projet où Polype n'a jamais été installé, `update` se comporte comme `install`.
 
-Une copie identique au fichier livré n'est jamais une modification à la main : `update` la recopie et
-enregistre son empreinte. Une pull request qui a actualisé `.polype/`, ou des copies de `.claude/`
-commitées, ne laisse donc rien de bloqué. Le premier `update` après cette version migre : sans
-`.claude/.polype-checksums`, il juge les copies sur les lignes `.claude/` de l'ancien
+Une copie identique au fichier livré n'est jamais une modification à la main : `update` la recopie
+et enregistre son empreinte. Une pull request qui a actualisé `.polype/`, ou des copies de
+`.claude/` commitées, ne laisse donc rien de bloqué. Le premier `update` après cette version migre :
+sans `.claude/.polype-checksums`, il juge les copies sur les lignes `.claude/` de l'ancien
 `.polype/checksums`, écrit le fichier local, retire ces lignes de `.polype/checksums` et le dit sur
 `stderr`. Un checkout déjà bloqué avant la migration, dont les copies sont plus anciennes que les
 empreintes commitées, se répare avec `polype install <projet>`.
@@ -260,15 +263,15 @@ empreintes commitées, se répare avec `polype install <projet>`.
 
 Le gabarit des réglages gagne des lignes au fil des versions ; l'`AGENTS.local.md` d'un projet, lui,
 ne bouge pas. `install`, `init` et `update` sur un projet nomment donc, sur `stderr`, chaque réglage
-du gabarit que l'`AGENTS.local.md` du projet ne déclare pas, avec la valeur du gabarit, une ligne par
-réglage :
+du gabarit que l'`AGENTS.local.md` du projet ne déclare pas, avec la valeur du gabarit, une ligne
+par réglage :
 
 ```
 missing setting: <Nom>: <valeur>
 ```
 
-L'installeur n'écrit jamais ce fichier (ADR-0043) : c'est au projet de choisir ses valeurs. Un projet
-servi par la pose globale voit cette liste quand `polype init <projet>` tourne après
+L'installeur n'écrit jamais ce fichier (ADR-0043) : c'est au projet de choisir ses valeurs. Un
+projet servi par la pose globale voit cette liste quand `polype init <projet>` tourne après
 `polype install --global`. `polype check <projet>` la redonne à la demande.
 
 Pour chaque ligne : lis le tableau des valeurs de `.polype/templates/agents-local.md`, garde la
@@ -279,16 +282,25 @@ cible. D'ici là, une commande qui lit un réglage absent s'arrête en le nomman
 modèle de s59 (`Model strong`, `Model light`, `Light up to`) arrêtent ainsi toutes les commandes qui
 délèguent à un subagent.
 
+### Un projet en `Merge mode: local` qui a un remote
+
+Depuis ADR-0080, `local` ne sert qu'à un dépôt sans remote. Sur un dépôt qui a un `origin`,
+`/po-ship` et les commandes de cadrage s'arrêtent sur « `Merge mode: local` is only for a repository
+without a remote (ADR-0080); set it to `pr`. ». Pour en sortir, mets `Merge mode: pr` dans
+`AGENTS.local.md` ; une personne pousse une fois la branche cible vers `origin`, puisqu'aucun agent
+ne la pousse ; sur GitHub, `gh` doit être connecté. Relance ensuite `polype update <projet>` ou
+`polype init <projet>` pour que `AGENTS.md` suive.
+
 ## Lire un rapport `check`
 
 `check` affiche la version installée, et dit si cet installeur en livre une autre. Il liste ensuite
-`modified: <chemin>` pour chaque fichier posé dont le contenu a changé depuis, et `missing:
-<chemin>` pour chaque fichier posé qui a disparu. Il sort **1** dès que l'une des deux listes n'est
-pas vide, ou si le fichier `version` manque ; **0** quand tout est intact — il dit alors combien de
-fichiers sont installés et ne nomme rien. Sans `manifest`, il sort 1 : rien n'est installé. En
-`--global`, les chemins sont relatifs à `~/.claude`, charge utile (`polype/bin/`, `polype/method/`)
-comprise. Sur un projet, `check` liste enfin les mêmes lignes `missing setting:` que la mise à jour ;
-elles ne changent pas son code de sortie.
+`modified: <chemin>` pour chaque fichier posé dont le contenu a changé depuis, et
+`missing: <chemin>` pour chaque fichier posé qui a disparu. Il sort **1** dès que l'une des deux
+listes n'est pas vide, ou si le fichier `version` manque ; **0** quand tout est intact — il dit
+alors combien de fichiers sont installés et ne nomme rien. Sans `manifest`, il sort 1 : rien n'est
+installé. En `--global`, les chemins sont relatifs à `~/.claude`, charge utile (`polype/bin/`,
+`polype/method/`) comprise. Sur un projet, `check` liste enfin les mêmes lignes `missing setting:`
+que la mise à jour ; elles ne changent pas son code de sortie.
 
 `check` compare chaque copie aux empreintes enregistrées et rien d'autre : il n'applique pas la
 règle « identique au fichier livré » de `update`. Dans un projet qui commite `.claude/`, les copies
@@ -303,15 +315,19 @@ les répertoires devenus vides **sous** `~/.claude/commands/`, `~/.claude/agents
 `~/.claude/skills/` — jamais ces trois-là, jamais `~/.claude`, jamais un répertoire que Polype n'a
 pas créé.
 
-`remove <projet>` supprime les fichiers du manifeste, les fichiers d'état (`.claude/.polype-checksums` compris), puis les répertoires
-`.claude/` et `.polype/` devenus vides. Il se contente de retirer l'ancienne ligne `@AGENTS.md` de `CLAUDE.md`, sans rien déplacer dans `AGENTS.local.md`, supprime
-`AGENTS.md` seulement s'il porte le marqueur d'assemblage, et remet `AGENTS.md.before-polype` à sa
-place s'il existe. Il ne rend `core.hooksPath` à git que si ce réglage vaut `.polype/hooks`.
+`remove <projet>` supprime les fichiers du manifeste, les fichiers d'état
+(`.claude/.polype-checksums` compris), puis les répertoires `.claude/` et `.polype/` devenus vides.
+Il se contente de retirer l'ancienne ligne `@AGENTS.md` de `CLAUDE.md`, sans rien déplacer dans
+`AGENTS.local.md`, supprime `AGENTS.md` seulement s'il porte le marqueur d'assemblage, et remet
+`AGENTS.md.before-polype` à sa place s'il existe. Il ne rend `core.hooksPath` à git que si ce
+réglage vaut `.polype/hooks`.
 
-`remove <projet>` retire aussi le hook `SessionStart` de `.claude/settings.json` (avec `jq` ; sans
-lui, il le dit et laisse le fichier). Si plus rien d'autre n'y reste, le fichier est supprimé, puis
-`.claude/` s'il est vide — y compris quand le fichier ne contenait que `{}` avant la pose : `remove`
-ne sait pas distinguer ce cas d'un fichier vidé par lui.
+`remove <projet>` retire aussi le hook `SessionStart` de `.claude/settings.json` (avec `jq`). Sans
+`jq`, il laisse le fichier tel quel et, si l'entrée y est, prévient qu'elle lance encore
+`.polype/hooks/po-session.sh`, que `remove` vient de supprimer : retire-la à la main. Si plus rien
+d'autre n'y reste, le fichier est supprimé, puis `.claude/` s'il est vide — y compris quand le
+fichier ne contenait que `{}` avant la pose : `remove` ne sait pas distinguer ce cas d'un fichier
+vidé par lui.
 
 Restent intacts : `AGENTS.local.md`, `docs/`, le `.gitignore` (les deux lignes ajoutées y restent —
 un worktree encore en place ne doit pas se retrouver suivi), et tout fichier que le projet a ajouté

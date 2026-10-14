@@ -43,6 +43,8 @@ test_throwaway_refuses_another_work_tree() {
   done
   zone_stderr implementer "git -C $c --work-tree=$WT $tail" | grep -qF 'forbidden to the implementer in a throwaway repo' \
     || fail "message missing"
+  zone_stderr implementer "git -C $c -c core.worktree=$WT $tail" | grep -qF 'forbidden to the implementer in a throwaway repo' \
+    || fail "core.worktree message does not name the throwaway repo"
   zone_expect implementer "git -C $c -c user.name=x checkout -q main" 0
   zone_expect implementer "git -C $c checkout -q main" 0
   zone_expect implementer "GIT_DIR=$SCRATCH/.git git -C $WT log" 0

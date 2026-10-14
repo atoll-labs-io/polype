@@ -9,16 +9,19 @@
 #                                 `## Checks` table declares has a passing `po-run` row on the recorded code
 #   po-gate qa-current <id>       0 when the committed QA report's last `QA status:` says complete and its `Tree:`
 #                                 matches HEAD; ignored files do not count (ADR-0044)
-#   po-gate pre-commit            non-zero, on every branch, when a staged environment file or an added line holding
+#   po-gate pre-commit [<base>]   non-zero, on every branch, when a staged environment file or an added line holding
 #                                 a private key or a known token is staged, or a CLAUDE.md or CLAUDE.local.md is
 #                                 added or modified at any depth; and on a code commit to story/<id> whose plan
-#                                 is not approved
+#                                 is not approved; the diff is taken against <base> when given, else HEAD
 #   po-gate floor-guard <id> <base>  scans `git diff <base>...story/<id>` for what lowers the bar of the checks:
 #                                 0 nothing, 1 one `<path>:<line>: <rule>: <detail>` per flag, 2 cannot verify
 #
-# Squash merges leave nothing for a push hook to inspect; put `po-gate ship-allowed <id>` in CI,
-# on a checkout of the story branch tip rather than a merge ref: it compares against HEAD.
+# A story lands through a pull request the forge rebuilds (ADR-0080, ADR-0081), which no local hook sees; put
+# `po-gate ship-allowed <id>` in CI, on a checkout of the story branch tip, never a merge ref: it compares against HEAD.
 set -euo pipefail
+
+# The commit the staged diff is read against; empty means HEAD.
+DIFF_BASE=""
 
 top() { git rev-parse --show-toplevel 2>/dev/null || pwd; }
 refuse() { echo "po-gate: $*" >&2; return 1; }
@@ -190,7 +193,7 @@ anthropic-key|40|sk-ant-[A-Za-z0-9_-]+'
 secret_scan() {
   local paths path base diff out rc=0
   # --diff-filter=d: unstaging a tracked .env is the fix, so a staged deletion passes.
-  paths="$(git -c core.quotePath=false diff --cached --name-only --no-renames --diff-filter=d -z | tr '\0' '\n')" \
+  paths="$(git -c core.quotePath=false diff --cached --name-only --no-renames --diff-filter=d -z ${DIFF_BASE:+"$DIFF_BASE"} | tr '\0' '\n')" \
     || refuse "could not list the staged files; refusing the commit" || return 1
   while IFS= read -r path; do
     base="${path##*/}"
@@ -200,7 +203,7 @@ secret_scan() {
     esac
   done <<< "$paths"
   diff="$(git -c core.quotePath=false diff --cached --no-color --no-ext-diff --no-textconv --no-renames \
-    --src-prefix=a/ --dst-prefix=b/ -U0)" \
+    --src-prefix=a/ --dst-prefix=b/ -U0 ${DIFF_BASE:+"$DIFF_BASE"})" \
     || refuse "could not read the staged diff; refusing the commit" || return 1
   [ -n "$diff" ] || return 0
   out="$(SECRET_PATTERNS="$SECRET_PATTERNS" awk '
@@ -256,7 +259,7 @@ secret_scan() {
 # Claude Code reads AGENTS.md only while no CLAUDE.md exists (ADR-0086); deleting one is the fix, so it passes.
 claude_md_check() {
   local paths path found=no
-  paths="$(git -c core.quotePath=false diff --cached --name-only --no-renames --diff-filter=d -z | tr '\0' '\n')" \
+  paths="$(git -c core.quotePath=false diff --cached --name-only --no-renames --diff-filter=d -z ${DIFF_BASE:+"$DIFF_BASE"} | tr '\0' '\n')" \
     || refuse "could not list the staged files; refusing the commit" || return 1
   while IFS= read -r path; do
     case "${path##*/}" in
@@ -270,6 +273,10 @@ claude_md_check() {
 
 pre_commit() {
   local branch staged path code=no hits count
+  if [ -n "${1:-}" ]; then
+    DIFF_BASE="$(git rev-parse --verify --quiet "$1^{commit}")" \
+      || refuse "cannot read base $1; refusing the commit" || return 1
+  fi
   hits="$(secret_scan)" || return 1
   if [ -n "$hits" ]; then
     printf '%s\n' "$hits" >&2
@@ -280,7 +287,7 @@ pre_commit() {
   branch="$(git rev-parse --abbrev-ref HEAD 2>/dev/null || true)"
   [[ "$branch" == story/* ]] || return 0
   # --no-renames: moving code into docs/ must count as touching code.
-  staged="$(git diff --cached --name-only --no-renames)" \
+  staged="$(git diff --cached --name-only --no-renames ${DIFF_BASE:+"$DIFF_BASE"})" \
     || refuse "could not list the staged files; refusing the commit" || return 1
   while IFS= read -r path; do
     case "$path" in ''|docs/*) ;; *) code=yes ;; esac
@@ -466,6 +473,6 @@ case "${1:-}" in
   ship-allowed)   ship_allowed "${2:?story id required}" ;;
   verif-current)  verif_current "${2:?story id required}" ;;
   qa-current)     qa_current "${2:?story id required}" ;;
-  pre-commit)     pre_commit ;;
+  pre-commit)     pre_commit "${2:-}" ;;
   *) echo "po-gate: unknown subcommand '${1:-}' (see the header of this script)" >&2; exit 2 ;;
 esac
