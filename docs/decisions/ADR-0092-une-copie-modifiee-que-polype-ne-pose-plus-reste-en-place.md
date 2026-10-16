@@ -5,7 +5,7 @@ status: accepted
 date: 2026-10-14
 scope: story s137-modified-copy-survives-drop
 supersedes: [ADR-0088]
-superseded-by: []
+superseded-by: [ADR-0093]
 ---
 
 # ADR-0092 — Une copie modifiée que Polype ne pose plus reste en place

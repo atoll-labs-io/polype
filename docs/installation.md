@@ -318,10 +318,26 @@ La pose suivante qui la livre à nouveau s'arrête dessus comme sur une collisio
 déplace en `<chemin>.before-polype`. `update` ne la compte pas dans « removed ». Si elle couvrait un
 `<chemin>.before-polype`, celui-ci reste aussi, et la ligne nomme les deux chemins.
 
-Deux limites. Une copie sans empreinte enregistrée est supprimée comme avant : un clone frais, dont
-les empreintes de `.claude/` sont hors de git (ADR-0087) ; git garde alors la modification. Et
-`remove --global` emporte la charge utile sous `~/.claude/polype/` avec son répertoire, même
-modifiée, sans ligne `modified, kept:`.
+Une limite. Une copie sans empreinte enregistrée est supprimée comme avant : un clone frais, dont
+les empreintes de `.claude/` sont hors de git (ADR-0087) ; git garde alors la modification.
+
+La charge utile sous `~/.claude/polype/` suit une autre règle (ADR-0093) : une installation lancée
+depuis elle livre tout ce qui s'y trouve, et une copie gardée en place y serait reposée. Un fichier
+modifié de la charge utile que Polype ne livre plus part donc, octet pour octet, vers
+`~/.claude/polype.kept/<chemin sous polype/>`, sort du manifeste et des empreintes, et `stderr` le
+dit sur l'une de ces trois lignes :
+
+```
+polype: modified, moved out of the payload: <ancien> -> <nouveau>
+polype: modified, already kept: <copie gardée>
+polype: kept copy now shipped, removed: <copie gardée>
+```
+
+La deuxième vient quand `polype.kept/` tient déjà une copie de même contenu : le fichier de la
+charge utile part sans rien écrire. Une copie gardée d'un autre contenu n'est jamais écrasée : la
+commande s'arrête avant toute écriture, sort 1 et nomme les deux fichiers. La troisième vient quand
+une pose ou une mise à jour livre au même chemin un fichier identique à la copie gardée : la
+retouche est intégrée, la copie part, et les dossiers vidés de `polype.kept/` avec elle.
 
 ## Après une mise à jour
 
@@ -374,10 +390,12 @@ actualisées par une pull request tirée sur ce checkout restent donc listées `
 
 ## Ce que `remove` garde
 
-`remove --global` supprime les fichiers du manifeste puis `~/.claude/polype/` en entier, et élague
-les répertoires devenus vides **sous** `~/.claude/commands/`, `~/.claude/agents/` et
-`~/.claude/skills/` — jamais ces trois-là, jamais `~/.claude`, jamais un répertoire que Polype n'a
-pas créé.
+`remove --global` déplace d'abord vers `~/.claude/polype.kept/` chaque fichier modifié de la charge
+utile, encore livré ou non (ADR-0093), puis supprime les fichiers du manifeste et
+`~/.claude/polype/` en entier, et élague les répertoires devenus vides **sous**
+`~/.claude/commands/`, `~/.claude/agents/` et `~/.claude/skills/` — jamais ces trois-là, jamais
+`~/.claude`, jamais un répertoire que Polype n'a pas créé. Il laisse `polype.kept/` en place et le
+dit : `polype: kept copies left in <racine>/polype.kept`.
 
 `remove <projet>` supprime les fichiers du manifeste, les fichiers d'état
 (`.claude/.polype-checksums` compris), puis les répertoires `.claude/` et `.polype/` devenus vides.
