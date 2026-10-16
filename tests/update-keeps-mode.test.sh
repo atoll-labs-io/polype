@@ -140,6 +140,20 @@ test_session_hint_infers_init_without_mode() {
   grep -qxF -- "${line/polype init ./polype update .}" <<< "$out" || fail "po-session does not infer a full install without .polype/mode: $out"
 }
 
+test_session_hint_trusts_recorded_mode() {
+  fresh_project
+  absorbed_settings
+  run_polype install "$P" >/dev/null
+  grep -q '^\.claude/commands/' "$P/.polype/manifest" || fail "install laid no command copies"
+  printf 'init\n' > "$P/.polype/mode"
+  mode_is init "inflated init project"
+  git -C "$P" add -A && git -C "$P" commit -qm activate
+  printf 'note\n' > "$P/CLAUDE.local.md"
+  local out; out="$(cd "$P" && CLAUDE_PROJECT_DIR="$P" bash "$HOOK")"
+  grep -qxF -- '- CLAUDE.local.md: Claude Code reads it instead of AGENTS.md → polype init . moves it into AGENTS.local.md' <<< "$out" \
+    || fail "po-session does not trust the recorded init mode: $out"
+}
+
 test_adr_records_the_mode() {
   local adr
   adr="$(ls $ADR_GLOB 2>/dev/null | head -n 1)"
@@ -157,11 +171,19 @@ test_session_comment_says_why() {
   grep -qF 'polype init .' <<< "$comments" || fail "no comment of po-session names polype init ."
 }
 
+test_session_comment_reads_once() {
+  local block
+  block="$(awk '/local again=/ {for (i = n; i > 0 && lines[i] ~ /^[[:space:]]*#/; i--) out = lines[i] "\n" out; printf "%s", out; exit} {lines[++n] = $0}' "$HOOK")"
+  [ -n "$block" ] || fail "no comment block above local again="
+  [ "$(grep -ow 'advise' <<< "$block" | wc -l)" = 1 ] || fail "the comment does not hold advise exactly once"
+  grep -qF '`polype init .`' <<< "$block" || fail "the comment does not write \`polype init .\` in backticks"
+}
+
 test_absorbed_settings_helper() {
   local self="$ROOT/tests/update-keeps-mode.test.sh" n t body
   n="$(grep -cE '^[[:space:]]*printf .*Project CLAUDE file: absorbed' "$self")"
   [ "$n" = 1 ] || fail "the absorbed settings appear $n times, expected once"
-  for t in test_hints_say_init test_session_hint_infers_init_without_mode; do
+  for t in test_hints_say_init test_session_hint_infers_init_without_mode test_session_hint_trusts_recorded_mode; do
     body="$(awk -v t="^$t\\(\\)" '$0 ~ t {on=1; next} on && /^}/ {exit} on' "$self")"
     grep -qF 'absorbed_settings' <<< "$body" || fail "$t does not call absorbed_settings"
   done

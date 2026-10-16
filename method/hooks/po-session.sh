@@ -238,8 +238,8 @@ waiting_for_a_human() {
     fi
   done
   lines+=(${ORPHANS[@]+"${ORPHANS[@]}"})
-  # init project (same rule as the installer's recorded_mode): advise polype init ., the advised
-  # command and the one that repairs an inflated project.
+  # Same rule as the installer's recorded_mode: on an init project, advise `polype init .`, which
+  # also repairs an inflated one; elsewhere `polype update .`.
   local again="polype update ." recorded=""
   [ -f "$top/.polype/mode" ] && recorded="$(head -n1 "$top/.polype/mode")"
   if [ "$recorded" = init ] || { [ "$recorded" != project ] && [ -f "$top/.polype/manifest" ] \
