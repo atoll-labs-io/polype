@@ -45,10 +45,12 @@ If a failing command, a missing tool, a missing prerequisite or missing evidence
 - `Required adaptation:` what has to change before the next attempt
 - `Next action:` the next command or human action
 
+Keep a `## Findings` section in that report too, holding `none` when it has nothing to list.
+
 A partial review never declares the code safe.
 
 ## Your answer
-Structured like `templates/review.md`, with the `Reviewed tree:` line in its header. Take the tree again just before answering: if it no longer equals the one you recorded, someone committed while you were reading, and your answer is a blocked report naming both hashes. Before the verdict, write down what you did **not** verify and why — a screen you never opened, a flow you never ran, a third party that only ever appeared as a mock — and what a person should do to cover it. An empty list would claim that everything was seen. Everything the QA report lists under `## Not seen` belongs there too, with its reason.
+Structured like `templates/review.md`, with the `Reviewed tree:` line in its header. Each finding is one list item of `## Findings`, in the shape `templates/review.md` shows, never a heading: `po-gate findings-shape` checks it the moment your answer is recorded, and `/po-ship` files no other shape. Take the tree again just before answering: if it no longer equals the one you recorded, someone committed while you were reading, and your answer is a blocked report naming both hashes. Before the verdict, write down what you did **not** verify and why — a screen you never opened, a flow you never ran, a third party that only ever appeared as a mock — and what a person should do to cover it. An empty list would claim that everything was seen. Everything the QA report lists under `## Not seen` belongs there too, with its reason.
 
 The last two lines, exactly:
 
