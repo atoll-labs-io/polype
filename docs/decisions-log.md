@@ -109,3 +109,8 @@ A decision the person took is not logged here: it is an ADR or a story.
 | 2026-10-16 | s140-session-branches-tested | Added the template's link line to the recorded review, the reviewer having left it out | s129's tests require it; precedent PR #100 |
 | 2026-10-16 | s140-session-branches-tested | Shipped (PR #116), no finding; closed #107, #108 | Effective `Ship confirmation: automatic`, solo repository; suite on the landing tree: 618 passed |
 | 2026-10-16 | s139-payload-kept-outside | Shipped (PR #117) with an open major, filed with its three minors as #118–#121; closed #110, #111 | Law 3: a major does not stop the ship; suite on the landing tree (with s140): 625 passed |
+| 2026-10-16 | M15 wave 2 (s141) | Launched s141 alone with ADR-0094 | The only story left; its `Owns` names ADR-0094 |
+| 2026-10-16 | s141-review-findings-shape | Put the plan's technical choice to the owner (option 1, a Bash permission narrowed to `po-gate findings-shape` for `/po-review`), recorded it in the plan and ADR-0094, then validated the plan | `Technical choice: waiting for a human` (ADR-0077); validation itself under `Plan validation: autonomous` |
+| 2026-10-16 | s141-review-findings-shape | Filed the planner's finding on `/po-orchestrator` resume as #123 | Law 7 |
+| 2026-10-16 | s141-review-findings-shape | Added the template's link line to the recorded review | s129's tests require it |
+| 2026-10-16 | s141-review-findings-shape | Shipped (PR #124) with two open majors and a minor, filed as #125–#127; closed #112 | Law 3; suite on the landing tree: 630 passed; the recorded review passes its own `findings-shape` check |
