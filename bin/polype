@@ -233,10 +233,77 @@ refuse_collisions() {
   done
 }
 
+is_payload_path() { [ "$mode" = global ] && [ "${1#polype/}" != "$1" ]; }
+
+kept_path() { printf '%s' "$root/polype.kept/${1#polype/}"; }
+
+# A run from the payload ships whatever lies under it, so an edit kept there would be laid again:
+# it leaves for polype.kept/ instead (ADR-0093). refuse_taken_kept_copies has ruled out a
+# different file at the kept path.
+move_out_of_payload() {
+  local dest="$1" kept
+  kept="$(kept_path "$dest")"
+  if [ -f "$kept" ] && [ ! -L "$kept" ] && [ "$(sum_of "$kept")" = "$(sum_of "$root/$dest")" ]; then
+    rm -f "$root/$dest"
+    echo "polype: modified, already kept: $kept" >&2
+    return 0
+  fi
+  mkdir -p "$(dirname "$kept")"
+  mv "$root/$dest" "$kept"
+  echo "polype: modified, moved out of the payload: $root/$dest -> $kept" >&2
+}
+
+# A kept copy is never overwritten: a different one at the kept path stops the run before any
+# write. With "dropped", only the payload files this version no longer ships are concerned.
+refuse_taken_kept_copies() {
+  [ "$mode" = global ] && [ -f "$manifest" ] || return 0
+  declare -A SHIPPED_NOW=()
+  local line path kept taken=no
+  if [ "$1" = dropped ]; then
+    for line in "${SHIPPED_LINES[@]}"; do SHIPPED_NOW["${line#*$'\t'}"]=1; done
+  fi
+  while IFS= read -r path; do
+    is_payload_path "$path" && [ -f "$root/$path" ] && has_drifted "$path" || continue
+    if [ "$1" = dropped ] && [ -n "${SHIPPED_NOW[$path]-}" ]; then continue; fi
+    kept="$(kept_path "$path")"
+    if [ -L "$kept" ] || { [ -e "$kept" ] \
+        && { [ ! -f "$kept" ] || [ "$(sum_of "$kept")" != "$(sum_of "$root/$path")" ]; }; }; then
+      echo "polype: $kept already exists and differs from $root/$path; nothing moved, nothing written" >&2
+      taken=yes
+    fi
+  done < "$manifest"
+  [ "$taken" = no ] || exit 1
+}
+
+# The shipped file is the edit, integrated: the kept copy has nothing left to keep.
+drop_kept_copies_now_shipped() {
+  [ "$mode" = global ] && [ -d "$root/polype.kept" ] || return 0
+  local line src dest kept
+  for line in "${SHIPPED_LINES[@]}"; do
+    src="${line%%$'\t'*}" dest="${line#*$'\t'}"
+    is_payload_path "$dest" || continue
+    kept="$(kept_path "$dest")"
+    if [ -f "$kept" ] && [ ! -L "$kept" ] && [ "$(sum_of "$kept")" = "$(sum_of "$src")" ]; then
+      rm -f "$kept"
+      echo "polype: kept copy now shipped, removed: $kept" >&2
+    fi
+  done
+  find "$root/polype.kept" -type d -empty -delete 2>/dev/null || true
+}
+
 # A laid-down file goes, and the person's file it had set aside comes back in its place. A copy
-# the person edited is kept and becomes theirs (ADR-0092): returns 1, nothing moved. Needs RECORDED.
+# the person edited is kept and becomes theirs (ADR-0092): returns 1, nothing moved. A payload
+# copy the person edited moves to polype.kept/ instead (ADR-0093), also returning 1. Needs RECORDED.
 drop_laid_file() {
   local dest="$1"
+  if is_payload_path "$dest" && [ -f "$root/$dest" ] && [ ! -L "$root/$dest" ] && has_drifted "$dest"; then
+    move_out_of_payload "$dest"
+    if [ -e "$root/$dest.before-polype" ] || [ -L "$root/$dest.before-polype" ]; then
+      mv "$root/$dest.before-polype" "$root/$dest"
+      echo "polype: put back: $root/$dest" >&2
+    fi
+    return 1
+  fi
   if [ -f "$root/$dest" ] && has_drifted "$dest"; then
     if [ -e "$root/$dest.before-polype" ] || [ -L "$root/$dest.before-polype" ]; then
       echo "polype: modified, kept: $root/$dest; $root/$dest.before-polype left as it is" >&2
@@ -596,8 +663,9 @@ done_message() {
 
 cmd_install() {
   collect_shipped
-  refuse_collisions
   load_checksums
+  refuse_taken_kept_copies dropped
+  refuse_collisions
   mkdir -p "$root" "$state_dir"
 
   local line src dest old
@@ -619,6 +687,7 @@ cmd_install() {
     printf '%s\n' "$dest" >> "$manifest.next"
     record_sum "$(sum_of "$root/$dest")" "$dest"
   done
+  drop_kept_copies_now_shipped
 
   mv "$manifest.next" "$manifest"
   finish_sums
@@ -637,8 +706,9 @@ cmd_init() {
 cmd_update() {
   if [ ! -f "$manifest" ]; then cmd_install; return; fi
   collect_shipped
-  refuse_collisions
   load_checksums
+  refuse_taken_kept_copies dropped
+  refuse_collisions
   local line src dest old
   declare -A SHIPPED=()
   for line in "${SHIPPED_LINES[@]}"; do SHIPPED["${line#*$'\t'}"]=1; done
@@ -669,6 +739,7 @@ cmd_update() {
     fi
     printf '%s\n' "$dest" >> "$manifest.next"
   done
+  drop_kept_copies_now_shipped
 
   mv "$manifest.next" "$manifest"
   finish_sums
@@ -742,18 +813,23 @@ cmd_remove() {
   require_install
   local path held=() hold="$root/.polype-restore.$$"
   load_checksums
+  refuse_taken_kept_copies all
   while IFS= read -r path; do
-    # A file set aside under the payload directory would be put back, then lost with it: it waits
-    # outside until the directory is gone.
-    if [ "$mode" = global ] && [ "${path#polype/}" != "$path" ] \
-        && { [ -e "$root/$path.before-polype" ] || [ -L "$root/$path.before-polype" ]; }; then
-      rm -f "$root/$path"
-      mkdir -p "$(dirname "$hold/$path")"
-      mv "$root/$path.before-polype" "$hold/$path"
-      held+=("$path")
-    elif [ "$mode" = global ] && [ "${path#polype/}" != "$path" ]; then
-      # The payload goes whole with its directory below: nothing there is kept.
-      rm -f "$root/$path"
+    if is_payload_path "$path"; then
+      # The payload goes whole with its directory below: an edit leaves it first (ADR-0093).
+      if [ -f "$root/$path" ] && [ ! -L "$root/$path" ] && has_drifted "$path"; then
+        move_out_of_payload "$path"
+      fi
+      if [ -e "$root/$path.before-polype" ] || [ -L "$root/$path.before-polype" ]; then
+        # A file set aside under the payload directory would be put back, then lost with it: it
+        # waits outside until the directory is gone.
+        rm -f "$root/$path"
+        mkdir -p "$(dirname "$hold/$path")"
+        mv "$root/$path.before-polype" "$hold/$path"
+        held+=("$path")
+      else
+        rm -f "$root/$path"
+      fi
     else
       drop_laid_file "$path" || true
     fi
@@ -762,6 +838,9 @@ cmd_remove() {
   if [ -n "$local_sums" ]; then rm -f "$local_sums"; fi
   # The payload lives there too, and nothing else does.
   if [ "$mode" = global ]; then rm -rf "$state_dir"; else unwire_session_hook; fi
+  if [ "$mode" = global ] && [ -d "$root/polype.kept" ]; then
+    echo "polype: kept copies left in $root/polype.kept" >&2
+  fi
   for path in ${held[@]+"${held[@]}"}; do
     mkdir -p "$(dirname "$root/$path")"
     mv "$hold/$path" "$root/$path"

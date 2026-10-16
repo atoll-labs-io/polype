@@ -102,11 +102,17 @@ test_update_ghost_keeps_a_modified_copy() {
   ok update "$P"
   cmp -s "$SCRATCH/x-edited" "$P/$X" || fail "update did not keep the modified ghost"
   says "polype: modified, kept: $P/$X"
-  not_listed "$P/.polype/manifest" "$X"
-  not_listed "$P/.claude/.polype-checksums" "$X"
+  out_of_the_state "$P" "$X"
   [ ! -e "$P/$Y" ] || fail "update kept an unmodified ghost"
   never_says "modified, kept: $P/$Y"
   [[ "$(tail -n 1 <<< "$OUT")" == *", 1 removed, "* ]] || fail "update counted a kept ghost: $OUT"
+}
+
+test_update_test_checks_all_state() {
+  local self="$ROOT/tests/drop-keeps-modified.test.sh" body
+  body="$(awk '$0 ~ /^test_update_ghost_keeps_a_modified_copy\(\)/ {on=1; next} on && /^}/ {exit} on' "$self")"
+  grep -qF 'out_of_the_state' <<< "$body" \
+    || fail "test_update_ghost_keeps_a_modified_copy does not check all three state files"
 }
 
 test_remove_keeps_a_modified_copy() {
