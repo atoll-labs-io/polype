@@ -238,10 +238,18 @@ waiting_for_a_human() {
     fi
   done
   lines+=(${ORPHANS[@]+"${ORPHANS[@]}"})
+  # Same rule as the installer's recorded_mode: on an init project, advise `polype init .`, which
+  # also repairs an inflated one; elsewhere `polype update .`.
+  local again="polype update ." recorded=""
+  [ -f "$top/.polype/mode" ] && recorded="$(head -n1 "$top/.polype/mode")"
+  if [ "$recorded" = init ] || { [ "$recorded" != project ] && [ -f "$top/.polype/manifest" ] \
+      && ! grep -q '^\.claude/commands/' "$top/.polype/manifest"; }; then
+    again="polype init ."
+  fi
   for name in CLAUDE.md CLAUDE.local.md; do
     [ -f "$top/$name" ] || continue
     case "$claude_md" in
-      absorbed) lines+=("$name: Claude Code reads it instead of AGENTS.md → polype update . moves it into AGENTS.local.md") ;;
+      absorbed) lines+=("$name: Claude Code reads it instead of AGENTS.md → $again moves it into AGENTS.local.md") ;;
       kept) ;;
       *) lines+=("$name: Claude Code reads it instead of AGENTS.md → set Project CLAUDE file to absorbed or kept in AGENTS.local.md") ;;
     esac
