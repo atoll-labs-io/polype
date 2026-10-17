@@ -52,7 +52,8 @@ Lenses run: <security | migration | dependencies | performance — each with the
 - [ ] Each lens finding graded on the scale above and listed under Findings
 
 ## Findings
-<one per line: severity — file:line — the problem; a finding never starts with `Ship allowed:`, since any line that does closes the review's verdict block>
+- <critical|major|minor> — <path>:<line> — <the problem>
+<one list item per finding, opening with its severity as above; its further lines indented under it; never a heading; `none` when there is none; a finding never starts with `Ship allowed:`, since any line that does closes the review's verdict block>
 
 ## Not verified
 <what this review did not check, why, and what a person should do instead; every item of the QA report's `## Not seen`; for a `scene` story, each viewpoint no capture shows>
