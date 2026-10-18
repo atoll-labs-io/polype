@@ -113,6 +113,74 @@ test_kept_copy_removed_once_shipped() {
   [ ! -e "$H/polype.kept" ] || fail "an emptied polype.kept stayed"
 }
 
+test_update_sweeps_shipped_kept_copy() {
+  home_in home
+  local same="$H/polype.kept/method/skills/diagnostic/SKILL.md"
+  ok install --global
+  mkdir -p "$(dirname "$same")"
+  cp "$ROOT/method/skills/diagnostic/SKILL.md" "$same"
+  ok update --global
+  [ ! -e "$same" ] || fail "update left a kept copy identical to the shipped file"
+  [ ! -e "$H/polype.kept" ] || fail "update left an emptied polype.kept"
+  says "polype: kept copy now shipped, removed: $same"
+}
+
+test_symlink_payload_path_not_refused() {
+  home_in home
+  local A="$H/polype/method/AGENTS.md" K="$H/polype.kept/method/AGENTS.md"
+  ok install --global
+  { cat "$A"; echo "# drift"; } > "$SCRATCH/drifted"
+  rm "$A"; ln -s "$SCRATCH/drifted" "$A"
+  mkdir -p "$(dirname "$K")"
+  echo "another edit" > "$K"
+  ok remove --global
+  [ "$(cat "$K")" = "another edit" ] || fail "the kept copy changed"
+  never_says "already exists and differs"
+
+  edited_payload_file_dropped second
+  cp "$EDITED" "$SCRATCH/drifted2"; rm "$PAY"
+  ln -s "$SCRATCH/drifted2" "$PAY"
+  mkdir -p "$(dirname "$KEPT")"
+  echo "different edit" > "$KEPT"
+  ok install --global
+  [ "$(cat "$KEPT")" = "different edit" ] || fail "the kept copy changed on install"
+  never_says "already exists and differs"
+}
+
+test_failed_move_is_not_reported_as_done() {
+  local cmd before
+  edited_payload_file_dropped home
+  printf x > "$H/polype.kept"
+  before="$(snapshot "$H")"
+  for cmd in install update remove; do
+    run "$cmd" --global
+    [ "$STATUS" -eq 1 ] || fail "polype $cmd over a file as polype.kept should exit 1, got $STATUS: $OUT"
+    [ "$(snapshot "$H")" = "$before" ] || fail "a stopped polype $cmd changed the home"
+    says "$H/polype.kept is not a directory"
+    never_says "moved out of the payload"
+  done
+
+  edited_payload_file_dropped inner
+  mkdir -p "$H/polype.kept"
+  printf x > "$H/polype.kept/method"
+  run install --global
+  [ "$STATUS" -eq 1 ] || fail "install over a file as parent should exit 1, got $STATUS: $OUT"
+  says "$H/polype.kept/method is not a directory"
+  never_says "moved out of the payload"
+
+  if [ "$(id -u)" -ne 0 ]; then
+    edited_payload_file_dropped readonly
+    mkdir -p "$H/polype.kept/method"
+    chmod 555 "$H/polype.kept/method"
+    run install --global
+    chmod 755 "$H/polype.kept/method" 2>/dev/null || true
+    [ "$STATUS" -ne 0 ] || fail "install into a read-only parent should fail: $OUT"
+    never_says "moved out of the payload"
+    cmp -s "$EDITED" "$PAY" || fail "the payload file did not stay in place"
+    grep -qF polype/method/commands/po-help.md "$H/polype/manifest" || fail "the manifest lost the file left in place"
+  fi
+}
+
 stops_on_the_taken_copy() {
   local before; before="$(snapshot "$H")"
   run "$@"
