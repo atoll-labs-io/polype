@@ -2230,3 +2230,91 @@ Objectif : solder ce que M14 a laissé ouvert. Décidé par le porteur le 2026-1
 - [ ] `adr_records_the_shape_check` — une ADR nouvelle dit pourquoi la forme se contrôle à l'enregistrement, avec les options écartées : le gabarit seul (un modèle remplit librement, la dérive revient), un refus au ship par `po-gate ship-allowed` (plus tard et plus brutal, un format arrête une livraison).
 
 **Notes pour l'agent** : la revue de s137 (`docs/reviews/s137-modified-copy-survives-drop.md`) est le cas réel d'une revue mal formée, et celle de s138 un cas bien formé : s'en servir comme fixtures. Le lead n'ayant ni Write ni Edit dans `/po-drive`, le contrôle passe par Bash. Les fichiers installés (`.claude/`, `.polype/`) ne se touchent pas. Tests hors `Owns` qui figent les fichiers changés et gardent leurs phrases : `tests/hooks-installer-docs-cleanup.test.sh:57` (« a finding never starts with `Ship allowed:` », à garder dans le nouveau gabarit), `tests/review.test.sh:23` et `:46`, `tests/review-lenses.test.sh:85-86`, `tests/everything-in-issues.test.sh:130` et `:181-184` (les lignes `- title:` / `- body:` de l'étape 3.2 que `cut_finding` lit, et la phrase du filet), `tests/final-leftovers.test.sh:7`, `tests/fleet-wiring.test.sh:68`, `tests/qa-fleet.test.sh:110-121`, `tests/resume.test.sh`. Hors périmètre : réécrire les revues déjà enregistrées.
+
+## M16 — La charge utile ne relivre rien, la forme de revue se tient partout
+
+Objectif : solder les constats laissés par M15. Décidé par le porteur le 2026-10-17 et le 2026-10-18 en cadrant les issues #115, #118 à #121, #123 et #125 à #127 : un fichier que Polype n'a pas posé sous `~/.claude/polype/` **arrête la commande**, même avec `--set-aside` (#118) ; une retouche d'un fichier de la charge utile encore livré est **signalée et ne se propage pas** (#115) ; pour que ces deux règles tiennent aussi quand la charge utile est synchronisée entre machines (ADR-0004, `docs/installation.md`), **la charge utile se signe elle-même** : une install depuis un dépôt Polype écrit dans la charge utile la liste de ses fichiers et de leurs sommes, qui voyage avec elle, et un run lancé depuis la charge utile s'y compare ; le contrôle de forme des revues est **resserré sur les seules formes que lit `/po-ship`**, par une ADR qui remplace ADR-0094 sur ce point. Constat sur `main` (c974e49) : lancé depuis la charge utile, l'installeur prend chaque fichier de `polype/` pour sa propre source (`bin/polype:112-113`, `:143`), si bien qu'il ne voit ni un fichier étranger (`refuse_collisions`, `:201`) ni une retouche (`cmd_update`, `:731`), qu'il relivre l'un et propage l'autre ; `drop_laid_file` remet un `.before-polype` dans la charge utile (`:301-303`, #118) ; `opens()` de `po-gate.sh:94` accepte des items que l'étape 3.2 de `/po-ship` ne lit pas (#126) ; `/po-orchestrator` et `/po-flow` lisent le rapport bloqué sur la forme comme une correction à faire (#123, #125).
+
+### s142-payload-refuses-foreign-files — La charge utile se signe et n'accueille aucun fichier de la personne
+**En tant que** porteur qui installe Polype globalement, sur une ou plusieurs machines **je veux** que la charge utile porte la liste de ses propres fichiers et qu'un fichier hors de cette liste arrête la commande **afin qu'aucun** de mes fichiers ne soit relivré comme méthode active, par aucun canal.
+
+- **Complexité** : 4 — risque : le canal de synchronisation et les installs déjà posées sans signature
+- **Dépend de** : s139-payload-kept-outside
+- **Surface** : command
+- **Corrige** : issue #118 (`Issue tracker: github`)
+- **Owns** : `bin/polype`, `docs/installation.md`, `docs/decisions/ADR-0095-la-charge-utile-se-signe-et-n-accueille-aucun-fichier-etranger.md`, `docs/decisions/ADR-0088-l-installeur-s-arrete-sur-une-collision-et-absorbe-l-agents-md.md`, `tests/payload-kept-outside.test.sh`, `tests/install-collisions.test.sh`, `tests/global-install.test.sh`, `tests/payload-refuses-foreign-files.test.sh`
+
+**Critères d'acceptation**
+- [ ] `payload_signs_itself` — une install ou une mise à jour globale lancée depuis un dépôt Polype (source hors de la charge utile) écrit `<racine>/polype/payload.sums`, une ligne par fichier de la charge utile (somme `cksum` et chemin sous `polype/`), sans les fichiers d'état (`manifest`, `checksums`, `version`, `payload.sums`, tout `*.next` et tout `*.polype-next`) ; le fichier vit dans la charge utile, si bien qu'une synchronisation de `~/.claude/polype/` l'emporte avec elle.
+- [ ] `foreign_payload_file_stops_install` — un fichier sous `<racine>/polype/` est **étranger** quand il n'est pas un fichier d'état, qu'il est absent du manifeste de cette machine, et que la source ne le livre pas (run depuis un dépôt : chemin absent des fichiers livrés) ou que `payload.sums` ne le liste pas (run depuis la charge utile). Un fichier étranger, ordinaire ou lien, arrête `install`, `update` et `init` avant toute écriture (sortie 1), avec ou sans `--set-aside`, en le nommant et en disant de le déplacer ; à toute install ou mise à jour, une collision sous `polype/` (un fichier de la personne, absent du manifeste, à un chemin livré) s'arrête de même, `--set-aside` ne s'y appliquant plus. Un fichier du manifeste garde les règles de retrait et de sortie de la charge utile (s137, s139), y compris quand une charge utile synchronisée ne le liste plus. Une collision hors de `polype/` garde la règle d'ADR-0088.
+- [ ] `synced_payload_still_installs` — une charge utile d'une version plus récente, copiée avec son `payload.sums` dans la racine d'une autre install (le chemin de synchronisation documenté), puis `<racine>/polype/bin/polype update --global` : aucun arrêt, les fichiers nouveaux sont posés et entrent au manifeste.
+- [ ] `old_set_aside_never_put_back_in_payload` — un `<chemin>.before-polype` sous `polype/`, laissé par une install antérieure, n'est jamais remis dans la charge utile ni listé comme source : il tombe sous `foreign_payload_file_stops_install` ; `remove --global` garde son chemin `held` d'aujourd'hui, qui le remet une fois la charge utile partie.
+- [ ] `remove_stops_on_foreign_payload_file` — `remove --global` s'arrête avant toute écriture quand la charge utile contient un fichier absent du manifeste et de `payload.sums` (hors fichiers d'état), au lieu de l'emporter avec `rm -rf` ; il le nomme. Il ne lit aucune source livrée : seulement le manifeste et `payload.sums`.
+- [ ] `unsigned_payload_says_so` — une charge utile sans `payload.sums` (posée avant ce correctif) : `install`, `update` et `init` lancés depuis la charge utile s'arrêtent avant toute écriture en disant de relancer une fois l'install depuis un dépôt Polype ; `check --global` et `remove --global` fonctionnent, avec une ligne qui dit la charge utile non signée (`remove` se fie alors au seul manifeste) ; un run depuis un dépôt écrit le fichier.
+- [ ] `adr_records_the_payload_rule` — une ADR nouvelle dit que la charge utile se signe, qu'un fichier hors signature l'arrête (#118) et qu'une retouche d'un fichier signé n'en sort pas (#115), cette seconde règle étant implémentée par s143 et dite comme telle, avec les options écartées : faire confiance à la charge utile lancée depuis elle-même (une retouche s'y propage), exiger un dépôt comme source (l'usage chezmoi disparaît), ranger un fichier étranger dans `polype.kept/` (un fichier qui n'a jamais été une retouche s'y mêle), propager la retouche en le disant. Elle remplace ADR-0088 sur la mise de côté sous `polype/`, seul point remplacé, et seul le `superseded-by` de l'ADR-0088 change. `docs/installation.md` le dit, chemin de synchronisation compris.
+
+**Notes pour l'agent** : tests qui deviennent faux avec la règle et changent avec elle, le rapport le dit : `tests/install-collisions.test.sh:171` et `tests/payload-kept-outside.test.sh:165-169` (mise de côté d'un fichier sous `polype/`), et ceux de `tests/global-install.test.sh` qui lancent depuis la charge utile sans signature. La ligne d'usage de `--set-aside` (`bin/polype:57-58`) dit qu'elle ne vaut pas sous `polype/`. Le contrôle se fait avant `refuse_collisions`, les sommes chargées. Un run « depuis la charge utile » est celui dont la source (`base`) est `<racine>/polype`. Ne renomme pas `recorded_mode`. Tests hors `Owns` qui figent `docs/installation.md` et gardent leurs phrases : `tests/docs-and-eval-cleanup.test.sh`, `tests/hooks-installer-docs-cleanup.test.sh` (100 caractères), `tests/installer.test.sh:175`, `tests/local-copy-checksums.test.sh:156`, `tests/readme-onboarding.test.sh:143`, `tests/post-m7-texts.test.sh:5`. Hors périmètre : la retouche d'un fichier signé (#115, s143), les cas des copies gardées (#119 à #121, s146).
+
+### s143-payload-edit-not-spread — Une retouche de la charge utile reste dans la charge utile
+**En tant que** porteur qui a retouché un fichier encore livré de `~/.claude/polype/` **je veux** que tout run lancé depuis la charge utile me signale cette retouche et ne la recopie nulle part **afin qu'une** modification de la méthode ne se répande pas sans que je l'aie décidé.
+
+- **Complexité** : 2
+- **Dépend de** : s142-payload-refuses-foreign-files
+- **Surface** : command
+- **Corrige** : issue #115 (`Issue tracker: github`)
+- **Owns** : `bin/polype`, `docs/installation.md`, `tests/payload-edit-not-spread.test.sh`
+
+**Critères d'acceptation**
+- [ ] `payload_edit_reported_not_spread` — un fichier de `polype/method/` dont la somme diffère de celle que `payload.sums` donne, puis `install --global` ou `update --global` lancés depuis la charge utile : le fichier reste tel quel, la copie active correspondante garde son contenu d'avant, la sortie dit `polype: modified, left as it is: <chemin dans polype/>`, le message final la compte dans « left modified » (le message final d'`install --global`, qui ne donne aujourd'hui que le nombre de fichiers, gagne ce compte), et ni `payload.sums` ni les sommes enregistrées ne prennent la somme retouchée.
+- [ ] `init_does_not_take_payload_edit` — `init <projet>` lancé depuis une charge utile qui porte une telle retouche (un gabarit ou un hook) ne la pose pas dans `.polype/` du projet : il garde la copie du projet telle qu'elle est (ou n'en pose pas si elle manque) et dit la même ligne.
+- [ ] `check_lists_payload_edit` — `check --global` liste ce fichier de la charge utile comme modifié.
+- [ ] `fresh_source_still_updates` — `update --global` lancé depuis un dépôt Polype remplace toujours un fichier non retouché de la charge utile et sa copie active, et réécrit `payload.sums`.
+
+**Notes pour l'agent** : la règle est celle d'ADR-0095 (écrite par s142). Une charge utile synchronisée porte son `payload.sums` à jour : ses fichiers correspondent à leur liste et ne sont pas des retouches. Une copie active déjà retouchée garde sa règle d'aujourd'hui.
+
+### s144-shape-gate-matches-ship — Le contrôle de forme refuse ce que /po-ship ne sait pas lire
+**En tant que** porteur **je veux** que `po-gate findings-shape` n'accepte un constat que sous une forme que l'étape 3.2 de `/po-ship` lit, et que tout autre échec du gate arrête l'enregistrement par écrit **afin que** le dépôt silencieux de #112 ne revienne par aucune forme.
+
+- **Complexité** : 2
+- **Dépend de** : s141-review-findings-shape
+- **Surface** : command
+- **Corrige** : issues #126 et #127 (`Issue tracker: github`)
+- **Owns** : `method/hooks/po-gate.sh`, `method/commands/po-review.md`, `method/commands/po-drive.md`, `docs/decisions/ADR-0096-le-controle-de-forme-suit-ce-que-po-ship-lit.md`, `docs/decisions/ADR-0094-la-forme-d-une-revue-se-controle-a-l-enregistrement.md`, `tests/review-findings-shape.test.sh`
+
+**Critères d'acceptation**
+- [ ] `gate_accepts_only_ship_shapes` — un item qui nomme une sévérité passe seulement sous une forme que l'étape 3.2 ouvre : marqueur `- `, `* ` ou `<n>. `, sévérité en minuscules, nue ou en gras, le deux-points dedans ou hors du gras, puis `—`, `:` ou `-` (`- **major:** x` et `- **major**: x` passent). Est refusé, cité avec son numéro, un titre (ligne qui commence par `#`) qui nomme une sévérité où que ce soit, comme `### F1: major.` (le cas de #112, que le test de s141 tient toujours) ; et toute autre ligne de `## Findings` hors d'un item accepté et hors ligne de suite indentée dont le premier mot, passé les caractères qui ne sont pas des lettres, est une sévérité en toute casse : `- major. a.sh:1 x`, `- major (a.sh:1) x`, `- MAJOR x`, `- Major — x`, `+ major — x`, `1) major — x`, `> major — x`, `• major — x`. Les cas acceptés de s141 (`- **major** —`, `1. **minor**:`, `* minor:`, `None.`, « No critical or major finding. ») passent toujours.
+- [ ] `other_gate_failures_stop` — `po-gate findings-shape` sans id sort 2 ; `/po-review` et `/po-drive` disent qu'une sortie du gate autre que 0 et 1 n'est pas une revue mal formée : le reviewer n'est pas relancé, et le contexte qui enregistre ajoute le même rapport bloqué que pour un second échec (`Review status: blocked`, un `Next action:` qui nomme `po-gate findings-shape` et la sortie, `Max severity: critical`, `Ship allowed: no`), si bien que la reprise de `/po-drive` et celle de s145 l'envoient à la personne ; ce rapport et la ligne de la table de reprise de `/po-drive` disent que le contrôle n'a pas pu tourner (avec la sortie), et non que les constats ont échoué deux fois à leur forme.
+- [ ] `adr_narrows_the_shape` — une ADR nouvelle remplace ADR-0094 sur la règle des sévérités (« toute casse », trois cas refusés) : le gate refuse tout ce que l'étape 3.2 ne sait pas ouvrir, avec les options écartées : garder « toute casse » et apprendre à `/po-ship` les autres formes (deux lectures à tenir au lieu d'une). Seul le `superseded-by` de l'ADR-0094 change.
+
+**Notes pour l'agent** : la forme acceptée est celle des deux premiers points de l'étape 3.2 de `method/commands/po-ship.md` (« Which findings ») ; un seul motif dans le gate. Tests hors `Owns` qui figent `po-review.md` et `po-drive.md` : `tests/review.test.sh`, `tests/fleet-wiring.test.sh:68`, `tests/qa-fleet.test.sh:110-121`, `tests/resume.test.sh`, `tests/drive.test.sh` (aucun `` `cd `` dans `po-drive.md`).
+
+### s145-resume-shape-stop — /po-orchestrator et /po-flow respectent l'arrêt sur la forme
+**En tant que** porteur **je veux** que `/po-orchestrator` et `/po-flow` m'envoient une revue bloquée sur la forme de ses constats au lieu d'en faire une correction **afin qu'aucune** tentative ne soit dépensée sur un code que personne n'a mis en cause.
+
+- **Complexité** : 2
+- **Dépend de** : s141-review-findings-shape
+- **Surface** : command
+- **Corrige** : issues #123 et #125 (`Issue tracker: github`)
+- **Owns** : `method/commands/po-orchestrator.md`, `method/commands/po-flow.md`, `tests/resume-shape-stop.test.sh`
+
+**Critères d'acceptation**
+- [ ] `orchestrator_stops_on_shape_block` — à son Stage 7, `/po-orchestrator` enregistre la revue « as `/po-review` says » (la phrase de délégation « Delegate to `reviewer` the way `/po-review` does » reste telle quelle) et, avant sa règle « Any other blocked review → back to stage 5 as a fix run », envoie à la personne une revue `Review status: blocked` dont le `Next action:` nomme `po-gate findings-shape`, sans dépenser de correction.
+- [ ] `flow_stops_on_shape_block` — l'étape « Fix loops » de `/po-flow` fait de même, avant « Any other `Ship allowed: no` → a fix run », la ligne existante restant entière.
+
+**Notes pour l'agent** : le rapport bloqué et son `Next action:` sont ceux de `method/commands/po-review.md` (`## Recording`, s141) ; les citer, ne pas les réécrire. Le message à la personne reprend la cause que le rapport écrit : « the check could not run » pour une sortie autre que 0 et 1 (s144), l'échec de forme répété sinon. Tests hors `Owns` qui figent ces deux fichiers et gardent leurs phrases : `tests/pilot.test.sh:19`, `tests/model-routing.test.sh:113` (la phrase de délégation), `tests/qa-fleet.test.sh:162` (la ligne de `/po-flow`).
+
+### s146-kept-copy-edge-fixes — Les copies gardées tiennent leurs cas limites
+**En tant que** porteur **je veux** que le balayage des copies gardées soit tenu par un test sur `update`, qu'un lien n'arrête pas la commande à tort, et qu'un déplacement raté ne soit jamais annoncé **afin que** `polype.kept/` dise toujours vrai.
+
+- **Complexité** : 2
+- **Dépend de** : s143-payload-edit-not-spread
+- **Surface** : command
+- **Corrige** : issues #119, #120 et #121 (`Issue tracker: github`)
+- **Owns** : `bin/polype`, `tests/payload-kept-outside.test.sh`
+
+**Critères d'acceptation**
+- [ ] `update_sweeps_shipped_kept_copy` — `update --global` supprime une copie de `polype.kept/` dont la charge utile livre désormais le contenu identique ; le test échoue quand l'appel du balayage dans `cmd_update` est retiré (#119).
+- [ ] `symlink_payload_path_not_refused` — un chemin de la charge utile qui est un lien symbolique n'arrête pas la commande sur une copie gardée qu'il ne déplacerait jamais : `refuse_taken_kept_copies` applique le même `[ ! -L … ]` que `drop_laid_file` (#120).
+- [ ] `failed_move_is_not_reported_as_done` — quand un parent de `polype.kept/<chemin>` est un fichier ordinaire, la commande s'arrête avant toute écriture en nommant ce parent ; la ligne `moved out of the payload` n'est jamais écrite pour un fichier resté en place (#121).
+
+**Notes pour l'agent** : les trois constats et leurs reproductions sont dans `docs/reviews/s139-payload-kept-outside.md` (`## Findings`).
