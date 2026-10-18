@@ -3,7 +3,8 @@
 `bin/polype` pose la méthode, la rafraîchit, l'ausculte et la retire. Il ne réécrit jamais les
 réglages d'un projet (`AGENTS.local.md`), sauf pour y ajouter des notes déplacées, ni ses documents.
 Un fichier à soi qui porte le nom d'un des siens l'arrête avant toute écriture : il ne le déplace
-qu'avec `--set-aside` (voir « Les collisions »).
+qu'avec `--set-aside` (voir « Les collisions »). Sous `~/.claude/polype/`, la charge utile, qui se
+signe dans `payload.sums`, un fichier qu'il n'a pas posé l'arrête toujours (ADR-0095).
 
 Deux poses, deux rôles. La pose **globale** met les commandes, les subagents et les skills dans
 `~/.claude/`, donc dans tous les projets à la fois. La pose **projet** met dans le dépôt ce qui lui
@@ -161,9 +162,11 @@ script sur la branche cible.
 
 La pose globale est faite pour être synchronisée entre machines (ADR-0004).
 
-**Ce qui se suit** : `~/.claude/polype/bin/` et `~/.claude/polype/method/`, versionnés avec la
-méthode, plus les commandes, subagents et skills posés dans `~/.claude/`. C'est exactement ce qui
-doit être identique partout.
+**Ce qui se suit** : `~/.claude/polype/bin/`, `~/.claude/polype/method/` et
+`~/.claude/polype/payload.sums`, la signature de la charge utile, versionnés avec la méthode, plus
+les commandes, subagents et skills posés dans `~/.claude/`. C'est exactement ce qui doit être
+identique partout. Sans `payload.sums`, la charge utile lancée depuis elle-même ne livre rien
+(ADR-0095).
 
 **Ce qui ne se suit pas** :
 - `~/.claude/polype/manifest`, `~/.claude/polype/checksums` et `~/.claude/polype/version` : ces
@@ -179,6 +182,12 @@ sur elle-même — `~/.claude/polype/bin/polype install --global` — pour réé
 empreintes locales ; la charge utile se repose sur elle-même sans se détruire. `polype check
 --global` dit ensuite ce qui a dérivé, charge utile comprise. Chaque projet suit avec `polype init
 <projet>`.
+
+Une charge utile non signée, posée avant ADR-0095, s'arrête là : `install`, `update` et `init`
+lancés depuis elle demandent de relancer une fois la pose depuis un dépôt Polype,
+`<clone>/bin/polype install --global`, qui écrit `payload.sums`. Un run depuis la charge utile ne
+livre que ce que `payload.sums` signe : un fichier qu'une version plus récente ne signe plus n'est
+pas reposé, et sort comme tout fichier que Polype ne livre plus.
 
 ## Ce qui est posé dans un projet
 
@@ -243,18 +252,34 @@ pour un projet. `remove` remet chaque fichier mis de côté à sa place, sauf qu
 couvrait a été modifiée à la main : les deux restent alors en place (ADR-0092). Un `AGENTS.md` écrit
 à la main n'est pas une collision : il est absorbé, comme le dit la liste ci-dessus.
 
+Sous `~/.claude/polype/`, `--set-aside` ne s'applique plus (ADR-0095, qui remplace ADR-0088 sur ce
+seul point). Une collision y arrête la pose comme sans l'option. Il en va de même d'un fichier
+**étranger** : ni fichier d'état, ni listé au manifeste, ni livré par la source (run depuis un
+dépôt) ou signé par `payload.sums` (run depuis la charge utile), lien compris. Un
+`<chemin>.before-polype` laissé là par une pose plus ancienne est étranger, quoi que dise le
+manifeste. `install`, `update` et `init` sortent en **1** sans rien écrire, avec une ligne par
+fichier, à déplacer hors de la charge utile :
+
+```
+polype: not laid down by Polype, inside the payload: <chemin>
+```
+
 ## Les fichiers d'état
 
 Trois fichiers d'état vivent dans `.polype/` pour un projet, dans `~/.claude/polype/` pour la pose
-globale ; un projet en a deux de plus, `.polype/mode` et `.claude/.polype-checksums`, décrits plus
-bas.
+globale ; un projet en a deux de plus, `.polype/mode` et `.claude/.polype-checksums`, et la pose
+globale un, `payload.sums`, décrits plus bas.
 
 | Fichier | Contenu |
 | --- | --- |
 | `manifest` | un chemin par ligne : tout ce que la dernière pose a écrit |
 | `checksums` | le `cksum` de chaque fichier au moment où il a été posé |
 | `version` | la version installée |
+| `payload.sums` | global seulement : la signature de la charge utile, `cksum` et chemin, ADR-0095 |
 | `mode` | projet seulement : `init` ou `project`, le mode que garde `update` (ADR-0091) |
+
+Une pose ou une mise à jour globale lancée depuis un dépôt écrit `payload.sums` avec une ligne par
+fichier de `bin/` et `method/` ; un run depuis la charge utile garde celui qu'elle a apporté.
 
 Aucun de ces fichiers n'est listé dans le manifeste : ils ne s'effacent donc jamais eux-mêmes au
 passage suivant. Le manifeste est ce qui permet de supprimer les fichiers d'une version précédente
@@ -395,7 +420,11 @@ utile, encore livré ou non (ADR-0093), puis supprime les fichiers du manifeste 
 `~/.claude/polype/` en entier, et élague les répertoires devenus vides **sous**
 `~/.claude/commands/`, `~/.claude/agents/` et `~/.claude/skills/` — jamais ces trois-là, jamais
 `~/.claude`, jamais un répertoire que Polype n'a pas créé. Il laisse `polype.kept/` en place et le
-dit : `polype: kept copies left in <racine>/polype.kept`.
+dit : `polype: kept copies left in <racine>/polype.kept`. Avant toute écriture, il s'arrête en
+**1** sur un fichier de la charge utile absent du manifeste et de `payload.sums`, et le nomme, au
+lieu de l'emporter (ADR-0095). Le `<chemin>.before-polype` d'un chemin du manifeste revient à sa
+place une fois la charge utile partie. Sans `payload.sums`, `remove` le dit et se fie au seul
+manifeste ; `check --global` le dit aussi.
 
 `remove <projet>` supprime les fichiers du manifeste, les fichiers d'état
 (`.claude/.polype-checksums` compris), puis les répertoires `.claude/` et `.polype/` devenus vides.

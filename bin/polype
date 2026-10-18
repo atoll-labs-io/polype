@@ -36,6 +36,15 @@ done
 base="$(cd "$(dirname "$self")/.." && pwd)"
 method="$base/method"
 home="${CLAUDE_CONFIG_DIR:-$HOME/.claude}"
+# A run from the payload is one whose source is <home>/polype. Physical paths on both sides: a
+# symlinked ~/.claude or a PATH link would otherwise read as a run from a repository.
+payload_dir="$home/polype"
+if [ -d "$home" ]; then payload_dir="$(cd "$home" && pwd)/polype"; fi
+from_payload=no
+if [ -d "$payload_dir" ] && [ "$(cd "$base" && pwd -P)" = "$(cd "$payload_dir" && pwd -P)" ]; then
+  from_payload=yes
+fi
+payload_signed=no
 marker='<!-- Assembled by Polype.'
 project="" hooks=no global=no mode=project set_aside=no
 root="" state_dir="" local_sums="" prune_mindepth=0
@@ -55,7 +64,8 @@ usage: polype <install|update> (--global | <project-dir>) [--hooks] [--set-aside
                         AGENTS.md, .gitignore — no copy of the commands
   --hooks               point core.hooksPath at .polype/hooks (projects only)
   --set-aside           move each file Polype did not lay down to <path>.before-polype instead of
-                        stopping; remove puts it back
+                        stopping; remove puts it back. It does not apply under polype/, the
+                        payload: a file there that Polype did not lay down always stops the run
 USAGE
 }
 
@@ -139,6 +149,8 @@ shipped_pairs() {
   for spec in "${PAIRS[@]}"; do
     from="$base/${spec%%:*}" to="${spec#*:}"
     while IFS= read -r rel; do
+      # From the payload, only what payload.sums signs is a source (ADR-0095).
+      if [ "$from_payload" = yes ] && [ -z "${PAYLOAD_SUMS["polype/${spec%%:*}/$rel"]-}" ]; then continue; fi
       printf '%s\t%s\n' "$from/$rel" "$to/$rel"
     done < <(cd "$from" && find . -type f | sed 's|^\./||' | sort)
   done
@@ -161,6 +173,11 @@ require_payload() {
 # SHIPPED_LINES is filled before anything is deleted: in global mode the payload being copied
 # lives inside the install root, so deleting first would destroy the sources of this very run.
 collect_shipped() {
+  load_payload_sums
+  if [ "$from_payload" = yes ] && [ "$payload_signed" = no ]; then
+    echo "polype: the payload in $payload_dir is not signed (no payload.sums): run the install once from a Polype repository (<clone>/bin/polype install --global); nothing written" >&2
+    exit 1
+  fi
   require_payload
   mapfile -t SHIPPED_LINES < <(shipped_pairs)
   [ "${#SHIPPED_LINES[@]}" -gt 0 ] || { echo "polype: nothing to install from $base" >&2; exit 1; }
@@ -211,6 +228,19 @@ refuse_collisions() {
     exit 1
   fi
   [ ${#collisions[@]} -gt 0 ] || return 0
+  local in_payload=no
+  for dest in "${collisions[@]}"; do is_payload_path "$dest" && in_payload=yes; done
+  if [ "$in_payload" = yes ]; then
+    for dest in "${collisions[@]}"; do
+      if is_payload_path "$dest"; then
+        echo "polype: not laid down by Polype, inside the payload: $root/$dest" >&2
+      else
+        echo "polype: not laid down by Polype, left untouched: $root/$dest" >&2
+      fi
+    done
+    echo "polype: nothing written; move each one out of $payload_dir (--set-aside does not apply under polype/)" >&2
+    exit 1
+  fi
   if [ "$set_aside" = no ]; then
     for dest in "${collisions[@]}"; do
       echo "polype: not laid down by Polype, left untouched: $root/$dest" >&2
@@ -234,6 +264,75 @@ refuse_collisions() {
 }
 
 is_payload_path() { [ "$mode" = global ] && [ "${1#polype/}" != "$1" ]; }
+
+# <rel> is relative to the payload directory.
+is_payload_state_file() {
+  case "$1" in
+    manifest|checksums|version|payload.sums|*.next|*.polype-next) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
+# PAYLOAD_SUMS[polype/<path>] = the sum payload.sums signs for that payload file.
+load_payload_sums() {
+  declare -gA PAYLOAD_SUMS=()
+  payload_signed=no
+  [ -f "$payload_dir/payload.sums" ] || return 0
+  payload_signed=yes
+  local crc size path
+  while read -r crc size path; do PAYLOAD_SUMS["$path"]="$crc $size"; done < "$payload_dir/payload.sums"
+}
+
+# Only a run from a repository signs: a run from the payload keeps the signature it came with.
+sign_payload() {
+  [ "$mode" = global ] && [ "$from_payload" = no ] || return 0
+  grep '^[^ ]* [^ ]* polype/' "$checksums" > "$state_dir/payload.sums.next" || true
+  mv -f "$state_dir/payload.sums.next" "$state_dir/payload.sums"
+}
+
+# A payload file is foreign when it is no state file, the global manifest does not list it and
+# neither the source (a repository's shipped files, or payload.sums) nor, for remove, payload.sums
+# does. A *.before-polype there is foreign to every run but remove, whose held path puts back the
+# one set aside for a manifest path (ADR-0095). Never $manifest: under init it is the project's.
+refuse_foreign_payload_files() {
+  local flavour="${1-run}"
+  if [ "$flavour" = run ]; then [ "$mode" = global ] || [ "$from_payload" = yes ] || return 0; fi
+  [ -d "$payload_dir" ] || return 0
+  declare -A LISTED=() SHIPPED_HERE=()
+  local line path rel foreign=()
+  if [ -f "$payload_dir/manifest" ]; then
+    while IFS= read -r line; do LISTED["$line"]=1; done < "$payload_dir/manifest"
+  fi
+  if [ "$flavour" = run ] && [ "$from_payload" = no ]; then
+    for line in "${SHIPPED_LINES[@]}"; do SHIPPED_HERE["${line#*$'\t'}"]=1; done
+  fi
+  while IFS= read -r path; do
+    rel="${path#"$payload_dir"/}"
+    is_payload_state_file "$rel" && continue
+    case "$rel" in
+      *.before-polype)
+        if [ "$flavour" = remove ] && [ -n "${LISTED["polype/${rel%.before-polype}"]-}" ]; then continue; fi ;;
+      *)
+        [ -z "${LISTED["polype/$rel"]-}" ] || continue
+        if [ "$flavour" = remove ] || [ "$from_payload" = yes ]; then
+          [ -z "${PAYLOAD_SUMS["polype/$rel"]-}" ] || continue
+        else
+          [ -z "${SHIPPED_HERE["polype/$rel"]-}" ] || continue
+        fi ;;
+    esac
+    foreign+=("$path")
+  done < <(find "$payload_dir" ! -type d | sort)
+  [ ${#foreign[@]} -gt 0 ] || return 0
+  for path in "${foreign[@]}"; do
+    echo "polype: not laid down by Polype, inside the payload: $path" >&2
+  done
+  if [ "$flavour" = remove ]; then
+    echo "polype: nothing removed; move each one out of $payload_dir, then rerun" >&2
+  else
+    echo "polype: nothing written; move each one out of $payload_dir (--set-aside does not apply under polype/)" >&2
+  fi
+  exit 1
+}
 
 kept_path() { printf '%s' "$root/polype.kept/${1#polype/}"; }
 
@@ -298,10 +397,6 @@ drop_laid_file() {
   local dest="$1"
   if is_payload_path "$dest" && [ -f "$root/$dest" ] && [ ! -L "$root/$dest" ] && has_drifted "$dest"; then
     move_out_of_payload "$dest"
-    if [ -e "$root/$dest.before-polype" ] || [ -L "$root/$dest.before-polype" ]; then
-      mv "$root/$dest.before-polype" "$root/$dest"
-      echo "polype: put back: $root/$dest" >&2
-    fi
     return 1
   fi
   if [ -f "$root/$dest" ] && has_drifted "$dest"; then
@@ -313,7 +408,8 @@ drop_laid_file() {
     return 1
   fi
   rm -f "$root/$dest"
-  if [ -e "$root/$dest.before-polype" ] || [ -L "$root/$dest.before-polype" ]; then
+  # Never under the payload: refuse_foreign_payload_files stops on any .before-polype there.
+  if ! is_payload_path "$dest" && { [ -e "$root/$dest.before-polype" ] || [ -L "$root/$dest.before-polype" ]; }; then
     mv "$root/$dest.before-polype" "$root/$dest"
     echo "polype: put back: $root/$dest" >&2
   fi
@@ -664,6 +760,7 @@ done_message() {
 cmd_install() {
   collect_shipped
   load_checksums
+  refuse_foreign_payload_files
   refuse_taken_kept_copies dropped
   refuse_collisions
   mkdir -p "$root" "$state_dir"
@@ -691,6 +788,7 @@ cmd_install() {
 
   mv "$manifest.next" "$manifest"
   finish_sums
+  sign_payload
   stamp_version
   stamp_mode
   prune_empty_dirs
@@ -707,6 +805,7 @@ cmd_update() {
   if [ ! -f "$manifest" ]; then cmd_install; return; fi
   collect_shipped
   load_checksums
+  refuse_foreign_payload_files
   refuse_taken_kept_copies dropped
   refuse_collisions
   local line src dest old
@@ -743,6 +842,7 @@ cmd_update() {
 
   mv "$manifest.next" "$manifest"
   finish_sums
+  sign_payload
   stamp_version
   stamp_mode
   prune_empty_dirs
@@ -771,6 +871,11 @@ cmd_check() {
   fi
 
   load_checksums
+  if [ "$mode" = global ]; then
+    load_payload_sums
+    [ "$payload_signed" = yes ] \
+      || echo "polype: the payload is not signed (no payload.sums); run the install once from a Polype repository"
+  fi
   local missing=() modified=()
   while IFS= read -r path; do
     if [ ! -f "$root/$path" ]; then
@@ -814,6 +919,12 @@ cmd_remove() {
   local path held=() hold="$root/.polype-restore.$$"
   load_checksums
   refuse_taken_kept_copies all
+  if [ "$mode" = global ]; then
+    load_payload_sums
+    refuse_foreign_payload_files remove
+    [ "$payload_signed" = yes ] \
+      || echo "polype: the payload is not signed (no payload.sums): remove trusts the manifest alone" >&2
+  fi
   while IFS= read -r path; do
     if is_payload_path "$path"; then
       # The payload goes whole with its directory below: an edit leaves it first (ADR-0093).

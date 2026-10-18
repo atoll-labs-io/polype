@@ -164,9 +164,9 @@ test_remove_leaves_kept_copies() {
 
   home_in aside
   A="$H/polype/method/AGENTS.md" K="$H/polype.kept/method/AGENTS.md"
-  mkdir -p "$(dirname "$A")"
-  echo "the person's file" > "$A"
-  ok install --global --set-aside
+  # As an install older than ADR-0095 left it: set-aside no longer applies under polype/.
+  ok install --global
+  echo "the person's file" > "$A.before-polype"
   echo "# mine" >> "$A"
   cp "$A" "$SCRATCH/aside-edited"
   ok remove --global
