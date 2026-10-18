@@ -2242,7 +2242,7 @@ Objectif : solder les constats laissés par M15. Décidé par le porteur le 2026
 - **Dépend de** : s139-payload-kept-outside
 - **Surface** : command
 - **Corrige** : issue #118 (`Issue tracker: github`)
-- **Owns** : `bin/polype`, `docs/installation.md`, `docs/decisions/ADR-0095-la-charge-utile-se-signe-et-n-accueille-aucun-fichier-etranger.md`, `docs/decisions/ADR-0088-l-installeur-s-arrete-sur-une-collision-et-absorbe-l-agents-md.md`, `tests/payload-kept-outside.test.sh`, `tests/install-collisions.test.sh`, `tests/global-install.test.sh`, `tests/payload-refuses-foreign-files.test.sh`
+- **Owns** : `bin/polype`, `docs/installation.md`, `docs/decisions/ADR-0095-la-charge-utile-se-signe-et-n-accueille-aucun-fichier-etranger.md`, `docs/decisions/ADR-0088-l-installeur-s-arrete-sur-une-collision-et-absorbe-l-agents-md.md`, `tests/payload-kept-outside.test.sh`, `tests/install-collisions.test.sh`, `tests/global-install.test.sh`, `tests/drop-keeps-modified.test.sh`, `tests/payload-refuses-foreign-files.test.sh`
 
 **Critères d'acceptation**
 - [ ] `payload_signs_itself` — une install ou une mise à jour globale lancée depuis un dépôt Polype (source hors de la charge utile) écrit `<racine>/polype/payload.sums`, une ligne par fichier de la charge utile (somme `cksum` et chemin sous `polype/`), sans les fichiers d'état (`manifest`, `checksums`, `version`, `payload.sums`, tout `*.next` et tout `*.polype-next`) ; le fichier vit dans la charge utile, si bien qu'une synchronisation de `~/.claude/polype/` l'emporte avec elle.
