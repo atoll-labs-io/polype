@@ -181,7 +181,7 @@ test_adr_records_the_choice() {
   contains "$adr" 'ADR-0087'
   contains "$adr" '`~/.claude/polype/`'
   old="$(ls "$ROOT"/docs/decisions/ADR-0088-*.md)"
-  frontmatter "$old" | grep -qx 'superseded-by: \[ADR-0092\]' || fail "ADR-0088 does not link to ADR-0092"
+  frontmatter "$old" | grep -qx 'superseded-by: \[ADR-0092, ADR-0095\]' || fail "ADR-0088 does not link to ADR-0092"
   frontmatter "$old" | grep -qx 'status: accepted' || fail "ADR-0088 must stay accepted"
   contains "$ROOT/docs/installation.md" 'modified, kept:'
   contains "$ROOT/docs/installation.md" 'ADR-0092'

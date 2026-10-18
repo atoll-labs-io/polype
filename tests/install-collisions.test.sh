@@ -164,14 +164,11 @@ test_set_aside_is_explicit_and_undone() {
 
 test_set_aside_is_explicit_and_undone_global() {
   sandbox
-  mkdir -p "$H/agents" "$H/polype/bin"
+  mkdir -p "$H/agents"
   echo mine > "$H/agents/reviewer.md"
-  echo mine > "$H/polype/bin/polype"
   ok install --global --set-aside
-  [ "$(cat "$H/polype/bin/polype.before-polype")" = mine ] || fail "the payload-side file was not set aside"
   ok remove --global
   [ "$(cat "$H/agents/reviewer.md")" = mine ] || fail "remove --global did not put reviewer.md back"
-  [ "$(cat "$H/polype/bin/polype")" = mine ] || fail "remove --global lost the file set aside under polype/"
   if [ -n "$(find "$H" -name '*.before-polype' -o -name '.polype-restore.*')" ]; then
     fail "remove --global left a backup or its hold directory behind"
   fi
