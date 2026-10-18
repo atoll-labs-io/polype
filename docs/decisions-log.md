@@ -124,3 +124,8 @@ A decision the person took is not logged here: it is an ADR or a story.
 | 2026-10-18 | s144-shape-gate-matches-ship | Added the template's link line to the recorded review; ran `findings-shape` (installed and new gate) on both reviews: exit 0 | s129's tests; s141's recording rule |
 | 2026-10-18 | s144-shape-gate-matches-ship | Shipped (PR #133); minor filed as #134; closed #126, #127 | Effective `automatic`, solo; landing tree 633 passed |
 | 2026-10-18 | s142-payload-refuses-foreign-files | Shipped (PR #135); minors filed as #136, #137; closed #118; re-ran `bin/polype install --global` from the repository to sign this machine's payload | Landing tree 640 passed; an unsigned payload now stops runs from itself |
+| 2026-10-18 | M16 wave 2 (s143, s145) | Launched s143 and s145; ADR-0097 and ADR-0098 reserved, both left unused | `Parallel: 2`; s146 waits on s143 |
+| 2026-10-18 | s143, s145 | Both plans approved without a human (`Plan validation: autonomous`); s143 rescored 3 by its planner, implementer on `Model strong` | Setting; `Light up to: 2` |
+| 2026-10-18 | s145-resume-shape-stop | Filed the planner's finding on `/po-execute` (fix run on a shape-blocked review) as #139; left s145's criterion text as framed, the plan already closing the Stage 5 path inside `Owns` | Law 7; the plan is the record of that extension |
+| 2026-10-18 | s145-resume-shape-stop | Shipped (PR #140), no finding; closed #123, #125 | Landing tree 642 passed |
+| 2026-10-18 | s143-payload-edit-not-spread | Shipped (PR #141), no finding; closed #115 | Landing tree 646 passed |
