@@ -215,6 +215,7 @@ refuse_collisions() {
   for line in "${SHIPPED_LINES[@]}"; do
     src="${line%%$'\t'*}" dest="${line#*$'\t'}" t="$root/$dest"
     [ -z "${KNOWN[$dest]-}" ] || continue
+    ! payload_edit "$src" || continue
     if [ -L "$t" ] || { [ -e "$t" ] && [ "$(sum_of "$t")" != "$(sum_of "$src")" ]; }; then
       collisions+=("$dest")
     fi
@@ -281,6 +282,34 @@ load_payload_sums() {
   payload_signed=yes
   local crc size path
   while read -r crc size path; do PAYLOAD_SUMS["$path"]="$crc $size"; done < "$payload_dir/payload.sums"
+}
+
+# A payload edit: from the payload, a source whose content differs from what payload.sums signs.
+payload_edit() {
+  [ "$from_payload" = yes ] || return 1
+  local signed="${PAYLOAD_SUMS["polype/${1#"$base"/}"]-}"
+  [ -n "$signed" ] && [ "$signed" != "$(sum_of "$1")" ]
+}
+
+# keep_payload_edit <src> <dest>: returns 1 when src is no payload edit, the caller laying it.
+# Otherwise nothing is laid: the payload path keeps the signed sum, so check keeps listing the
+# edit; an active copy Polype laid keeps its content and sum; any other dest is not claimed.
+# Appends to the caller's modified array, once per source through its reported set.
+keep_payload_edit() {
+  local src="$1" dest="$2" path="polype/${1#"$base"/}"
+  payload_edit "$src" || return 1
+  if [ "$dest" = "$path" ]; then
+    printf '%s\n' "$dest" >> "$manifest.next"
+    record_sum "${PAYLOAD_SUMS[$path]}" "$dest"
+  elif [ -n "${RECORDED[$dest]-}" ] && [ -e "$root/$dest" ]; then
+    printf '%s\n' "$dest" >> "$manifest.next"
+    record_sum "${RECORDED[$dest]}" "$dest"
+  fi
+  if [ -z "${reported[$path]-}" ]; then
+    reported["$path"]=1
+    modified+=("$path")
+  fi
+  return 0
 }
 
 # Only a run from a repository signs: a run from the payload keeps the signature it came with.
@@ -381,6 +410,7 @@ drop_kept_copies_now_shipped() {
   for line in "${SHIPPED_LINES[@]}"; do
     src="${line%%$'\t'*}" dest="${line#*$'\t'}"
     is_payload_path "$dest" || continue
+    ! payload_edit "$src" || continue
     kept="$(kept_path "$dest")"
     if [ -f "$kept" ] && [ ! -L "$kept" ] && [ "$(sum_of "$kept")" = "$(sum_of "$src")" ]; then
       rm -f "$kept"
@@ -749,7 +779,7 @@ warn_without_a_global_install() {
 done_message() {
   case "$mode" in
     global)
-      echo "Polype $POLYPE_VERSION installed in $root ($(wc -l < "$manifest") files), payload in $state_dir. Run 'polype init <project-dir>' in each project." ;;
+      echo "Polype $POLYPE_VERSION installed in $root ($(wc -l < "$manifest") files, ${1:-0} left modified), payload in $state_dir. Run 'polype init <project-dir>' in each project." ;;
     init)
       echo "Polype $POLYPE_VERSION activated in $project ($(wc -l < "$manifest") files). Commit .polype/, .claude/settings.json, AGENTS.md and .gitignore on the target branch so story worktrees get them." ;;
     *)
@@ -778,8 +808,11 @@ cmd_install() {
 
   : > "$manifest.next"
   start_sums
+  local modified=()
+  declare -A reported=()
   for line in "${SHIPPED_LINES[@]}"; do
     src="${line%%$'\t'*}" dest="${line#*$'\t'}"
+    if keep_payload_edit "$src" "$dest"; then continue; fi
     lay_down "$src" "$dest"
     printf '%s\n' "$dest" >> "$manifest.next"
     record_sum "$(sum_of "$root/$dest")" "$dest"
@@ -793,7 +826,11 @@ cmd_install() {
   stamp_mode
   prune_empty_dirs
   wire_the_project
-  done_message
+  local path
+  for path in ${modified[@]+"${modified[@]}"}; do
+    echo "polype: modified, left as it is: $path" >&2
+  done
+  done_message "${#modified[@]}"
 }
 
 cmd_init() {
@@ -823,8 +860,10 @@ cmd_update() {
   : > "$manifest.next"
   start_sums
   local modified=()
+  declare -A reported=()
   for line in "${SHIPPED_LINES[@]}"; do
     src="${line%%$'\t'*}" dest="${line#*$'\t'}"
+    if keep_payload_edit "$src" "$dest"; then continue; fi
     # A copy identical to the file now shipped is no hand edit, whatever the sums say: a
     # committed .claude/ refreshed by a pull request must not read as modified here.
     if [ -f "$root/$dest" ] && has_drifted "$dest" && [ "$(sum_of "$root/$dest")" != "$(sum_of "$src")" ]; then

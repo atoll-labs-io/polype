@@ -189,6 +189,12 @@ lancés depuis elle demandent de relancer une fois la pose depuis un dépôt Pol
 livre que ce que `payload.sums` signe : un fichier qu'une version plus récente ne signe plus n'est
 pas reposé, et sort comme tout fichier que Polype ne livre plus.
 
+Un fichier de la charge utile dont le contenu diffère de ce que `payload.sums` signe est une
+retouche. Un run depuis la charge utile le laisse tel quel et ne le pose nulle part, ni sur la
+copie active ni dans le `.polype/` d'un projet : il dit `polype: modified, left as it is:
+polype/<chemin>`, le compte dans « left modified », message final d'`install --global` compris, et
+garde l'empreinte signée, si bien que `polype check --global` continue de le lister (ADR-0095).
+
 ## Ce qui est posé dans un projet
 
 | Source | Destination | `init` | `install <projet>` |
