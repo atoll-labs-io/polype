@@ -376,9 +376,23 @@ move_out_of_payload() {
     echo "polype: modified, already kept: $kept" >&2
     return 0
   fi
-  mkdir -p "$(dirname "$kept")"
-  mv "$root/$dest" "$kept"
-  echo "polype: modified, moved out of the payload: $root/$dest -> $kept" >&2
+  if mkdir -p "$(dirname "$kept")" && mv "$root/$dest" "$kept"; then
+    echo "polype: modified, moved out of the payload: $root/$dest -> $kept" >&2
+  else
+    echo "polype: could not move $root/$dest to $kept; it stays in the payload, nothing more written" >&2
+    exit 1
+  fi
+}
+
+# First ancestor of a kept path, up to polype.kept itself, that exists but is not a directory.
+kept_blocking_parent() {
+  local d
+  d="$(dirname "$1")"
+  while :; do
+    if { [ -e "$d" ] || [ -L "$d" ]; } && [ ! -d "$d" ]; then printf '%s' "$d"; return 0; fi
+    [ "$d" != "$root/polype.kept" ] || return 1
+    d="$(dirname "$d")"
+  done
 }
 
 # A kept copy is never overwritten: a different one at the kept path stops the run before any
@@ -386,14 +400,19 @@ move_out_of_payload() {
 refuse_taken_kept_copies() {
   [ "$mode" = global ] && [ -f "$manifest" ] || return 0
   declare -A SHIPPED_NOW=()
-  local line path kept taken=no
+  local line path kept parent taken=no
   if [ "$1" = dropped ]; then
     for line in "${SHIPPED_LINES[@]}"; do SHIPPED_NOW["${line#*$'\t'}"]=1; done
   fi
   while IFS= read -r path; do
-    is_payload_path "$path" && [ -f "$root/$path" ] && has_drifted "$path" || continue
+    is_payload_path "$path" && [ -f "$root/$path" ] && [ ! -L "$root/$path" ] && has_drifted "$path" || continue
     if [ "$1" = dropped ] && [ -n "${SHIPPED_NOW[$path]-}" ]; then continue; fi
     kept="$(kept_path "$path")"
+    if parent="$(kept_blocking_parent "$kept")"; then
+      echo "polype: $parent is not a directory, so $root/$path cannot move to $kept; nothing moved, nothing written" >&2
+      taken=yes
+      continue
+    fi
     if [ -L "$kept" ] || { [ -e "$kept" ] \
         && { [ ! -f "$kept" ] || [ "$(sum_of "$kept")" != "$(sum_of "$root/$path")" ]; }; }; then
       echo "polype: $kept already exists and differs from $root/$path; nothing moved, nothing written" >&2
