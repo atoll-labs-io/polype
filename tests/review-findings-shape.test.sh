@@ -109,3 +109,43 @@ test_adr_records_the_shape_check() {
   contains "$ADR" '**C. Un refus au ship par `po-gate ship-allowed`.** Écartée'
   contains "$ADR" 'option 1, une permission Bash réduite à `.polype/hooks/po-gate.sh findings-shape`'
 }
+
+ADR96="$ROOT/docs/decisions/ADR-0096-le-controle-de-forme-suit-ce-que-po-ship-lit.md"
+
+test_gate_accepts_only_ship_shapes() {
+  scratch_repo
+  mkdir -p "$SCRATCH/docs/reviews"
+  local l out
+  for l in '- major. a.sh:1 x' '- major (a.sh:1) x' '- MAJOR x' '- Major — x' '+ major — x' '1) major — x' '> major — x' '• major — x' '### F1: major.'; do
+    refused "$l"
+  done
+  findings_block '+ major — x' > "$SCRATCH/docs/reviews/s01-a.md"
+  out="$(shape)" || true
+  holds "$out" 'docs/reviews/s01-a.md:5: + major — x' "the refusal"
+  accepted '- **major:** x' '- **major**: x' '- major — a.sh:1 — plain' '- **major** — b' '1. **minor**: c' '* minor: d' '- major-ish thing' 'None.' 'No critical or major finding.'
+}
+
+test_other_gate_failures_stop() {
+  scratch_repo
+  local rc=0 s
+  (cd "$SCRATCH" && bash "$GATE" findings-shape >/dev/null 2>&1) || rc=$?
+  [ "$rc" -eq 2 ] || fail "no id exits $rc, not 2"
+  rc=0
+  (cd "$SCRATCH" && bash "$GATE" findings-shape s01-a >/dev/null 2>&1) || rc=$?
+  [ "$rc" -eq 2 ] || fail "a missing review exits $rc, not 2"
+  s="$(section_of "$REVIEW_CMD" Recording)"
+  holds "$s" 'Any other exit' "po-review Recording"
+  holds "$s" 'is not a malformed review: the reviewer is not dispatched again' "po-review Recording"
+  holds "$s" '`Next action: a person runs po-gate findings-shape <id> — the check could not run (exit <n>)`' "po-review Recording"
+  holds "$(section_of "$REVIEW_CMD" Outcome)" 'or the check could not run (exit <n>)' "po-review Outcome"
+  holds "$(cat "$DRIVE")" 'Any other exit is not a malformed review: the reviewer is not asked again' "po-drive"
+  holds "$(grep -F 'naming `po-gate findings-shape` | a human' "$DRIVE")" 'the check could not run (exit <n>)' "po-drive row"
+}
+
+test_adr_narrows_the_shape() {
+  require_file "$ADR96"
+  grep -qx 'supersedes: \[ADR-0094\]' "$ADR96" || fail "ADR-0096 does not supersede ADR-0094"
+  grep -qx 'superseded-by: \[ADR-0096\]' "$ADR" || fail "ADR-0094 lacks superseded-by"
+  contains "$ADR" 'status: accepted'
+  contains "$ADR96" '**B. Garder « toute casse » et apprendre à `/po-ship` les autres formes.** Écartée'
+}

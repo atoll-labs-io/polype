@@ -5,7 +5,7 @@ status: accepted
 date: 2026-10-16
 scope: story s141-review-findings-shape
 supersedes: []
-superseded-by: []
+superseded-by: [ADR-0096]
 ---
 
 # ADR-0094 — La forme des constats d'une revue se contrôle à l'enregistrement
