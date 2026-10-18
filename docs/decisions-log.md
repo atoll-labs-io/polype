@@ -129,3 +129,6 @@ A decision the person took is not logged here: it is an ADR or a story.
 | 2026-10-18 | s145-resume-shape-stop | Filed the planner's finding on `/po-execute` (fix run on a shape-blocked review) as #139; left s145's criterion text as framed, the plan already closing the Stage 5 path inside `Owns` | Law 7; the plan is the record of that extension |
 | 2026-10-18 | s145-resume-shape-stop | Shipped (PR #140), no finding; closed #123, #125 | Landing tree 642 passed |
 | 2026-10-18 | s143-payload-edit-not-spread | Shipped (PR #141), no finding; closed #115 | Landing tree 646 passed |
+| 2026-10-18 | M16 wave 3 (s146) | Launched s146 alone; ADR-0097 reserved, unused; plan approved without a human | The last story of M16, waiting on s143; `Plan validation: autonomous` |
+| 2026-10-18 | s146-kept-copy-edge-fixes | Shipped (PR #145), no finding; closed #119–#121; filed the review's two Not-verified follow-ups as #143 (stranded restore file on `remove --global`) and #144 (installation docs) | Law 7; landing tree 649 passed |
+| 2026-10-18 | main | Refreshed this repository's installed copies to M16, then the global install from the repository (re-signs the payload) | Copies follow each milestone; an unsigned or stale payload stops runs from itself |

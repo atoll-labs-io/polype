@@ -15,7 +15,8 @@
 #                                 commit to story/<id> whose plan is not approved; the diff is taken against <base>
 #                                 when given, else HEAD
 #   po-gate findings-shape <id>  0 when ## Findings of the last review holds no line that names a severity outside the
-#                                 shape /po-ship reads; 1 with each such line quoted as `<path>:<line>: <text>`
+#                                 shape /po-ship reads; 1 with each such line quoted as `<path>:<line>: <text>`;
+#                                 2 when it cannot run (no id, no review, no verdict block)
 #   po-gate floor-guard <id> <base>  scans `git diff <base>...story/<id>` for what lowers the bar of the checks:
 #                                 0 nothing, 1 one `<path>:<line>: <rule>: <detail>` per flag, 2 cannot verify
 #
@@ -83,15 +84,20 @@ ship_allowed() {
 
 # What /po-ship step 3.2 can file is a list item opening with its severity; anything else naming a severity there
 # would be dropped or only reach the person, so it is refused while the reviewer can still be asked again (ADR-0094).
+# The accepted motif is exactly the one step 3.2 opens: lowercase severity, then its separator (ADR-0096).
 # Exit of the awk: 0 shape kept, 1 lines refused (printed), 2 no `## Findings` in the last block.
+shape_unreadable() { echo "po-gate: cannot check the findings of ${1:-<id>}: $2" >&2; exit 2; }
 findings_shape() {
-  local review rel out rc=0; rel="docs/reviews/$1.md"; review="$(top)/$rel"
-  [ -f "$review" ] || refuse "$1 has not been reviewed ($rel) — /po-review $1" || return 1
+  local review rel out rc=0
+  [ -n "${1:-}" ] || shape_unreadable "" "usage: po-gate findings-shape <id>"
+  rel="docs/reviews/$1.md"; review="$(top)/$rel"
+  [ -f "$review" ] || shape_unreadable "$1" "$1 has not been reviewed ($rel)"
   grep -qE '^([-*] )?Ship allowed:' "$review" \
-    || refuse "the review of $1 has no verdict block (no 'Ship allowed:' line)" || return 1
+    || shape_unreadable "$1" "the review has no verdict block (no 'Ship allowed:' line)"
   out="$(awk -v rel="$rel" '
     function names(s) { return tolower(s) ~ /(^|[^a-z0-9_])(critical|major|minor)([^a-z0-9_]|$)/ }
-    function opens(s) { return tolower(s) ~ /^(\*\*)?(critical|major|minor)([^a-z0-9_]|$)/ }
+    function ships(s) { return s ~ /^([-*] |[0-9]+\. )(\*\*(critical|major|minor):\*\*|((critical|major|minor)|\*\*(critical|major|minor)\*\*) *(—|:|-))/ }
+    function first(s) { sub(/^[^A-Za-z]+/, "", s); return tolower(s) ~ /^(critical|major|minor)([^a-z0-9_]|$)/ }
     { text[NR] = $0 }
     /^([-*] )?Ship allowed:/ { prev = last; last = NR }
     END {
@@ -101,8 +107,8 @@ findings_shape() {
         if (l ~ /^## /) break
         if (l ~ /^#/) bad = names(l)
         else if (l == "" || l ~ /^[ \t]/) bad = 0
-        else if (l ~ /^([-*] |[0-9]+\. )/) { item = l; sub(/^([-*] |[0-9]+\. )/, "", item); bad = names(item) && !opens(item) }
-        else bad = opens(l)
+        else if (l ~ /^([-*] |[0-9]+\. )/) { item = l; sub(/^([-*] |[0-9]+\. )/, "", item); bad = names(item) && !ships(l) }
+        else bad = first(l)
         if (bad) { print rel ":" n ": " l; refused = 1 }
       }
       if (!seen) exit 2
@@ -111,7 +117,7 @@ findings_shape() {
   ' "$review")" || rc=$?
   [ "$rc" -ne 2 ] || refuse "the last review of $1 has no '## Findings' section — the shape of templates/review.md" || return 1
   [ "$rc" -eq 0 ] && return 0
-  [ "$rc" -eq 1 ] || refuse "could not read the findings of $1 (awk exit $rc)" || return 1
+  [ "$rc" -eq 1 ] || shape_unreadable "$1" "could not read the findings (awk exit $rc)"
   while IFS= read -r line; do refuse "$line" || true; done <<< "$out"
   refuse "the findings of $1 are not in the shape of templates/review.md — each finding is one list item opening with its severity, never a heading"
 }
@@ -512,7 +518,7 @@ case "${1:-}" in
   floor-guard)    floor_guard "${2:-}" "${3:-}" ;;
   plan-validated) plan_validated "${2:?story id required}" ;;
   ship-allowed)   ship_allowed "${2:?story id required}" ;;
-  findings-shape) findings_shape "${2:?story id required}" ;;
+  findings-shape) findings_shape "${2:-}" ;;
   verif-current)  verif_current "${2:?story id required}" ;;
   qa-current)     qa_current "${2:?story id required}" ;;
   pre-commit)     pre_commit "${2:-}" ;;
