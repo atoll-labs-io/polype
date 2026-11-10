@@ -8,7 +8,7 @@ These rules matter to three roles only — planner, implementer, reviewer — so
 
 ## How many tests?
 
-A story gets up to `Test budget` tests. Going beyond requires a sentence in the plan's test strategy.
+A story gets up to `Test budget` tests. Going beyond requires a sentence in the plan's test strategy. The oracle's tests, those `## Acceptance tests` of the plan lists, count in `Test budget`: one per acceptance criterion a test can check.
 
 The number of tests says nothing about safety. The recurring failure is a story that adds many tests while the single rule it depends on is covered by none of them; counting never reveals that, neutralizing the rule does. A bloated suite also runs slowly, and then people stop running it.
 
@@ -47,7 +47,7 @@ A persistence or adapter test talks to the real service, a container or a local 
 
 ## No red-first while implementing
 
-Writing a test first to watch it fail, or disabling your own guard to see a test go red, costs a run each time and has not caught anything: a test is never more convincing to anyone than to its own author, minutes after writing it. Implement in whole blocks, add the tests that go with them, run them. Disabling guards on purpose is the reviewer's job, done in a separate context on code it did not write — that is where untested rules actually get found (ADR-0012).
+Writing a test first to watch it fail, or disabling your own guard to see a test go red, costs a run each time and has not caught anything: a test is never more convincing to anyone than to its own author, minutes after writing it. Implement in whole blocks, add the tests that go with them, run them. Disabling guards on purpose is the reviewer's job, done in a separate context on code it did not write — that is where untested rules actually get found (ADR-0012). The acceptance tests the plan lists come from another context than the code, the planner's, so nobody runs them red first either: an oracle test runs with the task that makes it passable, like any task test.
 
 ## Tests that prove nothing
 

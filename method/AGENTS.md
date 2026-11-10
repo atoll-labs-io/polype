@@ -102,7 +102,7 @@ Severity decides what a review blocks. **Critical** stops the ship. **Major** is
 
 A worktree has one occupant at a time. Every shell command a subagent runs inside it starts with `cd <absolute worktree path> &&` or uses `git -C <absolute worktree path>`, because a subagent's shell does not stay where it was.
 
-While a story is running, its worktree legitimately holds uncommitted work under `docs/`: the research, the design of a story with a screen (`docs/designs/<id>/`), the plan, the QA evidence (`docs/qa/<id>/`) between the walk and `/po-qa`'s commit and, during a fix run, the review. Anything else uncommitted that the current agent did not create is a reason to stop.
+While a story is running, its worktree legitimately holds uncommitted work under `docs/`: the research, the design of a story with a screen (`docs/designs/<id>/`), the plan, the QA evidence (`docs/qa/<id>/`) between the walk and `/po-qa`'s commit and, during a fix run, the review; and, outside `docs/`, the oracle files that `## Acceptance tests` of the plan names, until the implementer commits them with the story. Anything else uncommitted that the current agent did not create is a reason to stop.
 
 ## Law 5 — Quick fixes stay small
 

@@ -61,6 +61,9 @@ Delegate to `implementer` the way `/po-execute` does, its model chosen by `/po-e
 When `docs/designs/<id>/` exists, append this sentence to the prompt of `/po-execute`:
 > This story has a design: docs/designs/<id>/ is expected uncommitted work, like the research and the plan. Read design.md before the screen tasks, build the screen it settles, and commit the folder with the story.
 
+When the `## Acceptance tests` section of `docs/plans/<id>.md` names at least one file, the story has an oracle: append this sentence to the prompt of `/po-execute`:
+> This story has an oracle: each file that `## Acceptance tests` of docs/plans/<id>.md names is expected uncommitted work, like the research and the plan. Leave its tests as the planner wrote them, change one only through `## Oracle changes` of docs/verif/<id>.md, and commit them with the story.
+
 ## Stage 6 — QA
 Only for a story that goes to QA (`AGENTS.md`, Law 1); skip it otherwise. `QA stage` missing for a story that has a screen or a `Surface` other than `—` → stop and name the setting.
 

@@ -62,9 +62,9 @@ Read the story, `AGENTS.md`, `docs/architecture.md` when it exists and the accep
 Then run the second signal check described above.
 
 ## The plan
-Fill `templates/plan-flow.md` into `docs/plans/<id>.md`: frontmatter `track: flow` and `validated: no`, verified facts with their `path:line`, each escalation signal marked absent with where it was checked, six tasks at most, each naming the test that would fail if it were wrong. It carries a `## Reuse` section filled in, one line when the plan writes no new code. Tests follow the `testing-doctrine` skill and stay within `Test budget`. About 150 lines at most.
+Fill `templates/plan-flow.md` into `docs/plans/<id>.md`: frontmatter `track: flow` and `validated: no`, verified facts with their `path:line`, each escalation signal marked absent with where it was checked, six tasks at most, each naming the test that would fail if it were wrong. It carries a `## Reuse` section filled in, one line when the plan writes no new code, and an `## Acceptance tests` section: write the oracle files it names and no other test file, each test through the interface the tasks fix, an oracle file outside the story's `Owns` reported as a gap of the story instead of written, each sum as `cksum < <file>` prints it. Tests follow the `testing-doctrine` skill and stay within `Test budget`. About 150 lines at most.
 
-Leave the plan uncommitted; the implementer commits it with the code.
+Leave the plan and its oracle files uncommitted; the implementer commits them with the code.
 
 ## Approval
 A plan that needs a technical choice deserving an ADR is never validated here, whatever `Plan validation` says, so this clause is read before the two bullets below. The story leaves the short track, and before pointing to `/po-research <id>` you do four things:

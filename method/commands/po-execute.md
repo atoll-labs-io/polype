@@ -26,6 +26,7 @@ No Agent tool available → say so and stop.
 6. `docs/reviews/<id>.md` exists in the worktree with `Ship allowed: no` as its last verdict → this is a **fix run**; the review's findings come before anything else. Except a review with `Review status: blocked` and a `Next action:` naming `/po-qa` → stop with "Review blocked on QA for <id>. Run /po-qa <id>, then /po-review <id> again; no fix run is spent.", or with `Review status: blocked` and a `Next action:` naming the `<id>: QA evidence` commit → stop with "Review blocked on uncommitted QA evidence for <id>. Commit it alone: git commit -m "<id>: QA evidence" -- docs/qa/<id>/, then /po-review <id> again; no fix run is spent." (`/po-review`, ADR-0041).
 7. Glob `docs/designs/<id>/*` in the worktree: any match means the story **has a design**, even when no orchestrator runs it.
 8. `Model strong`, `Model light` and `Light up to` are set in `AGENTS.local.md`; a model setting missing → stop and name it.
+9. Read the `## Acceptance tests` section of `docs/plans/<id>.md`: when it names at least one file, the story **has an oracle**.
 
 ## Model
 This section is the single statement of the implementer's model; `/po-drive`, `/po-orchestrator` and `/po-flow` point to it.
@@ -48,6 +49,10 @@ For a fix run, append:
 When the story has a design, append:
 
 > This story has a design: docs/designs/<id>/ is expected uncommitted work, like the research and the plan. Read design.md before the screen tasks, build the screen it settles, and commit the folder with the story.
+
+When the story has an oracle, append:
+
+> This story has an oracle: each file that `## Acceptance tests` of docs/plans/<id>.md names is expected uncommitted work, like the research and the plan. Leave its tests as the planner wrote them, change one only through `## Oracle changes` of docs/verif/<id>.md, and commit them with the story.
 
 Wait for the subagent to finish.
 
