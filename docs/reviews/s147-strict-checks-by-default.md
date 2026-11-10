@@ -1,5 +1,7 @@
 # Review — s147-strict-checks-by-default
 
+[Story](../stories.md) · [Plan](../plans/s147-strict-checks-by-default.md) · [Verification](../verif/s147-strict-checks-by-default.md)
+
 I found no critical or major defect, so ship is allowed. The six acceptance criteria each have a test, the gates pass, and the tests fail when the rules they check are disabled. The three findings are minor.
 
 Reviewed tree: 581d764a9245cdc0ee7f78778b49fad02186a0b1
