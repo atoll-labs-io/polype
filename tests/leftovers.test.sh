@@ -9,7 +9,7 @@ test_testing_doctrine_single_quotes_po_run() {
 
 test_replaced_adrs_point_to_their_successor() {
   local pair f line
-  for pair in "0024:superseded-by: [ADR-0038, ADR-0039]" "0029:superseded-by: [ADR-0037]" "0037:superseded-by: [ADR-0041, ADR-0044]"; do
+  for pair in "0024:superseded-by: [ADR-0038, ADR-0039]" "0029:superseded-by: [ADR-0037, ADR-0102]" "0037:superseded-by: [ADR-0041, ADR-0044]"; do
     f="$(ls "$ROOT"/docs/decisions/ADR-"${pair%%:*}"-*.md)"
     line="${pair#*:}"
     frontmatter "$f" | grep -qxF "$line" || fail "$f lacks: $line"

@@ -19,7 +19,7 @@ test_first_qa_sets_its_evidence_aside() {
 
 test_bounded_waits_bite() {
   contains "$SCENARIOS" 'within 60 seconds → stop it and end with `QA status: blocked`'
-  contains "$QA_AGENT" 'set to `—` → write the report with `QA status: blocked`, naming the surface and the platform as its cause.'
+  contains "$QA_AGENT" 'set to `—` → return the report with `QA status: blocked`, naming the surface and the platform as its cause.'
 }
 
 test_scene_and_recorder_stop_cleanly() {

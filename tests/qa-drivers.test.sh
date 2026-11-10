@@ -31,7 +31,7 @@ behaviour robot simulation.md
 ROWS
   contains "$DRIVERS" 'QA status: blocked'
   contains "$DRIVERS" 'base directory'
-  contains "$QA_AGENT" 'A driver file is missing → write the report with `QA status: blocked`, naming the missing file as its cause.'
+  contains "$QA_AGENT" 'A driver file is missing → return the report with `QA status: blocked`, naming the missing file as its cause.'
 }
 
 test_qa_runs_without_a_screen() {
