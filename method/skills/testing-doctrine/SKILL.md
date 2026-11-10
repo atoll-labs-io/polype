@@ -24,6 +24,20 @@ The number of tests says nothing about safety. The recurring failure is a story 
 | Component | Rarely anything: only branching logic that lives in the component. Displaying data is not a rule. |
 | End to end | One scenario for what isolated tests cannot see, typically a side effect inside a transaction that mocks would hide. |
 
+## Beyond examples
+
+An example test checks the inputs someone thought of. Three kinds of test look for the others. The doctrine names the kind, never a library: the library comes from the project's profile or conventions.
+
+**Property test** — It states a rule that holds for every input of a domain and lets the runner draw the inputs: an encoding's round trip, an invariant of a computation, idempotence. Take it for pure logic, parsers and serialisers. It counts as one test in `Test budget`, however many inputs it draws.
+
+**Fuzzing** — It feeds malformed or random input to code that decodes input coming from outside: a protocol, a file format, a request. A story runs only a short campaign with a fixed seed, so that a failure replays.
+
+**Deterministic simulation with fault injection** — It runs the whole system in a controlled world, for distributed, time-dependent or robotic behaviour, and breaks that world on purpose: packets lost, a node restarted, a clock skewed, a sensor gone silent. FoundationDB's simulator is the model. A seed makes each failure replayable; a failure that does not replay is not a result.
+
+## Real services over hand-written mocks
+
+A persistence or adapter test talks to the real service, a container or a local instance, when the project can start it. A hand-written mock of a service the project owns needs a sentence in the plan's test strategy; without it, the reviewer reports it under shape 6 of `## Tests that prove nothing`.
+
 ## Four things to cut
 
 1. Access rules tested again per command, when the policy test already covers them.
@@ -58,6 +72,7 @@ Running a deterministic check twice on the same code buys nothing, so each has o
 | End to end | once, at ship, just before merging — each run pays a cold start, migrations, seed data and a browser | `E2E stage` · `E2E scope` · `E2E browsers` |
 | Production build | at ship, only if routing or a manifest changed, the one breakage a type check misses | `Build stage` |
 | Formatting | on staged files, at commit time | — |
+| Long fuzzing or simulation campaign | outside any story's cycle, on a schedule; its failure goes to `Issue tracker` as Law 7 says — the story runs only the short version | — |
 
 The full unit suite and the type check are launched through `po-run --story <id> --label <check> -- '<command>'`, which writes their row in the verification record. The command is passed as one single-quoted argument, a single quote inside it written `'\''`; their result is never written down by hand. The tests of a task run without it.
 
