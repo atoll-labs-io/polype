@@ -36,6 +36,14 @@ A JDK 17 and the Android SDK must be installed. The Gradle wrapper downloads Gra
 
 `Test` takes no paths: it runs every local unit test, and a focus is given with `--tests '<class pattern>'`. `Typecheck` compiles the Kotlin of the unit tests and of the instrumented tests without running them; these task names were not run when the profile was written, so a project whose Android Gradle Plugin names them differently corrects them. The instrumented tests, `./gradlew connectedDebugAndroidTest`, need a device or an emulator, hence `E2E: —`. Nothing is served, hence `Dev: —`.
 
+## Strictness
+
+- Strict check: `./gradlew lintDebug compileDebugUnitTestKotlin compileDebugAndroidTestKotlin`
+- Turned on by: `app/build.gradle.kts`, where neither `allWarningsAsErrors` for Kotlin nor `lint { warningsAsErrors = true }` is set
+- Passes at the commit profiled: not run
+
+No lint configuration file ships and the Gradle files leave warnings as warnings, so the command above is strict only once a story sets those two options in `app/build.gradle.kts`. Nothing was run when this section was written.
+
 ## Code map
 
 - `app/src/main/java/android/template/data/` — the repository, the Room database and the dependency injection modules.

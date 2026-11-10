@@ -32,6 +32,14 @@ Dev:               —
 
 To run a scenario, build first with `Build`, then call `target/release/rust-starter <subcommand> [options]` from the scenario's scratch folder, using the absolute path of the copy. The binary name follows the package name. Calling it with no subcommand is a usage error with a non-zero exit code (`tests/test_cli.rs` checks it). Configuration comes from variables prefixed `APP_` or from `-c <file>`; logs stay silent unless the program was built with `--features termlog`.
 
+## Strictness
+
+- Strict check: `cargo clippy --workspace --all-targets --all-features -- -D warnings`
+- Turned on by: `justfile` (`lint: cargo clippy`) and `.github/workflows/lint.yml` (`--all-features`); `Cargo.toml` has no `[lints]` table, so `-D warnings` is given on the command line
+- Passes at the commit profiled: not run
+
+The Rust compiler is strict on its own; Clippy runs it, so one command covers both halves. Nothing was run when this section was written.
+
 ## Code map
 
 - `src/` — the root binary: panic handlers, logger, the embedded default configuration, then a call into the `cli` crate.

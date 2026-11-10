@@ -38,6 +38,14 @@ Every command needs a Mac with Xcode, and `mise install` run first, so that Ruby
 
 The build lanes sign through `match`, which needs the team's certificates repository, hence `Build: —`. Nothing is served, hence `Dev: —`. `swiftlint` is the linter the template documents; it is not a profile command.
 
+## Strictness
+
+- Strict check: `swiftlint lint --strict`
+- Turned on by: `.swiftlint.yml`, its `opt_in_rules`; `PrebuildDangerfile` passes `--strict` to SwiftLint on each pull request
+- Passes at the commit profiled: not run
+
+The Swift compiler half runs inside the `Test` lane, which compiles the app: `SWIFT_TREAT_WARNINGS_AS_ERRORS` is set nowhere in the template, so its warnings stay warnings until a story sets it. Nothing was run when this section was written.
+
 ## Code map
 
 - `Modules/Domain/` — entities, interfaces and use cases; no framework code.

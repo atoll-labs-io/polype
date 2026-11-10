@@ -32,6 +32,14 @@ None of these was run here. `Test` needs `jest-expo` and `jest` installed as the
 
 `Dev` runs `expo start --web` and serves the web render of the app on `http://localhost:8081` by default. Without a TTY, or with `CI` set, it prints `Waiting on <url>`, which is the address to read; it also tries to open a desktop browser.
 
+## Strictness
+
+- Strict check: `npx tsc --noEmit && npx expo lint --max-warnings 0`
+- Turned on by: `tsconfig.json`, `"strict": true`
+- Passes at the commit profiled: not run
+
+The template ships no ESLint config: the first `expo lint` writes one from `eslint-config-expo` and installs it, so the linter half exists only once that run has happened, and `--max-warnings 0` is what turns its warnings into errors. Nothing was run when this section was written.
+
 ## Code map
 
 - `src/app/` — file-based routes of Expo Router: `_layout.tsx`, `index.tsx`, `explore.tsx`.

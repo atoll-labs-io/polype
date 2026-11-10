@@ -34,6 +34,14 @@ Simulation command: `source /opt/ros/jazzy/setup.bash && source install/setup.ba
 
 Resume command: `gz service -s /world/demo/control --reqtype gz.msgs.WorldControl --reptype gz.msgs.Boolean --timeout 5000 --req 'pause: false'`. The world starts paused, so the driver runs this when `/clock` stays still.
 
+## Strictness
+
+- Strict check: `source /opt/ros/jazzy/setup.bash && GZ_VERSION=harmonic colcon build --cmake-args -DCMAKE_CXX_FLAGS='-Wall -Wextra -Werror' && colcon test && colcon test-result --verbose`
+- Turned on by: `ros_gz_example_gazebo/CMakeLists.txt` sets no warning flag, and each `package.xml` declares `ament_lint_auto` as a test dependency without `ament_lint_common`
+- Passes at the commit profiled: not run
+
+The compiler half is the C++ of `ros_gz_example_gazebo/src/` built with its warnings turned into errors on the command line; `ament_lint_auto` registers only the linters a package names as test dependencies, and none is named, so the linter half is empty until a story adds `ament_lint_common`. Nothing was run when this section was written.
+
 ## Code map
 
 - `ros_gz_example_application/` — the ROS 2 package for the robot's own nodes; empty apart from its build files.

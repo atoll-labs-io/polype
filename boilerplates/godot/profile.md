@@ -32,6 +32,14 @@ Dev:               —
 
 Engine command: `xvfb-run -a -s "-screen 0 1920x1080x24" godot --path <copy> --display-driver x11 --rendering-driver opengl3 --xr-mode off --resolution 1920x1080 --script <capture script>`. `1920x1080`, in both places, is the default resolution: the `scene` driver replaces it with the viewpoint's own when its line names another. This is the line the `scene` driver reads. `--headless` draws nothing and is never used for a capture.
 
+## Strictness
+
+- Strict check: `gdlint components`
+- Turned on by: `.github/workflows/gdlint-on-push.yml`, which installs `gdtoolkit==4.*` and lints `components/`
+- Passes at the commit profiled: not run
+
+GDScript has no strict compiler of its own to run outside the editor: its typing warnings are raised to errors only through the `debug/gdscript/warnings/` settings of `project.godot`, which the template leaves at their defaults, so the strict check is the linter alone, and `gdlint` fails on any problem it reports. Nothing was run when this section was written.
+
 ## Code map
 
 - `game/` — the game: main scene, game state autoload, start scene and the demo zones.

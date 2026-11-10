@@ -42,8 +42,11 @@ Each structural choice becomes one ADR in `<ADR directory>` from `templates/adr.
 - the stack: language, framework, runtime, as the base already fixes them;
 - each capability the project needs — database, authentication, authorization, multi-tenancy, files, background jobs, email, payment, cache, observability, internationalisation, deployment — naming the brick retained as the project's default and the bricks that could replace it; a capability the project does not need is said so in `docs/architecture.md`, without an ADR;
 - each third-party integration the project depends on.
+- the strict check: the compiler at its strictest and the linter with warnings as errors, retained by default with its command, taken from the `## Strictness` section of the profile or, without a profile, from the analysis of step 2.
 
 For each capability, compare the brick the profile declares with the default brick of the skill; without a profile, compare the brick the code of step 2 shows; with an empty repository, the default applies. A gap is a capability whose profile brick differs from the skill's default. Weigh it against the skill's switch condition, then retain exactly one brick per capability: each gap is recorded in the project ADR of that capability, which names the profile's brick, the default, the brick retained and the switch condition that justifies it. A gap is never settled in silence. Retaining the default over the profile's brick records the choice only: the swap itself is a later story, as "Never rewrite the base" says.
+
+A project keeps a check that is not strict only through that ADR, the one on the strict check, which writes down why: a base inherited as it is, or no strict tool for its language. Its options are ranked like the others. With an empty repository, the ADR retains the strict check and its command arrives with the story that brings the base.
 
 Number them `NNNN-<slug>.md` from the next free number in `<ADR directory>`, with `scope: framing`. They become `status: accepted` once approved. An accepted ADR is never edited: a changed decision is a new ADR whose `supersedes` names the old one, and the old one gets `superseded-by` and `status: superseded`. An ADR replaced only in part keeps `status: accepted`: it names its successor in `superseded-by`, the successor names it in `supersedes`, and only these frontmatter links of an accepted ADR ever change.
 
@@ -55,6 +58,8 @@ A rule already written that the code now contradicts is kept and reported, never
 Every settings block of `AGENTS.local.md` stays exactly as it is: this command reads settings, it never decides them.
 
 The project commands are quoted from the settings into `docs/architecture.md`. When the base defines different ones, report the difference and ask the user to edit the settings; do not change them.
+
+The strict check reaches the project through `Typecheck`, never through a setting of its own. When the profile says `Passes at the commit profiled: yes`, give the strict command to copy into `Typecheck` and ask the person to do it. When it says `no` or `not run`, or no profile says, leave the base as it is: `docs/architecture.md` names the switch to the strict check as a story to write, and the strict command enters `Typecheck` only once that story has shipped.
 
 ## Never rewrite the base
 Never propose rewriting, replacing or restructuring the base: stories adapt to it. A brick that must change is swapped behind its capability by a later story, recorded by a new ADR, never by this command.
