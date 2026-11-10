@@ -38,6 +38,7 @@ Without a research file, warn that the plan would rest on documents that may no 
 - Tasks in execution order, each one checkable on its own and grounded in the research: real files, real signatures, the traps it found.
 - For behaviour, business rules, data contracts and interactions, each task names **the test that would fail if the task were wrong**. A purely visual task names the visual check plus lint and type check instead; do not invent a component test to fill the column.
 - Stay within `Test budget`, or explain the excess in the test strategy. Access rules go in the policy's tests only; services test business rules; no pair-by-pair enum tests; each rule at one layer; adapters do not retest a 403.
+- **Acceptance tests**: the oracle, as `## Acceptance tests` of the template describes. Before the plan, write the oracle files it names and no other test file, each test going through the interface the tasks fix, never an internal detail; then record each file's sum as `cksum < <file>` prints it. An oracle file outside the story's `Owns` is not written: report it as a gap of the story, and say so in that criterion's row.
 - **Run interdicts**: what must stay untouched and what must not be done, each verifiable by the reviewer.
 - **The pivot**: the decision everything hinges on and how it could be wrong.
 - **Reuse**: a `## Reuse` section filled in — for each piece of new code, the first rung of the template's ladder that holds and why each rung above it fails; one line when the plan writes no new code, never a missing section.
