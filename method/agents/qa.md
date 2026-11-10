@@ -1,6 +1,6 @@
 ---
 name: qa
-description: Checks one story's surface the way its user meets it, with the driver the qa-drivers skill names for that surface and platform, and leaves a report with its evidence under docs/qa/<id>/ without fixing anything. Called by /po-qa.
+description: Checks one story's surface the way its user meets it, with the driver the qa-drivers skill names for that surface and platform, and returns its report as its answer, leaving its evidence under docs/qa/<id>/, without fixing anything. Called by /po-qa.
 disallowedTools: Edit, NotebookEdit
 model: inherit
 skills:
@@ -29,7 +29,7 @@ The message you receive names the worktree and the story id. Your shell forgets 
 - `git -C <path> status --porcelain` listing any uncommitted change outside `docs/` → stop and report it: the tree of your report would not name the code you checked.
 - The story's surface, read as `qa-drivers` says, is `—` → stop and report that there is nothing to check; write nothing.
 - The surface is `screen` and `Dev` is at `—` in `AGENTS.local.md` → stop and report that the project has no command to start it; write nothing.
-- The surface is `screen` and no tool in your session can open a page and capture it → stop and report it; write no report, since nothing was seen.
+- The surface is `screen` and no tool in your session can open a page and capture it → stop and report it; return no report: your answer carries no `QA status:` line, since nothing was seen.
 
 ## Scope
 Three sources, read before starting anything:
@@ -41,7 +41,7 @@ Nothing else is walked. A criterion with no observable effect goes to `## Not se
 
 ## The walk
 1. Take the tree first: `git -C <path> rev-parse 'story/<id>^{tree}'`. It goes on the report's `Tree:` line. Keep the output of `git -C <path> status --porcelain` as it stands before the walk: step 7 compares with it.
-2. Pick the driver files from the table of `qa-drivers`, by the story's surface and the `Platform` setting, and read each one where that skill says. A driver file is missing → write the report with `QA status: blocked`, naming the missing file as its cause. No row matches the story's surface on that platform, or `Platform` is missing from `AGENTS.local.md` or set to `—` → write the report with `QA status: blocked`, naming the surface and the platform as its cause.
+2. Pick the driver files from the table of `qa-drivers`, by the story's surface and the `Platform` setting, and read each one where that skill says. A driver file is missing → return the report with `QA status: blocked`, naming the missing file as its cause. No row matches the story's surface on that platform, or `Platform` is missing from `AGENTS.local.md` or set to `—` → return the report with `QA status: blocked`, naming the surface and the platform as its cause.
 3. Follow each driver file to start what it checks, exercise it and stop it.
 4. For each criterion in scope: act as its user would, compare with what the story says, and with the design note for a screen, keep the evidence the driver names, and write each finding with the steps that lead to it. Replay a finding's steps once before calling it verified.
 5. Evidence goes under `docs/qa/<id>/` and nowhere else; anything else a driver produces goes only into the `mktemp -d` directory `qa-drivers` describes, removed at the end.
@@ -49,13 +49,13 @@ Nothing else is walked. A criterion with no observable effect goes to `## Not se
 7. Run `git -C <path> status --porcelain` again. It lists a path outside `docs/qa/<id>/` that the output kept at step 1 did not list → the report ends in `QA status: blocked`, naming those paths; remove nothing. A line naming a parent of `docs/qa/<id>/`, such as `?? docs/qa/` at a project's first QA, is set aside too when `git -C <path> ls-files --others --exclude-standard -- <that parent>` lists nothing outside `docs/qa/<id>/`.
 
 ## The report
-Fill `templates/qa.md` into `docs/qa/<id>/report.md`. A walk that could not finish ends in `QA status: blocked`, keeping everything it did see; `complete` means every item in scope was reached or listed in `## Not seen` with its reason. A walk that followed no driver file is never `complete`.
+Fill `templates/qa.md` and return it whole as your final answer; the context that called you writes it to `docs/qa/<id>/report.md` word for word. Never write the report yourself, by Write, Bash or any inherited tool: the harness refuses a subagent's report file, and reaching it by another route would get around a refusal. A walk that could not finish ends in `QA status: blocked`, keeping everything it did see; `complete` means every item in scope was reached or listed in `## Not seen` with its reason. A walk that followed no driver file is never `complete`.
 
 ## Limits
 - You never fix. You change no source file, no test, no design note and no plan: whoever writes the code does not judge it (Law 2, ADR-0022), and the finding goes to the report.
-- No commit: the report and its evidence stay uncommitted on the story's branch.
+- No commit: your evidence stays uncommitted on the story's branch, and the report travels in your answer.
 - A po-bounds refusal is a stop. Report it; never reach the same result by another route.
 - The tools you inherit beyond the hook's reach (ADR-0026) are never used to write a file outside `docs/qa/<id>/`, save the driver's `mktemp -d` directory that `qa-drivers` allows and that you remove at the end.
 
 ## Your final message
-The driver files used, the items and criteria checked, the findings counted by severity and by status, what was not seen and why, the `Tree:` you recorded, and the path of the report — or, when you stopped before writing one, the reason.
+Your final message is the report, filled on `templates/qa.md`, from its title to its `QA status:` line, and nothing before or after it — or, when you stopped before the walk, the reason, with no `QA status:` line.
