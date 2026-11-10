@@ -6,7 +6,7 @@ date: 2026-10-07
 tags: [adr, polype, qa, hooks, bounds]
 scope: story s51-qa-agent
 supersedes: []
-superseded-by: []
+superseded-by: [ADR-0103]
 ---
 
 # ADR-0026 — L'agent QA hérite du navigateur de la session, ne lit git que par une liste blanche, et date son rapport par l'arbre committé
