@@ -30,6 +30,14 @@ Dev:               bun run dev
 
 `Test` runs the tests of every workspace through Turbo and does **not** accept paths, unlike what the template asks: to run a single file, go into `apps/app/` or `apps/api/`, the only two workspaces with tests, and run `bunx vitest run <file>` there. `Typecheck` is `—` because neither the root `package.json` nor `turbo.json` defines a type-check task; each workspace carries its own `typecheck` script instead. There is no end-to-end tooling at all. `bun run dev` runs `turbo dev`, every app at once, the product (`apps/app/`) on port 3000. Two other root scripts matter to a project: `bun run check` (Biome, driven by Ultracite) for lint and format, and `bun run migrate` for Prisma migrations in `packages/database/`.
 
+## Strictness
+
+- Strict check: `bunx biome check --error-on-warnings . && bun run --filter '*' typecheck`
+- Turned on by: `biome.jsonc`, which extends the `ultracite` presets, and `packages/typescript-config/base.json`, `"strict": true`
+- Passes at the commit profiled: not run
+
+`turbo.json` declares no type-check task, so the compiler half runs the `typecheck` script each app carries (`tsc --noEmit --emitDeclarationOnly false` in `apps/app/package.json`) through Bun's workspace filter, and Biome is called directly so that its warnings fail the run. Nothing was run when this section was written.
+
 ## Code map
 
 - `apps/app/` — the product itself: the signed-in SaaS on port 3000, its pages under `apps/app/app/`, server actions under `apps/app/app/actions/`, tests under `apps/app/__tests__/`.

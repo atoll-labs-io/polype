@@ -32,6 +32,14 @@ No test runner ships: `Test` is `—` until a first story adds one, and its comm
 
 To run a scenario, build first with `Build`, then start `node dist/index.js` with `PORT=<port>` in the background and wait for the log line `Server is running`; requests go with `curl` to `http://127.0.0.1:<port>/`. The template ignores `PORT`: `src/index.ts` hard-codes port 3000, so until a story makes it read `process.env.PORT` the scenarios driver ends `blocked`.
 
+## Strictness
+
+- Strict check: `npx tsc --noEmit`
+- Turned on by: `tsconfig.json`, `"strict": true`
+- Passes at the commit profiled: not run
+
+The starter ships no linter, neither a config nor a dependency in `package.json`, so the strict check is the strict compiler alone until a story adds one. Nothing was run when this section was written.
+
 ## Code map
 
 - `src/` — the application sources.

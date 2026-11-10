@@ -188,6 +188,8 @@ check_fail_closed() {
 # backticked lowercase words of the `| Platform |` row of the settings template
 # (ADR-0055), so no list is repeated here. The value of its `- QA driver:` line
 # is `—` or the name of a driver file of method/skills/qa-drivers/ (ADR-0057).
+# Its `## Strictness` section holds its three lines; their values are not checked
+# (ADR-0097).
 # A profile whose driver is `mobile-web` needs a `Dev` command other than `—`,
 # since that driver drives what `Dev` serves.
 # The boilerplates/ folder sits beside method/; without it there is nothing to check.
@@ -233,6 +235,14 @@ profile_driver_line() {
   ' "$1"
 }
 
+# `<line><TAB><value>` of the first `- $3:` line under the section `## $2`.
+profile_field_line() {
+  awk -v sec_name="## $2" -v field="- $3:" '
+    /^## / {sec = ($0 == sec_name); next}
+    sec && index($0, field) == 1 {v = substr($0, length(field) + 1); sub(/^[[:space:]]+/, "", v); print NR "\t" v; exit}
+  ' "$1"
+}
+
 # `<line><TAB><name>` of each row of the `## Capabilities` table, header and separator excluded.
 profile_capabilities() {
   awk '
@@ -247,7 +257,7 @@ profile_capabilities() {
 }
 
 check_profiles() {
-  local sections commands capabilities platforms f rel heading line name cmdline platline drvline value
+  local sections commands capabilities platforms f rel heading line name cmdline platline drvline strictline value
   if [ ! -f "$PROFILE_TEMPLATE" ]; then
     report "templates/profile.md" 1 profile "the profile template is missing"
     return
@@ -307,6 +317,14 @@ check_profiles() {
       elif [ "$value" = mobile-web ] && [ "$(profile_command_value "$f" Dev)" = "—" ]; then
         report "$rel" "$line" profile "QA driver 'mobile-web' needs a Dev command, and Dev is '—'"
       fi
+    fi
+
+    strictline=$(grep -n -m1 -x '## Strictness' "$f" | cut -d: -f1)
+    if [ -n "$strictline" ]; then
+      for name in "Strict check" "Turned on by" "Passes at the commit profiled"; do
+        [ -n "$(profile_field_line "$f" Strictness "$name")" ] \
+          || report "$rel" "$strictline" profile "no '- $name:' line under '## Strictness'"
+      done
     fi
 
     while IFS=$'\t' read -r line name; do

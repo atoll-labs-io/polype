@@ -34,6 +34,14 @@ Dev:               flutter run -d web-server
 
 `Build` is the web build, which runs wherever `Dev` runs. The native builds (`flutter build apk`, `flutter build ipa`) need the Android SDK or a Mac and are not the profile's `Build`. No end-to-end test ships: `integration_test` is not part of the generated app.
 
+## Strictness
+
+- Strict check: `flutter analyze --fatal-infos --fatal-warnings`
+- Turned on by: `analysis_options.yaml`, `include: package:flutter_lints/flutter.yaml`
+- Passes at the commit profiled: not run
+
+Dart's null safety is always on, but the analyzer's stricter modes (`strict-casts`, `strict-inference`, `strict-raw-types` under `analyzer: language:`) are not set in the generated `analysis_options.yaml`; a project going strict adds them there. Nothing was run when this section was written.
+
 ## Code map
 
 - `lib/` — the application code; one file, `lib/main.dart`.
