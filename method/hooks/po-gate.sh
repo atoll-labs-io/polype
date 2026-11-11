@@ -19,6 +19,12 @@
 #                                 2 when it cannot run (no id, no review, no verdict block)
 #   po-gate floor-guard <id> <base>  scans `git diff <base>...story/<id>` for what lowers the bar of the checks:
 #                                 0 nothing, 1 one `<path>:<line>: <rule>: <detail>` per flag, 2 cannot verify
+#   po-gate oracle-intact <id>    compares each oracle file that `## Acceptance tests` of the plan names, on
+#                                 story/<id>, with its cksum: 0 all equal, each logged change listed, or no oracle (a
+#                                 line says so); 1 one line per file changed or missing that `## Oracle changes` of
+#                                 the record does not name; 2 cannot run. It guards against mistakes, not against an
+#                                 implementer who also rewrites the sum, which lives in the plan they commit
+#                                 (ADR-0052, ADR-0098).
 #
 # A story lands through a pull request the forge rebuilds (ADR-0080, ADR-0081), which no local hook sees; put
 # `po-gate ship-allowed <id>` in CI, on a checkout of the story branch tip, never a merge ref: it compares against HEAD.
@@ -514,8 +520,109 @@ floor_guard() {
   exit 1
 }
 
+# --- oracle intact ---
+
+oracle_unreadable() { echo "po-gate: cannot check the oracle of ${1:-<id>}: $2" >&2; exit 2; }
+
+# table_rows <file> <section> <first header cell> (`-` reads stdin): the rows of the first table in `## <section>`
+# whose first header cell matches, cells trimmed, enclosing backticks removed, joined by \037. Other tables of the
+# section are never read.
+table_rows() {
+  awk -v section="## $2" -v head="$3" '
+    function clean(s) { sub(/^[[:space:]]+/, "", s); sub(/[[:space:]]+$/, "", s); if (s ~ /^`.*`$/) s = substr(s, 2, length(s) - 2); return s }
+    function cells(line,   n, parts, i, out) {
+      sub(/^[[:space:]]*\|/, "", line); sub(/\|[[:space:]]*$/, "", line)
+      n = split(line, parts, "|"); out = ""
+      for (i = 1; i <= n; i++) out = out (i > 1 ? "\037" : "") clean(parts[i])
+      return out
+    }
+    /^## / { t = $0; sub(/[[:space:]]+$/, "", t); if (done) exit; insec = (t == section); state = 0; next }
+    !insec { next }
+    state == 2 && $0 !~ /^\|/ { done = 1; insec = 0; next }
+    state == 0 && /^\|/ { split(cells($0), h, "\037"); state = (h[1] == head) ? 1 : 3; next }
+    state == 3 && $0 !~ /^\|/ { state = 0; next }
+    state == 3 { next }
+    state == 1 { state = 2; next }
+    state == 2 { print cells($0) }
+  ' "$1"
+}
+
+# Every input is read from the commit story/<id> points at, never from the working tree.
+oracle_intact() {
+  local id="$1" repo plan rows row path want have sum record changes ch cpath what why logged
+  local -a bad=() unlogged=() lines=()
+  [ -n "$id" ] || oracle_unreadable "" "usage: po-gate oracle-intact <id>"
+  repo="$(top)"
+  git -C "$repo" rev-parse --verify --quiet "story/$id^{commit}" >/dev/null \
+    || oracle_unreadable "$id" "branch story/$id does not resolve"
+  git -C "$repo" cat-file -e "story/$id:docs/plans/$id.md" 2>/dev/null \
+    || oracle_unreadable "$id" "story/$id holds no docs/plans/$id.md"
+  plan="$(git -C "$repo" cat-file blob "story/$id:docs/plans/$id.md")" \
+    || oracle_unreadable "$id" "cannot read docs/plans/$id.md on story/$id"
+  if ! grep -qE '^## Acceptance tests[[:space:]]*$' <<< "$plan"; then
+    echo "po-gate: $id has no oracle: its plan has no ## Acceptance tests section"; exit 0
+  fi
+  rows="$(table_rows - "Acceptance tests" "Oracle file" <<< "$plan")" \
+    || oracle_unreadable "$id" "awk failed while reading ## Acceptance tests"
+  if [ -z "$rows" ]; then
+    if awk '/^## / { t = $0; sub(/[[:space:]]+$/, "", t); on = (t == "## Acceptance tests"); next } on && /^—/ { f = 1 } END { exit !f }' <<< "$plan"; then
+      echo "po-gate: $id has no oracle: its plan writes — under ## Acceptance tests"; exit 0
+    fi
+    oracle_unreadable "$id" "## Acceptance tests of the plan names no oracle file and writes no —"
+  fi
+  while IFS= read -r row; do
+    IFS=$'\037' read -r path want _ <<< "$row"
+    { [ -n "$path" ] && [[ "$want" =~ ^[0-9]+[[:space:]]+[0-9]+$ ]]; } \
+      || oracle_unreadable "$id" "unreadable row in the oracle table of the plan: ${row//$'\037'/ | }"
+    want="$(tr -s '[:space:]' ' ' <<< "$want" | sed 's/ $//')"
+    if ! git -C "$repo" cat-file -e "story/$id:$path" 2>/dev/null; then
+      bad+=("$path"$'\037'missing)
+      continue
+    fi
+    sum="$(git -C "$repo" cat-file blob "story/$id:$path" | cksum)" \
+      || oracle_unreadable "$id" "cannot read $path on story/$id"
+    have="$(awk '{print $1 " " $2}' <<< "$sum")"
+    [ "$have" = "$want" ] || bad+=("$path"$'\037'changed)
+  done <<< "$rows"
+  [ ${#bad[@]} -gt 0 ] || exit 0
+
+  git -C "$repo" cat-file -e "story/$id:docs/verif/$id.md" 2>/dev/null \
+    || oracle_unreadable "$id" "an oracle file differs and story/$id holds no docs/verif/$id.md"
+  record="$(git -C "$repo" cat-file blob "story/$id:docs/verif/$id.md")" \
+    || oracle_unreadable "$id" "cannot read docs/verif/$id.md on story/$id"
+  changes="$(table_rows - "Oracle changes" "Oracle file" <<< "$record")" \
+    || oracle_unreadable "$id" "awk failed while reading ## Oracle changes"
+  for row in "${bad[@]}"; do
+    IFS=$'\037' read -r path ch <<< "$row"
+    logged=0
+    while IFS= read -r cpath; do
+      [ -n "$cpath" ] || continue
+      IFS=$'\037' read -r cpath what why <<< "$cpath"
+      [ "$cpath" = "$path" ] || continue
+      lines+=("$path: changed, logged in ## Oracle changes — $what — $why")
+      logged=1
+    done <<< "$changes"
+    [ "$logged" -eq 1 ] && continue
+    if [ "$ch" = missing ]; then
+      unlogged+=("$path: missing on story/$id, without a row in ## Oracle changes")
+    else
+      unlogged+=("$path: changed without a row in ## Oracle changes")
+    fi
+  done
+  if [ ${#unlogged[@]} -gt 0 ]; then
+    printf '%s\n' "${unlogged[@]}"
+    [ ${#lines[@]} -eq 0 ] || printf '%s\n' "${lines[@]}"
+    echo "po-gate: ${#unlogged[@]} oracle file(s) of $id changed without a row in ## Oracle changes" >&2
+    exit 1
+  fi
+  printf '%s\n' "${lines[@]}"
+  echo "po-gate: ${#lines[@]} logged oracle change(s) of $id to judge" >&2
+  exit 0
+}
+
 case "${1:-}" in
   floor-guard)    floor_guard "${2:-}" "${3:-}" ;;
+  oracle-intact)  oracle_intact "${2:-}" ;;
   plan-validated) plan_validated "${2:?story id required}" ;;
   ship-allowed)   ship_allowed "${2:?story id required}" ;;
   findings-shape) findings_shape "${2:-}" ;;
