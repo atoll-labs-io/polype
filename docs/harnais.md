@@ -92,3 +92,30 @@ Puis `systemctl --user enable --now polype-nightly.timer`. La ligne crontab équ
 ```
 17 3 * * * cd "$HOME/dev/mon-projet" && .polype/hooks/po-intake.sh --label nightly -- 'bash tests/run.sh'
 ```
+
+## Transformer les échecs en stories
+
+`po-intake` dépose l'échec ; la commande `/po-intake` en fait une story de correction (ADR-0099). Elle lit les issues ouvertes étiquetées `polype-intake` qu'aucune ligne `Fixes` ou `Corrige` de `docs/stories.md` ne cite encore, ni sur `Target branch` ni sur une branche `framing/intake-*` en attente, et écrit une story par issue : le comportement faux et l'attendu, la reproduction dans les notes, un `Owns` tiré des chemins que l'échec met en cause. Le `stories-reviewer` relit ces seules stories, chacune sur son issue ; prêtes, elles atterrissent comme un cadrage, sur `framing/intake-<horodatage>`, et `/po-drive` les prend comme toute story. Pas prêtes, rien n'atterrit et les issues vont à la personne. Une issue qui touche la sécurité ne devient jamais une story : elle va à la personne. Aucune issue n'est fermée : chacune se ferme quand sa correction est livrée.
+
+La commande tourne sans personne pour répondre, depuis la racine du dépôt, juste après les contrôles :
+
+```
+claude -p '/po-intake'
+```
+
+Ce qu'elle retient pour la personne part dans sa sortie, donc dans le journal de l'ordonnanceur. Elle a besoin que le `.claude/settings.json` du projet lui accorde `git`, `gh` (ou `task`) et l'écriture sous `docs/` : en mode non interactif, une permission qui manque arrête la commande au lieu de la demander.
+
+Avec systemd, une seconde ligne `ExecStart=` dans `polype-nightly.service`, après celle du contrôle (un service `oneshot` les enchaîne, et une ligne préfixée `-` n'arrête pas la suite quand le contrôle échoue) :
+
+```ini
+ExecStart=-%h/dev/mon-projet/.polype/hooks/po-intake.sh --label nightly -- 'bash tests/run.sh'
+ExecStart=/usr/bin/env claude -p '/po-intake'
+```
+
+La ligne crontab équivalente, le `;` lançant `/po-intake` que le contrôle passe ou échoue :
+
+```
+17 3 * * * cd "$HOME/dev/mon-projet" && .polype/hooks/po-intake.sh --label nightly -- 'bash tests/run.sh'; claude -p '/po-intake'
+```
+
+L'exemple GitHub Actions s'en passe : le runner n'a pas d'identifiants Claude.
