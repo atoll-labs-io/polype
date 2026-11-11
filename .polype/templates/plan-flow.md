@@ -33,6 +33,16 @@ Written by `/po-flow`. On the short track this one file stands in for both the r
 | New code | Rung that holds | Why each rung above fails |
 | --- | --- | --- |
 
+## Acceptance tests
+<The oracle: the tests the plan's author wrote from the story's acceptance criteria, before any code, in files of their own that the story's `Owns` lists. Each test goes through the interface the tasks below fix, never an internal detail. One test per acceptance criterion that a test can check, each counted in `Test budget`. The implementer adds its own tests to other files, so no sum moves, and changes an oracle file only through `## Oracle changes` of the verification record. For a story where no criterion can be checked by a test (purely visual), or an exploration story, which its measure judges, write `—` with its reason in place of both tables. The sum is exactly what `cksum < <path>` prints, taken once the file is written.>
+
+| Oracle file | cksum |
+| --- | --- |
+| `<path>` | `<crc> <size>` |
+
+| Criterion | Test |
+| --- | --- |
+
 ## Tasks
 <Six at most; more means the story leaves the short track.>
 
