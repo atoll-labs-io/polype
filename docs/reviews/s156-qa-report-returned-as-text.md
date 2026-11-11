@@ -1,5 +1,7 @@
 # Review: s156-qa-report-returned-as-text
 
+[Story](../stories.md) · [Plan](../plans/s156-qa-report-returned-as-text.md) · [Verification](../verif/s156-qa-report-returned-as-text.md)
+
 Reviewed tree: 0ca9bd9d3233fc77d78af4923e5d15b21e63f441
 Fix loop: 0
 Scope: `git diff origin/main...story/s156-qa-report-returned-as-text` (one commit, 2b4fa49)
