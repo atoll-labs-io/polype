@@ -6,6 +6,7 @@
 .claude/commands/po-execute.md
 .claude/commands/po-flow.md
 .claude/commands/po-help.md
+.claude/commands/po-intake.md
 .claude/commands/po-orchestrator.md
 .claude/commands/po-plan.md
 .claude/commands/po-prd.md

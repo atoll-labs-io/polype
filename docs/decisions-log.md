@@ -177,3 +177,7 @@ A decision the person took is not logged here: it is an ADR or a story.
 | 2026-11-11 | M17 wave 4 | Recorded the s151 review under the s158 rule: the header written from the template, the reviewer's answer word for word below | First review dispatched with the refreshed `/po-review` prompt |
 | 2026-11-11 | M17 wave 4 | Shipped s151 (#196) with a major finding; filed it as #197; held the minor on `redact` for the owner | `Ship allowed: yes` (a major is handled in a later cycle, Law 3); the minor bears on secret scrubbing, so it goes to the person, not the tracker (Law 7, ADR-0090) |
 | 2026-11-11 | M17 wave 4 | Refreshed the installed method after s151 | Lays `po-intake.sh` and the shared secret matcher down in `.polype/hooks/` for the next lanes |
+| 2026-11-12 | M17 wave 5 | Launched s152 alone, held back s153–s155; reserved ADR-0099 (the number the story names) | s152's dependency s151 shipped; s153 depends on s152, s155 on s150 and s152 |
+| 2026-11-12 | M17 wave 5 | Plan of s152 (full track, 7 tasks, oracle of 6 tests) approved without a human; implementer on opus | `Plan validation: autonomous`; complexity 4 |
+| 2026-11-12 | M17 wave 5 | Shipped s152 (#199) with a major finding; filed none of its findings, held both for the owner | `Ship allowed: yes`; its review ran the security lens, so `/po-ship` files none of its findings (Law 7, ADR-0090) |
+| 2026-11-12 | M17 wave 5 | Refreshed the installed method after s152 | Lays `/po-intake` and the intake mode of the stories review down for the next lanes |
