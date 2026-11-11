@@ -40,6 +40,15 @@ How to decide: read a plain folder `x/` as `x/**`; compare the two entries segme
 (i) The defect record. A story with a `Fixes` line (`Corrige` in a French stories file) must own the defects file or tracker file that the line names as the defect's record, since marking the defect fixed edits that file. A review finding named there needs no `Owns` entry: a review is evidence and stays as written (Law 7).
 (ii) The superseded ADR. A story whose text says its ADR supersedes another, wholly or in part, must own that other ADR's file, since its `superseded-by` line changes (`templates/adr.md`).
 
+## Intake mode
+When the message names intake stories, written by `/po-intake` from issues a scheduled check filed, each new story is judged against its issue, which stands in for the PRD or the brief. Only the new stories are judged: no coverage check of the rest of the file, so it runs with `Entry mode: —` too.
+- Check 1 becomes: the story's criteria would make the failure its issue records pass, and its `Fixes` or `Corrige` line names that issue; otherwise critical.
+- Check 2 does not run: an issue lists no exclusions.
+- Checks 3, 4, 6, 9 and 10 read the new stories; checks 5, 7 and 8 compare them with the whole file, since a new story may overlap or depend on any story already there.
+- Under check 10 (i), the issue is the record, kept in `Issue tracker`, and asks no `Owns` entry.
+
+The severity scale and the verdict lines stay as below.
+
 ## Severity
 - **critical** — a scope item no story covers; an excluded item revived, graveyard feature or non-goal; a dependency on a later or unknown story; two `Owns` entries that overlap, between two stories with no dependency. Each of these wastes whole cycles once building starts.
 - **major** — a technical layer dressed as a story; a criterion no test can check; a 5 left unsplit; a 4 without its risk; a story with no `Owns`; a `Surface` the project's `Platform` does not admit; a story that fixes a defect without owning the record its `Fixes` line names, or whose ADR supersedes another without owning that ADR's file.
