@@ -25,6 +25,9 @@
 #                                 the record does not name; 2 cannot run. It guards against mistakes, not against an
 #                                 implementer who also rewrites the sum, which lives in the plan they commit
 #                                 (ADR-0052, ADR-0098).
+#   po-gate redact <file>         prints <file> with each secret the pre-commit scan would refuse replaced by
+#                                 [redacted], a private key block by one [redacted] line; the file is not changed;
+#                                 0, or 2 when the file cannot be read
 #
 # A story lands through a pull request the forge rebuilds (ADR-0080, ADR-0081), which no local hook sees; put
 # `po-gate ship-allowed <id>` in CI, on a checkout of the story branch tip, never a merge ref: it compares against HEAD.
@@ -239,6 +242,62 @@ github-token|40|github_pat_[A-Za-z0-9_]+
 stripe-secret-key|24|(sk|rk)_(live|test)_[A-Za-z0-9]+
 anthropic-key|40|sk-ant-[A-Za-z0-9_-]+'
 
+# The rule both the scan and `redact` apply, so a value the commit hook refuses is one `redact` erases. Loaded into
+# any awk program that sets ENVIRON["SECRET_PATTERNS"]; next_secret() sets SM_START and SM_LEN on the first match of
+# pattern i at or after position from that qualifies. A match that does not qualify is skipped past whole, not by
+# one character, as the scan always did.
+SECRET_MATCHER='
+  function load_secret_patterns(   n, rows, i, p1, rest, p2) {
+    n = split(ENVIRON["SECRET_PATTERNS"], rows, "\n")
+    for (i = 1; i <= n; i++) {
+      if (rows[i] == "") continue
+      p1 = index(rows[i], "|"); rest = substr(rows[i], p1 + 1); p2 = index(rest, "|")
+      np++; prule[np] = substr(rows[i], 1, p1 - 1); plen[np] = substr(rest, 1, p2 - 1) + 0; pat[np] = substr(rest, p2 + 1)
+    }
+  }
+  function next_secret(s, i, from,   rest, pos, before) {
+    rest = substr(s, from); pos = from - 1
+    while (match(rest, pat[i])) {
+      before = pos + RSTART - 1 > 0 ? substr(s, pos + RSTART - 1, 1) : ""
+      if ((before !~ /[A-Za-z0-9_]/ || substr(rest, RSTART, 1) !~ /[A-Za-z0-9_]/) && RLENGTH >= plen[i]) {
+        SM_START = pos + RSTART; SM_LEN = RLENGTH; return 1
+      }
+      pos += RSTART + RLENGTH - 1; rest = substr(rest, RSTART + RLENGTH)
+      if (RLENGTH == 0) return 0
+    }
+    return 0
+  }
+'
+
+# Prints <file> with each qualifying match of SECRET_PATTERNS replaced by [redacted]; a private key line, through the
+# next END line or the end of the file, becomes one [redacted] line. The file itself is left as it was.
+redact() {
+  local file="$1"
+  [ -n "$file" ] && [ -f "$file" ] && [ -r "$file" ] || { echo "po-gate: redact: cannot read '$file'" >&2; exit 2; }
+  SECRET_PATTERNS="$SECRET_PATTERNS" awk "$SECRET_MATCHER"'
+    BEGIN { load_secret_patterns() }
+    inkey { if ($0 ~ /-----END[A-Z ]*PRIVATE KEY/) inkey = 0; next }
+    {
+      line = $0
+      for (i = 1; i <= np; i++) {
+        if (prule[i] != "private-key" || !next_secret(line, i, 1)) continue
+        print "[redacted]"
+        # The END may sit on the BEGIN line itself, after the header.
+        if (substr(line, SM_START + SM_LEN) !~ /-----END[A-Z ]*PRIVATE KEY/) inkey = 1
+        next
+      }
+      for (i = 1; i <= np; i++) {
+        from = 1
+        while (next_secret(line, i, from)) {
+          line = substr(line, 1, SM_START - 1) "[redacted]" substr(line, SM_START + SM_LEN)
+          from = SM_START + length("[redacted]")
+        }
+      }
+      print line
+    }
+  ' "$file" || { echo "po-gate: redact: could not read '$file'" >&2; exit 2; }
+}
+
 # Prints one line per hit on stdout, never the matched text; returns 1 only when the index cannot be read.
 secret_scan() {
   local paths path base diff out rc=0
@@ -256,35 +315,19 @@ secret_scan() {
     --src-prefix=a/ --dst-prefix=b/ -U0 ${DIFF_BASE:+"$DIFF_BASE"})" \
     || refuse "could not read the staged diff; refusing the commit" || return 1
   [ -n "$diff" ] || return 0
-  out="$(SECRET_PATTERNS="$SECRET_PATTERNS" awk '
+  out="$(SECRET_PATTERNS="$SECRET_PATTERNS" awk "$SECRET_MATCHER"'
     function header_path(s, pre) {
       sub(/\t$/, "", s)
       if (s ~ /^".*"$/) s = substr(s, 2, length(s) - 2)
       if (substr(s, 1, 2) == pre) s = substr(s, 3)
       return s
     }
-    function hit(s, i,   rest, pos, before) {
-      rest = s; pos = 0
-      while (match(rest, pat[i])) {
-        before = pos + RSTART - 1 > 0 ? substr(s, pos + RSTART - 1, 1) : ""
-        if ((before !~ /[A-Za-z0-9_]/ || substr(rest, RSTART, 1) !~ /[A-Za-z0-9_]/) && RLENGTH >= plen[i]) return 1
-        pos += RSTART + RLENGTH - 1; rest = substr(rest, RSTART + RLENGTH)
-        if (RLENGTH == 0) return 0
-      }
-      return 0
-    }
+    function hit(s, i) { return next_secret(s, i, 1) }
     function added(s,   i, seen) {
       split("", seen)
       for (i = 1; i <= np; i++) if (!(prule[i] in seen) && hit(s, i)) { seen[prule[i]] = 1; print "po-gate: " file ":" line ": " prule[i] " (value not shown)" }
     }
-    BEGIN {
-      n = split(ENVIRON["SECRET_PATTERNS"], rows, "\n")
-      for (i = 1; i <= n; i++) {
-        if (rows[i] == "") continue
-        p1 = index(rows[i], "|"); rest = substr(rows[i], p1 + 1); p2 = index(rest, "|")
-        np++; prule[np] = substr(rows[i], 1, p1 - 1); plen[np] = substr(rest, 1, p2 - 1) + 0; pat[np] = substr(rest, p2 + 1)
-      }
-    }
+    BEGIN { load_secret_patterns() }
     remold > 0 || remnew > 0 {
       c = substr($0, 1, 1)
       if (c == "-" && remold > 0) { remold--; next }
@@ -629,5 +672,6 @@ case "${1:-}" in
   verif-current)  verif_current "${2:?story id required}" ;;
   qa-current)     qa_current "${2:?story id required}" ;;
   pre-commit)     pre_commit "${2:-}" ;;
+  redact)         redact "${2:-}" ;;
   *) echo "po-gate: unknown subcommand '${1:-}' (see the header of this script)" >&2; exit 2 ;;
 esac

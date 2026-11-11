@@ -72,7 +72,7 @@ Running a deterministic check twice on the same code buys nothing, so each has o
 | End to end | once, at ship, just before merging — each run pays a cold start, migrations, seed data and a browser | `E2E stage` · `E2E scope` · `E2E browsers` |
 | Production build | at ship, only if routing or a manifest changed, the one breakage a type check misses | `Build stage` |
 | Formatting | on staged files, at commit time | — |
-| Long fuzzing or simulation campaign | outside any story's cycle, on a schedule; its failure goes to `Issue tracker` as Law 7 says — the story runs only the short version | — |
+| Long fuzzing or simulation campaign | outside any story's cycle, on a schedule, through `po-intake`; its failure goes to `Issue tracker` as Law 7 says, except that a fuzzing campaign, or any check that exercises a decoder of input from outside, runs with `--sensitive` and its failure goes to the person — the story runs only the short version | — |
 
 The full unit suite and the type check are launched through `po-run --story <id> --label <check> -- '<command>'`, which writes their row in the verification record. The command is passed as one single-quoted argument, a single quote inside it written `'\''`; their result is never written down by hand. The tests of a task run without it.
 
