@@ -181,3 +181,8 @@ A decision the person took is not logged here: it is an ADR or a story.
 | 2026-11-12 | M17 wave 5 | Plan of s152 (full track, 7 tasks, oracle of 6 tests) approved without a human; implementer on opus | `Plan validation: autonomous`; complexity 4 |
 | 2026-11-12 | M17 wave 5 | Shipped s152 (#199) with a major finding; filed none of its findings, held both for the owner | `Ship allowed: yes`; its review ran the security lens, so `/po-ship` files none of its findings (Law 7, ADR-0090) |
 | 2026-11-12 | M17 wave 5 | Refreshed the installed method after s152 | Lays `/po-intake` and the intake mode of the stories review down for the next lanes |
+| 2026-11-12 | — | Framed M20 and M21 (s159–s170) and outlined M22 from the independent analysis; held s153–s155 behind s170 | The owner asked to clean up first, then resume; an unshipped dependency keeps them out of the fleet without deleting them |
+| 2026-11-12 | — | Wrote ADR-0105 to ADR-0110 as `proposed` and listed their questions in `docs/a-trancher.md` | Technical and strategic choices are the owner's; the stories that depend on them say so |
+| 2026-11-12 | — | Re-triaged the tracker: closed the issues M17 shipped and the wording-only findings, labelled product-pulled ideas `parked`, opened #201–#212, created forge milestones M20–M22 | The backlog has to show the corrected direction; a wording-only finding gets no story |
+| 2026-11-12 | — | Replaced the table of `docs/milestones.md` by pointers to `docs/stories.md` and `docs/direction.md` | It had stayed at M6 while stories reached M19; one fact, one place |
+| 2026-11-12 | — | Kept the detail of the security-related findings of s151 and s152 out of `docs/a-trancher.md` and of the tracker | Law 7, ADR-0090; the owner got it in the hand-over report |

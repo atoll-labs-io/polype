@@ -6,7 +6,7 @@ Polype n'est pas un framework ni un générateur : c'est un jeu de règles, de c
 
 Quatre principes portent le reste : rien n'atteint le code hors d'une story, celui qui écrit le code ne le juge pas, chaque gate est fermé tant qu'un fichier ne l'ouvre pas, et chaque story vit dans son propre worktree.
 
-**Statut** : le cycle, le cadrage et la flotte tournent — Polype se construit avec Polype. Venture outillage sous Atoll.
+**Statut** : le cycle, le cadrage et la flotte tournent — Polype se construit avec Polype. Venture outillage sous Atoll. La direction en cours et ce que Polype ne fait plus : [`docs/direction.md`](docs/direction.md).
 
 ## Pour quel agent
 

@@ -1,16 +1,10 @@
 # Milestones — Polype
 
-Un milestone livre un incrément utilisable. Chaque story atterrit sur la branche cible dès que sa revue l'autorise (ADR-0015) ; on corrige au fil de l'eau. Pas de sprint : la cadence est celle des décisions, pas du calendrier.
+Ce fichier ne tient plus de tableau : il était resté à M6 quand les stories en étaient à M19.
 
-| Milestone | Livre | Lignes de la [matrice](parite-killer-saas.md) | Statut |
-|---|---|---|---|
-| **M1 — Le cycle** | Règles, réglages, research → plan → execute → review → ship sur une story, gates, doctrines test et revue | A, B, D (hors design, voie courte et flotte), E, F, G | livré |
-| **M2 — Le cadrage** | Trois modes d'entrée, stories et leur revue, architecture, design system, design par story, voie courte | C, D03, D15 | livré |
-| **M3 — La flotte** | Lanes parallèles, tracker GitHub/Taskwarrior, reprise après crash, checkpoints groupés | D05, D16, D17, extensions | livré |
-| **M4 — Le catalogue** | Profil next-forge, briques auto-hébergées pour mustelinet, tests de contrat | ADR-0008 à ADR-0011 | livré |
-| **M5 — La distribution** | Installation globale chezmoi + `init` par projet, mise à jour par manifeste, migration depuis `/spec` et `/drive` | H | livré |
-| **M6 — Le pilote** | nautile : spec `/spec` repris en 23 stories, revue passée, méthode installée — reste à construire | validation | en cours |
+- **Les jalons et leurs stories** sont les titres de [`stories.md`](stories.md) ; chaque jalon y ouvre par son objectif.
+- **Où en est chaque story** : `/po-status`, qui le lit dans les fichiers et dans git.
+- **Le bilan d'un jalon livré** : `/po-retro <jalon>`.
+- **La direction et le jalon en cours** : [`direction.md`](direction.md).
 
-**Amorçage** : M1 est construit à la main en appliquant les règles de Polype (une story, un commit, revue en contexte frais). À partir de M2, Polype construit Polype.
-
-Préfixe provisoire des commandes : `/po-*`, renommable quand les noms seront choisis.
+Un milestone livre un incrément utilisable. Chaque story atterrit sur la branche cible dès que sa revue l'autorise (ADR-0015). Pas de sprint : la cadence est celle des décisions, pas du calendrier.
