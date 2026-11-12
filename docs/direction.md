@@ -4,7 +4,7 @@
 
 ## Ce qu'est Polype
 
-Polype est le côté intelligent du travail du porteur : il cadre un produit, le découpe, le fait construire et relire par des agents, et ne laisse rien atterrir sans preuve. Le porteur n'y parle pas directement tous les jours : un agent extérieur, son majordome vocal, demande à Polype où en est un projet, lui lit ce qui l'attend, rapporte sa réponse et relance le travail. Le majordome n'a aucune intelligence à fournir ; Polype doit donc lui offrir une vraie interface, pas de la prose ([`interface-agent.md`](interface-agent.md)).
+Polype est une brique indépendante, du côté de l'intelligence : il cadre un produit, le découpe, le fait construire et relire par des agents, et ne laisse rien atterrir sans preuve. Il ne suppose aucune installation particulière chez celui qui l'utilise. La personne qui porte un projet peut lui parler dans une session, ou passer par un agent extérieur quelconque — une interface de discussion, un ordonnanceur, ou par exemple un assistant vocal local qui ne fait que transmettre et laisse l'intelligence à un grand modèle. Cet agent demande à Polype où en est un projet, rapporte ce qui attend la personne, transmet sa réponse et relance le travail ; il n'a aucune intelligence à fournir. Polype doit donc offrir une vraie interface, pas de la prose ([`interface-agent.md`](interface-agent.md)). Aucun document de la méthode ne nomme une installation précise : un exemple d'installation reste un exemple.
 
 ## Le constat
 
@@ -26,7 +26,7 @@ Ce qu'un script peut décider ou écrire quitte la prose et le modèle. La méth
 | **M21 — L'interface** | l'état en JSON, la boîte de décisions, la réponse, les rapports écrits par un script, le pilote en automate, le lancement, les signaux de confiance | cadré, attend M20 et trois ADR |
 | **M22 — La preuve par le comportement** | un parcours rejouable de bout en bout, le retrait des tests de phrase, le budget de mots, les bras de contrôle, une seule commande d'entrée, le ship en script | à cadrer quand M21 est livré |
 
-Ensuite, Polype sert les produits (nautile, lagon, seiche, pecten, patelle…) et ne change que quand l'un d'eux bute sur lui.
+Ensuite, Polype sert les projets qui l'utilisent et ne change que quand l'un d'eux bute sur lui.
 
 ## La façon de faire
 

@@ -11,7 +11,7 @@ superseded-by: []
 # ADR-0107 — Un agent extérieur interroge Polype par une commande et du JSON
 
 ## Context and Problem Statement
-L'agent vocal local du porteur n'est que son majordome : l'intelligence est déléguée à Claude ou à un autre grand modèle, et Polype est de ce côté-là. Un agent extérieur doit donc pouvoir demander où en est un projet, ce qui attend le porteur, rapporter sa réponse et lancer ou reprendre le travail, sans lire de prose ni tenir une conversation avec le chef de projet (#204). Aujourd'hui, ce qui attend la personne n'existe que dans le texte d'une session. Trois choses sont à décider : le transport, l'endroit où vit la boîte de décisions, et la façon de lancer une session. Le contrat lui-même est dans [`docs/interface-agent.md`](../interface-agent.md).
+Polype est une brique indépendante, du côté de l'intelligence ; la personne peut lui parler à travers n'importe quel agent extérieur, par exemple un assistant vocal local qui ne fait que transmettre et délègue l'intelligence à un grand modèle. Un agent extérieur doit donc pouvoir demander où en est un projet, ce qui attend le porteur, rapporter sa réponse et lancer ou reprendre le travail, sans lire de prose ni tenir une conversation avec le chef de projet (#204). Aujourd'hui, ce qui attend la personne n'existe que dans le texte d'une session. Trois choses sont à décider : le transport, l'endroit où vit la boîte de décisions, et la façon de lancer une session. Le contrat lui-même est dans [`docs/interface-agent.md`](../interface-agent.md).
 
 ## Considered Options
 Classées par les critères du porteur : libre ou auto-hébergeable, sobre en matériel, capable de grandir, facile à manier pour une IA.
@@ -36,7 +36,7 @@ Classées par les critères du porteur : libre ou auto-hébergeable, sobre en ma
 Proposé, à trancher par le porteur. Recommandation : **l'option 1 de chaque groupe**. Une commande et des fichiers suffisent à un porteur seul, ne coûtent rien quand rien ne tourne, et gardent les sujets sensibles sur la machine. `run` refuse de lancer quand il ne peut pas prouver que les bornes seront tenues. Un serveur MCP reste possible ensuite, comme couche mince.
 
 ### Consequences
-- Good, because le majordome n'a rien à comprendre de Polype : il lit du JSON, répète une question, rapporte le nom d'une option.
+- Good, because l'agent extérieur n'a rien à comprendre de Polype : il lit du JSON, répète une question, rapporte le nom d'une option.
 - Good, because une réponse hors des options listées est refusée par un script, pas par un modèle.
 - Bad, because la boîte ne se partage pas entre machines : le porteur répond sur la machine où tourne le projet, ou par SSH.
 - Neutral: le contrat porte un numéro de version ; un champ ajouté ne le change pas, un champ retiré ou renommé si.
