@@ -17,7 +17,7 @@ Le cycle d'une story se lance aujourd'hui à trois niveaux qui se recouvrent : s
 Classées par les critères du porteur ; les deux premiers ne départagent rien ici, restent la capacité à grandir et la facilité pour une IA.
 
 1. **Une entrée, des étapes** — `/po-drive` fait avancer tout ce qui est prêt et `/po-drive <id>` une seule story ; `/po-orchestrator` et `/po-flow` disparaissent, la voie courte devenant une valeur que l'automate lit et non une commande ; les commandes d'étape restent, réduites au brief de leur subagent, pour reprendre une étape à la main. `/po-ship`, qui ne fait que des opérations déterministes, devient un script que la commande appelle (#211). Un seul endroit dit l'ordre des étapes : la table de cas de l'automate.
-2. **Garder les trois niveaux, alimentés par l'automate** — aucune habitude ne change. Trois textes continuent de décrire le même parcours, et le majordome a trois façons de lancer.
+2. **Garder les trois niveaux, alimentés par l'automate** — aucune habitude ne change. Trois textes continuent de décrire le même parcours, et un agent extérieur a trois façons de lancer.
 3. **Une entrée, plus aucune commande d'étape** — le moins de texte. Reprendre une seule étape à la main demande alors de passer par l'automate, y compris pour déboguer la méthode.
 
 ## Decision Outcome

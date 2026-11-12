@@ -1,6 +1,6 @@
 # L'interface pour un agent extérieur
 
-Polype est du côté de l'intelligence : il cadre, planifie, écrit, relit. Un agent extérieur, par exemple le majordome vocal du porteur, ne fait que passer les plats : il demande où en est un projet, lit au porteur ce qui l'attend, rapporte sa réponse, lance ou reprend le travail. Il n'a rien à comprendre de la méthode et ne lit jamais de prose.
+Polype est du côté de l'intelligence : il cadre, planifie, écrit, relit. Polype reste une brique indépendante et ne suppose aucun agent en particulier. Un agent extérieur, quel qu'il soit (une interface de discussion, un ordonnanceur, ou par exemple un assistant vocal local qui sert de majordome), ne fait que passer les plats : il demande où en est un projet, lit au porteur ce qui l'attend, rapporte sa réponse, lance ou reprend le travail. Il n'a rien à comprendre de la méthode et ne lit jamais de prose.
 
 Ce document est le contrat de cette interface, **version 1**. Il est écrit avant le code : les stories s164 à s170 de [`stories.md`](stories.md) le construisent, et l'[ADR-0107](decisions/ADR-0107-un-agent-exterieur-interroge-polype-par-une-commande-et-du-json.md), encore proposée, en fixe le transport. Tant que ces stories ne sont pas livrées, rien de ce qui suit n'existe ; la boîte provisoire est [`a-trancher.md`](a-trancher.md).
 
@@ -107,8 +107,8 @@ Un agent extérieur n'a pas à juger ces signaux : il les rapporte. Celui qui en
   "context": "docs/decisions/ADR-0105-la-suite-tourne-sur-chaque-pull-request.md",
   "options": [
     {"key": "a", "label": "Runners hébergés de GitHub", "consequence": "rien à installer ; ni libre ni auto-hébergé"},
-    {"key": "b", "label": "Runner auto-hébergé sur crabelab", "consequence": "matériel du porteur ; à isoler sur un dépôt public"},
-    {"key": "c", "label": "Forgejo Actions sur crabelab", "consequence": "tout est libre ; une forge à installer d'abord"}
+    {"key": "b", "label": "Runner auto-hébergé", "consequence": "sur une machine du porteur ; à isoler sur un dépôt public"},
+    {"key": "c", "label": "Forgejo Actions auto-hébergé", "consequence": "tout est libre ; une forge à installer d'abord"}
   ],
   "recommended": "a",
   "why": "le contrôle est un script neutre, on changera d'endroit sans le réécrire",

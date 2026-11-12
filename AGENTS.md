@@ -229,7 +229,7 @@ Dev:               —
 
 Read `docs/direction.md` before anything else: it says where Polype goes and what it no longer does. In short:
 
-- **What Polype is**: the intelligence side of the owner's work. An external butler agent queries it and carries the owner's answers back, through the contract of `docs/interface-agent.md`.
+- **What Polype is**: an independent building block on the intelligence side of agent-driven development. It assumes no particular setup: any external agent (a chat front-end, a scheduler, or for example a local voice assistant acting as a butler) queries it and carries the person's answers back, through the contract of `docs/interface-agent.md`. Never write a specific user's setup into the method or its docs; a setup is only ever an example.
 - **Current milestone**: M20 (clean-up), then M21 (the interface), in `docs/stories.md`. M22 is framed once M21 has shipped. s153, s154 and s155 are postponed.
 - **Next thing to do**: put D1 to D4 of `docs/a-trancher.md` to the owner, one at a time (ADR-0105 to ADR-0108, all `proposed`); land the answers as framing; then `/po-stories-review` on M20 and M21; then `/po-drive`. No story that depends on a `proposed` ADR is planned before its answer.
 - **Do not**: open a method milestone that no defect seen on a product pulls; add a prose rule to `method/` without removing as many words from the same file; write a test that looks for a phrase no script reads; fix a wording-only review finding through a story; settle a technical choice alone; file a security matter in the tracker.
