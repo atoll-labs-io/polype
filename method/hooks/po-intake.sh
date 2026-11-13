@@ -3,12 +3,11 @@
 #
 #   po-intake --label <name> [--sensitive] -- '<command>'
 #
-# The single argument after `--` runs through `bash -c`; its output and exit code pass through untouched, and every
-# message of po-intake goes to stderr. A passing check files nothing. A failing one files one issue titled
-# `<name>: <fingerprint>`, its output scrubbed of secrets by `po-gate redact` and of the values of environment
-# variables whose name holds TOKEN, KEY, SECRET or PASSWORD; an issue already open with that title gets a comment
-# instead. A failure under --sensitive is never filed: its raw report is kept in a private temporary folder whose
-# path is printed for the person. Exit 125 means po-intake refused before running the command.
+# The argument after `--` runs through `bash -c`; its output and exit code pass through, and po-intake's own
+# messages go to stderr. A failing check files one issue titled `<name>: <fingerprint>`, scrubbed by
+# `po-gate redact` and of the values of environment variables named TOKEN, KEY, SECRET or PASSWORD; an open issue
+# with that title gets a comment instead. A --sensitive failure is never filed: its raw report stays in a private
+# temporary folder whose path is printed. Exit 125: refused before running the command.
 set -euo pipefail
 
 say() { echo "po-intake: $*" >&2; }
@@ -113,7 +112,7 @@ awk -v code="$code" '
   {
     s = trim($0); f = ""
     if (s ~ /^not ok [0-9]+ /) { f = s; sub(/^not ok [0-9]+ /, "", f) }
-    else if (s ~ /^FAILED /) f = substr(s, 8)
+    else if (s ~ /^FAILED /) { f = substr(s, 8); sub(/ - .*/, "", f) }
     else if (s ~ /^test .+ \.\.\. FAILED$/) f = substr(s, 6, length(s) - 16)
     else if (s ~ /^  FAIL  /) f = substr(s, 9)
     f = trim(f)
@@ -136,7 +135,8 @@ if ! scrub "$d/title.raw" "$d/title.lines" || ! scrub "$d/body.raw" "$d/body"; t
   say "check '$label' failed (exit $code), but its report could not be scrubbed of secrets: nothing filed"
   exit "$code"
 fi
-awk '{ sub(/[ \t\r]+$/, ""); printf "%s", $0; exit }' "$d/title.lines" > "$d/title"
+awk '{ sub(/[ \t\r]+$/, ""); printf "%s", $0; exit }' "$d/title.lines" \
+  | LC_ALL=C.UTF-8 sed -E 's/^(.{80}).*/\1/; s/ +$//' > "$d/title"
 
 report() { { cat "$d/title"; echo; echo; cat "$d/body"; } >&2; }
 not_filed() { say "$* — nothing filed; the report follows"; report; }
