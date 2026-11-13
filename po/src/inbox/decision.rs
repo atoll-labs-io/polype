@@ -4,7 +4,7 @@ use std::io;
 use std::path::{Path, PathBuf};
 
 use serde::{Deserialize, Serialize};
-use serde_json::Value;
+use serde_json::{Map, Value};
 
 #[derive(Serialize, Deserialize, Clone, Copy, PartialEq, Eq, Debug)]
 #[serde(rename_all = "kebab-case")]
@@ -60,6 +60,12 @@ pub struct Decision {
     pub blocks: Option<Vec<String>>,
     pub status: String,
     pub answer: Option<Value>,
+    /// What the answer produced, once the lead consumed it; absent until then, so an unconsumed
+    /// decision keeps the contract's shape.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub consumed: Option<Value>,
+    #[serde(flatten)]
+    pub extra: Map<String, Value>,
 }
 
 /// The number of an id `d-<digits>`; anything else is no id `po` hands out.

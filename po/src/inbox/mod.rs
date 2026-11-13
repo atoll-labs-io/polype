@@ -1,8 +1,10 @@
 //! The decisions waiting for the person (ADR-0107): `po inbox` lists them, `po inbox <id>` shows
-//! one, `po inbox add` writes one. `po answer` comes with a later story of M21.
+//! one, `po inbox add` writes one, `po answer` records the person's choice among its options.
+//! `po inbox --answered` lists what the lead has not consumed yet, `po inbox consume` marks it.
 
 mod add;
 mod decision;
+mod rewrite;
 
 use std::io;
 use std::path::{Path, PathBuf};
@@ -18,26 +20,85 @@ pub struct Pending {
     pub unreadable: Vec<PathBuf>,
 }
 
+const REF_MAX: usize = 200;
+
 #[derive(Serialize)]
 struct List {
     pending: Vec<Decision>,
+}
+
+#[derive(Serialize)]
+struct Answered {
+    answered: Vec<Decision>,
 }
 
 pub fn main(args: &[String]) -> i32 {
     match args {
         [] => list(),
         [verb] if verb == "add" => add::main(),
+        [flag] if flag == "--answered" => answered(),
+        [verb, id, reference] if verb == "consume" => consume(id, reference),
+        [verb, ..] if verb == "consume" => unknown_option("po inbox consume takes a decision id and a ref", args),
         [id] if !id.starts_with('-') => show(id),
-        _ => output::error(
-            output::UNREADABLE,
-            "unknown-option",
-            format!("po inbox takes nothing, add, or one decision id; not {}", args.join(" ")),
-        ),
+        _ => unknown_option("po inbox takes nothing, add, --answered, consume <id> <ref>, or one decision id", args),
     }
 }
 
-pub fn answer(_args: &[String]) -> i32 {
-    output::not_built("answer")
+/// `po answer <id> <key>`: the key must equal a listed option key byte for byte. It is never
+/// trimmed, parsed, put into a path nor handed to a process.
+pub fn answer(args: &[String]) -> i32 {
+    let [id, key] = args else {
+        return unknown_option("po answer takes a decision id and an option key", args);
+    };
+    let (project, dir) = match locate() {
+        Ok(found) => found,
+        Err(code) => return code,
+    };
+    rewrite::rewrite(&project, &dir, id, |decision| {
+        if decision.status != "pending" {
+            return Err(("already-answered", format!("{id} is {}, not pending", decision.status)));
+        }
+        let keys: Vec<&str> = decision
+            .options
+            .iter()
+            .flatten()
+            .filter_map(|option| option.get("key").and_then(|key| key.as_str()))
+            .collect();
+        if !keys.contains(&key.as_str()) {
+            return Err(("not-an-option", format!("{key:?} is not an option of {id}; its keys: {}", keys.join(", "))));
+        }
+        decision.status = "answered".to_string();
+        decision.answer = Some(serde_json::json!({ "key": key, "at": rewrite::now() }));
+        Ok(())
+    })
+}
+
+fn consume(id: &str, reference: &str) -> i32 {
+    if reference.trim().is_empty() || reference.contains(['\n', '\r']) || reference.chars().count() > REF_MAX {
+        return output::error(
+            output::REFUSED,
+            "malformed-ref",
+            format!("the ref must be one non-empty line of at most {REF_MAX} characters"),
+        );
+    }
+    let (project, dir) = match locate() {
+        Ok(found) => found,
+        Err(code) => return code,
+    };
+    rewrite::rewrite(&project, &dir, id, |decision| {
+        if decision.status == "pending" {
+            return Err(("not-answered", format!("{id} is still pending")));
+        }
+        if decision.consumed.is_some() {
+            return Err(("already-consumed", format!("{id} was already consumed")));
+        }
+        decision.consumed = Some(serde_json::json!({ "ref": reference, "at": rewrite::now() }));
+        Ok(())
+    })
+}
+
+fn unknown_option(usage: &str, args: &[String]) -> i32 {
+    output::error(output::UNREADABLE, "unknown-option", format!("{usage}; not {}", args.join(" ")))
 }
 
 /// The ids of the pending decisions of `dir`, oldest first; a missing folder holds none. Built on
@@ -87,6 +148,27 @@ fn list() -> i32 {
         Ok((decisions, _)) => {
             let pending = decisions.into_iter().filter(|d| d.status == "pending").collect();
             output::reply(List { pending }, output::OK)
+        }
+        Err(err) => output::error(
+            output::UNREADABLE,
+            "unreadable-decision",
+            format!("cannot read {}: {err}", dir.display()),
+        ),
+    }
+}
+
+fn answered() -> i32 {
+    let (_, dir) = match locate() {
+        Ok(found) => found,
+        Err(code) => return code,
+    };
+    match decision::read_dir(&dir) {
+        Ok((decisions, _)) => {
+            let answered = decisions
+                .into_iter()
+                .filter(|d| d.status == "answered" && d.consumed.is_none())
+                .collect();
+            output::reply(Answered { answered }, output::OK)
         }
         Err(err) => output::error(
             output::UNREADABLE,

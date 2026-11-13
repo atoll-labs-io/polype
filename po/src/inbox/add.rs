@@ -156,7 +156,7 @@ fn normalise(path: &Path) -> PathBuf {
 
 /// The folder lies outside the repository, or git ignores what would be written in it; asked from
 /// the root, never from a worktree whose own .gitignore could differ.
-fn kept_out_of_git(project: &Project, dir: &Path) -> bool {
+pub(super) fn kept_out_of_git(project: &Project, dir: &Path) -> bool {
     match place(project, dir) {
         Place::Outside => true,
         Place::Elsewhere => false,
@@ -198,6 +198,8 @@ fn write(dir: &Path, new: NewDecision) -> io::Result<Decision> {
         blocks: Some(new.blocks),
         status: "pending".to_string(),
         answer: None,
+        consumed: None,
+        extra: serde_json::Map::new(),
     };
     let mut number = next_id(dir)?;
     loop {

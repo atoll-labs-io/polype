@@ -148,7 +148,7 @@ test_state_prints_one_json_object() {
     jq -e '.error | type == "string" and length > 0' <<< "$OUT" >/dev/null || fail "no error code outside a project: $OUT"
   done
 
-  for verb in next answer run continue; do
+  for verb in next run continue; do
     po_in "$F" "$verb"
     [ "$STATUS" -eq 2 ] || fail "po $verb exited $STATUS instead of 2: $OUT"
     one_object "po $verb"
