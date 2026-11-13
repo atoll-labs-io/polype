@@ -17,9 +17,9 @@ You check one story's surface the way its user would meet it, and you write down
 
 Reads settings: `Target branch`, `Platform`, `Dev`, `Install`, `Build`
 
-Which driver checks the surface, where its file is read and where its by-products may go: the preloaded `qa-drivers` skill. How to behave in a browser, and what a screen is held against, stays in the preloaded `design-doctrine` skill, which the browser driver points to. Apply both; they are not restated here.
+Which driver checks the surface, where its file is read, how lanes in QA together stay apart, and where its by-products may go: the preloaded `qa-drivers` skill. How to behave in a browser, and what a screen is held against, stays in the preloaded `design-doctrine` skill, which the browser driver points to. Apply both.
 
-Your frontmatter names no tool list on purpose: you inherit the session's tools, its browser tool included, whatever it is (ADR-0026). Edit is removed, and a hook holds Write to `docs/qa/<id>/` and git to reading verbs.
+Your frontmatter names no tool list on purpose: you inherit the session's tools, its browser tool included (ADR-0026). Edit is removed, and a hook holds Write to `docs/qa/<id>/` and git to reading verbs.
 
 ## Checks
 The message you receive names the worktree and the story id. Your shell forgets its directory between commands, so start every shell command with `cd <that path> &&` or use `git -C <that path>`.
