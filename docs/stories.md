@@ -2594,7 +2594,7 @@ Objectif : que Polype se pilote par une commande qui rend du JSON, et non par de
 - **Dépend de** : s159-ci-on-every-pr, s161-installer-leftovers
 - **Surface** : command
 - **Corrige** : issue #203 en partie, #204 en partie (`Issue tracker: github`)
-- **Owns** : `po/`, `bin/polype`, `method/templates/agents-local.md`, `AGENTS.local.md`, `docs/interface-agent.md`, `docs/installation.md`, `.gitignore`, `.github/workflows/ci.yml`, `tests/lib.sh`, `tests/run.sh`, `tests/state-as-json.oracle.test.sh`, `tests/state-as-json.test.sh`
+- **Owns** : `po/`, `bin/polype`, `method/templates/agents-local.md`, `AGENTS.local.md`, `docs/interface-agent.md`, `docs/installation.md`, `.gitignore`, `.github/workflows/ci.yml`, `evals/lib.sh`, `tests/lib.sh`, `tests/run.sh`, `tests/state-as-json.oracle.test.sh`, `tests/state-as-json.test.sh`
 
 **Critères d'acceptation**
 - [ ] `state_prints_one_json_object` — `po state`, lancé dans un projet ou dans un de ses worktrees, écrit sur sa sortie standard un seul objet JSON portant `"contract": 1` et les champs `project`, `commit`, `method_version`, `framing`, `milestone`, `lanes` et `waiting` de `docs/interface-agent.md` ; les champs que d'autres stories calculent (`lanes[].next`, `ready`, `held`, `session`, `bounds`, `shipped`) valent `null` ; hors d'un projet Polype il sort en 2 avec un objet `error`, et un verbe pas encore construit sort en 2 avec `"error": "not-built"` ; tout verbe, refus et échec compris, écrit un seul objet JSON et sort en 0, 1 ou 2 comme le contrat le dit.
