@@ -23,7 +23,7 @@ Ce qu'un script peut décider ou écrire quitte la prose et le modèle. La méth
 | Jalon | Ce qu'il livre | État |
 | --- | --- | --- |
 | **M20 — Le ménage** | la suite sur chaque pull request, les défauts vus sur les produits et les restes de revue fermés | livré le 2026-11-13 (s159 à s163) ; deux constats majeurs de s163 restent ouverts (#233, #234) |
-| **M21 — L'interface** | l'état en JSON, la boîte de décisions, la réponse, les rapports écrits par un script, le pilote en automate, le lancement, les signaux de confiance | cadré pour bash, à reprendre par `/po-stories` pour un binaire Rust ([ADR-0106](decisions/ADR-0106-le-pilote-devient-un-automate-en-code.md)), précompilé et vérifié ([ADR-0115](decisions/ADR-0115-le-binaire-de-l-automate-est-precompile-et-verifie.md)), où entre tout le code que M21 ajoute ([ADR-0116](decisions/ADR-0116-tout-le-code-de-m21-entre-dans-le-binaire.md)) |
+| **M21 — L'interface** | l'état en JSON, la boîte de décisions, la réponse, les rapports écrits par du code, la prochaine action calculée, le lancement, les signaux de confiance, le binaire `po` précompilé et vérifié | cadré le 2026-11-13 pour le binaire Rust `po` (s164 à s173 ; [ADR-0106](decisions/ADR-0106-le-pilote-devient-un-automate-en-code.md), [ADR-0115](decisions/ADR-0115-le-binaire-de-l-automate-est-precompile-et-verifie.md) à [ADR-0117](decisions/ADR-0117-un-binaire-po-par-machine.md)) ; à construire |
 | **M22 — La preuve par le comportement** | un parcours rejouable de bout en bout, le retrait des tests de phrase, le budget de mots, les bras de contrôle, une seule commande d'entrée, le ship en script | à cadrer quand M21 est livré |
 
 Ensuite, Polype sert les projets qui l'utilisent et ne change que quand l'un d'eux bute sur lui.
@@ -67,5 +67,4 @@ D1 à D4, puis D11 et D12, ont été tranchées le 2026-11-13 : les ADR-0105 à 
 M20 est livré depuis le 2026-11-13 : la suite tourne sur chaque pull request, et `/po-ship` attend qu'elle passe.
 
 1. Rendre le contrôle `suite` obligatoire sur `main` (D8), geste du porteur décrit dans [`ci.md`](ci.md).
-2. `/po-stories` reprend s164 à s170 pour le binaire Rust et la boîte à emplacement réglable, puis `/po-stories-review`. Aucune story de M21 ne se planifie avant.
-3. `/po-drive` sur M21, quand le porteur le demande. D5 à D10 peuvent attendre.
+2. `/po-drive` sur M21 (s164 à s173), quand le porteur le demande. D5 à D10 peuvent attendre.
