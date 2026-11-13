@@ -299,7 +299,7 @@ is_payload_path() { [ "$mode" = global ] && [ "${1#polype/}" != "$1" ]; }
 is_payload_state_file() {
   case "$1" in
     */*) return 1 ;;
-    manifest|checksums|version|payload.sums|*.next|*.polype-next) return 0 ;;
+    manifest|checksums|version|payload.sums|po|*.next|*.polype-next) return 0 ;;
     *) return 1 ;;
   esac
 }
@@ -782,6 +782,40 @@ wire_the_project() {
   missing_settings >&2
 }
 
+# po, one per machine at the payload root (ADR-0117), is built from the clone's sources. A run from
+# the payload has none and keeps the po it finds. Nothing here stops the run: the method is laid
+# down whether po builds or not.
+po_path() { printf '%s' "$payload_dir/po"; }
+
+# How a run that did not build po leaves it, for the line that says so.
+po_left() { if [ -e "$1" ]; then printf '%s kept as it was' "$1"; else printf '%s is missing' "$1"; fi; }
+
+build_po() {
+  local dest out target_dir
+  dest="$(po_path)"
+  if [ ! -f "$base/po/Cargo.toml" ]; then
+    echo "polype: no po sources in $base; po was not built, $(po_left "$dest")" >&2
+    return 0
+  fi
+  if ! command -v cargo >/dev/null 2>&1; then
+    echo "polype: cargo not found; po was not built, $(po_left "$dest") (install Rust, then rerun)" >&2
+    return 0
+  fi
+  target_dir="${CARGO_TARGET_DIR:-$base/po/target}"
+  if ! out="$(cargo build --release --locked --quiet --manifest-path "$base/po/Cargo.toml" --target-dir "$target_dir" 2>&1)"; then
+    echo "polype: cargo could not build po, $(po_left "$dest"):" >&2
+    printf '%s\n' "$out" >&2
+    return 0
+  fi
+  if mkdir -p "$(dirname "$dest")" && cp "$target_dir/release/po" "$dest.polype-next" \
+      && chmod +x "$dest.polype-next" && mv -f "$dest.polype-next" "$dest"; then
+    return 0
+  fi
+  rm -f "$dest.polype-next" 2>/dev/null || true
+  echo "polype: po was built but could not be laid at $dest" >&2
+  return 0
+}
+
 stamp_version() { printf '%s\n' "$POLYPE_VERSION" > "$version_file"; }
 stamp_mode() { [ "$mode" = global ] || printf '%s\n' "$mode" > "$mode_file"; }
 
@@ -888,6 +922,7 @@ cmd_install() {
   stamp_mode
   prune_empty_dirs
   wire_the_project
+  build_po
   local path
   for path in ${modified[@]+"${modified[@]}"}; do
     echo "polype: modified, left as it is: $path" >&2
@@ -948,6 +983,7 @@ cmd_update() {
   stamp_mode
   prune_empty_dirs
   wire_the_project
+  build_po
 
   if [ "$had_local_sums" = no ] && [ -n "$local_sums" ] && [ -f "$local_sums" ]; then
     echo "polype: .claude/.polype-checksums written: the sums of the .claude/ copies now live there, out of git" >&2
@@ -993,6 +1029,7 @@ cmd_check() {
   else
     status=1
   fi
+  [ -e "$(po_path)" ] || echo "po missing: $(po_path) (rerun install or update from a Polype clone, with cargo)"
   missing_settings
   exit "$status"
 }

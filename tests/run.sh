@@ -5,6 +5,23 @@ cd "$(dirname "$0")"
 files=("$@")
 [ ${#files[@]} -gt 0 ] || files=(*.test.sh)
 
+# Taken before any test moves HOME, so a cargo the installer launches still finds its toolchain.
+export CARGO_HOME="${CARGO_HOME:-$HOME/.cargo}" RUSTUP_HOME="${RUSTUP_HOME:-$HOME/.rustup}"
+root="$(cd .. && pwd)"
+export CARGO_TARGET_DIR="${CARGO_TARGET_DIR:-$root/po/target}"
+# No test may reach the developer's real ~/.claude, even one that never sets it itself.
+claude_tmp="$(mktemp -d)"
+trap 'rm -rf "$claude_tmp"' EXIT
+export CLAUDE_CONFIG_DIR="$claude_tmp/claude"
+mkdir -p "$CLAUDE_CONFIG_DIR"
+
+# A copy of this runner outside the repository has no crate to build.
+if [ -f "$root/po/Cargo.toml" ]; then
+  if ! build=$(cargo build --release --locked --quiet --manifest-path "$root/po/Cargo.toml" 2>&1); then
+    echo "po does not build:"; echo "$build"; exit 1
+  fi
+fi
+
 passed=0 failed=0 skipped=0
 for file in "${files[@]}"; do
   echo "${file}"

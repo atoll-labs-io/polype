@@ -35,6 +35,7 @@ Model light:       sonnet
 Light up to:       2
 Project CLAUDE file: absorbed
 Forge checks:      required
+Decision inbox:    .polype/inbox/
 ```
 
 ## Commands

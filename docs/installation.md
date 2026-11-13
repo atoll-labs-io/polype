@@ -71,6 +71,33 @@ n'a pas posé — une commande personnelle dans `~/.claude/commands/` survit à 
 elle ne supprime pas `~/.claude` lui-même. Un agent, une commande ou une skill à soi qui porte le
 nom d'un des siens l'arrête avant toute écriture, comme dans un projet (voir « Les collisions »).
 
+## Le binaire `po`
+
+`po` est la commande qu'un agent extérieur interroge ([`interface-agent.md`](interface-agent.md)).
+Il y en a un par machine (ADR-0117), à la racine de la charge utile :
+`${CLAUDE_CONFIG_DIR:-$HOME/.claude}/polype/po`, à côté de `version`, comme un fichier d'état que la
+règle des fichiers étrangers d'ADR-0095 laisse en place.
+
+`install` et `update`, en `--global` comme sur un projet, le construisent à la fin de la pose quand
+ils sont lancés depuis un clone de Polype : `cargo build --release --locked` sur les sources `po/`
+du clone, puis une copie à côté renommée sur `polype/po`. La pose d'un projet crée donc
+`~/.claude/polype/` s'il n'existe pas, pour y mettre le seul `po`. Rien de cette étape n'arrête la
+pose ni ne change son code de sortie ; chaque cas où `po` n'est pas construit est dit sur `stderr` :
+
+```
+polype: cargo not found; po was not built, <chemin> is missing (install Rust, then rerun)
+polype: cargo could not build po, <chemin> is missing:
+polype: no po sources in <charge utile>; po was not built, <chemin> kept as it was
+```
+
+La première vient sans `cargo` sur le `PATH` : installe Rust, puis relance la même commande. La
+deuxième est suivie de la sortie de `cargo`. La troisième vient d'un run depuis la charge utile, qui
+ne porte pas les sources : il garde le `po` qu'il trouve, ou le laisse manquant. Jusqu'à s171, qui
+télécharge un binaire précompilé, seul un run depuis un clone construit `po`.
+
+Le binaire porte la version de l'installeur. Quand le `.polype/version` d'un projet en dit une
+autre, `po state` répond quand même et ajoute l'avertissement `method-version-mismatch`.
+
 ## Activer un projet
 
 Une fois le global posé, `polype init <projet>` dépose dans le dépôt ce qui doit y vivre, et rien de
@@ -169,8 +196,9 @@ identique partout. Sans `payload.sums`, la charge utile lancée depuis elle-mêm
 (ADR-0095).
 
 **Ce qui ne se suit pas** :
-- `~/.claude/polype/manifest`, `~/.claude/polype/checksums` et `~/.claude/polype/version` : ces
-  trois fichiers décrivent l'état d'**une** machine. Synchronisés, une machine hériterait du
+- `~/.claude/polype/manifest`, `~/.claude/polype/checksums`, `~/.claude/polype/version` et le
+  binaire `~/.claude/polype/po` : ces quatre fichiers décrivent l'état d'**une** machine, et `po`
+  est compilé pour elle. Synchronisés, une machine hériterait du
   manifeste d'une autre et `remove` y supprimerait des chemins qu'elle n'a jamais posés. À exclure
   explicitement des dotfiles.
 - l'`AGENTS.local.md` d'un projet et l'état de ce projet (`.polype/`, `AGENTS.md`, `docs/`) : ils
@@ -294,6 +322,7 @@ globale un, `payload.sums`, décrits plus bas.
 | `version` | la version installée |
 | `payload.sums` | global seulement : la signature de la charge utile, `cksum` et chemin, ADR-0095 |
 | `mode` | projet seulement : `init` ou `project`, le mode que garde `update` (ADR-0091) |
+| `po` | global seulement, un par machine : le binaire `po`, voir « Le binaire `po` » |
 
 Une pose ou une mise à jour globale lancée depuis un dépôt écrit `payload.sums` avec une ligne par
 fichier de `bin/` et `method/` ; un run depuis la charge utile garde celui qu'elle a apporté.
@@ -434,7 +463,9 @@ listes n'est pas vide, ou si le fichier `version` manque ; **0** quand tout est 
 alors combien de fichiers sont installés et ne nomme rien. Sans `manifest`, il sort 1 : rien n'est
 installé. En `--global`, les chemins sont relatifs à `~/.claude`, charge utile (`polype/bin/`,
 `polype/method/`) comprise. Sur un projet, `check` liste enfin les mêmes lignes `missing setting:`
-que la mise à jour ; elles ne changent pas son code de sortie.
+que la mise à jour ; elles ne changent pas son code de sortie. Quand le binaire `po` manque, en
+`--global` comme sur un projet, `check` le dit sur une ligne `po missing: <chemin>`, qui ne change
+pas non plus son code de sortie.
 
 `check` compare chaque copie aux empreintes enregistrées et rien d'autre : il n'applique pas la
 règle « identique au fichier livré » de `update`. Dans un projet qui commite `.claude/`, les copies
@@ -454,6 +485,9 @@ dit : `polype: kept copies left in <racine>/polype.kept`. Avant toute écriture,
 lieu de l'emporter (ADR-0095). Le `<chemin>.before-polype` d'un chemin du manifeste revient à sa
 place une fois la charge utile partie. Sans `payload.sums`, `remove` le dit et se fie au seul
 manifeste ; `check --global` le dit aussi.
+
+Le binaire `po` part avec `~/.claude/polype/`. `remove <projet>` n'y touche pas : il sert les
+autres projets de la machine.
 
 Un `remove --global` qui s'arrête en cours de route remet chaque `<chemin>.before-polype` qu'il
 tenait dans `~/.claude/.polype-restore.<pid>/` là où il était avant la commande : à
