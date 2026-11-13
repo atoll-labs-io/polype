@@ -49,6 +49,8 @@ marker='<!-- Assembled by Polype.'
 project="" hooks=no global=no mode=project set_aside=no
 root="" state_dir="" local_sums="" prune_mindepth=0
 PAIRS=() PRUNE_DIRS=() SHIPPED_LINES=()
+# Read by report_the_stop: what remove holds under $HOLD, and what --set-aside has moved.
+HELD=() SET_ASIDE=() HOLD=""
 
 usage() {
   cat <<'USAGE'
@@ -70,6 +72,31 @@ USAGE
 }
 
 die_usage() { usage >&2; exit 2; }
+
+# The EXIT trap: on a failed run, puts back what remove holds and names what it cannot, then
+# repeats every --set-aside move. Every command is guarded, and it never calls exit, so the
+# status of the run is the one the stop gave (ADR-0112).
+report_the_stop() {
+  local status=$? path target entry
+  [ "$status" -ne 0 ] || return 0
+  for path in ${HELD[@]+"${HELD[@]}"}; do
+    if [ ! -e "$HOLD/$path" ] && [ ! -L "$HOLD/$path" ]; then continue; fi
+    if [ -d "$state_dir" ]; then target="$root/$path.before-polype"; else target="$root/$path"; fi
+    if [ ! -e "$target" ] && [ ! -L "$target" ] && mkdir -p "$(dirname "$target")" && mv "$HOLD/$path" "$target"; then
+      echo "polype: put back: $target" >&2 || true
+    else
+      echo "polype: still held in $HOLD: $HOLD/$path" >&2 || true
+    fi
+  done
+  if [ -n "$HOLD" ] && [ -d "$HOLD" ]; then find "$HOLD" -depth -type d -empty -delete 2>/dev/null || true; fi
+  if [ ${#SET_ASIDE[@]} -gt 0 ]; then
+    echo "polype: fix the cause, then rerun the same command: it lays Polype's files on the freed paths, and remove puts these back" >&2 || true
+    for entry in "${SET_ASIDE[@]}"; do
+      echo "polype: set aside before this stop: $entry" >&2 || true
+    done
+  fi
+  return 0
+}
 
 parse_target() {
   local allow_global="$1" arg; shift
@@ -260,15 +287,18 @@ refuse_collisions() {
   [ "$taken" = no ] || exit 1
   for dest in "${collisions[@]}"; do
     mv "$root/$dest" "$root/$dest.before-polype"
+    SET_ASIDE+=("$root/$dest -> $root/$dest.before-polype")
     echo "polype: set aside: $root/$dest -> $root/$dest.before-polype" >&2
   done
 }
 
 is_payload_path() { [ "$mode" = global ] && [ "${1#polype/}" != "$1" ]; }
 
-# <rel> is relative to the payload directory.
+# <rel> is relative to the payload directory. State files sit at its root only: a deeper *.next
+# is the person's, or a leftover, and stops the run as foreign (ADR-0112).
 is_payload_state_file() {
   case "$1" in
+    */*) return 1 ;;
     manifest|checksums|version|payload.sums|*.next|*.polype-next) return 0 ;;
     *) return 1 ;;
   esac
@@ -319,7 +349,7 @@ sign_payload() {
   mv -f "$state_dir/payload.sums.next" "$state_dir/payload.sums"
 }
 
-# A payload file is foreign when it is no state file, the global manifest does not list it and
+# A payload file is foreign when it is no root state file, the global manifest does not list it and
 # neither the source (a repository's shipped files, or payload.sums) nor, for remove, payload.sums
 # does. A *.before-polype there is foreign to every run but remove, whose held path puts back the
 # one set aside for a manifest path (ADR-0095). Never $manifest: under init it is the project's.
@@ -471,12 +501,21 @@ hand_written_agents_md() {
 
 # A hand-written AGENTS.md joins the settings whatever Project CLAUDE file says, as a CLAUDE.md does
 # only under absorbed (ADR-0086, ADR-0088, ADR-0089). Without an
-# AGENTS.local.md it waits as AGENTS.md.before-polype, and the first run that finds one absorbs it.
+# AGENTS.local.md it waits as AGENTS.md.before-polype next to Polype's AGENTS.md, and the first
+# run that finds the pair absorbs it. An aside with no AGENTS.md of Polype is not one Polype made:
+# it stays, named (ADR-0112).
 absorb_agents_md() {
-  local aside="$project/AGENTS.md.before-polype" sources=()
-  [ -f "$aside" ] && sources+=("$aside")
-  if hand_written_agents_md && { [ ! -f "$aside" ] || [ "$(sum_of "$project/AGENTS.md")" != "$(sum_of "$aside")" ]; }; then
-    sources+=("$project/AGENTS.md")
+  local aside="$project/AGENTS.md.before-polype" sources=() from_aside=no
+  if [ -f "$aside" ] && [ -f "$project/AGENTS.md" ] && head -n 1 "$project/AGENTS.md" | grep -qF "$marker"; then
+    sources+=("$aside")
+    from_aside=yes
+  fi
+  if hand_written_agents_md; then sources+=("$project/AGENTS.md"); fi
+  # Without AGENTS.local.md, a hand-written AGENTS.md moves onto the aside, which the preflight of
+  # refuse_collisions has found identical: that aside is the waiting copy, not an orphan.
+  if [ "$from_aside" = no ] && { [ -e "$aside" ] || [ -L "$aside" ]; } \
+      && { [ -f "$project/AGENTS.local.md" ] || ! hand_written_agents_md; }; then
+    echo "polype: $aside kept as it is: no AGENTS.md laid by Polype goes with it; move its notes into AGENTS.local.md or delete it" >&2
   fi
   [ ${#sources[@]} -gt 0 ] || return 0
   if [ -f "$project/AGENTS.local.md" ]; then
@@ -487,8 +526,12 @@ absorb_agents_md() {
       cat "${sources[@]}"
     } > "$project/AGENTS.local.md.polype-next"
     mv -f "$project/AGENTS.local.md.polype-next" "$project/AGENTS.local.md"
-    rm -f "$aside"
-    echo "polype: AGENTS.md moved into AGENTS.local.md under ## Notes moved from AGENTS.md" >&2
+    if [ "$from_aside" = yes ]; then
+      rm -f "$aside"
+      echo "polype: AGENTS.md.before-polype moved into AGENTS.local.md under ## Notes moved from AGENTS.md, then deleted" >&2
+    else
+      echo "polype: AGENTS.md moved into AGENTS.local.md under ## Notes moved from AGENTS.md" >&2
+    fi
   elif hand_written_agents_md; then
     local again='polype update .'
     [ "$mode" = init ] && again='polype init .'
@@ -974,7 +1017,8 @@ unwire_the_project() {
 
 cmd_remove() {
   require_install
-  local path held=() hold="$root/.polype-restore.$$"
+  local path
+  HOLD="$root/.polype-restore.$$"
   load_checksums
   refuse_taken_kept_copies all
   if [ "$mode" = global ]; then
@@ -993,9 +1037,9 @@ cmd_remove() {
         # A file set aside under the payload directory would be put back, then lost with it: it
         # waits outside until the directory is gone.
         rm -f "$root/$path"
-        mkdir -p "$(dirname "$hold/$path")"
-        mv "$root/$path.before-polype" "$hold/$path"
-        held+=("$path")
+        mkdir -p "$(dirname "$HOLD/$path")"
+        mv "$root/$path.before-polype" "$HOLD/$path"
+        HELD+=("$path")
       else
         rm -f "$root/$path"
       fi
@@ -1010,12 +1054,12 @@ cmd_remove() {
   if [ "$mode" = global ] && [ -d "$root/polype.kept" ]; then
     echo "polype: kept copies left in $root/polype.kept" >&2
   fi
-  for path in ${held[@]+"${held[@]}"}; do
+  for path in ${HELD[@]+"${HELD[@]}"}; do
     mkdir -p "$(dirname "$root/$path")"
-    mv "$hold/$path" "$root/$path"
+    mv "$HOLD/$path" "$root/$path"
     echo "polype: put back: $root/$path" >&2
   done
-  if [ ${#held[@]} -gt 0 ]; then rm -rf "$hold"; fi
+  if [ ${#HELD[@]} -gt 0 ]; then rm -rf "$HOLD"; fi
   prune_empty_dirs
   unwire_the_project
 
@@ -1027,6 +1071,7 @@ cmd_remove() {
 }
 
 main() {
+  trap report_the_stop EXIT
   local command="${1-}"
   [ $# -gt 0 ] && shift
   case "$command" in
