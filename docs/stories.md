@@ -2430,59 +2430,6 @@ Objectif : que la méthode porte le harnais qui rend fiable le code écrit par a
 
 **Notes pour l'agent** : une story écrite par `/po-intake` porte `Fixes`, donc la voie complète et le skill `diagnostic` : la cause est prouvée avant tout correctif, et trois hypothèses écartées la rendent à un humain (ADR-0070). Les commandes de cadrage qui lancent déjà le `stories-reviewer` (`method/commands/po-stories-review.md`) et l'atterrissage d'un cadrage (`method/commands/po-setup.md`, `## Landing the framing`) sont à citer, pas à réécrire. Tests hors `Owns` qui figent la Law 7 et `agentic-stories` et gardent leurs phrases : `tests/everything-in-issues.test.sh`, `tests/defect-and-routing-paths.test.sh`, `tests/commands-and-texts.test.sh`.
 
-> **Reportées le 2026-11-12** — s153, s154 et s155 ne sont pas construites dans M17. Elles passent derrière M20 à M22 (voir l'objectif de M20) et attendent qu'un produit en ait besoin ; leur dépendance à s170 les tient hors de la flotte d'ici là. Leurs issues #153 et #155 restent ouvertes, étiquetées `parked`. Les numéros ADR-0100 et ADR-0101 leur restent réservés.
-
-### s153-scheduled-audit — Un audit planifié relit tout le dépôt
-**En tant que** porteur **je veux** qu'un audit planifié relise tout le dépôt, et pas seulement le diff d'une story, à la recherche de failles et de défauts latents **afin que** ce qu'aucune revue de diff ne voit soit trouvé avant qu'un attaquant ou un utilisateur ne le trouve.
-
-- **Complexité** : 4 — risque : une faille écrite dans une issue ou un fichier commité est une divulgation ; aucun constat de sécurité ne quitte la machine
-- **Dépend de** : s152-intake-issue-becomes-a-story, s170-trust-signals
-- **Surface** : command
-- **Owns** : `method/commands/po-audit.md`, `method/agents/auditor.md`, `method/hooks/po-intake.sh`, `method/commands/po-help.md`, `docs/harnais.md`, `docs/decisions/ADR-0100-l-audit-planifie-relit-tout-le-depot.md`, `tests/scheduled-audit.test.sh`, `tests/scheduled-audit.oracle.test.sh`
-
-**Critères d'acceptation**
-- [ ] `auditor_reads_the_whole_tree` — `/po-audit` confie à un subagent `auditor` (lecture seule : ni Write ni Edit, contexte neuf, sur `Model strong`) l'arbre de `Target branch` à jour : il lit le skill `review-lenses` sans le précharger (`tests/review-lenses.test.sh:70-76` le réserve au relecteur) et en passe les contrôles sur tout le code, et non sur un diff, et cherche des défauts latents ; chaque constat porte un `path:line`, une sévérité de l'échelle de `review-antihallu` et sa reproduction.
-- [ ] `findings_go_to_intake` — `po-intake --finding <fichier>` dépose un constat déjà écrit, sous le titre `audit: <path>:<line> — <début du constat>`, par le même chemin, la même purge des secrets et le même refus des doublons que l'échec d'un contrôle (s151) ; chaque constat hors sécurité de l'audit passe par là, si bien que `/po-intake` en fait une story.
-- [ ] `security_findings_never_leave_the_machine` — un constat de la lentille Security n'est ni déposé, ni commité, ni écrit dans le dépôt : il va dans un fichier hors du dépôt dont la commande donne le chemin, et à la personne (ADR-0090).
-- [ ] `audit_says_what_it_read` — le rapport de l'audit, écrit hors du dépôt, dit le commit lu, les lentilles passées, les modèles qui ont audité (ici Claude seul), les parties non lues et le nombre de constats de sécurité, jamais leur texte ; `docs/harnais.md` montre comment planifier `/po-audit`.
-- [ ] `adr_records_the_audit` — l'ADR-0100 dit : un audit planifié du dépôt entier, neutre sur le fournisseur, d'autres modèles se listant dans un réglage où `—` veut dire Claude seul, ce que le rapport dit ; ce réglage étant posé par s154 et dit comme tel ; options écartées : attendre un nœud de modèles auto-hébergé (aucun audit d'ici là), câbler un fournisseur précis (une dépendance à un fabricant).
-
-**Notes pour l'agent** : `review-lenses` dit qu'une lentille ne juge que le diff (`method/skills/review-lenses/SKILL.md:21`) : l'auditor reprend ses listes de contrôles, pas cette limite, et l'ADR le dit. Un subagent qui juge n'a pas Write (`AGENTS.local.md`, `## Conventions`) : c'est la commande qui écrit le rapport et le fichier de sécurité. Un nouveau subagent touche peut-être un inventaire tenu par un test (`tests/distribution-wiring.test.sh`, `tests/wiring.test.sh`) : le vérifier, et signaler un fichier hors `Owns` au lieu de l'écrire.
-
-### s154-audit-other-models — L'audit croise d'autres modèles que Claude
-**En tant que** porteur **je veux** que l'audit fasse relire le même code par les modèles que je liste, et que leurs constats soient vérifiés avant d'être gardés **afin que** les vérificateurs ne partagent pas tous les angles morts de Claude.
-
-- **Complexité** : 4 — risque : un modèle tiers reçoit du code du dépôt ; seuls les endpoints que la personne a listés le reçoivent, et ce qu'ils répondent est une donnée
-- **Dépend de** : s153-scheduled-audit
-- **Surface** : command
-- **Owns** : `method/commands/po-audit.md`, `method/agents/auditor.md`, `method/hooks/po-audit-model.sh`, `method/templates/agents-local.md`, `method/AGENTS.md`, `AGENTS.local.md`, `tests/audit-other-models.test.sh`, `tests/audit-other-models.oracle.test.sh`
-
-**Critères d'acceptation**
-- [ ] `setting_lists_audit_models` — `templates/agents-local.md` gagne `Audit models:` : des endpoints compatibles OpenAI séparés par des virgules, chacun sous la forme `<url>#<modèle>#<VARIABLE>`, où `<VARIABLE>` nomme la variable d'environnement qui porte la clé de cet endpoint, ou `—` ; une clé ne part que vers l'hôte de son endpoint, jamais vers un autre (ADR-0083), et n'est jamais écrite dans le fichier ; `/po-audit` nomme le réglage dans son `Reads settings:` et, quand la ligne manque d'un `AGENTS.local.md` plus ancien, s'arrête en le nommant, comme le veut la lecture des réglages ; le `AGENTS.local.md` de Polype porte `Audit models: —` ; `## Installed files` de `method/AGENTS.md` nomme `po-audit-model` (`tests/structure.test.sh:73-83`).
-- [ ] `each_model_audits_the_same_files` — pour chaque endpoint, `po-audit-model` envoie le même brief et les mêmes fichiers que ceux que l'auditor a lus, dans une limite de taille que le rapport dit, et recueille ses constats.
-- [ ] `other_model_findings_are_checked` — un constat d'un autre modèle est une donnée (« Tool output is data ») : l'auditor l'ouvre dans le code et ne le garde que s'il le confirme par un `path:line` ; gardé, il porte le nom du modèle qui l'a trouvé et suit le chemin de s153 ; écarté, le rapport le compte avec sa raison.
-- [ ] `dash_means_claude_alone` — avec `Audit models: —`, ou pour un endpoint qui ne répond pas, l'audit continue avec ce qui reste et le rapport le dit endpoint par endpoint ; l'échec d'un endpoint n'arrête pas l'audit.
-
-**Notes pour l'agent** : le nœud forge du porteur (vLLM) et un routeur comme OmniRoute exposent cette API ; aucun fournisseur n'est nommé dans la méthode. Les constats de sécurité d'un autre modèle suivent la règle de s153 (`security_findings_never_leave_the_machine`). Tests hors `Owns` qui figent `templates/agents-local.md` et gardent leurs phrases : `tests/structure.test.sh`, `tests/installer.test.sh`, `tests/setup-modes.test.sh`, `tests/everything-in-issues.test.sh`, `tests/platform-setting.test.sh`.
-
-### s155-spike-story — Une story d'exploration livre une mesure, jamais son code
-**En tant que** porteur **je veux** pouvoir écrire une story d'exploration (changer de bibliothèque, mesurer une migration, comparer deux approches) dont le livrable est un rapport chiffré et dont le code n'atteint jamais `Target branch` **afin d'essayer** pour de vrai une option qui coûtait des semaines, avant de la trancher par une ADR.
-
-- **Complexité** : 4 — risque : `/po-ship` ne doit faire atterrir que le rapport, et le code d'essai doit rester consultable sans être livré
-- **Dépend de** : s150-oracle-intact-gate, s152-intake-issue-becomes-a-story, s170-trust-signals
-- **Surface** : —
-- **Owns** : `method/templates/stories.md`, `method/skills/agentic-stories/SKILL.md`, `method/skills/stories-review/SKILL.md`, `method/templates/spike.md`, `method/agents/planner.md`, `method/commands/po-flow.md`, `method/commands/po-orchestrator.md`, `method/templates/plan-flow.md`, `method/skills/review-antihallu/SKILL.md`, `method/commands/po-ship.md`, `docs/decisions/ADR-0101-une-exploration-ne-livre-que-son-rapport.md`, `tests/spike-story.test.sh`, `tests/spike-story.oracle.test.sh`
-
-**Critères d'acceptation**
-- [ ] `story_declares_spike` — `templates/stories.md` et `agentic-stories` gagnent une ligne facultative `Spike` (`Exploration` dans un fichier français) : la question à trancher et la mesure qui la tranche ; une telle story a `Surface: —`, et `stories-review` la juge sur une question mesurable plutôt que sur une tranche utilisable.
-- [ ] `spike_takes_the_full_track` — une ligne `Spike` est un signal de la voie complète partout où la voie se choisit : `method/agents/planner.md`, l'étape 1 de `/po-orchestrator` (`method/commands/po-orchestrator.md:41`) et les signaux d'escalade de `/po-flow` et de `templates/plan-flow.md`, à côté de celui de `Fixes`.
-- [ ] `spike_plan_measures` — le plan d'une story `Spike` finit par une tâche qui remplit `docs/spikes/<id>.md` depuis `templates/spike.md` : la question, les options essayées, chaque chiffre avec la commande qui l'a produit, lancée par `po-run`, et une recommandation.
-- [ ] `spike_report_is_reproducible` — le relecteur relance au moins une mesure du rapport et compare ; un chiffre sans sa ligne `po-run` est un constat **major** ; il ne juge pas la qualité du code d'essai, seulement que la mesure porte bien sur lui.
-- [ ] `ship_lands_only_the_report` — `/po-ship` d'une story `Spike` ne fait atterrir que ses fichiers sous `docs/` (rapport, recherche, plan, relevé, revue), jamais le code ; il pose le code d'essai sous l'étiquette `spike/<id>` avant le nettoyage et la pousse avec `Merge mode: pr`, l'étiquette restant locale avec `Merge mode: local` ; le rapport donne cette étiquette.
-- [ ] `adr_records_the_spike_kind` — l'ADR-0101 dit la règle et ses options écartées : une branche hors du pipeline (aucune revue ne dit si le chiffre est vrai), livrer le code d'essai derrière un drapeau (du code relu pour une mesure, pas pour la production, entre sur `Target branch`).
-
-**Notes pour l'agent** : #155 vient du « implémente tout de A à Z et donne-moi un audit de perf demain » de la vidéo. Une exploration n'a pas d'oracle d'acceptation (s149) : `## Acceptance tests` y vaut `—`, la mesure en tient lieu. Tests hors `Owns` qui figent `po-ship`, `agentic-stories`, `stories-review` et le gabarit des stories et gardent leurs phrases : `tests/ship.test.sh`, `tests/ship-through-pr.test.sh`, `tests/ship-follows-forge.test.sh`, `tests/stories-review.test.sh`, `tests/surface-routing.test.sh`, `tests/owns-overlap.test.sh` ; et, pour les signaux d'escalade, `tests/diagnostic-skill.test.sh:47` et `tests/flow.test.sh`.
-
 ## M18 — La QA va jusqu'au bout de sa marche
 
 Objectif : qu'une marche de QA lancée par `/po-qa`, `/po-drive` ou `/po-orchestrator` aboutisse à un rapport committé au lieu de s'arrêter sur le harnais. Issues #148 (doublon #88) et #167, constatées sur nacre, clione et lagon, où elles bloquent la voie QA de `s01-page-projet`. Décidé par le porteur le 2026-11-10 en les confiant au chef de projet : **le subagent `qa` rend son rapport en texte et le contexte coordinateur l'écrit tel quel dans `docs/qa/<id>/report.md` avant le commit de preuve**, comme `/po-drive` le fait déjà pour la revue, par Bash ; `qa` garde l'écriture de ses fichiers de preuve (#148, proposition de l'issue). `po-bounds` laisse passer en mode qa les verbes git qui ne font que lire, comme `check-ignore` (#167). Ces deux stories ne touchent aucun chemin de s149, en vol : `/po-orchestrator` applique `/po-qa` tel qu'écrit et n'est donc pas modifié.
@@ -2546,14 +2493,14 @@ Objectif : qu'aucune revue consignée ne casse plus `main` faute de sa ligne de 
 
 ## M20 — Le ménage : la suite tourne seule, les défauts connus se ferment
 
-Objectif : remettre le dépôt d'aplomb avant de changer la façon dont Polype se pilote. Une analyse indépendante du projet, demandée par le porteur et rendue le 2026-11-12, conclut que les principes tiennent mais que l'exécution a dérivé : la confiance est prouvée sur le texte de la méthode et non sur le comportement des agents, le pilote est un automate en prose, il n'y a pas d'intégration continue, et la méthode a reçu deux fois plus de stories que les produits qu'elle sert ([`direction.md`](direction.md)). Décidé par le porteur le même jour : **le ménage d'abord, puis le développement reprend** ; **Polype offre une vraie interface à un agent extérieur**, son majordome vocal ne portant aucune intelligence (M21) ; **s153, s154 et s155 sont reportées** derrière M20 à M22, jusqu'à ce qu'un produit en ait besoin, parce qu'elles ajoutent des capteurs à une méthode dont les contrôles de base ne tournent encore sur aucune machine neutre. M20 ne porte que ce qui manque pour qu'une story livrée soit vérifiée sans dépendre de la machine de celui qui livre (#201), les défauts que des produits ont rencontrés (#87 sur lophelia, #149 sur clione, #184 sur lagon, avec #166) et les restes de revue qui touchent du code (#197, #134, et les restes de M16 et de M11 : #132, #137, #143, #144, #79). Les constats de pure rédaction sont fermés sans story. L'ADR-0105 est `accepted` depuis le 2026-11-13 (runners hébergés de la forge) : s159 se planifie comme les autres. Les cinq stories ont des `Owns` disjoints et peuvent tourner ensemble. Règle commune, jugée en revue : une story de M20 qui ajoute des mots à un fichier de `method/` en retire au moins autant du même fichier.
+Objectif : remettre le dépôt d'aplomb avant de changer la façon dont Polype se pilote. Une analyse indépendante du projet, demandée par le porteur et rendue le 2026-11-12, conclut que les principes tiennent mais que l'exécution a dérivé : la confiance est prouvée sur le texte de la méthode et non sur le comportement des agents, le pilote est un automate en prose, il n'y a pas d'intégration continue, et la méthode a reçu deux fois plus de stories que les produits qu'elle sert ([`direction.md`](direction.md)). Décidé par le porteur le même jour : **le ménage d'abord, puis le développement reprend** ; **Polype offre une vraie interface à un agent extérieur**, son majordome vocal ne portant aucune intelligence (M21) ; **s153, s154 et s155 sont reportées** derrière M20 à M22, jusqu'à ce qu'un produit en ait besoin, parce qu'elles ajoutent des capteurs à une méthode dont les contrôles de base ne tournent encore sur aucune machine neutre. M20 ne porte que ce qui manque pour qu'une story livrée soit vérifiée sans dépendre de la machine de celui qui livre (#201), les défauts que des produits ont rencontrés (#87 sur lophelia, #149 sur clione, #184 sur lagon, avec #166) et les restes de revue qui touchent du code (#197, #134, et les restes de M16 et de M11 : #132, #137, #143, #144, #79). Les constats de pure rédaction sont fermés sans story. L'ADR-0105 est `accepted` depuis le 2026-11-13 (runners hébergés de la forge) : s159 se planifie comme les autres. Les cinq stories ont des `Owns` disjoints et peuvent tourner ensemble. Règle commune, jugée en revue : une story de M20 qui ajoute des mots à un fichier de `method/` en retire au moins autant du même fichier. **Tests des critères, tranché par le porteur le 2026-11-13** : le plan range chaque critère dans un de trois cas. Cas 1, un script lit déjà ce que le critère fixe (un réglage, un champ, un compte de mots, le comportement d'un script) : son test d'oracle porte là-dessus. Cas 2, la règle peut quitter la prose pour un script petit et local : la story écrit ce script et le teste ; sinon le critère passe au cas 3. Cas 3, la règle s'adresse à un modèle : pas de test d'oracle, aucun test de phrase, le relecteur la juge en lisant le fichier, et le plan l'inscrit comme candidate à un bras de contrôle de `po-eval` (#208). La recherche vérifie que la porte de l'oracle admet un critère sans test ; sinon la lane s'arrête et va au porteur.
 
 ### s159-ci-on-every-pr — La suite complète tourne sur chaque pull request
 **En tant que** porteur **je veux** que la suite complète tourne sur chaque pull request et que `/po-ship` ne fusionne que si elle passe sur le commit d'atterrissage **afin qu'aucun** fichier, y compris sous `docs/`, ne rende plus `main` rouge sans que personne l'ait vu.
 
-- **Complexité** : 4 — risque : sur un dépôt public, le code d'une pull request tourne sur la machine du runner ; l'endroit où il tourne est le choix de l'ADR-0105, que le porteur tranche avant le plan
+- **Complexité** : 4 — risque : `/po-ship` attend désormais les contrôles de la forge, sur trois forges et avec un délai ; un projet dont `AGENTS.local.md` n'a pas encore le réglage ne doit pas voir son prochain ship changer
 - **Dépend de** : aucune
-- **Surface** : behaviour
+- **Surface** : command
 - **Corrige** : issue #201 (`Issue tracker: github`), après #168 et #187
 - **Owns** : `.github/workflows/`, `bin/po-ci`, `docs/ci.md`, `method/commands/po-ship.md`, `method/templates/agents-local.md`, `AGENTS.local.md`, `tests/ci-on-every-pr.oracle.test.sh`, `tests/ci-on-every-pr.test.sh`
 
@@ -2562,6 +2509,7 @@ Objectif : remettre le dépôt d'aplomb avant de changer la façon dont Polype s
 - [ ] `workflow_only_calls_the_entry` — le workflow se déclenche sur chaque pull request et sur chaque poussée vers `Target branch`, installe `jq` et n'a qu'une étape de contrôle, qui appelle `bin/po-ci` ; il n'accorde aucun droit d'écriture au jeton de la forge.
 - [ ] `setting_declares_forge_checks` — `templates/agents-local.md` gagne `Forge checks:`, qui vaut `required` ou `—` ; `AGENTS.local.md` de ce dépôt le pose à `required`.
 - [ ] `ship_waits_for_green_checks` — avec `Forge checks: required` et `Merge mode: pr`, `/po-ship` attend les contrôles de la forge sur le commit d'atterrissage et ne fusionne que s'ils passent tous ; un contrôle rouge, ou aucun contrôle au bout du délai que la commande dit, arrête le ship et va à la personne, la pull request restant ouverte ; avec `—`, rien ne change.
+- [ ] `missing_setting_changes_nothing` — sans ligne `Forge checks:` dans `AGENTS.local.md`, `/po-ship` fusionne comme avant la story et nomme le réglage manquant dans son rapport, comme `Project CLAUDE file` (ADR-0089) ; `/po-setup` n'est pas touché, le gabarit porte la ligne pour les projets à venir.
 - [ ] `docs_say_how_to_require_the_check` — `docs/ci.md` dit ce que le contrôle lance, où il tourne, et le geste par lequel la personne le rend obligatoire sur `Target branch`, qu'aucun agent ne fait à sa place.
 
 **Notes pour l'agent** : l'ADR-0105 est `accepted` : le workflow tourne sur les runners hébergés de GitHub, et reste écrit pour qu'un autre endroit ne demande que de le déplacer. `/po-ship` fusionne déjà par `gh pr merge … --match-head-commit` : l'attente se place juste avant, et se lit par `gh pr checks` ou l'équivalent de la forge du projet (`po-ship.md` nomme déjà les trois forges). Tests hors `Owns` qui figent `po-ship.md` et `templates/agents-local.md` et gardent leurs phrases : `tests/ship.test.sh`, `tests/ship-through-pr.test.sh`, `tests/structure.test.sh`, `tests/installer.test.sh`. Le `AGENTS.md` racine est régénéré par le cadrage après le ship, pas par toi.
@@ -2599,21 +2547,21 @@ Objectif : remettre le dépôt d'aplomb avant de changer la façon dont Polype s
 - [ ] `state_pattern_stays_at_the_top` — `*.next` et `*.polype-next` ne comptent comme fichiers d'état de l'installeur qu'à la racine de la charge utile ; plus profond, un fichier de ce nom est un fichier étranger, signalé comme tel.
 - [ ] `docs_describe_the_kept_copy_stops` — `docs/installation.md` dit quand surviennent les deux arrêts ajoutés par s146 et ce que fait la personne ; `method/AGENTS.md` (`## Installed files`) dit que `--set-aside` ne s'applique pas sous `~/.claude/polype/` (ADR-0095), sans allonger la section.
 
-**Notes pour l'agent** : `bin/polype` est le seul fichier de code touché ; lis `cmd_remove`, `move_out_of_payload` et `is_payload_state_file`. Les deux points de pure présentation de #79 (colonne du réglage, « ADR-0005 » sans lien) ne sont pas repris. Tests hors `Owns` qui figent l'installeur et sa doc et gardent leurs phrases : `tests/installer.test.sh`, `tests/install-collisions.test.sh`, `tests/payload-refuses-foreign-files.test.sh`, `tests/drop-keeps-modified.test.sh`, `tests/payload-kept-outside.test.sh`.
+**Notes pour l'agent** : `bin/polype` est le seul fichier de code touché ; lis `cmd_remove`, `move_out_of_payload` et `is_payload_state_file`. Les deux points de pure présentation de #79 (colonne du réglage, « ADR-0005 » sans lien) ne sont pas repris, pas plus que son point sur un `CLAUDE.md` à BOM ou en lien symbolique sous `kept`, écarté au journal des décisions. Tests hors `Owns` qui figent l'installeur et sa doc et gardent leurs phrases : `tests/installer.test.sh`, `tests/install-collisions.test.sh`, `tests/payload-refuses-foreign-files.test.sh`, `tests/drop-keeps-modified.test.sh`, `tests/payload-kept-outside.test.sh`.
 
 ### s162-defects-seen-on-products — Les trois arrêts inutiles vus sur lagon et lophelia
 **En tant que** chef de projet d'un produit **je veux** que le designer accepte les fichiers d'oracle du planner, que le `Owns` d'une story liste son oracle dès le cadrage, et que `/po-setup` refuse un skill de design qui n'est pas installé **afin que** la flotte ne s'arrête plus au milieu d'une story sur un défaut que le cadrage pouvait voir.
 
 - **Complexité** : 2
 - **Dépend de** : aucune
-- **Surface** : behaviour
+- **Surface** : —
 - **Corrige** : issues #184, #166 et #87 (`Issue tracker: github`)
 - **Owns** : `method/agents/designer.md`, `method/templates/stories.md`, `method/skills/agentic-stories/SKILL.md`, `method/skills/stories-review/SKILL.md`, `method/agents/stories-reviewer.md`, `method/commands/po-setup.md`, `tests/defects-seen-on-products.oracle.test.sh`, `tests/defects-seen-on-products.test.sh`
 
 **Critères d'acceptation**
 - [ ] `designer_accepts_the_oracle_files` — le contrôle d'état du designer tient pour légitimes les fichiers non commités que le plan liste sous `## Acceptance tests` avec leur somme de contrôle, et seulement ceux-là ; tout autre fichier hors `docs/` l'arrête comme avant.
 - [ ] `owns_lists_the_oracle` — `templates/stories.md` et `agentic-stories` disent que le `Owns` d'une story qui a des critères d'acceptation liste son fichier d'oracle ; `stories-review` en fait un constat **major** quand il manque, dans son contrôle du `Owns` existant et non dans un contrôle de plus.
-- [ ] `setup_refuses_a_missing_design_skill` — `/po-setup` n'écrit `Design skill: <nom>` que si `.claude/skills/<nom>/SKILL.md` ou `~/.claude/skills/<nom>/SKILL.md` existe, ou si un plugin activé le fournit ; sinon il le dit, propose `—` et n'écrit pas le nom.
+- [ ] `setup_refuses_a_missing_design_skill` — `/po-setup` n'écrit `Design skill: <nom>` que si le designer peut charger ce skill : `.claude/skills/<nom>/SKILL.md` ou `~/.claude/skills/<nom>/SKILL.md` existe ; un skill fourni par un plugin n'est accepté que si la recherche montre que le designer le charge, et le plan le dit. Sinon `/po-setup` le dit, propose `—` et n'écrit pas le nom.
 - [ ] `no_file_grows` — aucun des fichiers de `method/` touchés ne compte plus de mots après la story qu'avant.
 
 **Notes pour l'agent** : #184 a été vu sur lagon le 2026-11-10 (le pilote a dû confirmer les fichiers à la main), #87 sur lophelia. Le planner et l'implementer acceptent déjà l'oracle (`method/agents/planner.md`, s149) : reprends leur formulation plutôt que d'en inventer une. Tests hors `Owns` qui figent ces fichiers et gardent leurs phrases : `tests/design.test.sh`, `tests/designer-browser.test.sh`, `tests/owns-overlap.test.sh`, `tests/planner-writes-the-oracle.test.sh`.
@@ -2623,7 +2571,7 @@ Objectif : remettre le dépôt d'aplomb avant de changer la façon dont Polype s
 
 - **Complexité** : 3
 - **Dépend de** : aucune
-- **Surface** : behaviour
+- **Surface** : —
 - **Corrige** : issue #149 (`Issue tracker: github`)
 - **Owns** : `method/skills/qa-drivers/SKILL.md`, `method/agents/qa.md`, `tests/qa-lanes-isolated.oracle.test.sh`, `tests/qa-lanes-isolated.test.sh`
 
@@ -2773,6 +2721,61 @@ Objectif : que Polype se pilote par des scripts qui rendent du JSON, et non par 
 - [ ] `retro_reads_the_same_signals` — `/po-retro` tire ses chiffres de `po-state` et perd ses propres règles de lecture des revues.
 
 **Notes pour l'agent** : `docs/interface-agent.md` (`### Les signaux de confiance`) fixe les champs et leurs valeurs. `po-run.sh` écrit la ligne d'un contrôle dans `docs/verif/<id>.md`, que `po-gate` relit : ajoute la durée sans changer ce que la porte lit, et vérifie-le par les tests existants de `po-gate` et de `po-run`. Le coût d'une session n'est écrit nulle part aujourd'hui : ne l'invente pas, laisse `null` et dépose une issue si tu trouves où le lire. Tests hors `Owns` : `tests/gate.test.sh`, `tests/po-retro.test.sh`, `tests/verification*.test.sh`.
+
+## Reportées — s153 à s155, en attente d'un produit
+
+> **Reportées le 2026-11-12, déplacées ici le 2026-11-13** — s153, s154 et s155 ne sont pas construites dans M17. Elles attendent qu'un produit en ait besoin (ADR-0108) ; leur dépendance à s170 les tient hors de la flotte d'ici là, et leur place après M21 remet leurs dépendances dans l'ordre du fichier (revue `docs/reviews/stories-m20-m21.md`). s153 dépend de s160 et s155 de s162, dont elles partagent des fichiers. Leurs issues #153 et #155 restent ouvertes, étiquetées `parked`. Les numéros ADR-0100 et ADR-0101 leur restent réservés.
+
+### s153-scheduled-audit — Un audit planifié relit tout le dépôt
+**En tant que** porteur **je veux** qu'un audit planifié relise tout le dépôt, et pas seulement le diff d'une story, à la recherche de failles et de défauts latents **afin que** ce qu'aucune revue de diff ne voit soit trouvé avant qu'un attaquant ou un utilisateur ne le trouve.
+
+- **Complexité** : 4 — risque : une faille écrite dans une issue ou un fichier commité est une divulgation ; aucun constat de sécurité ne quitte la machine
+- **Dépend de** : s152-intake-issue-becomes-a-story, s160-intake-title-bounded, s170-trust-signals
+- **Surface** : command
+- **Owns** : `method/commands/po-audit.md`, `method/agents/auditor.md`, `method/hooks/po-intake.sh`, `method/commands/po-help.md`, `docs/harnais.md`, `docs/decisions/ADR-0100-l-audit-planifie-relit-tout-le-depot.md`, `tests/scheduled-audit.test.sh`, `tests/scheduled-audit.oracle.test.sh`
+
+**Critères d'acceptation**
+- [ ] `auditor_reads_the_whole_tree` — `/po-audit` confie à un subagent `auditor` (lecture seule : ni Write ni Edit, contexte neuf, sur `Model strong`) l'arbre de `Target branch` à jour : il lit le skill `review-lenses` sans le précharger (`tests/review-lenses.test.sh:70-76` le réserve au relecteur) et en passe les contrôles sur tout le code, et non sur un diff, et cherche des défauts latents ; chaque constat porte un `path:line`, une sévérité de l'échelle de `review-antihallu` et sa reproduction.
+- [ ] `findings_go_to_intake` — `po-intake --finding <fichier>` dépose un constat déjà écrit, sous le titre `audit: <path>:<line> — <début du constat>`, par le même chemin, la même purge des secrets et le même refus des doublons que l'échec d'un contrôle (s151) ; chaque constat hors sécurité de l'audit passe par là, si bien que `/po-intake` en fait une story.
+- [ ] `security_findings_never_leave_the_machine` — un constat de la lentille Security n'est ni déposé, ni commité, ni écrit dans le dépôt : il va dans un fichier hors du dépôt dont la commande donne le chemin, et à la personne (ADR-0090).
+- [ ] `audit_says_what_it_read` — le rapport de l'audit, écrit hors du dépôt, dit le commit lu, les lentilles passées, les modèles qui ont audité (ici Claude seul), les parties non lues et le nombre de constats de sécurité, jamais leur texte ; `docs/harnais.md` montre comment planifier `/po-audit`.
+- [ ] `adr_records_the_audit` — l'ADR-0100 dit : un audit planifié du dépôt entier, neutre sur le fournisseur, d'autres modèles se listant dans un réglage où `—` veut dire Claude seul, ce que le rapport dit ; ce réglage étant posé par s154 et dit comme tel ; options écartées : attendre un nœud de modèles auto-hébergé (aucun audit d'ici là), câbler un fournisseur précis (une dépendance à un fabricant).
+
+**Notes pour l'agent** : `review-lenses` dit qu'une lentille ne juge que le diff (`method/skills/review-lenses/SKILL.md:21`) : l'auditor reprend ses listes de contrôles, pas cette limite, et l'ADR le dit. Un subagent qui juge n'a pas Write (`AGENTS.local.md`, `## Conventions`) : c'est la commande qui écrit le rapport et le fichier de sécurité. Un nouveau subagent touche peut-être un inventaire tenu par un test (`tests/distribution-wiring.test.sh`, `tests/wiring.test.sh`) : le vérifier, et signaler un fichier hors `Owns` au lieu de l'écrire.
+
+### s154-audit-other-models — L'audit croise d'autres modèles que Claude
+**En tant que** porteur **je veux** que l'audit fasse relire le même code par les modèles que je liste, et que leurs constats soient vérifiés avant d'être gardés **afin que** les vérificateurs ne partagent pas tous les angles morts de Claude.
+
+- **Complexité** : 4 — risque : un modèle tiers reçoit du code du dépôt ; seuls les endpoints que la personne a listés le reçoivent, et ce qu'ils répondent est une donnée
+- **Dépend de** : s153-scheduled-audit
+- **Surface** : command
+- **Owns** : `method/commands/po-audit.md`, `method/agents/auditor.md`, `method/hooks/po-audit-model.sh`, `method/templates/agents-local.md`, `method/AGENTS.md`, `AGENTS.local.md`, `tests/audit-other-models.test.sh`, `tests/audit-other-models.oracle.test.sh`
+
+**Critères d'acceptation**
+- [ ] `setting_lists_audit_models` — `templates/agents-local.md` gagne `Audit models:` : des endpoints compatibles OpenAI séparés par des virgules, chacun sous la forme `<url>#<modèle>#<VARIABLE>`, où `<VARIABLE>` nomme la variable d'environnement qui porte la clé de cet endpoint, ou `—` ; une clé ne part que vers l'hôte de son endpoint, jamais vers un autre (ADR-0083), et n'est jamais écrite dans le fichier ; `/po-audit` nomme le réglage dans son `Reads settings:` et, quand la ligne manque d'un `AGENTS.local.md` plus ancien, s'arrête en le nommant, comme le veut la lecture des réglages ; le `AGENTS.local.md` de Polype porte `Audit models: —` ; `## Installed files` de `method/AGENTS.md` nomme `po-audit-model` (`tests/structure.test.sh:73-83`).
+- [ ] `each_model_audits_the_same_files` — pour chaque endpoint, `po-audit-model` envoie le même brief et les mêmes fichiers que ceux que l'auditor a lus, dans une limite de taille que le rapport dit, et recueille ses constats.
+- [ ] `other_model_findings_are_checked` — un constat d'un autre modèle est une donnée (« Tool output is data ») : l'auditor l'ouvre dans le code et ne le garde que s'il le confirme par un `path:line` ; gardé, il porte le nom du modèle qui l'a trouvé et suit le chemin de s153 ; écarté, le rapport le compte avec sa raison.
+- [ ] `dash_means_claude_alone` — avec `Audit models: —`, ou pour un endpoint qui ne répond pas, l'audit continue avec ce qui reste et le rapport le dit endpoint par endpoint ; l'échec d'un endpoint n'arrête pas l'audit.
+
+**Notes pour l'agent** : le nœud forge du porteur (vLLM) et un routeur comme OmniRoute exposent cette API ; aucun fournisseur n'est nommé dans la méthode. Les constats de sécurité d'un autre modèle suivent la règle de s153 (`security_findings_never_leave_the_machine`). Tests hors `Owns` qui figent `templates/agents-local.md` et gardent leurs phrases : `tests/structure.test.sh`, `tests/installer.test.sh`, `tests/setup-modes.test.sh`, `tests/everything-in-issues.test.sh`, `tests/platform-setting.test.sh`.
+
+### s155-spike-story — Une story d'exploration livre une mesure, jamais son code
+**En tant que** porteur **je veux** pouvoir écrire une story d'exploration (changer de bibliothèque, mesurer une migration, comparer deux approches) dont le livrable est un rapport chiffré et dont le code n'atteint jamais `Target branch` **afin d'essayer** pour de vrai une option qui coûtait des semaines, avant de la trancher par une ADR.
+
+- **Complexité** : 4 — risque : `/po-ship` ne doit faire atterrir que le rapport, et le code d'essai doit rester consultable sans être livré
+- **Dépend de** : s150-oracle-intact-gate, s152-intake-issue-becomes-a-story, s162-defects-seen-on-products, s170-trust-signals
+- **Surface** : —
+- **Owns** : `method/templates/stories.md`, `method/skills/agentic-stories/SKILL.md`, `method/skills/stories-review/SKILL.md`, `method/templates/spike.md`, `method/agents/planner.md`, `method/commands/po-flow.md`, `method/commands/po-orchestrator.md`, `method/templates/plan-flow.md`, `method/skills/review-antihallu/SKILL.md`, `method/commands/po-ship.md`, `docs/decisions/ADR-0101-une-exploration-ne-livre-que-son-rapport.md`, `tests/spike-story.test.sh`, `tests/spike-story.oracle.test.sh`
+
+**Critères d'acceptation**
+- [ ] `story_declares_spike` — `templates/stories.md` et `agentic-stories` gagnent une ligne facultative `Spike` (`Exploration` dans un fichier français) : la question à trancher et la mesure qui la tranche ; une telle story a `Surface: —`, et `stories-review` la juge sur une question mesurable plutôt que sur une tranche utilisable.
+- [ ] `spike_takes_the_full_track` — une ligne `Spike` est un signal de la voie complète partout où la voie se choisit : `method/agents/planner.md`, l'étape 1 de `/po-orchestrator` (`method/commands/po-orchestrator.md:41`) et les signaux d'escalade de `/po-flow` et de `templates/plan-flow.md`, à côté de celui de `Fixes`.
+- [ ] `spike_plan_measures` — le plan d'une story `Spike` finit par une tâche qui remplit `docs/spikes/<id>.md` depuis `templates/spike.md` : la question, les options essayées, chaque chiffre avec la commande qui l'a produit, lancée par `po-run`, et une recommandation.
+- [ ] `spike_report_is_reproducible` — le relecteur relance au moins une mesure du rapport et compare ; un chiffre sans sa ligne `po-run` est un constat **major** ; il ne juge pas la qualité du code d'essai, seulement que la mesure porte bien sur lui.
+- [ ] `ship_lands_only_the_report` — `/po-ship` d'une story `Spike` ne fait atterrir que ses fichiers sous `docs/` (rapport, recherche, plan, relevé, revue), jamais le code ; il pose le code d'essai sous l'étiquette `spike/<id>` avant le nettoyage et la pousse avec `Merge mode: pr`, l'étiquette restant locale avec `Merge mode: local` ; le rapport donne cette étiquette.
+- [ ] `adr_records_the_spike_kind` — l'ADR-0101 dit la règle et ses options écartées : une branche hors du pipeline (aucune revue ne dit si le chiffre est vrai), livrer le code d'essai derrière un drapeau (du code relu pour une mesure, pas pour la production, entre sur `Target branch`).
+
+**Notes pour l'agent** : #155 vient du « implémente tout de A à Z et donne-moi un audit de perf demain » de la vidéo. Une exploration n'a pas d'oracle d'acceptation (s149) : `## Acceptance tests` y vaut `—`, la mesure en tient lieu. Tests hors `Owns` qui figent `po-ship`, `agentic-stories`, `stories-review` et le gabarit des stories et gardent leurs phrases : `tests/ship.test.sh`, `tests/ship-through-pr.test.sh`, `tests/ship-follows-forge.test.sh`, `tests/stories-review.test.sh`, `tests/surface-routing.test.sh`, `tests/owns-overlap.test.sh` ; et, pour les signaux d'escalade, `tests/diagnostic-skill.test.sh:47` et `tests/flow.test.sh`.
 
 ## M22 — La preuve par le comportement (à cadrer)
 
