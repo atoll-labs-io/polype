@@ -5,7 +5,7 @@ status: accepted
 date: 2026-10-18
 scope: story s142-payload-refuses-foreign-files
 supersedes: [ADR-0088]
-superseded-by: []
+superseded-by: [ADR-0112]
 ---
 
 # ADR-0095 — La charge utile se signe et n'accueille aucun fichier étranger

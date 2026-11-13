@@ -210,7 +210,10 @@ En plus des copies, `init` comme `install <projet>` :
   un `AGENTS.md` écrit à la main va d'abord à la fin d'`AGENTS.local.md`, sous
   `## Notes moved from AGENTS.md`, quel que soit `Project CLAUDE file` (ADR-0088). Sans
   `AGENTS.local.md`, il attend en `AGENTS.md.before-polype`, et la première pose qui trouve un
-  `AGENTS.local.md` l'y absorbe ;
+  `AGENTS.local.md` l'y absorbe et le dit. Un `AGENTS.md.before-polype` sans `AGENTS.md`
+  assemblé par Polype à côté n'est pas cette copie en attente : il n'est ni absorbé ni supprimé,
+  et la pose le nomme sur `stderr` ; à la personne d'en reporter les notes dans `AGENTS.local.md`
+  ou de le supprimer (ADR-0112) ;
 - traite le `CLAUDE.md` et le `CLAUDE.local.md` de la racine selon `Project CLAUDE file` (ADR-0089).
   Avec `absorbed`, la valeur du template, il les absorbe avant d'assembler `AGENTS.md` (ADR-0086) :
   leur contenu, sans la ligne `@AGENTS.md`, va à la fin d'`AGENTS.local.md` sous
@@ -258,12 +261,20 @@ pour un projet. `remove` remet chaque fichier mis de côté à sa place, sauf qu
 couvrait a été modifiée à la main : les deux restent alors en place (ADR-0092). Un `AGENTS.md` écrit
 à la main n'est pas une collision : il est absorbé, comme le dit la liste ci-dessus.
 
+Une pose `--set-aside` qui échoue après ses déplacements (un `.polype` qui est un fichier, par
+exemple) ne les défait pas : elle finit sur une ligne par fichier déplacé,
+`polype: set aside before this stop: <ancien> -> <nouveau>`. Une fois la cause réglée, relancer
+la même commande pose les fichiers de Polype aux chemins libérés, et `remove` remettra les
+fichiers mis de côté (ADR-0112).
+
 Sous `~/.claude/polype/`, `--set-aside` ne s'applique plus (ADR-0095, qui remplace ADR-0088 sur ce
 seul point). Une collision y arrête la pose comme sans l'option. Il en va de même d'un fichier
 **étranger** : ni fichier d'état, ni listé au manifeste, ni livré par la source (run depuis un
 dépôt) ou signé par `payload.sums` (run depuis la charge utile), lien compris. Un
 `<chemin>.before-polype` laissé là par une pose plus ancienne est étranger, quoi que dise le
-manifeste. `install`, `update` et `init` sortent en **1** sans rien écrire, avec une ligne par
+manifeste. `*.next` et `*.polype-next` ne sont des fichiers d'état qu'à la racine de la charge
+utile : plus bas, ils sont étrangers comme les autres (ADR-0112, qui remplace ADR-0095 sur ce seul
+point). `install`, `update` et `init` sortent en **1** sans rien écrire, avec une ligne par
 fichier, à déplacer hors de la charge utile :
 
 ```
@@ -370,6 +381,18 @@ commande s'arrête avant toute écriture, sort 1 et nomme les deux fichiers. La 
 une pose ou une mise à jour livre au même chemin un fichier identique à la copie gardée : la
 retouche est intégrée, la copie part, et les dossiers vidés de `polype.kept/` avec elle.
 
+Deux arrêts gardent la copie dans la charge utile (ADR-0112) :
+
+```
+polype: <parent> is not a directory, so <chemin> cannot move to <copie gardée>; nothing moved, nothing written
+polype: could not move <chemin> to <copie gardée>; it stays in the payload, nothing more written
+```
+
+Le premier vient avant toute écriture : un fichier occupe la place d'un dossier sur le chemin de la
+copie gardée ; déplace ou renomme ce fichier, puis relance. Le second vient quand le déplacement
+lui-même échoue en cours de route : la copie reste dans la charge utile, et ce qui a déjà été fait
+reste fait ; libère le chemin de la copie gardée, puis relance la même commande.
+
 ## Après une mise à jour
 
 Le gabarit des réglages gagne des lignes au fil des versions ; l'`AGENTS.local.md` d'un projet, lui,
@@ -431,6 +454,13 @@ dit : `polype: kept copies left in <racine>/polype.kept`. Avant toute écriture,
 lieu de l'emporter (ADR-0095). Le `<chemin>.before-polype` d'un chemin du manifeste revient à sa
 place une fois la charge utile partie. Sans `payload.sums`, `remove` le dit et se fie au seul
 manifeste ; `check --global` le dit aussi.
+
+Un `remove --global` qui s'arrête en cours de route remet chaque `<chemin>.before-polype` qu'il
+tenait dans `~/.claude/.polype-restore.<pid>/` là où il était avant la commande : à
+`<chemin>.before-polype` tant que la charge utile existe, à `<chemin>` une fois partie, et le dit
+(`polype: put back: <chemin>`). Il n'écrase rien : un fichier qu'il ne peut pas remettre reste dans
+ce dossier, nommé sur une ligne `polype: still held in <dossier>: <fichier>` (ADR-0112). Un arrêt
+par signal (`kill -9`) ne passe pas par là : le dossier peut alors rester, sans être nommé.
 
 `remove <projet>` supprime les fichiers du manifeste, les fichiers d'état
 (`.claude/.polype-checksums` compris), puis les répertoires `.claude/` et `.polype/` devenus vides.
