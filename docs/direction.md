@@ -22,7 +22,7 @@ Ce qu'un script peut décider ou écrire quitte la prose et le modèle. La méth
 
 | Jalon | Ce qu'il livre | État |
 | --- | --- | --- |
-| **M20 — Le ménage** | la suite sur chaque pull request, les défauts vus sur les produits et les restes de revue fermés | cadré, relu puis construit |
+| **M20 — Le ménage** | la suite sur chaque pull request, les défauts vus sur les produits et les restes de revue fermés | livré le 2026-11-13 (s159 à s163) ; deux constats majeurs de s163 restent ouverts (#233, #234) |
 | **M21 — L'interface** | l'état en JSON, la boîte de décisions, la réponse, les rapports écrits par un script, le pilote en automate, le lancement, les signaux de confiance | cadré pour bash, à reprendre par `/po-stories` pour un binaire Rust ([ADR-0106](decisions/ADR-0106-le-pilote-devient-un-automate-en-code.md)) une fois D11 et D12 tranchées |
 | **M22 — La preuve par le comportement** | un parcours rejouable de bout en bout, le retrait des tests de phrase, le budget de mots, les bras de contrôle, une seule commande d'entrée, le ship en script | à cadrer quand M21 est livré |
 
@@ -64,7 +64,9 @@ Rien de ceci n'est remis en cause, et M20 à M22 le respectent :
 
 D1 à D4 ont été tranchées le 2026-11-13 : les ADR-0105 à ADR-0108 sont `accepted`.
 
-1. `/po-stories-review`, puis `/po-drive` sur M20, qui ne dépend que de l'ADR-0105.
+M20 est livré depuis le 2026-11-13 : la suite tourne sur chaque pull request, et `/po-ship` attend qu'elle passe.
+
+1. Rendre le contrôle `suite` obligatoire sur `main` (D8), geste du porteur décrit dans [`ci.md`](ci.md).
 2. Poser D11 et D12 de [`a-trancher.md`](a-trancher.md) au porteur, une à la fois : la distribution du binaire Rust et ce qui y entre. Aucune story de M21 ne se planifie avant.
 3. `/po-stories` reprend s164 à s170 pour le binaire Rust et la boîte à emplacement réglable, puis `/po-stories-review`.
 4. `/po-drive` sur M21. D5 à D10 peuvent attendre.
