@@ -157,6 +157,16 @@ du dossier — jamais dans une session `claude -p`, où les bornes ne sont **pas
 l'installation globale, les subagents de `~/.claude/agents/` exécutent leurs hooks sans cette
 condition.
 
+`po state` le rend dans `bounds`, et `po run` refuse de lancer le chef de projet (`bounds-unproven`)
+tant que ce n'est pas `held`. `held` exige `implementer.md`, `qa.md` et `reviewer.md` dans
+`${CLAUDE_CONFIG_DIR:-$HOME/.claude}/agents/`, chacun étant le subagent de Polype dont le
+frontmatter porte son nom et appelle `.polype/hooks/po-bounds.sh <nom>` comme la pose globale
+l'écrit (un `reviewer.md` à soi, du même nom, ne compte pas) ; aucun des trois dans
+`.claude/agents/` du dépôt, car Claude Code préfère la copie du projet, dont les hooks attendent le
+dialogue de confiance ; et un `.polype/hooks/po-bounds.sh` exécutable dans le projet. Un
+projet posé par `polype install <projet>` est donc `unproven`, même quand la pose globale existe
+aussi ; voir [`interface-agent.md`](interface-agent.md), « `run` et `continue` ».
+
 ### Le mode reviewer
 
 Le frontmatter du subagent `reviewer` appelle `.polype/hooks/po-bounds.sh reviewer` sur `Edit`,
@@ -333,6 +343,21 @@ Aucun de ces fichiers n'est listé dans le manifeste : ils ne s'effacent donc ja
 passage suivant. Le manifeste est ce qui permet de supprimer les fichiers d'une version précédente
 sans toucher à ceux du projet ; les empreintes sont ce qui permet de distinguer un fichier intact
 d'un fichier modifié à la main.
+
+`po run` et `po continue` laissent deux fichiers de plus, propres à la machine, sous le dossier
+commun de git du projet (`.git/` du checkout principal, partagé par ses worktrees), donc hors de
+l'arbre de travail et jamais dans git ; s171 les nettoie :
+
+| Fichier, sous `<dossier commun de git>/polype/` | Contenu |
+| --- | --- |
+| `lead-session.json` | la session lancée par `po run` : `session` (UUID), `started`, `command` |
+| `run.lock` | le verrou d'un lancement en cours, qui porte le pid de son `po` |
+
+Le verrou est retiré à la fin du lancement. Celui qu'un `po` mort laisse, ou qui a plus de dix
+minutes, est repris par le lancement suivant.
+
+Le programme que `po` lance est `claude`, ou celui que nomme la variable `PO_CLAUDE` quand elle est
+posée, comme le font les tests avec un remplaçant.
 
 `.polype/mode` est commité avec le reste de `.polype/`. `update` le lit avant de choisir quoi
 poser ; quand il manque, il déduit le mode du manifeste : sans ligne sous `.claude/commands/`, c'est

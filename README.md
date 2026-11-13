@@ -144,6 +144,8 @@ polype install <projet>      tout dans un seul dépôt, sans rien de global
 polype check                 la version posée et les fichiers qui ont dérivé
 ```
 
+Un agent extérieur (une interface de discussion, un ordonnanceur) pilote un projet par la commande `po` et du JSON : le contrat est dans [docs/interface-agent.md](docs/interface-agent.md).
+
 Le détail — la charge utile sous `~/.claude/polype/`, le suivi par chezmoi, la mise à jour par manifeste qui ne laisse pas de fantômes et ne réécrit pas ce qu'on a modifié à la main — est dans [docs/installation.md](docs/installation.md).
 
 Pour un projet qui tournait sous `/spec` et `/drive`, [docs/migration.md](docs/migration.md) dit ce que devient chaque notion et comment reprendre un projet en vol.
