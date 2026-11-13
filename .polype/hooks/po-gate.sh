@@ -16,7 +16,7 @@
 #                                 when given, else HEAD
 #   po-gate findings-shape <id>  0 when ## Findings of the last review holds no line that names a severity outside the
 #                                 shape /po-ship reads; 1 with each such line quoted as `<path>:<line>: <text>`;
-#                                 2 when it cannot run (no id, no review, no verdict block)
+#                                 2 when it cannot run (no id, no review, unreadable review, no verdict block)
 #   po-gate floor-guard <id> <base>  scans `git diff <base>...story/<id>` for what lowers the bar of the checks:
 #                                 0 nothing, 1 one `<path>:<line>: <rule>: <detail>` per flag, 2 cannot verify
 #   po-gate oracle-intact <id>    compares each oracle file that `## Acceptance tests` of the plan names, on
@@ -91,16 +91,16 @@ ship_allowed() {
     || refuse "the code of $1 changed after its review (tree $tree); the verdict no longer applies — /po-review $1"
 }
 
-# What /po-ship step 3.2 can file is a list item opening with its severity; anything else naming a severity there
-# would be dropped or only reach the person, so it is refused while the reviewer can still be asked again (ADR-0094).
-# The accepted motif is exactly the one step 3.2 opens: lowercase severity, then its separator (ADR-0096).
-# Exit of the awk: 0 shape kept, 1 lines refused (printed), 2 no `## Findings` in the last block.
+# /po-ship step 3.2 files only a list item opening with its severity; anything else naming one is refused while the
+# reviewer can still be asked again (ADR-0094). The accepted motif is exactly the one it opens (ADR-0096).
+# Awk exit: 0 kept, 1 refused (printed), 3 no `## Findings`; its own read failure, 2, is unreadable.
 shape_unreadable() { echo "po-gate: cannot check the findings of ${1:-<id>}: $2" >&2; exit 2; }
 findings_shape() {
   local review rel out rc=0
   [ -n "${1:-}" ] || shape_unreadable "" "usage: po-gate findings-shape <id>"
   rel="docs/reviews/$1.md"; review="$(top)/$rel"
   [ -f "$review" ] || shape_unreadable "$1" "$1 has not been reviewed ($rel)"
+  [ -r "$review" ] || shape_unreadable "$1" "$rel cannot be read"
   grep -qE '^([-*] )?Ship allowed:' "$review" \
     || shape_unreadable "$1" "the review has no verdict block (no 'Ship allowed:' line)"
   out="$(awk -v rel="$rel" '
@@ -120,11 +120,11 @@ findings_shape() {
         else bad = first(l)
         if (bad) { print rel ":" n ": " l; refused = 1 }
       }
-      if (!seen) exit 2
+      if (!seen) exit 3
       exit refused ? 1 : 0
     }
   ' "$review")" || rc=$?
-  [ "$rc" -ne 2 ] || refuse "the last review of $1 has no '## Findings' section — the shape of templates/review.md" || return 1
+  [ "$rc" -ne 3 ] || refuse "the last review of $1 has no '## Findings' section — the shape of templates/review.md" || return 1
   [ "$rc" -eq 0 ] && return 0
   [ "$rc" -eq 1 ] || shape_unreadable "$1" "could not read the findings (awk exit $rc)"
   while IFS= read -r line; do refuse "$line" || true; done <<< "$out"
