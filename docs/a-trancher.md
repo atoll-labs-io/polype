@@ -1,6 +1,6 @@
 # À trancher par le porteur
 
-Boîte de décisions provisoire, tenue à la main en attendant `po-inbox` (story s165 de [`stories.md`](stories.md), qui reprend ce qui reste ici et supprime ce fichier). Chaque entrée a la forme du contrat de [`interface-agent.md`](interface-agent.md). Une décision prise produit ce qui doit vivre ailleurs (une ADR qui passe à `accepted`, un réglage, une story), puis son entrée est retirée d'ici.
+Boîte de décisions provisoire, tenue à la main en attendant `po inbox` (story s165 de [`stories.md`](stories.md), qui reprend ce qui reste ici et supprime ce fichier). Chaque entrée a la forme du contrat de [`interface-agent.md`](interface-agent.md). Une décision prise produit ce qui doit vivre ailleurs (une ADR qui passe à `accepted`, un réglage, une story), puis son entrée est retirée d'ici.
 
 Ce dépôt est public : aucune entrée ne décrit un moyen d'exploiter quoi que ce soit.
 
