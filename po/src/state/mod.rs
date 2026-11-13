@@ -1,38 +1,17 @@
-//! `po state`: the project's state as one JSON object, read from files and git only.
-
-mod framing;
-mod lanes;
-
-use std::path::PathBuf;
+//! `po state`: the project's state as one JSON object, composed from the project context.
 
 use serde::Serialize;
 
-use crate::project::{Project, Setting, PO_VERSION};
-use crate::{inbox, next, output, run, trust};
-
-pub use framing::{Framing, Milestone};
-pub use lanes::{Lane, Stage};
+use crate::context::{BlockedBy, Context, Framing, Milestone, Stage, Warning};
+use crate::project::Project;
+use crate::{next, output, run, trust};
 
 #[derive(Serialize, Clone, Debug, PartialEq)]
-#[serde(tag = "code", rename_all = "kebab-case")]
-pub enum Warning {
-    MethodVersionMismatch { po: String, project: String },
-    MissingSetting { setting: String },
-    UnreadableSetting { setting: String },
-    OrphanWorktree { path: String, branch: Option<String> },
-    UnreadableDecision { path: String },
-    NoGate { story: String },
-}
-
-#[derive(Default)]
-pub struct Warnings(Vec<Warning>);
-
-impl Warnings {
-    pub fn push(&mut self, warning: Warning) {
-        if !self.0.contains(&warning) {
-            self.0.push(warning);
-        }
-    }
+pub struct Lane {
+    pub story: String,
+    pub stage: Option<Stage>,
+    pub next: Option<next::NextAction>,
+    pub blocked_by: Option<BlockedBy>,
 }
 
 #[derive(Serialize)]
@@ -52,41 +31,6 @@ pub struct State {
     pub warnings: Vec<Warning>,
 }
 
-/// The settings `po state` reads, each either a value or the warning already given for it.
-pub struct Settings<'a> {
-    project: &'a Project,
-}
-
-impl Settings<'_> {
-    /// A value, or `None` after a `missing-setting` warning.
-    pub fn required(&self, name: &str, warnings: &mut Warnings) -> Option<String> {
-        match self.project.setting(name) {
-            Setting::Value(value) => Some(value),
-            Setting::Missing => {
-                warnings.push(Warning::MissingSetting { setting: name.to_string() });
-                None
-            }
-        }
-    }
-
-    /// Like `required`, but `—` cannot be used either and is named `unreadable-setting`.
-    pub fn usable(&self, name: &str, warnings: &mut Warnings) -> Option<String> {
-        let value = self.required(name, warnings)?;
-        if value == "—" {
-            warnings.push(Warning::UnreadableSetting { setting: name.to_string() });
-            return None;
-        }
-        Some(value)
-    }
-
-    pub fn optional(&self, name: &str) -> Option<String> {
-        match self.project.setting(name) {
-            Setting::Value(value) => Some(value),
-            Setting::Missing => None,
-        }
-    }
-}
-
 pub fn main(args: &[String]) -> i32 {
     let options = match trust::state_options(args) {
         Ok(options) => options,
@@ -102,83 +46,43 @@ pub fn main(args: &[String]) -> i32 {
             "not inside a Polype project: no AGENTS.local.md nor .polype/version at the repository root",
         );
     };
-    output::reply(read(&project, &options), output::OK)
+    let context = Context::read(project);
+    output::reply(compose(&context, &options), output::OK)
 }
 
-fn read(project: &Project, options: &trust::StateOptions) -> State {
-    let mut warnings = Warnings::default();
-    let settings = Settings { project };
-
-    let method_version = project.method_version();
-    if let Some(found) = &method_version {
-        if found != PO_VERSION {
-            warnings.push(Warning::MethodVersionMismatch {
-                po: PO_VERSION.to_string(),
-                project: found.clone(),
-            });
-        }
-    }
-
-    let target = settings.usable("Target branch", &mut warnings);
-    let commit = target.as_deref().and_then(|target| project.commit(target));
-    let stories = target.as_deref().map(|target| framing::Stories::read(project, target));
-    let shipped = target.as_deref().map(|target| lanes::Shipped::read(project, target));
-
-    let framing = if project.has_local_md() {
-        target.as_deref().and_then(|target| {
-            framing::framing(project, &settings, target, stories.as_ref()?, &mut warnings)
-        })
-    } else {
-        Some(Framing::setup())
-    };
-    let milestone = match (&stories, &shipped) {
-        (Some(stories), Some(shipped)) => framing::milestone(stories, shipped),
-        _ => None,
-    };
-
-    let lanes = match (stories.as_ref(), shipped.as_ref()) {
-        (Some(stories), Some(shipped)) => lanes::lanes(project, &settings, stories, shipped, &mut warnings),
-        _ => {
-            settings.usable("Worktree root", &mut warnings);
-            None
-        }
-    };
-
-    let waiting = waiting(project, &settings, &mut warnings);
-
+fn compose(context: &Context, options: &trust::StateOptions) -> State {
+    let waiting = context.inbox.as_ref().map(|inbox| {
+        inbox
+            .decisions
+            .iter()
+            .filter(|decision| decision.status == "pending")
+            .map(|decision| decision.id.clone())
+            .collect()
+    });
+    let lanes = context.lanes.as_ref().map(|lanes| {
+        lanes
+            .iter()
+            .map(|lane| Lane {
+                story: lane.story.clone(),
+                stage: lane.stage,
+                next: next::lane_next(context, lane),
+                blocked_by: lane.blocked_by,
+            })
+            .collect()
+    });
     State {
-        project: project.name(),
-        commit,
-        method_version,
-        framing,
-        milestone,
-        session: run::session(),
-        bounds: run::bounds(),
+        project: context.project.name(),
+        commit: context.commit.clone(),
+        method_version: context.method_version.clone(),
+        framing: context.framing.clone(),
+        milestone: context.milestone.clone(),
+        session: run::session(context),
+        bounds: run::bounds(context),
         waiting,
         lanes,
-        ready: next::ready(),
-        held: next::held(),
-        shipped: trust::shipped(options),
-        warnings: warnings.0,
-    }
-}
-
-fn waiting(project: &Project, settings: &Settings, warnings: &mut Warnings) -> Option<Vec<String>> {
-    let setting = settings.usable("Decision inbox", warnings)?;
-    let dir = {
-        let path = PathBuf::from(&setting);
-        if path.is_absolute() { path } else { project.root.join(path) }
-    };
-    match inbox::pending_ids(&dir) {
-        Ok(pending) => {
-            for path in pending.unreadable {
-                warnings.push(Warning::UnreadableDecision { path: path.display().to_string() });
-            }
-            Some(pending.ids)
-        }
-        Err(_) => {
-            warnings.push(Warning::UnreadableDecision { path: dir.display().to_string() });
-            None
-        }
+        ready: next::ready(context),
+        held: next::held(context),
+        shipped: trust::shipped(context, options),
+        warnings: context.warnings.list().to_vec(),
     }
 }
