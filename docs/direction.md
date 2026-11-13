@@ -18,12 +18,12 @@ Les principes tiennent : rien hors d'une story, celui qui écrit ne juge pas, de
 
 ## La direction
 
-Ce qu'un script peut décider ou écrire quitte la prose et le modèle. La méthode ne grandit plus que tirée par un produit ([ADR-0108](decisions/ADR-0108-un-jalon-de-methode-nait-d-un-defaut-vu-sur-un-produit.md), proposée).
+Ce qu'un script peut décider ou écrire quitte la prose et le modèle. La méthode ne grandit plus que tirée par un produit ([ADR-0108](decisions/ADR-0108-un-jalon-de-methode-nait-d-un-defaut-vu-sur-un-produit.md)), ou d'une décision stratégique écrite du porteur.
 
 | Jalon | Ce qu'il livre | État |
 | --- | --- | --- |
-| **M20 — Le ménage** | la suite sur chaque pull request, les défauts vus sur les produits et les restes de revue fermés | cadré, à relire puis à construire |
-| **M21 — L'interface** | l'état en JSON, la boîte de décisions, la réponse, les rapports écrits par un script, le pilote en automate, le lancement, les signaux de confiance | cadré, attend M20 et trois ADR |
+| **M20 — Le ménage** | la suite sur chaque pull request, les défauts vus sur les produits et les restes de revue fermés | cadré, relu puis construit |
+| **M21 — L'interface** | l'état en JSON, la boîte de décisions, la réponse, les rapports écrits par un script, le pilote en automate, le lancement, les signaux de confiance | cadré pour bash, à reprendre par `/po-stories` pour un binaire Rust ([ADR-0106](decisions/ADR-0106-le-pilote-devient-un-automate-en-code.md)) une fois D11 et D12 tranchées |
 | **M22 — La preuve par le comportement** | un parcours rejouable de bout en bout, le retrait des tests de phrase, le budget de mots, les bras de contrôle, une seule commande d'entrée, le ship en script | à cadrer quand M21 est livré |
 
 Ensuite, Polype sert les projets qui l'utilisent et ne change que quand l'un d'eux bute sur lui.
@@ -34,7 +34,7 @@ Faut-il changer l'ordre et la forme des commandes ? Les étapes et leurs portes,
 
 - **Les étapes restent** : recherche, design, plan avec son oracle, exécution, QA, revue, ship. C'est l'ordre de la Law 1 ; la flotte, qui fait passer le designer après le planner, s'y aligne (#184).
 - **Une seule commande fait avancer le travail** : `/po-drive`, avec un id pour une seule story. `/po-orchestrator` et `/po-flow` disparaissent comme commandes, la voie courte devenant une valeur que l'automate lit ([ADR-0109](decisions/ADR-0109-une-seule-commande-fait-avancer-le-travail.md), proposée, #210). Pas avant s168.
-- **Ce qui est déterministe devient un script** : l'état (`po-state`), l'écriture d'un rapport (`po-record`), le routage (`po-state next`), puis le ship (#211). Le modèle garde ce qui demande du jugement : cadrer, planifier, écrire, relire, parler à la personne.
+- **Ce qui est déterministe devient du code** : l'état (`po-state`), l'écriture d'un rapport (`po-record`), le routage (`po-state next`), puis le ship (#211). L'automate est un binaire Rust (ADR-0106). Le modèle garde ce qui demande du jugement : cadrer, planifier, écrire, relire, parler à la personne.
 - **Une story de complexité 1 ou 2** garde toutes ses portes et passe par trois contextes, le minimum de la Law 2 : un planner, un implementer, un relecteur. Ce qui l'allège, ce sont les mots que chacun lit, pas une porte en moins.
 - **La chaîne de cadrage** ne tourne qu'une fois par projet et ne change pas, à une question près : fixer l'architecture avant de découper les stories, pour que les `Owns` portent sur des chemins connus ([ADR-0110](decisions/ADR-0110-l-architecture-se-fixe-avant-le-decoupage.md), proposée, #212).
 - **Un agent extérieur** n'appelle aucune de ces commandes : il passe par `po-agent`.
@@ -52,7 +52,7 @@ Rien de ceci n'est remis en cause, et M20 à M22 le respectent :
 
 ## Ce qu'on ne fait plus
 
-- Ouvrir un jalon de méthode sans défaut vu sur un produit. Les idées attendent en issues `parked`.
+- Ouvrir un jalon de méthode sans défaut vu sur un produit ni décision stratégique écrite du porteur. Les idées attendent en issues `parked`.
 - Ajouter une règle en prose sans en retirer une : le nombre de mots de `method/` ne monte pas.
 - Écrire un test qui cherche une phrase qu'aucun script ne lit. Un test porte sur un script, ou sur un champ qu'un script lit.
 - Corriger un écart d'interprétation par une phrase de plus quand un script peut tenir la règle.
@@ -62,7 +62,9 @@ Rien de ceci n'est remis en cause, et M20 à M22 le respectent :
 
 ## Par où reprendre
 
-1. Lire [`a-trancher.md`](a-trancher.md) et poser D1 à D4 au porteur, une à la fois : ce sont les ADR proposées dont M20 et M21 dépendent, et aucune story qui en dépend ne se planifie avant. D5 à D10 peuvent attendre.
-2. Passer les ADR tranchées à `accepted` (ou les récrire selon la réponse) par une pull request de cadrage.
-3. `/po-stories-review` sur M20 et M21.
-4. `/po-drive` sur M20.
+D1 à D4 ont été tranchées le 2026-11-13 : les ADR-0105 à ADR-0108 sont `accepted`.
+
+1. `/po-stories-review`, puis `/po-drive` sur M20, qui ne dépend que de l'ADR-0105.
+2. Poser D11 et D12 de [`a-trancher.md`](a-trancher.md) au porteur, une à la fois : la distribution du binaire Rust et ce qui y entre. Aucune story de M21 ne se planifie avant.
+3. `/po-stories` reprend s164 à s170 pour le binaire Rust et la boîte à emplacement réglable, puis `/po-stories-review`.
+4. `/po-drive` sur M21. D5 à D10 peuvent attendre.

@@ -1,8 +1,8 @@
 ---
 adr: 0108
 title: Un jalon de méthode naît d'un défaut vu sur un produit
-status: proposed
-date: 2026-11-12
+status: accepted
+date: 2026-11-13
 scope: framing
 supersedes: []
 superseded-by: []
@@ -19,9 +19,9 @@ Au 2026-11-12, Polype a livré 158 stories sur lui-même pour 79 stories sur les
 - **Tirer la méthode par les produits, sous budget** — voir ci-dessous.
 
 ## Decision Outcome
-Proposé, à trancher par le porteur. Recommandation : **tirer la méthode par les produits, sous budget**, en quatre règles.
+Chosen option: **tirer la méthode par les produits, sous budget**, tranché par le porteur le 2026-11-13, qui y ajoute sa propre voie d'ouverture (règle 1). Quatre règles.
 
-1. Après M22, un jalon de méthode ne s'ouvre que pour un défaut vu sur un produit, cité dans son objectif. Une idée sans défaut reste une issue étiquetée `parked`.
+1. Après M22, un jalon de méthode ne s'ouvre que pour un défaut vu sur un produit, cité dans son objectif, ou par une décision stratégique écrite du porteur, qui dit quel produit ou quel usage elle sert. Aucun agent n'ouvre un jalon de méthode seul. Une idée sans défaut ni décision reste une issue étiquetée `parked`.
 2. Une règle en prose n'entre dans `method/` que si une autre en sort : le budget de mots, contrôlé par `po-lint` (#208), ne monte pas.
 3. Ce qu'un script peut décider ou écrire n'est pas confié à un modèle : état, routage, forme d'un rapport, validation d'une réponse.
 4. Une règle se prouve par un comportement rejoué (#206) ou par un bras de contrôle de `po-eval` (#208), pas par la présence de sa phrase ; les tests de phrase qui ne sont lus par aucun script sont retirés (#207).
@@ -31,4 +31,5 @@ M20 à M22 sont l'exception qui met ces règles en place.
 ### Consequences
 - Good, because le temps passé sur Polype se justifie par un produit qui avance.
 - Bad, because des améliorations plausibles attendent qu'un produit en ait besoin (audit planifié, story d'exploration, plateforme desktop, portage Codex).
+- Neutral: après M22, la méthode avance par les défauts que les produits rencontrent, par les signaux de confiance (s170) et par les corrections hors jalon ; une amélioration de fond passe par la décision écrite du porteur.
 - Neutral: un constat de revue sur Polype lui-même reste déposé (Law 7) ; il n'ouvre pas un jalon à lui seul.
