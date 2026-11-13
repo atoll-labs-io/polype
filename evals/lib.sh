@@ -146,7 +146,11 @@ MD
 A small notes service: users of a tenant write notes, read their own and may share some with their tenant.
 MD
 
-  bash "$POLYPE_ROOT/bin/polype" install "$repo" >/dev/null
+  # The install also lays the machine's po (ADR-0117): a throwaway config keeps the real one untouched.
+  local config
+  config="$(mktemp -d)"
+  CLAUDE_CONFIG_DIR="$config" bash "$POLYPE_ROOT/bin/polype" install "$repo" >/dev/null
+  rm -rf "$config"
   git -C "$repo" add -A
   git -C "$repo" commit -q -m "Notes service with Polype installed"
 }

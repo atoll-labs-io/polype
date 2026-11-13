@@ -4,6 +4,7 @@
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 METHOD="$ROOT/method"
+PO="${CARGO_TARGET_DIR:-$ROOT/po/target}/release/po"
 
 # Throwaway repositories must not depend on the developer's global git configuration.
 export GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_NOSYSTEM=1

@@ -2,14 +2,14 @@
 
 Polype est du côté de l'intelligence : il cadre, planifie, écrit, relit. Polype reste une brique indépendante et ne suppose aucun agent en particulier. Un agent extérieur, quel qu'il soit (une interface de discussion, un ordonnanceur, ou par exemple un assistant vocal local qui sert de majordome), ne fait que passer les plats : il demande où en est un projet, lit au porteur ce qui l'attend, rapporte sa réponse, lance ou reprend le travail. Il n'a rien à comprendre de la méthode et ne lit jamais de prose.
 
-Ce document est le contrat de cette interface, **version 1**. Il est écrit avant le code : les stories s164 à s173 de [`stories.md`](stories.md) le construisent, et l'[ADR-0107](decisions/ADR-0107-un-agent-exterieur-interroge-polype-par-une-commande-et-du-json.md) en fixe le transport. Tant que ces stories ne sont pas livrées, rien de ce qui suit n'existe ; la boîte provisoire est [`a-trancher.md`](a-trancher.md). Depuis les décisions du 2026-11-13, la commande est le binaire Rust `po`, un par machine ([ADR-0106](decisions/ADR-0106-le-pilote-devient-un-automate-en-code.md), [ADR-0117](decisions/ADR-0117-un-binaire-po-par-machine.md)), et l'emplacement de la boîte est un réglage : ce qui suit nomme encore `po-agent.sh`, `po-record` et `.polype/inbox/`, que s164 et s169 reprennent avec le code.
+Ce document est le contrat de cette interface, **version 1**. Il est écrit avant le code : les stories s164 à s173 de [`stories.md`](stories.md) le construisent, et l'[ADR-0107](decisions/ADR-0107-un-agent-exterieur-interroge-polype-par-une-commande-et-du-json.md) en fixe le transport. La commande est le binaire Rust `po`, un par machine ([ADR-0106](decisions/ADR-0106-le-pilote-devient-un-automate-en-code.md), [ADR-0117](decisions/ADR-0117-un-binaire-po-par-machine.md)). Depuis s164, `state` existe ; chaque autre verbe répond `not-built` (code 2) jusqu'à la story qui le construit. Tant qu'un verbe n'est pas livré, la boîte provisoire de ce qu'il couvre reste [`a-trancher.md`](a-trancher.md).
 
 ## La commande
 
-Une commande par projet, lancée depuis n'importe où :
+Un binaire par machine, posé par l'installeur (voir [`installation.md`](installation.md), « Le binaire `po` »), lancé depuis la racine d'un projet ou depuis un de ses worktrees, qui répond pour le checkout principal :
 
 ```
-<projet>/.polype/hooks/po-agent.sh <verbe> [arguments]
+${CLAUDE_CONFIG_DIR:-$HOME/.claude}/polype/po <verbe> [arguments]
 ```
 
 | Verbe | Effet | Écrit quelque chose |
@@ -21,10 +21,12 @@ Une commande par projet, lancée depuis n'importe où :
 | `run` | lance le chef de projet sur le projet | oui, une session |
 | `continue` | relance le chef de projet après une réponse | oui, une session |
 
+Le binaire déclare aussi `next` et `record`, les verbes du chef de projet ; ils ne font pas partie de ce contrat.
+
 Règles communes :
 
 - La sortie standard est un seul objet JSON, toujours, y compris en cas d'échec ; rien d'autre n'y est écrit.
-- Le code de sortie vaut `0` quand la demande est faite, `1` quand elle est refusée (réponse hors liste, session déjà en cours), `2` quand elle ne peut pas être lue ou exécutée (hors d'un projet Polype, `jq` absent).
+- Le code de sortie vaut `0` quand la demande est faite, `1` quand elle est refusée (réponse hors liste, session déjà en cours), `2` quand elle ne peut pas être lue ou exécutée : hors d'un projet Polype (`not-a-project`), un verbe inconnu (`unknown-verb`), aucun verbe (`usage`), une option inconnue (`unknown-option`), un verbe pas encore construit (`not-built`), une erreur interne (`internal`).
 - Tout objet porte `"contract": 1`. Un champ ajouté ne change pas ce numéro ; un champ retiré ou renommé le change.
 - Un refus ou un échec a la forme `{"contract": 1, "error": "<code stable>", "message": "<une phrase>"}`.
 - Une valeur que Polype ne peut pas lire vaut `null`. Elle n'est jamais devinée.
@@ -37,7 +39,7 @@ Règles communes :
   "contract": 1,
   "project": "polype",
   "commit": "0648923",
-  "method_version": "0648923",
+  "method_version": "0.2.0",
   "framing": {"stage": "done", "next": null},
   "milestone": {"id": "M20", "stories": 5, "shipped": 0},
   "session": {"running": false, "id": null},
@@ -68,14 +70,23 @@ Règles communes :
         "cost_usd": null
       }
     }
-  ]
+  ],
+  "warnings": []
 }
 ```
 
-- `framing.stage` : `setup`, `scope`, `stories`, `stories-review`, `architecture`, `design-system` ou `done` ; `next` est la commande à lancer, ou `null`.
-- `lanes[].stage` : `research`, `design`, `plan`, `execute`, `qa`, `review`, `ship`. `next.action` est l'une de `plan`, `validate-plan`, `design`, `execute`, `qa`, `review`, `fix`, `ship`, `wait`, `ask` ; `reason` nomme la porte ou le fichier qui en décide.
+- Un projet Polype a `AGENTS.local.md` ou `.polype/version` à la racine de son checkout principal ; ses réglages sont lus dans cet `AGENTS.local.md`, sur le disque.
+- `project` est le nom du dossier du projet ; `commit` le commit court de `Target branch` ; `method_version` la première ligne de `.polype/version`.
+- `milestone` est la première section `## M…` de `docs/stories.md` sur `Target branch` qui tient une story pas encore livrée, `id` étant le titre avant ` — ` ; `null` quand toutes le sont.
+- `waiting` liste, triés, les `id` des décisions `pending` du dossier que nomme le réglage `Decision inbox` (`.polype/inbox/` dans le gabarit), lu depuis la racine du projet ou absolu ; `[]` quand le dossier manque.
+
+- `framing.stage` : `setup`, `scope`, `stories`, `stories-review`, `architecture`, `design-system` ou `done` ; `next` est la commande à lancer, ou `null`. Les règles sont celles de `po-session`.
+- `lanes[].stage` : `research`, `design`, `plan`, `execute`, `qa`, `review`, `ship`, ou `null` quand il ne peut pas être lu. La première règle qui s'applique décide, chaque gate étant le `po-gate` du worktree lancé dans ce worktree : story livrée → `ship` ; sans plan → `research` sans recherche, `design` quand la story a un écran et que `docs/designs/<id>/design.md` manque, sinon `plan` ; `plan-validated` refuse → `plan` ; `ship-allowed` passe → `ship` ; `verif-current` refuse → `execute` ; la story va en QA et `qa-current` refuse → `qa` ; sinon `review`. Une revue bloquée sur un code inchangé reste donc `review`, et une lane livrée encore sur le disque est `ship`, son nettoyage.
+- `lanes[].blocked_by` : le premier arrêt qui attend une personne, `root-cause-not-found`, `technical-choice`, `qa-blocked`, `max-attempts` ou `merge-waiting`, sinon `null`. `next.action` est l'une de `plan`, `validate-plan`, `design`, `execute`, `qa`, `review`, `fix`, `ship`, `wait`, `ask` ; `reason` nomme la porte ou le fichier qui en décide.
 - `held[].reason` : `dependency` (une story dont elle dépend n'est pas livrée), `owns` (une lane en cours tient un de ses chemins), `decision` (une décision attend, `ref` la nomme), `parallel` (la limite `Parallel` est atteinte).
 - `bounds` : `held` quand les bornes des subagents seront tenues dans une session lancée par `run`, `unproven` sinon.
+- `session`, `bounds`, `ready`, `held`, `shipped` et `lanes[].next` valent `null` tant que la story qui les calcule n'est pas livrée.
+- `warnings` est toujours une liste d'objets portant un `code` : `method-version-mismatch` (`po`, `project` : `po` et le projet n'ont pas la même version), `missing-setting` et `unreadable-setting` (`setting`), `orphan-worktree` (`path`, `branch`, `null` sur une tête détachée), `unreadable-decision` (`path`), `no-gate` (`story` : son worktree n'a pas de `po-gate`). Un champ qu'un réglage absent empêche de lire vaut `null`.
 
 ### Les signaux de confiance
 
@@ -88,7 +99,7 @@ Lus dans les fichiers que le pipeline écrit déjà, pour chaque story livrée (
 | `fix_loops` | un entier | `docs/reviews/<id>.md` |
 | `max_severity` | `none`, `minor`, `major`, `critical` | la dernière ligne `Max severity:` de la revue |
 | `not_verified` | un entier | le nombre d'entrées de `## Not verified` de la revue |
-| `method_version` | un identifiant | l'estampille que `po-record` pose dans la revue |
+| `method_version` | un identifiant | l'estampille que `po record` pose dans la revue |
 | `duration_s`, `cost_usd` | un nombre ou `null` | le relevé, quand il les porte |
 
 Un agent extérieur n'a pas à juger ces signaux : il les rapporte. Celui qui en décide est le porteur, ou le grand modèle à qui il délègue.
