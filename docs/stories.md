@@ -2633,7 +2633,7 @@ Objectif : que Polype se pilote par une commande qui rend du JSON, et non par de
 - **Dépend de** : s165-decision-inbox
 - **Surface** : command
 - **Corrige** : issue #204 en partie (`Issue tracker: github`)
-- **Owns** : `po/src/inbox/`, `method/AGENTS.md`, `tests/answer-comes-back.oracle.test.sh`, `tests/answer-comes-back.test.sh`, `tests/state-as-json.oracle.test.sh`
+- **Owns** : `po/src/inbox/`, `method/AGENTS.md`, `tests/answer-comes-back.oracle.test.sh`, `tests/answer-comes-back.test.sh`, `tests/state-as-json.oracle.test.sh`, `docs/interface-agent.md`
 
 **Critères d'acceptation**
 - [ ] `answer_accepts_only_a_listed_option` — `po answer <id> <key>` passe la décision à `"status": "answered"` avec `answer.key` et `answer.at`, et la rend ; une `key` hors de `options` sort en 1 avec `"error": "not-an-option"` et ne change pas le fichier.
