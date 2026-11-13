@@ -1,0 +1,23 @@
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  suite:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          # A pull request's head, checked out as a local branch: the suite clones this checkout and runs
+          # git pull in the clone, which the default detached merge commit refuses. On push, ref is empty
+          # and the pushed branch is checked out as usual.
+          repository: ${{ github.event.pull_request.head.repo.full_name || github.repository }}
+          ref: ${{ github.head_ref }}
+      - run: command -v jq >/dev/null || if [ "$(id -u)" = 0 ]; then apt-get update && apt-get install -y jq; else sudo apt-get update && sudo apt-get install -y jq; fi
+      - run: bin/po-ci

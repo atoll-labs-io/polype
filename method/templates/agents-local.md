@@ -2,7 +2,7 @@
 
 This file is the project's. Polype's installer never rewrites it; `/po-setup` writes it once and you edit it afterwards. Rules live in `AGENTS.md`, which the installer regenerates — do not edit that one.
 
-Format: one `Name: value` per line inside the blocks below, with no comment after the value (anything after the colon is the value, except a final `(forge)` or `(chosen)` on `Ship confirmation`, which records where the value came from). After a change, rerun the installer so the conventions at the bottom reach `AGENTS.md`.
+Format: one `Name: value` per line inside the blocks below, with no comment after the value (anything after the colon is the value, except a final `(forge)` or `(chosen)` on `Ship confirmation`). Rerun the installer after a change so the conventions reach `AGENTS.md`.
 
 ## Pipeline
 
@@ -36,14 +36,15 @@ Model strong:      opus
 Model light:       sonnet
 Light up to:       2
 Project CLAUDE file: absorbed
+Forge checks:      —
 ```
 
 | Setting | Values |
 | --- | --- |
 | Merge mode | `pr` — a pull request to the target branch, landed as one commit · `local` — only for a repository without a remote: the commit lands on this machine and nothing is pushed |
 | Target branch | where finished stories land |
-| Plan validation | `human` — you approve each plan · `autonomous` — the planner approves its own and says so; the default, since a human is asked only for the reasons ADR-0077 names |
-| Ship confirmation | `human` — you approve each merge · `automatic` — the review gate is enough. A final `(forge)` means the value follows the repository and `/po-ship` keeps it in line at each ship; `(chosen)` is the person's choice on a solo repository, never rewritten by an agent; no suffix reads `(forge)`. A collaborative repository gives `human (forge)` whatever the line says |
+| Plan validation | `human` — you approve each plan · `autonomous` — the planner approves its own and says so (ADR-0077) |
+| Ship confirmation | `human` — you approve each merge · `automatic` — the review gate is enough. A final `(forge)` follows the repository, kept in line by `/po-ship`; `(chosen)`, the person's choice on a solo repository, is never rewritten; no suffix reads `(forge)`. A collaborative repository gives `human (forge)` whatever the line says |
 | Test budget | maximum tests per story before the plan must justify more |
 | Verification mode | `record` — a review reuses a current verification record · `rerun` — a review repeats the checks |
 | Full suite | where the complete unit suite runs: `execute-end` · `ship` · `both` |
@@ -69,6 +70,7 @@ Project CLAUDE file: absorbed
 | Model light | the model the implementer runs on for a story whose complexity is at most `Light up to`: a name the Agent tool accepts, or `—` for the session's model |
 | Light up to | highest story complexity whose implementer runs on `Model light`; `—` means never |
 | Project CLAUDE file | `absorbed` — the installer moves a root `CLAUDE.md` or `CLAUDE.local.md` into `AGENTS.local.md` and the pre-commit refuses one at any depth (ADR-0086) · `kept` — both stay, the root `CLAUDE.md` starts with `@AGENTS.md` and the pre-commit lets them through (ADR-0089); with the line missing nothing is touched, and the installer, `check` and `po-session` name the setting |
+| Forge checks | `required` — `/po-ship` merges only once the forge's checks pass on the landing commit · `—` — no such wait; a missing line reads `—` and is named |
 
 ## Commands
 
@@ -82,7 +84,7 @@ Build:             —
 Dev:               —
 ```
 
-Agents run these exactly as written. `—` means the project has no such command, and no agent will make one up. `Test` has to accept paths to test files, so a single task's tests can run alone. `Dev` starts the development server, or whatever serves what a person looks at (the web render of a mobile app), and prints the address it serves; `—` when the project has nothing to serve. QA of a `screen` surface needs it; the other drivers start what they check themselves.
+Agents run these exactly as written; `—` means none, and no agent makes one up. `Test` has to accept paths to test files, so a single task's tests can run alone. `Dev` starts the development server, or whatever serves what a person looks at (the web render of a mobile app), and prints the address it serves; `—` when the project has nothing to serve. QA of a `screen` surface needs it; the other drivers start what they check themselves.
 
 ## Conventions
 
