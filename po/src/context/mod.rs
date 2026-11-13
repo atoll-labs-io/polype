@@ -14,7 +14,7 @@ use crate::project::{Project, Setting, PO_VERSION};
 
 pub use framing::{Framing, Milestone};
 pub use lanes::{BlockedBy, Lane, LaneSettings, Landed, Stage};
-pub use stories::Stories;
+pub use stories::{Stories, Story};
 
 #[derive(Serialize, Clone, Debug, PartialEq)]
 #[serde(tag = "code", rename_all = "kebab-case")]

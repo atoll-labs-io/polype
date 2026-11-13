@@ -1,0 +1,13 @@
+# po-drive.md, ## Checks: QA stage missing stops only the lanes of stories that would need it.
+# Each case_ function builds one project state; tests/driver-next-action.oracle.test.sh replays it.
+
+case_checks_01_qa_stage_missing() {
+  setting 'QA stage' -
+  story s01-alpha command -
+  story s02-bravo — -
+  start
+  recorded_lane s01-alpha
+  recorded_lane s02-bravo
+  expect_lane s01-alpha ask 'setting unreadable: QA stage'
+  expect_lane s02-bravo review 'no review'
+}

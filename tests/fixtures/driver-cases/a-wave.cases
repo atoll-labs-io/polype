@@ -1,0 +1,36 @@
+# po-drive.md, ## A wave (### Preparing the lanes, ### Dispatching): the design stage's own conditions.
+# Orphan worktrees are in ready-set.cases. Each case_ function builds one project state;
+# tests/driver-next-action.oracle.test.sh replays it.
+
+# Dispatching, step 2: docs/design-system.md missing in the lane — the lane stops for /po-design-system.
+case_a_wave_01_no_design_system() {
+  story s01-alpha screen -
+  rm "$F/docs/design-system.md"
+  start
+  lane s01-alpha
+  research_in s01-alpha
+  plan_in s01-alpha yes
+  expect_lane s01-alpha ask 'no docs/design-system.md'
+}
+
+# Dispatching, step 2: Design source at — — a person chooses internal or external.
+case_a_wave_02_design_source_unset() {
+  setting 'Design source' —
+  story s01-alpha screen -
+  start
+  lane s01-alpha
+  research_in s01-alpha
+  plan_in s01-alpha yes
+  expect_lane s01-alpha ask 'Design source unset'
+}
+
+# Dispatching, step 2: a design note already on disk is the lane's design — the code stage follows.
+case_a_wave_03_design_on_disk() {
+  story s01-alpha screen -
+  start
+  lane s01-alpha
+  research_in s01-alpha
+  plan_in s01-alpha yes
+  design_in s01-alpha
+  expect_lane s01-alpha execute 'verif-current refuses'
+}
