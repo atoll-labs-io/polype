@@ -1,0 +1,48 @@
+# The decision inbox (docs/interface-agent.md, ## inbox): what a decision's `blocks` holds back.
+# Not a section of po-drive.md: s168's own rule. Each case_ function builds one project state;
+# tests/driver-next-action.oracle.test.sh replays it.
+
+# A lane a pending decision names waits for the answer.
+case_decisions_01_pending_holds_the_lane() {
+  story s01-alpha command -
+  start
+  recorded_lane s01-alpha
+  decision d-0001 pending s01-alpha
+  expect_lane s01-alpha wait 'decision d-0001'
+}
+
+# Answered but not consumed: the lead has not written what the answer produces yet.
+case_decisions_02_answered_not_consumed() {
+  story s01-alpha command -
+  start
+  recorded_lane s01-alpha
+  decision d-0001 answered s01-alpha
+  expect_lane s01-alpha wait 'decision d-0001'
+}
+
+# Answered and consumed: the lane takes its action again.
+case_decisions_03_consumed_releases() {
+  story s01-alpha command -
+  start
+  recorded_lane s01-alpha
+  decision d-0001 consumed s01-alpha
+  expect_lane s01-alpha review 'no review'
+}
+
+# A story a pending decision names is held with `decision` and the decision's id.
+case_decisions_04_pending_holds_the_story() {
+  story s01-alpha command -
+  start
+  decision d-0001 pending s01-alpha
+  expect_held s01-alpha decision d-0001
+}
+
+# A stop that went to the inbox waits there rather than asking twice.
+case_decisions_05_asked_stop_waits() {
+  story s01-alpha command -
+  start
+  lane s01-alpha
+  research_in s01-alpha 'Root cause: not found'
+  decision d-0001 pending s01-alpha
+  expect_lane s01-alpha wait 'decision d-0001'
+}

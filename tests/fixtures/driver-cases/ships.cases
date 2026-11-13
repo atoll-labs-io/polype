@@ -1,0 +1,62 @@
+# po-drive.md, ## Ships, one at a time.
+# Each case_ function builds one project state; tests/driver-next-action.oracle.test.sh replays it.
+
+# Ships never overlap: the review that passed first ships first, whatever the order of docs/stories.md.
+case_ships_01_serial_in_review_order() {
+  story s01-alpha command - 'src/a/'
+  story s02-bravo command - 'src/b/'
+  start
+  recorded_lane s01-alpha
+  review_in s01-alpha complete 0 yes
+  recorded_lane s02-bravo
+  review_in s02-bravo complete 0 yes
+  reviewed_at s01-alpha '2026-11-13 10:00'
+  reviewed_at s02-bravo '2026-11-13 09:00'
+  expect_lane s02-bravo ship 'ship-allowed passes'
+  expect_lane s01-alpha wait 'ships serial: s02-bravo'
+}
+
+# A pull request left for a person ends that ship: the next lane ships.
+case_ships_02_merge_waiting_is_not_a_ship() {
+  setting 'Merge mode' pr
+  setting 'Ship confirmation' human
+  story s01-alpha command - 'src/a/'
+  story s02-bravo command - 'src/b/'
+  start
+  recorded_lane s01-alpha
+  review_in s01-alpha complete 0 yes
+  pushed s01-alpha
+  recorded_lane s02-bravo
+  review_in s02-bravo complete 0 yes
+  reviewed_at s01-alpha '2026-11-13 09:00'
+  reviewed_at s02-bravo '2026-11-13 10:00'
+  expect_lane s01-alpha wait 'merge waiting'
+  expect_lane s02-bravo ship 'ship-allowed passes'
+}
+
+# Under an effective automatic, an open pull request resumes at the ship.
+case_ships_03_automatic_resumes_the_ship() {
+  setting 'Merge mode' pr
+  story s01-alpha command -
+  start
+  recorded_lane s01-alpha
+  review_in s01-alpha complete 0 yes
+  pushed s01-alpha
+  expect_lane s01-alpha ship 'ship-allowed passes'
+}
+
+# A landed lane's cleanup takes no place in the serial order.
+case_ships_04_cleanup_is_not_a_ship() {
+  story s01-alpha command - 'src/a/'
+  story s02-bravo command - 'src/b/'
+  start
+  recorded_lane s01-alpha
+  review_in s01-alpha complete 0 yes
+  recorded_lane s02-bravo
+  review_in s02-bravo complete 0 yes
+  reviewed_at s01-alpha '2026-11-13 09:00'
+  reviewed_at s02-bravo '2026-11-13 10:00'
+  land s01-alpha
+  expect_lane s01-alpha ship 'landed'
+  expect_lane s02-bravo ship 'ship-allowed passes'
+}

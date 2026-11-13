@@ -1,0 +1,153 @@
+# po-drive.md, ## The ready set (and ## Validating's Max attempts paragraph for the freed lane).
+# Each case_ function builds one project state; tests/driver-next-action.oracle.test.sh replays it.
+
+# Rules 1 to 3 hold: not shipped, no dependency, no Owns shared.
+case_ready_set_01_ready() {
+  story s01-alpha command - 'src/a/'
+  start
+  expect_ready s01-alpha
+}
+
+# Rule 1: a shipped story is neither ready nor held.
+case_ready_set_02_shipped() {
+  story s01-alpha command - 'src/a/'
+  start
+  land s01-alpha
+  expect_none s01-alpha
+}
+
+# Rule 2: a dependency not shipped holds the story, naming it.
+case_ready_set_03_dependency() {
+  story s01-alpha command - 'src/a/'
+  story s02-bravo command s01-alpha 'src/b/'
+  start
+  expect_ready s01-alpha
+  expect_held s02-bravo dependency s01-alpha
+}
+
+# Rule 2: every dependency shipped (by the bare number `s<n>:` here) lets the story open.
+case_ready_set_04_dependency_shipped() {
+  story s01-alpha command - 'src/a/'
+  story s02-bravo command s01-alpha 'src/b/'
+  start
+  git -C "$F" commit -q --allow-empty -m 's01: Landed under its number'
+  expect_none s01-alpha
+  expect_ready s02-bravo
+}
+
+# Rule 3: an Owns entry overlapping a running lane's holds the story, naming the lane.
+case_ready_set_05_owns_lane() {
+  story s01-alpha command - 'src/a/'
+  story s02-bravo command - 'src/a/x.txt'
+  start
+  lane s01-alpha
+  expect_held s02-bravo owns s01-alpha
+}
+
+# Rule 3: an Owns entry overlapping a story taken earlier in the same batch, in stories.md order.
+case_ready_set_06_owns_batch() {
+  story s01-alpha command - 'docs/x.md'
+  story s02-bravo command - 'docs/x.md'
+  start
+  expect_ready s01-alpha
+  expect_held s02-bravo owns s01-alpha
+}
+
+# The overlap rule: `*` takes a plain name, a folder covers what is beneath it.
+case_ready_set_07_owns_glob_overlap() {
+  story s01-alpha command - 'crates/*/Cargo.toml'
+  story s02-bravo command - 'crates/core/'
+  start
+  lane s01-alpha
+  expect_held s02-bravo owns s01-alpha
+}
+
+# The overlap rule: two different plain names at the same position are disjoint.
+case_ready_set_08_owns_names_disjoint() {
+  story s01-alpha command - 'src/a/*.ts'
+  story s02-bravo command - 'src/b/'
+  start
+  lane s01-alpha
+  expect_ready s02-bravo
+}
+
+# The overlap rule: `*` stays within one segment, so a deeper path is disjoint.
+case_ready_set_09_owns_star_one_segment() {
+  story s01-alpha command - 'src/*'
+  story s02-bravo command - 'src/a/b.ts'
+  start
+  lane s01-alpha
+  expect_ready s02-bravo
+}
+
+# The overlap rule: everything after `**` overlaps.
+case_ready_set_10_owns_double_star() {
+  story s01-alpha command - 'src/**/test.ts'
+  story s02-bravo command - 'src/a/'
+  start
+  lane s01-alpha
+  expect_held s02-bravo owns s01-alpha
+}
+
+# Stop at Parallel lanes, the lanes already running counted in.
+case_ready_set_11_parallel() {
+  setting Parallel 2
+  story s01-alpha command - 'src/a/'
+  story s02-bravo command - 'src/b/'
+  story s03-charlie command - 'src/c/'
+  story s04-delta command - 'src/d/'
+  start
+  lane s01-alpha
+  expect_ready s02-bravo
+  expect_held s03-charlie parallel
+  expect_held s04-delta parallel
+}
+
+# A lane waiting for a human merge keeps its Owns but takes no Parallel slot.
+case_ready_set_12_merge_waiting_lane() {
+  setting Parallel 1
+  setting 'Merge mode' pr
+  setting 'Ship confirmation' human
+  story s01-alpha command - 'src/a/'
+  story s02-bravo command - 'src/a/b.txt'
+  story s03-charlie command - 'src/c/'
+  start
+  lane s01-alpha
+  research_in s01-alpha
+  plan_in s01-alpha yes
+  code_in s01-alpha
+  record_in s01-alpha
+  review_in s01-alpha complete 0 yes
+  pushed s01-alpha
+  expect_lane s01-alpha wait 'merge waiting'
+  expect_held s02-bravo owns s01-alpha
+  expect_ready s03-charlie
+}
+
+# A story whose branch an orphan worktree holds gets no lane: the orphan-worktree warning names it.
+case_ready_set_13_orphan() {
+  story s01-alpha command - 'src/a/'
+  story s02-bravo command - 'src/b/'
+  start
+  orphan s01-alpha
+  expect_none s01-alpha
+  expect_ready s02-bravo
+}
+
+# Past Max attempts the lane is freed: its Owns and its slot return to the pool.
+case_ready_set_14_max_attempts_frees() {
+  setting Parallel 1
+  story s01-alpha command - 'src/a/'
+  story s02-bravo command - 'src/a/'
+  start
+  lane s01-alpha
+  research_in s01-alpha
+  plan_in s01-alpha yes
+  code_in s01-alpha
+  code_in s01-alpha 's01-alpha: fix run'
+  code_in s01-alpha 's01-alpha: fix run'
+  record_in s01-alpha
+  review_in s01-alpha complete 2 no
+  expect_lane s01-alpha ask 'Max attempts reached'
+  expect_ready s02-bravo
+}

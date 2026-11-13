@@ -1,0 +1,59 @@
+# po-drive.md, ## The verdict, and the fix runs.
+# Each case_ function builds one project state; tests/driver-next-action.oracle.test.sh replays it.
+
+# A review blocked on QA evidence gets that commit without a walk, then the reviewer at the same loop.
+case_verdict_01_qa_evidence_committed() {
+  setting 'QA stage' surfaces
+  story s01-alpha command -
+  start
+  recorded_lane s01-alpha
+  qa_in s01-alpha complete
+  review_in s01-alpha blocked 0 no 'commit it alone: git commit -m "s01-alpha: QA evidence" -- docs/qa/s01-alpha/'
+  git -C "$W" add -- docs/qa/s01-alpha
+  git -C "$W" commit -qm 's01-alpha: QA evidence' -- docs/qa/s01-alpha
+  expect_lane s01-alpha review 'review waited for QA'
+}
+
+# Still blocked on QA with two QA evidence commits since the last implementer commit — a person.
+case_verdict_02_qa_evidence_twice() {
+  setting 'QA stage' surfaces
+  story s01-alpha command -
+  start
+  recorded_lane s01-alpha
+  qa_in s01-alpha complete commit
+  review_in s01-alpha blocked 0 no '/po-qa s01-alpha, then /po-review s01-alpha'
+  qa_in s01-alpha complete commit
+  expect_lane s01-alpha ask 'QA evidence committed twice'
+}
+
+# A fix run while Fix loop is under Max attempts.
+case_verdict_03_fix_before_max() {
+  story s01-alpha command -
+  start
+  recorded_lane s01-alpha
+  code_in s01-alpha 's01-alpha: fix run'
+  record_in s01-alpha
+  review_in s01-alpha complete 1 no
+  expect_lane s01-alpha fix 'Ship allowed: no'
+}
+
+# Past Max attempts fix runs, the story goes to a human with its open findings.
+case_verdict_04_max_attempts() {
+  story s01-alpha command -
+  start
+  recorded_lane s01-alpha
+  code_in s01-alpha 's01-alpha: fix run'
+  code_in s01-alpha 's01-alpha: fix run'
+  record_in s01-alpha
+  review_in s01-alpha complete 2 no
+  expect_lane s01-alpha ask 'Max attempts reached'
+}
+
+# A blocked review whose findings-shape check could not run is not a malformed review: a person.
+case_verdict_05_shape_check_could_not_run() {
+  story s01-alpha command -
+  start
+  recorded_lane s01-alpha
+  review_in s01-alpha blocked 0 no 'a person runs po-gate findings-shape s01-alpha — the check could not run (exit 2)'
+  expect_lane s01-alpha ask 'findings-shape refused'
+}

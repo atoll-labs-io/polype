@@ -133,10 +133,10 @@ test_state_prints_one_json_object() {
       >/dev/null || fail "a field of the contract is missing from po state in $dir: $OUT"
     jq -e '.project == "project" and (.lanes | length) == 1 and .lanes[0].story == "s03-plan-approved"' <<< "$OUT" >/dev/null \
       || fail "po state in $dir does not describe the project and its one lane: $OUT"
-    jq -en --argjson o "$OUT" 'all("ready", "held", "session", "bounds", "shipped"; . as $k | $o | has($k) and .[$k] == null)' \
+    jq -en --argjson o "$OUT" 'all("session", "bounds", "shipped"; . as $k | $o | has($k) and .[$k] == null)' \
       >/dev/null || fail "a field another story computes is not present as null in $dir: $OUT"
-    jq -e 'all(.lanes[]; has("next") and .next == null)' <<< "$OUT" >/dev/null \
-      || fail "lanes[].next is not present as null in $dir: $OUT"
+    jq -e 'all(.lanes[]; .next | type == "object" and has("action") and has("reason"))' <<< "$OUT" >/dev/null \
+      || fail "lanes[].next is not an object with action and reason in $dir: $OUT"
   done
 
   mkdir -p "$SCRATCH/outside" "$SCRATCH/plain"
@@ -148,7 +148,7 @@ test_state_prints_one_json_object() {
     jq -e '.error | type == "string" and length > 0' <<< "$OUT" >/dev/null || fail "no error code outside a project: $OUT"
   done
 
-  for verb in next run continue; do
+  for verb in run continue; do
     po_in "$F" "$verb"
     [ "$STATUS" -eq 2 ] || fail "po $verb exited $STATUS instead of 2: $OUT"
     one_object "po $verb"

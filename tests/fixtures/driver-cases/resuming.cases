@@ -1,0 +1,215 @@
+# po-drive.md, ## Resuming: one case per row of the table, read top to bottom, first match wins.
+# Each case_ function builds one project state; tests/driver-next-action.oracle.test.sh replays it.
+
+# Row 1: no docs/research/<id>.md — the planner does the research and the plan.
+case_resuming_01_no_research() {
+  story s01-alpha command -
+  start
+  lane s01-alpha
+  expect_lane s01-alpha plan 'no research'
+}
+
+# Row 2: research holding `Root cause: not found`, no validated plan.
+case_resuming_02_root_cause_not_found() {
+  story s01-alpha command -
+  start
+  lane s01-alpha
+  research_in s01-alpha 'Root cause: not found'
+  expect_lane s01-alpha ask 'Root cause: not found'
+}
+
+# Row 3: plan holding `Technical choice: waiting for a human`, without validated: yes.
+case_resuming_03_technical_choice() {
+  story s01-alpha command -
+  start
+  lane s01-alpha
+  research_in s01-alpha
+  plan_in s01-alpha no 'Technical choice: waiting for a human'
+  expect_lane s01-alpha ask 'Technical choice: waiting for a human'
+}
+
+# Row 4: research present, plan absent — the plan is built on the research on disk.
+case_resuming_04_research_without_plan() {
+  story s01-alpha command -
+  start
+  lane s01-alpha
+  research_in s01-alpha
+  expect_lane s01-alpha plan 'research, no plan'
+}
+
+# Row 4 with ## Validating a wave's plans: a plan without validated: yes under Plan validation: human.
+case_resuming_05_plan_waits_for_a_human() {
+  setting 'Plan validation' human
+  story s01-alpha command -
+  start
+  lane s01-alpha
+  research_in s01-alpha
+  plan_in s01-alpha no
+  expect_lane s01-alpha validate-plan 'plan-validated refuses'
+}
+
+# Row 4 under Plan validation: autonomous: the planner resumes at its plan and approves it.
+case_resuming_06_plan_autonomous() {
+  story s01-alpha command -
+  start
+  lane s01-alpha
+  research_in s01-alpha
+  plan_in s01-alpha no
+  expect_lane s01-alpha plan 'plan-validated refuses'
+}
+
+# Row 5: plan validated, the story has a screen, docs/designs/<id>/design.md absent.
+case_resuming_07_design() {
+  story s01-alpha screen -
+  start
+  lane s01-alpha
+  research_in s01-alpha
+  plan_in s01-alpha yes
+  expect_lane s01-alpha design 'no design'
+}
+
+# Row 6: plan validated, no record.
+case_resuming_08_no_record() {
+  story s01-alpha command -
+  start
+  lane s01-alpha
+  research_in s01-alpha
+  plan_in s01-alpha yes
+  expect_lane s01-alpha execute 'verif-current refuses'
+}
+
+# Row 6: a record the gate refuses, the code having moved after it.
+case_resuming_09_stale_record() {
+  story s01-alpha command -
+  start
+  recorded_lane s01-alpha
+  code_in s01-alpha
+  expect_lane s01-alpha execute 'verif-current refuses'
+}
+
+# Row 7: record current, the story goes to QA, last QA status blocked.
+case_resuming_10_qa_blocked() {
+  setting 'QA stage' surfaces
+  story s01-alpha command -
+  start
+  recorded_lane s01-alpha
+  qa_in s01-alpha blocked commit
+  expect_lane s01-alpha ask 'QA status: blocked'
+}
+
+# Row 8: qa-current refuses a report that `is current but` not committed: the evidence commit, no walk.
+case_resuming_11_qa_evidence_uncommitted() {
+  setting 'QA stage' surfaces
+  story s01-alpha command -
+  start
+  recorded_lane s01-alpha
+  qa_in s01-alpha complete
+  expect_lane s01-alpha qa 'QA evidence not committed'
+}
+
+# Row 9: the story goes to QA and qa-current fails: the QA stage.
+case_resuming_12_qa() {
+  setting 'QA stage' surfaces
+  story s01-alpha command -
+  start
+  recorded_lane s01-alpha
+  expect_lane s01-alpha qa 'qa-current refuses'
+}
+
+# Row 10: record current, no docs/reviews/<id>.md.
+case_resuming_13_no_review() {
+  story s01-alpha command -
+  start
+  recorded_lane s01-alpha
+  expect_lane s01-alpha review 'no review'
+}
+
+# Row 11: a blocked review whose Fix loop shows it judged an earlier commit: a fix run landed after it.
+case_resuming_14_review_judged_earlier_code() {
+  story s01-alpha command -
+  start
+  recorded_lane s01-alpha
+  review_in s01-alpha complete 0 no
+  code_in s01-alpha 's01-alpha: fix run'
+  record_in s01-alpha
+  expect_lane s01-alpha review 'review judged earlier code'
+}
+
+# Row 12: Review status: blocked, a Next action naming /po-qa, the QA now current: review, same loop.
+case_resuming_15_review_waited_for_qa() {
+  setting 'QA stage' surfaces
+  story s01-alpha command -
+  start
+  recorded_lane s01-alpha
+  review_in s01-alpha blocked 0 no '/po-qa s01-alpha, then /po-review s01-alpha'
+  qa_in s01-alpha complete commit
+  expect_lane s01-alpha review 'review waited for QA'
+}
+
+# Row 13: Review status: blocked, a Next action naming po-gate findings-shape: a person (#139).
+case_resuming_16_findings_shape() {
+  story s01-alpha command -
+  start
+  recorded_lane s01-alpha
+  review_in s01-alpha blocked 0 no 'a person settles the findings shape — po-gate findings-shape s01-alpha refused the reviewer twice'
+  expect_lane s01-alpha ask 'findings-shape refused'
+}
+
+# Row 14: last Ship allowed: no — a fix run.
+case_resuming_17_fix() {
+  story s01-alpha command -
+  start
+  recorded_lane s01-alpha
+  review_in s01-alpha complete 0 no
+  expect_lane s01-alpha fix 'Ship allowed: no'
+}
+
+# Row 15: last Ship allowed: yes that ship-allowed refuses (a commit after the verdict): back to review.
+case_resuming_18_ship_allowed_refuses() {
+  story s01-alpha command -
+  start
+  recorded_lane s01-alpha
+  review_in s01-alpha complete 0 yes
+  code_in s01-alpha 's01-alpha: late commit'
+  record_in s01-alpha
+  expect_lane s01-alpha review 'ship-allowed refuses'
+}
+
+# Row 16: Ship allowed: yes, Merge mode: pr, an effective human Ship confirmation, the branch pushed.
+case_resuming_19_merge_waiting() {
+  setting 'Merge mode' pr
+  setting 'Ship confirmation' 'human (chosen)'
+  story s01-alpha command -
+  start
+  recorded_lane s01-alpha
+  review_in s01-alpha complete 0 yes
+  pushed s01-alpha
+  expect_lane s01-alpha wait 'merge waiting'
+}
+
+# Row 18: Ship allowed: yes and ship-allowed passes — the ship (row 17, a closed pull request, needs the forge).
+case_resuming_20_ship() {
+  story s01-alpha command -
+  start
+  recorded_lane s01-alpha
+  review_in s01-alpha complete 0 yes
+  expect_lane s01-alpha ship 'ship-allowed passes'
+}
+
+# Row 19 with ## Ships' cleanup paragraph: shipped while its worktree exists — /po-ship's cleanup.
+case_resuming_21_landed() {
+  story s01-alpha command -
+  start
+  recorded_lane s01-alpha
+  land s01-alpha
+  expect_lane s01-alpha ship 'landed'
+}
+
+# Row 1 read with the short track: a plan with `track: flow` stands in for the research.
+case_resuming_22_flow_plan_without_research() {
+  story s01-alpha command -
+  start
+  lane s01-alpha
+  plan_in s01-alpha yes 'track: flow'
+  expect_lane s01-alpha execute 'verif-current refuses'
+}
