@@ -13,12 +13,8 @@ use serde::Serialize;
 
 use crate::output;
 use crate::project::{Project, Setting};
-use decision::{id_number, Decision};
-
-pub struct Pending {
-    pub ids: Vec<String>,
-    pub unreadable: Vec<PathBuf>,
-}
+use decision::id_number;
+pub use decision::Decision;
 
 const REF_MAX: usize = 200;
 
@@ -101,16 +97,10 @@ fn unknown_option(usage: &str, args: &[String]) -> i32 {
     output::error(output::UNREADABLE, "unknown-option", format!("{usage}; not {}", args.join(" ")))
 }
 
-/// The ids of the pending decisions of `dir`, oldest first; a missing folder holds none. Built on
-/// the same reader as `po inbox`, so `po state` and the list never disagree.
-pub fn pending_ids(dir: &Path) -> io::Result<Pending> {
-    let (decisions, unreadable) = decision::read_dir(dir)?;
-    let ids = decisions
-        .into_iter()
-        .filter(|decision| decision.status == "pending")
-        .map(|decision| decision.id)
-        .collect();
-    Ok(Pending { ids, unreadable })
+/// Every decision of `dir` in id order, and the files that do not parse; a missing folder holds
+/// none. The same reader as `po inbox`, so the project context and the list never disagree.
+pub fn read_decisions(dir: &Path) -> io::Result<(Vec<Decision>, Vec<PathBuf>)> {
+    decision::read_dir(dir)
 }
 
 /// The project and its inbox folder, or the exit code of the refusal already printed.

@@ -4,6 +4,8 @@
 
 use serde::Serialize;
 
+use crate::context::Context;
+
 #[derive(Serialize, Clone, Debug, PartialEq)]
 pub struct Trust {
     pub checks: Option<String>,
@@ -34,6 +36,6 @@ pub fn state_options(args: &[String]) -> Result<StateOptions, String> {
     }
 }
 
-pub fn shipped(_options: &StateOptions) -> Option<Vec<Shipped>> {
+pub fn shipped(_context: &Context, _options: &StateOptions) -> Option<Vec<Shipped>> {
     None
 }

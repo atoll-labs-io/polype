@@ -5,7 +5,7 @@
 use serde::Serialize;
 
 use crate::output;
-use crate::state::Stage;
+use crate::context::{self, Context};
 
 #[derive(Serialize, Clone, Debug, PartialEq)]
 pub struct NextAction {
@@ -25,14 +25,14 @@ pub fn main(_args: &[String]) -> i32 {
     output::not_built("next")
 }
 
-pub fn lane_next(_story: &str, _stage: Option<Stage>) -> Option<NextAction> {
+pub fn lane_next(_context: &Context, _lane: &context::Lane) -> Option<NextAction> {
     None
 }
 
-pub fn ready() -> Option<Vec<String>> {
+pub fn ready(_context: &Context) -> Option<Vec<String>> {
     None
 }
 
-pub fn held() -> Option<Vec<Held>> {
+pub fn held(_context: &Context) -> Option<Vec<Held>> {
     None
 }

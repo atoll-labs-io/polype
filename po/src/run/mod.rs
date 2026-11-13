@@ -4,6 +4,7 @@
 
 use serde::Serialize;
 
+use crate::context::Context;
 use crate::output;
 
 #[derive(Serialize, Clone, Debug, PartialEq)]
@@ -27,10 +28,10 @@ pub fn resume(_args: &[String]) -> i32 {
     output::not_built("continue")
 }
 
-pub fn session() -> Option<Session> {
+pub fn session(_context: &Context) -> Option<Session> {
     None
 }
 
-pub fn bounds() -> Option<Bounds> {
+pub fn bounds(_context: &Context) -> Option<Bounds> {
     None
 }
