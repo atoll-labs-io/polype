@@ -64,7 +64,7 @@ Code is written by the `implementer` subagent, reviews are made by the `reviewer
 
 The main session of a project is its project lead (ADR-0076). While framing is missing, it leads framing in conversation with the person, one stage of Law 1 after the other; once framing is done, it runs `/po-drive` wave after wave until the milestone is done. It never writes a story's code: Law 2 binds it like any main context, and the code belongs to the `implementer`. A subagent is never the project lead: it does the one job its prompt names, then hands back.
 
-The lead answers the question it was asked first, and relaunches the fleet only when the project is waiting for it. At session start it reads the state `po-session` prints — the framing stage, the ready stories, the lanes in flight and what waits for a human — as its first picture of the project; a line `po-session` marks as presumed is confirmed with `/po-drive status` before the lead acts on it.
+The lead answers the question it was asked first, and relaunches the fleet only when the project is waiting for it. At session start it reads the state `po-session` prints, confirming a line marked presumed with `/po-drive status`, then each decision `po inbox --answered` lists: it writes what the answer produces where that lives, citing the decision's id, the id alone when `sensitive`, and runs `po inbox consume <id> <ref>`.
 
 ## What goes to the person
 

@@ -2,7 +2,7 @@
 
 Polype est du côté de l'intelligence : il cadre, planifie, écrit, relit. Polype reste une brique indépendante et ne suppose aucun agent en particulier. Un agent extérieur, quel qu'il soit (une interface de discussion, un ordonnanceur, ou par exemple un assistant vocal local qui sert de majordome), ne fait que passer les plats : il demande où en est un projet, lit au porteur ce qui l'attend, rapporte sa réponse, lance ou reprend le travail. Il n'a rien à comprendre de la méthode et ne lit jamais de prose.
 
-Ce document est le contrat de cette interface, **version 1**. Il est écrit avant le code : les stories s164 à s173 de [`stories.md`](stories.md) le construisent, et l'[ADR-0107](decisions/ADR-0107-un-agent-exterieur-interroge-polype-par-une-commande-et-du-json.md) en fixe le transport. La commande est le binaire Rust `po`, un par machine ([ADR-0106](decisions/ADR-0106-le-pilote-devient-un-automate-en-code.md), [ADR-0117](decisions/ADR-0117-un-binaire-po-par-machine.md)). `state` existe depuis s164 et `inbox` depuis s165 ; chaque autre verbe répond `not-built` (code 2) jusqu'à la story qui le construit.
+Ce document est le contrat de cette interface, **version 1**. Il est écrit avant le code : les stories s164 à s173 de [`stories.md`](stories.md) le construisent, et l'[ADR-0107](decisions/ADR-0107-un-agent-exterieur-interroge-polype-par-une-commande-et-du-json.md) en fixe le transport. La commande est le binaire Rust `po`, un par machine ([ADR-0106](decisions/ADR-0106-le-pilote-devient-un-automate-en-code.md), [ADR-0117](decisions/ADR-0117-un-binaire-po-par-machine.md)). `state` existe depuis s164, `inbox` depuis s165 et `answer` depuis s166 ; chaque autre verbe répond `not-built` (code 2) jusqu'à la story qui le construit.
 
 ## La commande
 
@@ -21,12 +21,12 @@ ${CLAUDE_CONFIG_DIR:-$HOME/.claude}/polype/po <verbe> [arguments]
 | `run` | lance le chef de projet sur le projet | oui, une session |
 | `continue` | relance le chef de projet après une réponse | oui, une session |
 
-Le binaire déclare aussi `next`, `record` et `inbox add`, les verbes du chef de projet ; ils ne font pas partie de ce contrat, sauf `inbox add`, décrit sous `## inbox` parce qu'il écrit ce que l'agent extérieur lit.
+Le binaire déclare aussi `next`, `record`, `inbox add`, `inbox --answered` et `inbox consume`, les verbes du chef de projet ; ils ne font pas partie de ce contrat, sauf `inbox add`, décrit sous `## inbox` parce qu'il écrit ce que l'agent extérieur lit, et `inbox --answered` et `inbox consume`, décrits sous `## answer` parce qu'ils changent ce que rend `inbox <id>`.
 
 Règles communes :
 
 - La sortie standard est un seul objet JSON, toujours, y compris en cas d'échec ; rien d'autre n'y est écrit.
-- Le code de sortie vaut `0` quand la demande est faite, `1` quand elle est refusée (réponse hors liste, session déjà en cours), `2` quand elle ne peut pas être lue ou exécutée : hors d'un projet Polype (`not-a-project`), un verbe inconnu (`unknown-verb`), aucun verbe (`usage`), une option inconnue (`unknown-option`), un verbe pas encore construit (`not-built`), une erreur interne (`internal`), une boîte de décisions non réglée (`no-inbox-setting`), illisible (`unreadable-decision`) ou impossible à écrire (`inbox-unwritable`).
+- Le code de sortie vaut `0` quand la demande est faite, `1` quand elle est refusée (réponse hors liste, session déjà en cours), `2` quand elle ne peut pas être lue ou exécutée : hors d'un projet Polype (`not-a-project`), un verbe inconnu (`unknown-verb`), aucun verbe (`usage`), une option inconnue (`unknown-option`), un verbe pas encore construit (`not-built`), une erreur interne (`internal`), une boîte de décisions non réglée (`no-inbox-setting`), illisible (`unreadable-decision`), impossible à écrire (`inbox-unwritable`) ou tenue par un autre `po` (`inbox-busy`).
 - Tout objet porte `"contract": 1`. Un champ ajouté ne change pas ce numéro ; un champ retiré ou renommé le change.
 - Un refus ou un échec a la forme `{"contract": 1, "error": "<code stable>", "message": "<une phrase>"}`.
 - Une valeur que Polype ne peut pas lire vaut `null`. Elle n'est jamais devinée.
@@ -135,6 +135,7 @@ Un agent extérieur n'a pas à juger ces signaux : il les rapporte. Celui qui en
 - `recommended` nomme une `key` de la liste, `why` en donne la raison en une phrase.
 - `reversible` dit si la décision se défait sans perte ; une décision difficile à défaire se lit en entier au porteur avant sa réponse.
 - `blocks` liste les stories ou les étapes de cadrage qui attendent.
+- `consumed` (`{"ref", "at"}`) n'apparaît qu'une fois la décision consommée par le chef de projet ; jusque-là, la décision a exactement la forme ci-dessus.
 - `sensitive: true` : la décision touche à la sécurité. `question` et `options` ne décrivent alors aucun moyen d'exploiter quoi que ce soit, `context` pointe un fichier hors du dépôt, et la décision n'est jamais recopiée dans git, dans une issue ni dans un journal.
 
 `inbox <id>` rend une décision seule, répondue ou non. `inbox` saute un fichier qui ne se lit pas ; `state` le signale par l'avertissement `unreadable-decision`.
@@ -162,15 +163,29 @@ Un refus n'écrit rien.
 
 `answer <id> <key>` n'accepte qu'une `key` listée dans `options` d'une décision `pending`. Tout le reste est refusé, sans rien écrire :
 
-| Cas | `error` |
-| --- | --- |
-| `<id>` inconnu | `unknown-decision` |
-| décision déjà répondue | `already-answered` |
-| `<key>` hors de la liste | `not-an-option` |
+| Cas | Code de sortie | `error` |
+| --- | --- | --- |
+| `<id>` inconnu ou qui n'a pas la forme `d-<chiffres>` | 1 | `unknown-decision` |
+| décision déjà répondue | 1 | `already-answered` |
+| `<key>` hors de la liste, clé vide comprise, comparée octet par octet, sans rognage ni casse ignorée | 1 | `not-an-option` |
+| boîte dans le dépôt que git n'ignore pas | 1 | `inbox-not-ignored` |
+| fichier de la décision qui ne se lit pas | 2 | `unreadable-decision` |
+| décision tenue par un autre `po` au-delà d'une seconde environ | 2 | `inbox-busy` |
+| écriture impossible | 2 | `inbox-unwritable` |
+| autre chose que deux arguments | 2 | `unknown-option` |
 
 Une réponse acceptée rend la décision, avec `"status": "answered"` et `"answer": {"key": "a", "at": "<date>"}`. Le porteur qui ne veut aucune des options ne répond pas par cette commande : il ouvre la session (`claude attach`) et le dit au chef de projet, qui repose une décision.
 
-Répondre ne lance rien. C'est `continue` qui relance le chef de projet ; il lit les décisions répondues, écrit ce que chacune produit là où cela doit vivre (une ADR qui passe à `accepted`, une story, une ligne de plan) en citant son `id`, puis reprend les lanes qu'elle bloquait.
+Répondre ne lance rien. C'est `continue` qui relance le chef de projet ; il lit les décisions répondues, écrit ce que chacune produit là où cela doit vivre (une ADR qui passe à `accepted`, une story, une ligne de plan) en citant son `id`, consomme chacune avec `inbox consume`, la `ref` nommant ce que la réponse a produit, puis reprend les lanes qu'elle bloquait.
+
+Le chef de projet lit avec `inbox --answered` les décisions répondues qu'il n'a pas encore consommées : `{"contract": 1, "answered": [<décision>, …]}`, la plus ancienne d'abord, `[]` quand le dossier manque. `inbox consume <id> <ref>` note dans la décision `"consumed": {"ref": "<ref>", "at": "<date>"}` et la retire de cette liste ; elle reste `answered`. La `ref` n'est pas vérifiée sur le disque, une ligne de plan n'étant pas un chemin. Les codes `unknown-decision`, `inbox-not-ignored`, `unreadable-decision`, `inbox-busy` et `inbox-unwritable` s'y appliquent comme pour `answer`, et :
+
+| Cas | Code de sortie | `error` |
+| --- | --- | --- |
+| `ref` vide une fois rognée, sur plusieurs lignes ou de plus de 200 caractères | 1 | `malformed-ref` |
+| décision encore `pending` | 1 | `not-answered` |
+| décision déjà consommée | 1 | `already-consumed` |
+| autre chose que `consume <id> <ref>` | 2 | `unknown-option` |
 
 ## `run` et `continue`
 
