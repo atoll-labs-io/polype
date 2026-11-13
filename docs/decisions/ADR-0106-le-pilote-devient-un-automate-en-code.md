@@ -1,8 +1,8 @@
 ---
 adr: 0106
 title: Le pilote devient un automate en code
-status: proposed
-date: 2026-11-12
+status: accepted
+date: 2026-11-13
 scope: framing
 supersedes: []
 superseded-by: []
@@ -22,10 +22,16 @@ Classées par les critères du porteur : libre ou auto-hébergeable, sobre en ma
 4. **Garder la prose et la raccourcir** — aucun outil nouveau. Ne change pas la nature du problème : un modèle continue d'interpréter l'automate.
 
 ## Decision Outcome
-Proposé, à trancher par le porteur. Recommandation : **l'option 1, avec un seuil de sortie écrit d'avance**. L'automate dérive l'état et calcule la prochaine action ; il ne lance aucun agent, ce que la session Claude Code continue de faire en lisant sa sortie. C'est le plus petit pas qui retire l'interprétation, et il se prouve par des cas rejoués : un état de dépôt, une action attendue. Le seuil : si `po-state.sh` dépasse 800 lignes, ou si un second harness doit le lancer hors de bash, l'option 2 est reprise par une nouvelle ADR, la table des cas servant alors de spécification.
+Chosen option: **l'option 2, un binaire Rust, dès maintenant**, tranché par le porteur le 2026-11-13. La recommandation était l'option 1 avec un seuil de sortie vers Rust à 800 lignes. Ce seuil aurait sans doute été atteint dès la première version complète de l'automate (`po-bounds.sh` compte déjà 855 lignes, `po-gate.sh` 677) : le porteur préfère écrire l'automate une seule fois, dans le langage où les états et les transitions sont vérifiés avant l'exécution, plutôt que de le réécrire quelques stories plus tard.
+
+Ce qui ne change pas avec le langage : l'automate dérive l'état et calcule la prochaine action, il ne lance aucun agent, ce que la session Claude Code continue de faire en lisant sa sortie ; il se prouve par des cas rejoués — un état de dépôt, une action attendue ; les hooks existants (`po-gate`, `po-bounds`, `po-run`, `po-intake`, `po-session`) restent en bash.
+
+Deux choix techniques en découlent et restent au porteur avant que `/po-stories` reprenne M21 : la façon de construire et de distribuer le binaire, et la liste des scripts de M21 qui y entrent (`docs/a-trancher.md`, D11 et D12).
 
 ### Consequences
-- Good, because une règle de routage devient une ligne dans une table de cas, et un changement de règle un diff lisible.
+- Good, because une règle de routage devient un cas dans une table et une branche que le compilateur oblige à traiter, et un changement de règle un diff lisible.
 - Good, because `/po-status`, `po-session` et un agent extérieur lisent le même état (ADR-0107).
+- Bad, because Polype gagne une chaîne de compilation et une distribution par plateforme, l'installeur doit poser un binaire, et la méthode tient désormais en deux langages.
+- Bad, because s164, s168 et s170, écrites pour bash, sont reprises par `/po-stories` avant tout plan, ce qui retarde M21.
 - Bad, because la parité avec le pilote en prose est à établir cas par cas, et un cas oublié change le comportement de la flotte.
 - Neutral: `/po-drive` reste une commande, réduite à exécuter ce que l'automate lui dit.

@@ -1,8 +1,8 @@
 ---
 adr: 0105
 title: La suite tourne sur chaque pull request
-status: proposed
-date: 2026-11-12
+status: accepted
+date: 2026-11-13
 scope: framing
 supersedes: []
 superseded-by: []
@@ -22,7 +22,7 @@ Classées par les critères du porteur : libre ou auto-hébergeable, sobre en ma
 4. **Un hook local `pre-push` seul** — aucun service. Ne contrôle que la machine qui pousse, se contourne, et ne dit rien du commit qu'une pull request fait atterrir.
 
 ## Decision Outcome
-Proposé, à trancher par le porteur. Recommandation : **l'option 3 maintenant, écrite pour passer à l'option 1 sans réécriture**. Le contrôle lui-même est un script du dépôt, `bin/po-ci`, qui ne connaît aucune forge ; le fichier de workflow ne fait que l'appeler, dans une syntaxe que Forgejo Actions lit aussi. L'option 1 l'emporte sur les critères du porteur, mais elle suppose un chantier de forge que rien d'autre ne réclame aujourd'hui, et l'option 2 expose la machine qui héberge le runner tant que le dépôt est public. Le jour où une forge Forgejo auto-hébergée existe (#75), seul l'endroit où le workflow tourne change.
+Chosen option: **l'option 3 maintenant, écrite pour passer à l'option 1 sans réécriture**, tranché par le porteur le 2026-11-13, qui garde l'installation d'une forge auto-hébergée comme un chantier à part (#75). Le contrôle lui-même est un script du dépôt, `bin/po-ci`, qui ne connaît aucune forge ; le fichier de workflow ne fait que l'appeler, dans une syntaxe que Forgejo Actions lit aussi. L'option 1 l'emporte sur les critères du porteur, mais elle suppose un chantier de forge que rien d'autre ne réclame aujourd'hui, et l'option 2 expose la machine qui héberge le runner tant que le dépôt est public. Le jour où une forge Forgejo auto-hébergée existe (#75), seul l'endroit où le workflow tourne change.
 
 Quelle que soit l'option : `/po-ship` lit les contrôles de la forge sur le commit d'atterrissage et ne fusionne que s'ils passent, et rendre le contrôle obligatoire sur la branche cible (protection de branche) reste un geste du porteur.
 

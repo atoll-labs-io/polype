@@ -1,8 +1,8 @@
 ---
 adr: 0107
 title: Un agent extérieur interroge Polype par une commande et du JSON
-status: proposed
-date: 2026-11-12
+status: accepted
+date: 2026-11-13
 scope: framing
 supersedes: []
 superseded-by: []
@@ -33,7 +33,13 @@ Classées par les critères du porteur : libre ou auto-hébergeable, sobre en ma
 3. **Un programme sur l'Agent SDK** — écarté avec l'option 3 de l'ADR-0106.
 
 ## Decision Outcome
-Proposé, à trancher par le porteur. Recommandation : **l'option 1 de chaque groupe**. Une commande et des fichiers suffisent à un porteur seul, ne coûtent rien quand rien ne tourne, et gardent les sujets sensibles sur la machine. `run` refuse de lancer quand il ne peut pas prouver que les bornes seront tenues. Un serveur MCP reste possible ensuite, comme couche mince.
+Chosen option: **l'option 1 de chaque groupe**, tranché par le porteur le 2026-11-13, avec deux précisions de sa part. Une commande et des fichiers suffisent à un porteur seul, ne coûtent rien quand rien ne tourne, et gardent les sujets sensibles sur la machine. `run` refuse de lancer quand il ne peut pas prouver que les bornes seront tenues.
+
+- **Transport** : la commande et le JSON d'abord ; un serveur MCP vient ensuite en couche supplémentaire, qui appelle la commande et n'a aucune logique propre. Il attend qu'un agent en ait besoin (#215, `parked`).
+- **Boîte de décisions** : des fichiers locaux hors de git, dont l'emplacement est un réglage du projet, `.polype/inbox/` par défaut. Quel que soit l'emplacement, la boîte n'entre jamais dans git. Le porteur veut pouvoir, plus tard, enregistrer les décisions prises dans une mémoire partagée entre agents : la boîte reste alors la source de ce qui attend, la mémoire reçoit une copie à la réponse, et une décision `sensitive` n'en sort pas par défaut (#216, `parked`).
+- **Lancement** : `claude --bg` depuis la racine du projet.
+
+Le langage de la commande suit l'ADR-0106, qui retient un binaire Rust : le nom et le chemin que `docs/interface-agent.md` donne à la commande sont repris par `/po-stories` une fois D11 et D12 tranchées (`docs/a-trancher.md`).
 
 ### Consequences
 - Good, because l'agent extérieur n'a rien à comprendre de Polype : il lit du JSON, répète une question, rapporte le nom d'une option.
