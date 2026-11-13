@@ -108,7 +108,7 @@ plus :
 | `method/templates/` | `.polype/templates/` |
 | `method/hooks/` | `.polype/hooks/` (rendus exécutables) |
 
-plus `AGENTS.md`, les deux lignes de `.gitignore` décrites plus bas et le hook `SessionStart`
+plus `AGENTS.md`, les trois lignes de `.gitignore` décrites plus bas et le hook `SessionStart`
 fusionné dans `.claude/settings.json` : fusionné, jamais posé, ce fichier reste hors du manifeste.
 Aucune copie des commandes, des subagents ni des skills : ils sont déjà globaux. Si
 `~/.claude/polype/version` manque, `init` le dit sur `stderr` et pose quand même le volet projet.
@@ -259,7 +259,9 @@ En plus des copies, `init` comme `install <projet>` :
   touché ; tant qu'un `CLAUDE.md` sans `@AGENTS.md` existe dans le projet, Claude Code le lit
   **à la place** d'`AGENTS.md` ;
 - ajoute au `.gitignore` la racine des worktrees (`Worktree root` lu dans `AGENTS.local.md`,
-  `.worktrees/` par défaut) et `.env*`, une seule fois chacun ;
+  `.worktrees/` par défaut) et `.env*`, une seule fois chacun, puis l'emplacement `Decision inbox`
+  du gabarit (`.polype/inbox/`), où `po` écrit les décisions qui attendent le porteur, jamais dans
+  git (ADR-0107) ; il le dit sur `stderr` quand il ajoute cette ligne ;
 - avec `--hooks`, pointe `core.hooksPath` sur `.polype/hooks` — et seulement si ce réglage est vide
   ou déjà le nôtre : un `core.hooksPath` existant est laissé tel quel, à charger de chaîner
   `.polype/hooks/pre-commit` depuis là ; ce pre-commit refuse aussi, sur toute branche, un
@@ -510,7 +512,8 @@ d'autre n'y reste, le fichier est supprimé, puis `.claude/` s'il est vide — y
 fichier ne contenait que `{}` avant la pose : `remove` ne sait pas distinguer ce cas d'un fichier
 vidé par lui.
 
-Restent intacts : `AGENTS.local.md`, `docs/`, le `.gitignore` (les deux lignes ajoutées y restent —
-un worktree encore en place ne doit pas se retrouver suivi), et tout fichier que le projet a ajouté
+Restent intacts : `AGENTS.local.md`, `docs/`, le `.gitignore` (les trois lignes ajoutées y restent —
+un worktree encore en place ne doit pas se retrouver suivi), les décisions de la boîte
+(`Decision inbox`), et tout fichier que le projet a ajouté
 sous `.claude/`, y compris ses propres commandes, ainsi que chaque copie modifiée à la main, nommée
 `modified, kept:` sur `stderr` (ADR-0092).

@@ -2,7 +2,7 @@
 
 Polype est du côté de l'intelligence : il cadre, planifie, écrit, relit. Polype reste une brique indépendante et ne suppose aucun agent en particulier. Un agent extérieur, quel qu'il soit (une interface de discussion, un ordonnanceur, ou par exemple un assistant vocal local qui sert de majordome), ne fait que passer les plats : il demande où en est un projet, lit au porteur ce qui l'attend, rapporte sa réponse, lance ou reprend le travail. Il n'a rien à comprendre de la méthode et ne lit jamais de prose.
 
-Ce document est le contrat de cette interface, **version 1**. Il est écrit avant le code : les stories s164 à s173 de [`stories.md`](stories.md) le construisent, et l'[ADR-0107](decisions/ADR-0107-un-agent-exterieur-interroge-polype-par-une-commande-et-du-json.md) en fixe le transport. La commande est le binaire Rust `po`, un par machine ([ADR-0106](decisions/ADR-0106-le-pilote-devient-un-automate-en-code.md), [ADR-0117](decisions/ADR-0117-un-binaire-po-par-machine.md)). Depuis s164, `state` existe ; chaque autre verbe répond `not-built` (code 2) jusqu'à la story qui le construit. Tant qu'un verbe n'est pas livré, la boîte provisoire de ce qu'il couvre reste [`a-trancher.md`](a-trancher.md).
+Ce document est le contrat de cette interface, **version 1**. Il est écrit avant le code : les stories s164 à s173 de [`stories.md`](stories.md) le construisent, et l'[ADR-0107](decisions/ADR-0107-un-agent-exterieur-interroge-polype-par-une-commande-et-du-json.md) en fixe le transport. La commande est le binaire Rust `po`, un par machine ([ADR-0106](decisions/ADR-0106-le-pilote-devient-un-automate-en-code.md), [ADR-0117](decisions/ADR-0117-un-binaire-po-par-machine.md)). `state` existe depuis s164 et `inbox` depuis s165 ; chaque autre verbe répond `not-built` (code 2) jusqu'à la story qui le construit.
 
 ## La commande
 
@@ -21,12 +21,12 @@ ${CLAUDE_CONFIG_DIR:-$HOME/.claude}/polype/po <verbe> [arguments]
 | `run` | lance le chef de projet sur le projet | oui, une session |
 | `continue` | relance le chef de projet après une réponse | oui, une session |
 
-Le binaire déclare aussi `next` et `record`, les verbes du chef de projet ; ils ne font pas partie de ce contrat.
+Le binaire déclare aussi `next`, `record` et `inbox add`, les verbes du chef de projet ; ils ne font pas partie de ce contrat, sauf `inbox add`, décrit sous `## inbox` parce qu'il écrit ce que l'agent extérieur lit.
 
 Règles communes :
 
 - La sortie standard est un seul objet JSON, toujours, y compris en cas d'échec ; rien d'autre n'y est écrit.
-- Le code de sortie vaut `0` quand la demande est faite, `1` quand elle est refusée (réponse hors liste, session déjà en cours), `2` quand elle ne peut pas être lue ou exécutée : hors d'un projet Polype (`not-a-project`), un verbe inconnu (`unknown-verb`), aucun verbe (`usage`), une option inconnue (`unknown-option`), un verbe pas encore construit (`not-built`), une erreur interne (`internal`).
+- Le code de sortie vaut `0` quand la demande est faite, `1` quand elle est refusée (réponse hors liste, session déjà en cours), `2` quand elle ne peut pas être lue ou exécutée : hors d'un projet Polype (`not-a-project`), un verbe inconnu (`unknown-verb`), aucun verbe (`usage`), une option inconnue (`unknown-option`), un verbe pas encore construit (`not-built`), une erreur interne (`internal`), une boîte de décisions non réglée (`no-inbox-setting`), illisible (`unreadable-decision`) ou impossible à écrire (`inbox-unwritable`).
 - Tout objet porte `"contract": 1`. Un champ ajouté ne change pas ce numéro ; un champ retiré ou renommé le change.
 - Un refus ou un échec a la forme `{"contract": 1, "error": "<code stable>", "message": "<une phrase>"}`.
 - Une valeur que Polype ne peut pas lire vaut `null`. Elle n'est jamais devinée.
@@ -136,6 +136,27 @@ Un agent extérieur n'a pas à juger ces signaux : il les rapporte. Celui qui en
 - `reversible` dit si la décision se défait sans perte ; une décision difficile à défaire se lit en entier au porteur avant sa réponse.
 - `blocks` liste les stories ou les étapes de cadrage qui attendent.
 - `sensitive: true` : la décision touche à la sécurité. `question` et `options` ne décrivent alors aucun moyen d'exploiter quoi que ce soit, `context` pointe un fichier hors du dépôt, et la décision n'est jamais recopiée dans git, dans une issue ni dans un journal.
+
+`inbox <id>` rend une décision seule, répondue ou non. `inbox` saute un fichier qui ne se lit pas ; `state` le signale par l'avertissement `unreadable-decision`.
+
+### Poser une décision : `inbox add`
+
+Le chef de projet pose une décision avec `inbox add`, qui la lit en JSON sur l'entrée standard. Il ne donne ni `id`, ni `asked`, ni `status`, ni `answer`, et aucun champ que la forme ci-dessus n'a ; `sensitive` vaut `false` et `context` `null` quand il les omet. `po` vérifie la décision, lui donne l'identifiant suivant (`d-0001`, `d-0002`…, le plus grand numéro présent plus un), la date du moment avec son décalage, le statut `pending`, l'écrit dans `<id>.json` et rend ce qu'il a écrit. Deux écritures simultanées n'obtiennent jamais le même identifiant.
+
+La boîte est le dossier que nomme le réglage `Decision inbox`, depuis la racine du checkout principal ou en chemin absolu, même lancée depuis un worktree. Elle n'entre jamais dans git (ADR-0107) : `po` n'y écrit que si le dossier est hors du dépôt, ou dans le dépôt et ignoré par git ; l'installeur ajoute l'emplacement du gabarit, `.polype/inbox/`, au `.gitignore`.
+
+| Cas | Code de sortie | `error` |
+| --- | --- | --- |
+| `Decision inbox` absent ou `—` (aussi pour `inbox` et `inbox <id>`) | 2 | `no-inbox-setting` |
+| JSON illisible, champ manquant, inconnu ou mal typé, `motive` hors liste, `question` vide, sur plusieurs lignes ou de plus de 200 caractères, moins de deux ou plus de trois `options`, `key` vide ou en double, `recommended` hors des `key`, `why` vide | 1 | `malformed-decision` |
+| décision `sensitive` dont `context` manque, est relatif ou pointe dans le dépôt | 1 | `sensitive-context-in-repo` |
+| boîte dans le dépôt que git n'ignore pas | 1 | `inbox-not-ignored` |
+| écriture impossible | 2 | `inbox-unwritable` |
+| `inbox <id>` : identifiant inconnu ou qui n'a pas la forme `d-<chiffres>` | 1 | `unknown-decision` |
+| `inbox <id>` : fichier qui ne se lit pas | 2 | `unreadable-decision` |
+| tout autre argument | 2 | `unknown-option` |
+
+Un refus n'écrit rien.
 
 ## `answer`
 

@@ -579,6 +579,20 @@ ignore_local_sums() {
     || printf '%s\n' '.claude/.polype-checksums' >> "$project/.gitignore"
 }
 
+# The decision inbox holds what waits for the person and never enters git (ADR-0107); the line is
+# the template's location, and po refuses to write into any other folder git does not ignore.
+ignore_decision_inbox() {
+  local inbox
+  inbox="$(awk '/^```/ { fence = !fence; next }
+    fence && /^Decision inbox:/ { sub(/^Decision inbox:[[:space:]]*/, ""); sub(/[[:space:]]+$/, ""); print; exit }' \
+    "$method/templates/agents-local.md")"
+  [ -n "$inbox" ] || return 0
+  touch "$project/.gitignore"
+  grep -qxF "$inbox" "$project/.gitignore" && return 0
+  printf '%s\n' "$inbox" >> "$project/.gitignore"
+  echo "polype: added $inbox to .gitignore: the decision inbox never enters git" >&2
+}
+
 # Named, never written: the project chooses its own values (ADR-0043).
 missing_settings() {
   [ "$mode" = global ] && return 0
@@ -777,6 +791,7 @@ wire_the_project() {
   assemble_agents_md
   ignore_worktrees_and_env
   ignore_local_sums
+  ignore_decision_inbox
   set_hooks_path
   wire_session_hook
   missing_settings >&2
