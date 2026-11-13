@@ -2585,46 +2585,46 @@ Objectif : remettre le dépôt d'aplomb avant de changer la façon dont Polype s
 
 ## M21 — L'interface : un agent extérieur lit l'état, voit ce qui attend, répond et relance
 
-Objectif : que Polype se pilote par des scripts qui rendent du JSON, et non par de la prose qu'un modèle réinterprète. Précisé par le porteur le 2026-11-12 : Polype reste une brique indépendante, du côté de l'intelligence, et ne suppose aucune installation particulière ; la personne peut passer par un agent extérieur quelconque (par exemple un assistant vocal local qui délègue l'intelligence à un grand modèle), qui doit pouvoir l'interroger vraiment et par lequel ses réponses reviennent (#204). Le contrat est écrit d'avance dans [`interface-agent.md`](interface-agent.md) et les stories le construisent sans le réinventer. Le même mouvement retire au modèle ce qu'un script fait mieux : dériver l'état (#203), écrire un rapport de revue ou de QA (#202, qui ferme #172, #180, #181, #186, #191, #193), calculer la prochaine action d'une lane (#203, qui ferme #139), rapporter les signaux de confiance (#205). **À reprendre avant tout plan.** Le porteur a tranché le 2026-11-13 : l'automate est un binaire Rust (ADR-0106), et non bash ; l'interface est une commande qui rend du JSON, la boîte vit dans des fichiers locaux hors de git dont l'emplacement est un réglage, le lancement passe par `claude --bg` (ADR-0107). Les stories ci-dessous ont été écrites pour bash et `jq` sous `method/hooks/` et pour une boîte fixée à `.polype/inbox/` : aucune ne se planifie telle quelle. Le porteur a tranché le même jour la distribution du binaire (ADR-0115 : précompilé par plateforme et vérifié, compilé en repli) et ce qui y entre (ADR-0116 : tout ce que M21 ajoute, les hooks restant en bash) ; `/po-stories` les reprend sur cette base. Ordre : s164, s165 (après s161) et s167 peuvent tourner ensemble ; s166 après s165 ; s168 et s169 après s166 ; s170 en dernier. La règle de M20 sur les mots de `method/` vaut ici aussi, et s168 la chiffre.
+Objectif : que Polype se pilote par une commande qui rend du JSON, et non par de la prose qu'un modèle réinterprète. Précisé par le porteur le 2026-11-12 : Polype reste une brique indépendante, du côté de l'intelligence, et ne suppose aucune installation particulière ; la personne peut passer par un agent extérieur quelconque (par exemple un assistant vocal local qui délègue l'intelligence à un grand modèle), qui doit pouvoir l'interroger vraiment et par lequel ses réponses reviennent (#204). Le contrat est écrit d'avance dans [`interface-agent.md`](interface-agent.md) et les stories le construisent sans le réinventer. Le même mouvement retire au modèle ce que du code fait mieux : dériver l'état (#203), écrire un rapport de revue ou de QA (#202, qui ferme #172, #180, #181, #186, #191, #193), calculer la prochaine action d'une lane (#203, qui ferme #139), rapporter les signaux de confiance (#205). Reprises le 2026-11-13 après les décisions du porteur : l'automate est un binaire Rust (ADR-0106), où entre tout ce que M21 ajoute, les hooks existants restant en bash (ADR-0116) ; il s'appelle `po`, il y en a un par machine, qui prévient quand sa version n'est pas celle du projet et lit ce qu'une version plus ancienne a écrit (ADR-0117) ; il est compilé depuis les sources dès s164, puis précompilé et vérifié par s171 (ADR-0115) ; l'interface est cette commande, la boîte vit dans des fichiers locaux hors de git dont l'emplacement est un réglage, le lancement passe par `claude --bg` (ADR-0107). s171 à s173 sont nées de cette reprise : la distribution du binaire, que rien ne portait, et deux morceaux retirés de s164 et de s168 pour les garder sous dix tâches. Ordre : s164 d'abord, qui pose le crate ; puis s165 et s167 ensemble ; s166 après s165 ; s168 après s166 ; s169 après s168 ; s170 et s171 après s169 ; s172 après s170 ; s173 après s167 et s168. Le code de `po` est sous `po/`, un dossier par verbe, pour que deux stories ne tiennent jamais le même fichier. Un critère qui porte sur `po` a son test d'oracle, qui lance le binaire sur un dépôt d'essai ; un critère qui porte sur une règle lue par un modèle n'en a pas, il est jugé en revue et le plan le liste comme candidat à un bras de contrôle `po-eval` (#208). La règle de M20 sur les mots de `method/` vaut ici aussi, et s173 la chiffre.
 
 ### s164-state-as-json — L'état d'un projet se lit en JSON
-**En tant qu'** agent extérieur **je veux** demander l'état d'un projet à un script et recevoir du JSON **afin de** dire au porteur où en est son projet sans lancer de modèle ni lire de prose.
+**En tant qu'** agent extérieur **je veux** demander l'état d'un projet à une commande et recevoir du JSON **afin de** dire au porteur où en est son projet sans lancer de modèle ni lire de prose.
 
-- **Complexité** : 4 — risque : le JSON doit dire la même chose que ce que `/po-status` et `po-session` dérivent aujourd'hui chacun de leur côté ; un écart entre les trois devient un mensonge servi à la personne
+- **Complexité** : 4 — risque : deux à la fois. Le JSON doit dire la même chose que ce que `/po-status` et `po-session` dérivent aujourd'hui, et un écart devient un mensonge servi à la personne ; et c'est la story qui fait entrer Rust dans le dépôt (le crate, la compilation à l'installation, la suite et la CI qui construisent le binaire)
 - **Dépend de** : aucune
 - **Surface** : command
 - **Corrige** : issue #203 en partie, #204 en partie (`Issue tracker: github`)
-- **Owns** : `method/hooks/po-state.sh`, `method/hooks/po-session.sh`, `method/commands/po-status.md`, `docs/interface-agent.md`, `tests/state-as-json.oracle.test.sh`, `tests/state-as-json.test.sh`
+- **Owns** : `po/`, `bin/polype`, `method/templates/agents-local.md`, `AGENTS.local.md`, `docs/interface-agent.md`, `docs/installation.md`, `.gitignore`, `.github/workflows/ci.yml`, `tests/lib.sh`, `tests/run.sh`, `tests/state-as-json.oracle.test.sh`, `tests/state-as-json.test.sh`
 
 **Critères d'acceptation**
-- [ ] `state_prints_one_json_object` — `po-state` écrit sur sa sortie standard un seul objet JSON portant `"contract": 1` et les champs `project`, `commit`, `method_version`, `framing`, `milestone`, `lanes`, `ready`, `held`, `waiting` de `docs/interface-agent.md` ; hors d'un projet Polype il sort en 2 avec un objet `error`.
-- [ ] `state_reads_only_files_and_git` — `po-state` n'écrit rien, ne prend aucun verrou git, n'interroge aucune forge et ne lance aucun modèle ; sur ce dépôt il répond en moins d'une seconde.
-- [ ] `lane_stage_follows_the_gates` — pour un dépôt d'essai construit par le test, chaque état d'une story (worktree sans plan, plan non validé, plan validé, code commité avec relevé à jour, revue bloquée, revue qui autorise le ship, commit atterri) donne le `stage` attendu, lu par les mêmes contrôles que `po-gate`.
-- [ ] `held_says_why` — une story dont une dépendance n'est pas livrée, dont un chemin de `Owns` est tenu par une lane en cours, ou que la limite `Parallel` retient, figure dans `held` avec la raison `dependency`, `owns` ou `parallel` ; les autres stories non commencées figurent dans `ready`.
-- [ ] `waiting_reads_the_inbox_folder` — `waiting` liste les identifiants des fichiers de `.polype/inbox/` dont le `status` vaut `pending`, et vaut `[]` quand le dossier manque.
-- [ ] `session_hook_prints_from_state` — `po-session` tire ce qu'il affiche de `po-state` et ne dérive plus rien lui-même ; ce qu'il affiche pour les cas de ses tests existants ne change pas ; `/po-status` dit de lire `po-state` et perd ses propres règles de dérivation.
+- [ ] `state_prints_one_json_object` — `po state`, lancé dans un projet ou dans un de ses worktrees, écrit sur sa sortie standard un seul objet JSON portant `"contract": 1` et les champs `project`, `commit`, `method_version`, `framing`, `milestone`, `lanes` et `waiting` de `docs/interface-agent.md` ; les champs que d'autres stories calculent (`lanes[].next`, `ready`, `held`, `session`, `bounds`, `shipped`) valent `null` ; hors d'un projet Polype il sort en 2 avec un objet `error`, et un verbe pas encore construit sort en 2 avec `"error": "not-built"`.
+- [ ] `state_reads_only_files_and_git` — `po state` n'écrit rien, ne prend aucun verrou git, n'interroge aucune forge et ne lance aucun modèle ; sur ce dépôt il répond en moins d'une seconde.
+- [ ] `lane_stage_follows_the_gates` — pour un dépôt d'essai construit par le test, chaque état d'une story (worktree sans plan, plan non validé, plan validé, code commité avec relevé à jour, revue bloquée, revue qui autorise le ship, commit atterri) donne le `stage` attendu, celui que `po-gate` donnerait.
+- [ ] `waiting_reads_the_inbox_setting` — `waiting` liste les identifiants des décisions `pending` du dossier que le réglage `Decision inbox` nomme (`.polype/inbox/` dans le gabarit) ; il vaut `[]` quand le dossier manque, et `null` quand la ligne manque dans `AGENTS.local.md`, `warnings` nommant alors le réglage.
+- [ ] `installer_builds_po_from_sources` — `bin/polype install` et `update` compilent `po` depuis les sources avec `cargo` et le posent dans le dossier de Polype de l'utilisateur, un par machine ; sans `cargo`, l'installeur pose tout le reste, dit que `po` manque et pourquoi, et ne sort pas en erreur ; `check` signale un `po` absent.
+- [ ] `po_warns_on_another_version` — quand la version de `po` n'est pas celle que `.polype/version` du projet nomme, l'objet rendu porte `warnings` avec `method-version-mismatch` et les deux versions, et `po` répond quand même (ADR-0117).
 
-**Notes pour l'agent** : l'ADR-0106 doit être `accepted` avant ton plan ; si elle ne retient pas bash, arrête-toi. `po-session.sh` contient déjà la dérivation (cadrage, stories prêtes, lanes, attentes) : déplace-la, ne la récris pas. Le recouvrement de deux `Owns` suit la règle du contrôle 8 de `stories-review`, que `tests/owns-overlap.test.sh` exerce déjà. `shipped[].trust`, `session` et `bounds` sont hors de cette story (s169, s170) : laisse les champs absents plutôt que faux. Si le contrat doit bouger, change `docs/interface-agent.md` dans la story et dis-le dans le plan. Tests hors `Owns` qui figent `po-session.sh` et `po-status.md` : `tests/session*.test.sh`, `tests/status*.test.sh`, `tests/commands-and-texts.test.sh`.
+**Notes pour l'agent** : lis les ADR-0106, 0115, 0116 et 0117 avant ton plan. Le crate est sous `po/`. `main` déclare dès cette story tous les verbes du contrat et ceux du chef de projet (`state`, `next`, `inbox`, `answer`, `record`, `run`, `continue`), chacun dans son dossier (`po/src/inbox/`, `po/src/record/`, `po/src/next/`, `po/src/run/`, `po/src/trust/`) qui rend `not-built` : les stories suivantes remplissent leur dossier sans toucher aux tiens. Les dépendances du crate sont un choix technique : ton plan porte la ligne `Technical choice: waiting for a human` avec la liste courte (lire et écrire du JSON, lire les arguments), classée par les critères du porteur ; aucune story suivante n'en ajoute. `po-session.sh` contient la dérivation à porter (cadrage, lanes, attentes) : lis-le, ne le modifie pas (s172). `po-gate.sh` n'est pas modifié. La compilation depuis les sources est le repli de l'ADR-0115 ; le binaire précompilé est s171. `Test` reste `bash tests/run.sh`, qui construit `po` une fois avant les tests ; les tests d'oracle lancent le binaire sur un dépôt d'essai, et la CI doit passer sur un runner neuf. Dans `docs/interface-agent.md`, remplace le chemin et le nom de la commande par `po`, ajoute `warnings`, et dis que l'emplacement de la boîte est un réglage. Tests hors `Owns` qui figent l'installeur et le gabarit des réglages : `tests/install*.test.sh`, `tests/global-install.test.sh`, `tests/structure.test.sh`, `tests/setup-modes.test.sh`, `tests/platform-setting.test.sh`.
 
 ### s165-decision-inbox — Ce qui attend le porteur est un fichier, pas une phrase dans une session
 **En tant que** porteur **je veux** que chaque question que Polype me pose soit rangée dans une boîte, avec ses options et une recommandation **afin de** la retrouver et d'y répondre par l'agent extérieur de mon choix, même quand la session qui l'a posée est fermée.
 
 - **Complexité** : 3
-- **Dépend de** : s161-installer-leftovers
+- **Dépend de** : s164-state-as-json
 - **Surface** : command
 - **Corrige** : issue #204 en partie (`Issue tracker: github`)
-- **Owns** : `method/hooks/po-inbox.sh`, `method/AGENTS.md`, `.gitignore`, `docs/a-trancher.md`, `tests/decision-inbox.oracle.test.sh`, `tests/decision-inbox.test.sh`
+- **Owns** : `po/src/inbox/`, `bin/polype`, `method/AGENTS.md`, `.gitignore`, `docs/a-trancher.md`, `tests/decision-inbox.oracle.test.sh`, `tests/decision-inbox.test.sh`
 
 **Critères d'acceptation**
-- [ ] `add_writes_one_decision_file` — `po-inbox add` lit une décision en JSON sur son entrée standard, lui donne l'identifiant suivant (`d-0001`, `d-0002`…) et l'écrit dans `.polype/inbox/<id>.json` à la racine du dépôt, y compris lancé depuis le worktree d'une story ; il rend l'objet écrit.
+- [ ] `add_writes_one_decision_file` — `po inbox add` lit une décision en JSON sur son entrée standard, lui donne l'identifiant suivant (`d-0001`, `d-0002`…) et l'écrit dans `<id>.json` sous le dossier que `Decision inbox` nomme, résolu depuis la racine du dépôt, y compris lancé depuis le worktree d'une story ; il rend l'objet écrit.
 - [ ] `add_refuses_a_malformed_decision` — une décision sans `motive` connu, sans `question` d'une seule phrase, avec moins de deux ou plus de trois `options`, avec un `recommended` hors de la liste, sans `why`, sans `reversible` ou sans `blocks` est refusée avec un objet `error`, et rien n'est écrit.
-- [ ] `list_prints_pending_oldest_first` — `po-inbox list` rend `{"contract": 1, "pending": […]}`, la plus ancienne d'abord ; `po-inbox show <id>` rend une décision, répondue ou non.
-- [ ] `inbox_never_enters_git` — `.polype/inbox/` est ignoré par git dans ce dépôt, et `po-inbox add` refuse d'écrire quand le dossier n'est pas ignoré.
-- [ ] `sensitive_decisions_carry_no_detail` — une décision `sensitive: true` n'est acceptée que si son `context` pointe hors du dépôt ; `list` la rend comme les autres.
-- [ ] `rules_send_every_stop_to_the_inbox` — `## What goes to the person` de `method/AGENTS.md` dit que tout ce qui remonte à la personne est posé par `po-inbox add` avant d'être dit, et la section ne compte pas plus de mots qu'avant.
-- [ ] `provisional_inbox_is_gone` — `docs/a-trancher.md` est supprimé ; ce qui y restait ouvert est dans le rapport de la story, pour que le chef de projet le pose avec `po-inbox add`.
+- [ ] `list_prints_pending_oldest_first` — `po inbox` rend `{"contract": 1, "pending": […]}`, la plus ancienne d'abord ; `po inbox <id>` rend une décision, répondue ou non.
+- [ ] `inbox_never_enters_git` — quel que soit l'emplacement réglé : dans le dépôt et non ignoré par git, `po inbox add` refuse avec `inbox-not-ignored` et n'écrit rien ; hors du dépôt, il écrit. À l'installation et à la mise à jour, l'installeur ajoute l'emplacement du gabarit au `.gitignore` du projet quand il n'y est pas, et le dit.
+- [ ] `sensitive_decisions_carry_no_detail` — une décision `sensitive: true` n'est acceptée que si son `context` pointe hors du dépôt ; `po inbox` la rend comme les autres.
+- [ ] `rules_send_every_stop_to_the_inbox` — `## What goes to the person` de `method/AGENTS.md` dit que tout ce qui remonte à la personne est posé par `po inbox add` avant d'être dit. Règle lue par un modèle : pas de test d'oracle, jugée en revue ; le test vérifie seulement que la section ne compte pas plus de mots qu'avant.
+- [ ] `provisional_inbox_is_gone` — `docs/a-trancher.md` est supprimé ; ce qui y restait ouvert est listé dans le plan de la story, pour que le chef de projet le pose avec `po inbox add` une fois la story livrée.
 
-**Notes pour l'agent** : l'ADR-0107 doit être `accepted` avant ton plan. La forme d'une décision est dans `docs/interface-agent.md` (`## inbox`) ; ne l'étends pas. La racine du dépôt se trouve depuis un worktree par `git rev-parse --git-common-dir`. La dépendance à s161 vient de `method/AGENTS.md`, que les deux stories possèdent. `.polype/` est commité : seule `.polype/inbox/` est ignorée, et l'installeur ne doit pas la prendre pour un fichier étranger (dis-le au chef de projet si c'est le cas, `bin/polype` n'est pas à toi). Tests hors `Owns` qui figent `## What goes to the person` : `tests/escalation-contract.test.sh`, `tests/everything-in-issues.test.sh`.
+**Notes pour l'agent** : l'ADR-0107 fixe la boîte : des fichiers locaux, jamais dans git, à un emplacement réglé. La forme d'une décision est dans `docs/interface-agent.md` (`## inbox`) ; ne l'étends pas. Tu remplis `po/src/inbox/` et tu ne touches à aucun autre dossier du crate ; il te manque une dépendance → arrête-toi et dis-le. `.polype/` est commité : seule la boîte est ignorée, et l'installeur ne doit pas la prendre pour un fichier étranger. Une décision de sécurité de `a-trancher.md` (D6, D7) se repose en `sensitive`, sans plus de détail que ce fichier public n'en donne. Tests hors `Owns` qui figent `## What goes to the person` : `tests/escalation-contract.test.sh`, `tests/everything-in-issues.test.sh`.
 
 ### s166-answer-comes-back — Une réponse du porteur n'est acceptée que si elle nomme une option listée
 **En tant que** porteur **je veux** répondre à une décision en nommant une de ses options, par l'agent extérieur de mon choix **afin que** ma réponse arrive au chef de projet telle que je l'ai donnée, et qu'une réponse mal comprise soit refusée plutôt qu'interprétée.
@@ -2633,94 +2633,145 @@ Objectif : que Polype se pilote par des scripts qui rendent du JSON, et non par 
 - **Dépend de** : s165-decision-inbox
 - **Surface** : command
 - **Corrige** : issue #204 en partie (`Issue tracker: github`)
-- **Owns** : `method/hooks/po-inbox.sh`, `method/AGENTS.md`, `tests/answer-comes-back.oracle.test.sh`, `tests/answer-comes-back.test.sh`
+- **Owns** : `po/src/inbox/`, `method/AGENTS.md`, `tests/answer-comes-back.oracle.test.sh`, `tests/answer-comes-back.test.sh`
 
 **Critères d'acceptation**
-- [ ] `answer_accepts_only_a_listed_option` — `po-inbox answer <id> <key>` passe la décision à `"status": "answered"` avec `answer.key` et `answer.at`, et la rend ; une `key` hors de `options` sort en 1 avec `"error": "not-an-option"` et ne change pas le fichier.
+- [ ] `answer_accepts_only_a_listed_option` — `po answer <id> <key>` passe la décision à `"status": "answered"` avec `answer.key` et `answer.at`, et la rend ; une `key` hors de `options` sort en 1 avec `"error": "not-an-option"` et ne change pas le fichier.
 - [ ] `answer_refuses_twice_and_unknown` — une décision déjà répondue rend `already-answered`, un identifiant inconnu `unknown-decision` ; dans les deux cas rien n'est écrit.
-- [ ] `answer_launches_nothing` — `answer` ne lance aucune commande, aucun modèle et aucune session.
-- [ ] `answered_decisions_are_listed_until_consumed` — `po-inbox list --answered` rend les décisions répondues que le chef de projet n'a pas encore traitées ; `po-inbox consume <id> <ref>` note ce que la réponse a produit (le chemin d'une ADR, l'id d'une story) et la sort de cette liste.
-- [ ] `rules_say_who_consumes` — `method/AGENTS.md` dit que le chef de projet lit les décisions répondues au début d'une session, écrit ce que chacune produit là où cela doit vivre en citant son identifiant, puis la consomme ; une décision `sensitive` n'est citée que par son identifiant.
+- [ ] `answer_launches_nothing` — `po answer` ne lance aucune commande, aucun modèle et aucune session.
+- [ ] `answered_decisions_are_listed_until_consumed` — `po inbox --answered` rend les décisions répondues que le chef de projet n'a pas encore traitées ; `po inbox consume <id> <ref>` note ce que la réponse a produit (le chemin d'une ADR, l'id d'une story) et la sort de cette liste.
+- [ ] `rules_say_who_consumes` — `method/AGENTS.md` dit que le chef de projet lit les décisions répondues au début d'une session, écrit ce que chacune produit là où cela doit vivre en citant son identifiant, puis la consomme ; une décision `sensitive` n'est citée que par son identifiant. Règle lue par un modèle : pas de test d'oracle, jugée en revue ; le test vérifie seulement que `method/AGENTS.md` ne compte pas plus de mots qu'avant.
 
 **Notes pour l'agent** : `docs/interface-agent.md` (`## answer`) fixe les codes d'erreur. Une réponse est une donnée venue de l'extérieur : `<key>` est comparée aux clés listées, jamais évaluée ni passée à un shell. Le porteur qui ne veut aucune option ne répond pas par cette commande : c'est écrit dans le contrat, n'ajoute pas de texte libre.
 
-### s167-record-writes-reports — Un rapport de revue ou de QA est écrit par un script
-**En tant que** porteur **je veux** qu'un script écrive le fichier d'une revue ou d'une QA à partir de la réponse du subagent **afin que** l'en-tête, la forme et la version de la méthode ne dépendent plus de ce qu'un modèle a recopié.
+### s167-record-writes-reports — Un rapport de revue ou de QA est écrit par du code
+**En tant que** porteur **je veux** qu'une commande écrive le fichier d'une revue ou d'une QA à partir de la réponse du subagent **afin que** l'en-tête, la forme et la version de la méthode ne dépendent plus de ce qu'un modèle a recopié.
 
 - **Complexité** : 3
-- **Dépend de** : aucune
+- **Dépend de** : s164-state-as-json
 - **Surface** : command
 - **Corrige** : issues #202, #172, #180, #181, #186, #191 et #193 (`Issue tracker: github`)
-- **Owns** : `method/hooks/po-record.sh`, `method/commands/po-review.md`, `method/commands/po-qa.md`, `method/commands/po-orchestrator.md`, `method/commands/po-flow.md`, `method/commands/po-drive.md`, `method/templates/review.md`, `method/templates/qa.md`, `tests/record-writes-reports.oracle.test.sh`, `tests/record-writes-reports.test.sh`, `tests/review-header-recorded.oracle.test.sh`, `tests/review-header-recorded.test.sh`
+- **Owns** : `po/src/record/`, `method/commands/po-review.md`, `method/commands/po-qa.md`, `method/commands/po-orchestrator.md`, `method/commands/po-flow.md`, `method/commands/po-drive.md`, `method/templates/review.md`, `method/templates/qa.md`, `tests/record-writes-reports.oracle.test.sh`, `tests/record-writes-reports.test.sh`, `tests/review-header-recorded.oracle.test.sh`, `tests/review-header-recorded.test.sh`, `tests/qa-report-returned-as-text.test.sh`
 
 **Critères d'acceptation**
-- [ ] `record_writes_header_then_answer` — `po-record review <id>` et `po-record qa <id>` lisent la réponse du subagent sur leur entrée standard et écrivent `docs/reviews/<id>.md` ou `docs/qa/<id>/report.md` : le titre et la ligne de liens du gabarit, `<id>` remplacé, puis la réponse mot pour mot ; une réponse qui apporte son propre en-tête ne le voit pas doublé.
-- [ ] `record_stamps_the_method_version` — le rapport porte une ligne `Method version:` tirée de `.polype/version`, que le script écrit et que le subagent ne fournit pas.
-- [ ] `record_checks_the_shape` — `po-record review` lance `po-gate findings-shape` sur ce qu'il vient d'écrire et sort avec son code ; `po-record qa` refuse une réponse sans ligne `QA status:` et n'écrit alors rien.
-- [ ] `record_refuses_the_wrong_branch` — hors de la branche `story/<id>`, le script sort en 2 sans écrire.
-- [ ] `record_notes_the_oracle_gate` — `po-record review` ajoute sous `## Tests` le résultat de `po-gate oracle-intact <id>`, qu'il lance lui-même.
-- [ ] `commands_call_the_script` — `/po-review`, `/po-qa`, `/po-orchestrator`, `/po-flow` et `/po-drive` consignent par `po-record` et perdent leurs consignes de transcription (heredoc, en-tête, ordre des contrôles) ; chacun de ces fichiers compte moins de mots qu'avant.
-- [ ] `resume_paths_reuse_the_report` — les deux chemins de reprise qui renvoyaient au commit des preuves sans nouvelle marche (#180) relancent `po-record qa` sur le rapport déjà écrit, ou disent pourquoi il n'y en a pas.
+- [ ] `record_writes_header_then_answer` — `po record review <id>` et `po record qa <id>` lisent la réponse du subagent sur leur entrée standard et écrivent `docs/reviews/<id>.md` ou `docs/qa/<id>/report.md` : le titre et la ligne de liens du gabarit, `<id>` remplacé, puis la réponse mot pour mot ; une réponse qui apporte son propre en-tête ne le voit pas doublé.
+- [ ] `record_stamps_the_method_version` — le rapport porte une ligne `Method version:` tirée de `.polype/version`, que `po` écrit et que le subagent ne fournit pas.
+- [ ] `record_checks_the_shape` — `po record review` lance `po-gate findings-shape` sur ce qu'il vient d'écrire et sort avec son code ; `po record qa` refuse une réponse sans ligne `QA status:` et n'écrit alors rien.
+- [ ] `record_refuses_the_wrong_branch` — hors de la branche `story/<id>`, `po record` sort en 2 sans écrire.
+- [ ] `record_notes_the_oracle_gate` — `po record review` ajoute sous `## Tests` le résultat de `po-gate oracle-intact <id>`, qu'il lance lui-même.
+- [ ] `commands_call_po_record` — `/po-review`, `/po-qa`, `/po-orchestrator`, `/po-flow` et `/po-drive` consignent par `po record` et perdent leurs consignes de transcription (heredoc, en-tête, ordre des contrôles). Règle lue par un modèle : pas de test d'oracle, jugée en revue ; le test vérifie seulement que chacun de ces fichiers compte moins de mots qu'avant.
+- [ ] `resume_paths_reuse_the_report` — les deux chemins de reprise qui renvoyaient au commit des preuves sans nouvelle marche (#180) relancent `po record qa` sur le rapport déjà écrit, ou disent pourquoi il n'y en a pas ; même régime que le critère précédent.
 
-**Notes pour l'agent** : cette story remplace la mécanique de s156 et de s158 sans changer leurs règles (ADR-0102, ADR-0104) : le coordinateur consigne, le subagent qui juge n'écrit pas. Elle change donc les clauses que `tests/review-header-recorded*.test.sh` vérifient : ces deux fichiers sont dans `Owns`, dis dans le plan quelles assertions changent. `po-record.sh` appelle `po-gate.sh` sans le modifier. L'ADR-0106 doit être `accepted` avant ton plan. Tests hors `Owns` qui figent ces commandes et gardent leurs phrases : `tests/review.test.sh`, `tests/review-findings-shape.test.sh`, `tests/qa*.test.sh`, `tests/drive.test.sh`, `tests/flow.test.sh`.
+**Notes pour l'agent** : cette story remplace la mécanique de s156 et de s158 sans changer leurs règles (ADR-0102, ADR-0104) : le coordinateur consigne, le subagent qui juge n'écrit pas. Elle change donc les clauses que `tests/review-header-recorded*.test.sh` et `tests/qa-report-returned-as-text.test.sh` vérifient : ces fichiers sont dans `Owns`, dis dans le plan quelles assertions changent. `po record` appelle `po-gate.sh` sans le modifier. Tu remplis `po/src/record/` et tu ne touches à aucun autre dossier du crate ; il te manque une dépendance → arrête-toi et dis-le. Tests hors `Owns` qui figent ces commandes et gardent leurs phrases : `tests/review.test.sh`, `tests/review-findings-shape.test.sh`, `tests/qa*.test.sh`, `tests/drive.test.sh`, `tests/flow.test.sh`.
 
 ### s168-driver-next-action — La prochaine action d'une lane est calculée, pas interprétée
-**En tant que** porteur **je veux** qu'un script calcule ce que chaque lane doit faire ensuite et que `/po-drive` l'exécute **afin que** la flotte se comporte de la même façon d'une session à l'autre, et qu'une règle de routage se lise dans une table de cas.
+**En tant que** porteur **je veux** qu'une commande calcule quelles stories peuvent s'ouvrir et ce que chaque lane doit faire ensuite **afin que** la flotte se comporte de la même façon d'une session à l'autre, et qu'une règle de routage se lise dans une table de cas.
 
-- **Complexité** : 4 — risque : la parité avec le pilote en prose ; un cas de routage oublié change le comportement de la flotte sans qu'aucun test de phrase le voie, d'où une table de cas tirée de `po-drive.md` avant d'en retirer une ligne
-- **Dépend de** : s164-state-as-json, s166-answer-comes-back, s167-record-writes-reports
+- **Complexité** : 4 — risque : la parité avec le pilote en prose ; un cas de routage oublié changera le comportement de la flotte quand `/po-drive` lira cette sortie (s173), d'où une table de cas tirée de `po-drive.md` section par section
+- **Dépend de** : s164-state-as-json, s166-answer-comes-back
 - **Surface** : command
-- **Corrige** : issues #203 et #139 (`Issue tracker: github`)
-- **Owns** : `method/hooks/po-state.sh`, `method/commands/po-drive.md`, `method/commands/po-execute.md`, `tests/driver-next-action.oracle.test.sh`, `tests/driver-next-action.test.sh`, `tests/fixtures/driver-cases/`, `tests/drive.test.sh`, `tests/drive-guards.test.sh`, `tests/fleet-wiring.test.sh`, `tests/fleet-design.test.sh`
+- **Corrige** : issue #203 en partie, #139 en partie (`Issue tracker: github`)
+- **Owns** : `po/src/next/`, `tests/fixtures/driver-cases/`, `tests/driver-next-action.oracle.test.sh`, `tests/driver-next-action.test.sh`
 
 **Critères d'acceptation**
-- [ ] `next_gives_one_action_per_lane` — `po-state next` rend, pour chaque lane et chaque story prête, une action parmi `plan`, `validate-plan`, `design`, `execute`, `qa`, `review`, `fix`, `ship`, `wait`, `ask`, avec la raison qui nomme la porte ou le fichier lu.
-- [ ] `every_routing_case_is_a_fixture` — `tests/fixtures/driver-cases/` tient un cas par règle de routage de `po-drive.md` d'avant la story : un état de dépôt et l'action attendue ; le plan en donne la liste, section par section du fichier, et le test les rejoue tous.
-- [ ] `blocked_on_shape_asks_and_never_fixes` — une revue bloquée par `po-gate findings-shape` donne `ask`, jamais `fix`, et `/po-execute` lancé seul refuse le fix run dans ce cas (#139).
+- [ ] `next_gives_one_action_per_lane` — `po next` rend, pour chaque lane et chaque story prête, une action parmi `plan`, `validate-plan`, `design`, `execute`, `qa`, `review`, `fix`, `ship`, `wait`, `ask`, avec la raison qui nomme la porte ou le fichier lu ; `po state` porte la même dans `lanes[].next`.
+- [ ] `ready_and_held_say_why` — `po state` rend dans `ready` les stories qui peuvent s'ouvrir et dans `held` celles qui attendent, avec la raison `dependency`, `owns`, `parallel` ou `decision` ; une story que le `blocks` d'une décision `pending` nomme est tenue avec `decision` et `ref`.
+- [ ] `every_routing_case_is_a_fixture` — `tests/fixtures/driver-cases/` tient un cas par règle de routage de `po-drive.md` tel qu'il est : un état de dépôt et l'action attendue ; le plan en donne la liste, section par section du fichier, et le test les rejoue tous.
+- [ ] `blocked_on_shape_asks_and_never_fixes` — une revue bloquée par `po-gate findings-shape` donne `ask`, jamais `fix` (#139).
 - [ ] `fix_loops_stop_at_max_attempts` — après `Max attempts` fix runs, l'action est `ask` ; avant, `fix`.
 - [ ] `ships_stay_serial_in_review_order` — deux lanes dont la revue autorise le ship donnent `ship` à celle dont la revue est passée la première et `wait` à l'autre.
-- [ ] `answered_decision_releases_its_lanes` — une story que `blocks` d'une décision `pending` nomme donne `wait` ; la décision répondue et consommée, elle reprend son action.
-- [ ] `drive_executes_what_it_reads` — `/po-drive` dit : lancer `po-state next`, faire l'action de chaque ligne par la commande ou le subagent qu'elle nomme, recommencer ; il ne décrit plus aucune règle de routage et tient en 2 500 mots au plus (5 470 avant).
+- [ ] `answered_decision_releases_its_lanes` — une lane que le `blocks` d'une décision `pending` nomme donne `wait` ; la décision répondue et consommée, elle reprend son action.
 
-**Notes pour l'agent** : commence par la table des cas, relue contre `po-drive.md` section par section ; seulement ensuite retire la prose. Les tests de `Owns` qui figent des phrases de routage de `po-drive.md` perdent ces assertions, remplacées par les cas : dis lesquelles dans le plan. Ce que le modèle garde : briefer un subagent, lire sa réponse, la passer à `po-record`, parler à la personne. Le seuil de l'ADR-0106 s'applique : si `po-state.sh` dépasse 800 lignes, dis-le dans le rapport, ne change pas de langage de ton chef. `/po-orchestrator` et `/po-flow` ne sont pas touchés ici.
+**Notes pour l'agent** : commence par la table des cas, relue contre `po-drive.md` section par section. `po-drive.md` n'est pas à toi : cette story calcule, s173 fait lire le résultat à `/po-drive` et retire la prose. Le recouvrement de deux `Owns` suit la règle du contrôle 8 de `stories-review`, que `tests/owns-overlap.test.sh` exerce déjà. Tu remplis `po/src/next/` et tu ne touches à aucun autre dossier du crate ; il te manque une dépendance → arrête-toi et dis-le. Si la table demande plus de dix tâches, dis-le avant de faire valider le plan et propose la coupe par section.
 
 ### s169-run-from-outside — Un agent extérieur lance et relance le chef de projet
-**En tant qu'** agent extérieur **je veux** une seule commande pour lire l'état, lire la boîte, répondre, lancer et relancer **afin de** piloter un projet pour le porteur sans rien connaître de Polype.
+**En tant qu'** agent extérieur **je veux** lancer et relancer le chef de projet par la commande qui me donne déjà l'état et la boîte **afin de** piloter un projet pour le porteur sans rien connaître de Polype.
 
 - **Complexité** : 4 — risque : lancer une session sans personne devant ; `run` refuse quand il ne peut pas prouver que les bornes des subagents seront tenues, et ne passe jamais de consigne libre à la session
-- **Dépend de** : s161-installer-leftovers, s164-state-as-json, s166-answer-comes-back
+- **Dépend de** : s166-answer-comes-back, s168-driver-next-action
 - **Surface** : command
 - **Corrige** : issue #204 (`Issue tracker: github`)
-- **Owns** : `method/hooks/po-agent.sh`, `docs/interface-agent.md`, `docs/installation.md`, `README.md`, `tests/run-from-outside.oracle.test.sh`, `tests/run-from-outside.test.sh`
+- **Owns** : `po/src/run/`, `docs/interface-agent.md`, `docs/installation.md`, `README.md`, `tests/run-from-outside.oracle.test.sh`, `tests/run-from-outside.test.sh`
 
 **Critères d'acceptation**
-- [ ] `one_command_five_verbs` — `po-agent state`, `inbox`, `inbox <id>`, `answer <id> <key>` rendent ce que `po-state` et `po-inbox` rendent, avec les mêmes codes de sortie ; un verbe inconnu sort en 2 avec un objet `error`.
-- [ ] `run_starts_one_lead_session` — `po-agent run` lance une session de chef de projet à la racine du projet par la commande que le test remplace par un double, avec pour seule consigne la commande que `state` annonce (l'étape de cadrage manquante, sinon `/po-drive`), et rend `session`, `started` et `command`.
-- [ ] `run_refuses_a_second_session` — tant qu'une session lancée par `run` tourne, `run` et `continue` rendent `already-running` et ne lancent rien ; `state` porte `session.running` et `session.id`.
-- [ ] `run_refuses_unproven_bounds` — quand les subagents du projet ne sont posés que dans `.claude/agents/` du dépôt et que rien ne prouve le dialogue de confiance accepté, `state` porte `"bounds": "unproven"` et `run` rend `bounds-unproven` sans rien lancer ; avec l'installation globale, `"bounds": "held"`.
-- [ ] `run_refuses_when_nothing_to_do` — sans story prête, sans lane en cours et sans décision répondue à consommer, `run` rend `nothing-to-do`.
+- [ ] `run_starts_one_lead_session` — `po run` lance une session de chef de projet à la racine du projet par la commande que le test remplace par un double, avec pour seule consigne la commande que `po state` annonce (l'étape de cadrage manquante, sinon `/po-drive`), et rend `session`, `started` et `command`.
+- [ ] `continue_resumes_after_an_answer` — avec une session lancée par `run` puis arrêtée et une décision répondue non consommée, `po continue` relance cette session par la commande de reprise, que le test remplace par un double, et rend `session`, `started` et `command` ; sans session connue, il en lance une comme `run`.
+- [ ] `run_refuses_a_second_session` — tant qu'une session lancée par `run` tourne, `run` et `continue` rendent `already-running` et ne lancent rien ; `po state` porte `session.running` et `session.id`.
+- [ ] `run_refuses_unproven_bounds` — quand les subagents du projet ne sont posés que dans `.claude/agents/` du dépôt et que rien ne prouve le dialogue de confiance accepté, `po state` porte `"bounds": "unproven"` et `run` rend `bounds-unproven` sans rien lancer ; avec l'installation globale, `"bounds": "held"`.
+- [ ] `run_refuses_when_nothing_to_do` — sans story prête, sans lane en cours et sans décision répondue à consommer, `run` et `continue` rendent `nothing-to-do`.
 - [ ] `run_takes_no_free_text` — `run` et `continue` refusent tout argument qui n'est pas une option documentée.
-- [ ] `docs_show_the_agent_loop` — `docs/interface-agent.md` n'annonce plus que rien n'existe et montre la boucle d'un agent extérieur (`state`, `inbox`, `answer`, `continue`) ; `README.md` y renvoie en une ligne ; `docs/installation.md` dit, sous « Limite de confiance », ce que `bounds` rapporte.
+- [ ] `docs_show_the_agent_loop` — `docs/interface-agent.md` n'annonce plus que rien n'existe et montre la boucle d'un agent extérieur (`state`, `inbox`, `answer`, `continue`) ; `README.md` y renvoie en une ligne ; `docs/installation.md` dit, sous « Limite de confiance », ce que `bounds` rapporte. Documentation : pas de test d'oracle, jugée en revue.
 
-**Notes pour l'agent** : l'ADR-0107 fixe la commande de lancement ; sa recommandation est `claude --bg` depuis la racine, que le porteur utilise déjà (`claude agents`, `claude attach <id>`, `claude logs <id>`). Le test ne lance jamais de vraie session : la commande passe par une variable que le test pointe sur un double. Vérifie dans la doc de Claude Code comment savoir qu'une session de fond tourne encore avant de choisir entre un fichier de verrou et une interrogation de `claude agents`. La dépendance à s161 vient de `docs/installation.md`, que les deux stories possèdent.
+**Notes pour l'agent** : l'ADR-0107 fixe le lancement : `claude --bg` depuis la racine, que le porteur suit par `claude agents`, `claude attach <id>`, `claude logs <id>`. Le test ne lance jamais de vraie session : la commande passe par une variable que le test pointe sur un double. Vérifie dans la doc de Claude Code comment savoir qu'une session de fond tourne encore avant de choisir entre un fichier de verrou et une interrogation de `claude agents`. Ce que `run` laisse sur la machine (un verrou, l'identifiant de la session) reste hors de git ; nomme ces fichiers dans le plan, s171 les nettoie à la montée de version (ADR-0117). Tu remplis `po/src/run/` et tu ne touches à aucun autre dossier du crate ; il te manque une dépendance → arrête-toi et dis-le.
 
 ### s170-trust-signals — Chaque story livrée dit à quel point on peut s'y fier
 **En tant que** porteur **je veux** lire, pour chaque story livrée, les signaux qui disent si je peux m'y fier **afin de** décider quoi relire moi-même sans ouvrir chaque revue, et de comparer la voie courte à la voie complète.
 
 - **Complexité** : 3
-- **Dépend de** : s159-ci-on-every-pr, s168-driver-next-action, s169-run-from-outside
+- **Dépend de** : s167-record-writes-reports, s169-run-from-outside
 - **Surface** : command
 - **Corrige** : issue #205 (`Issue tracker: github`) ; donne sa mesure à #209
-- **Owns** : `method/hooks/po-state.sh`, `method/hooks/po-run.sh`, `method/templates/verification-record.md`, `method/commands/po-retro.md`, `docs/interface-agent.md`, `tests/trust-signals.oracle.test.sh`, `tests/trust-signals.test.sh`
+- **Owns** : `po/src/trust/`, `method/hooks/po-run.sh`, `method/templates/verification-record.md`, `docs/interface-agent.md`, `tests/trust-signals.oracle.test.sh`, `tests/trust-signals.test.sh`
 
 **Critères d'acceptation**
-- [ ] `shipped_stories_carry_trust` — `po-state` rend pour chaque story livrée du jalon en cours `shipped[].trust` avec `oracle`, `fix_loops`, `max_severity`, `not_verified`, `method_version`, lus dans `docs/reviews/<id>.md` tel que `po-record` l'a écrit, et `track` (`full` ou `flow`), lu dans le plan.
-- [ ] `unknown_is_null_never_guessed` — une revue d'avant s167, sans ligne `Method version:`, donne `"method_version": null` ; une valeur illisible vaut `null`, jamais une valeur par défaut.
+- [ ] `shipped_stories_carry_trust` — `po state` rend pour chaque story livrée du jalon en cours `shipped[].trust` avec `oracle`, `fix_loops`, `max_severity`, `not_verified`, `method_version`, lus dans `docs/reviews/<id>.md`, et `track` (`full` ou `flow`), lu dans le plan ; `po state --all` le rend pour toutes les stories livrées.
+- [ ] `unknown_is_null_never_guessed` — une revue d'avant s167, sans ligne `Method version:`, donne `"method_version": null` ; une valeur illisible vaut `null`, jamais une valeur par défaut, et `po` ne sort pas en erreur sur un rapport d'une version plus ancienne (ADR-0117).
 - [ ] `checks_are_read_only_on_request` — sans `--remote`, `checks` vaut `null` et aucune forge n'est interrogée ; avec `--remote`, `checks` est l'état des contrôles de la forge sur le commit atterri (`passed`, `failed`, `none`), lu par la commande que le test remplace par un double.
 - [ ] `duration_comes_from_the_record` — `po-run` note dans la ligne de chaque contrôle sa durée, le relevé porte l'heure de son premier et de son dernier contrôle, et `duration_s` en est tirée ; `cost_usd` vaut `null` tant qu'aucun fichier ne le porte, et le contrat le dit.
-- [ ] `retro_reads_the_same_signals` — `/po-retro` tire ses chiffres de `po-state` et perd ses propres règles de lecture des revues.
 
-**Notes pour l'agent** : `docs/interface-agent.md` (`### Les signaux de confiance`) fixe les champs et leurs valeurs. `po-run.sh` écrit la ligne d'un contrôle dans `docs/verif/<id>.md`, que `po-gate` relit : ajoute la durée sans changer ce que la porte lit, et vérifie-le par les tests existants de `po-gate` et de `po-run`. Le coût d'une session n'est écrit nulle part aujourd'hui : ne l'invente pas, laisse `null` et dépose une issue si tu trouves où le lire. Tests hors `Owns` : `tests/gate.test.sh`, `tests/po-retro.test.sh`, `tests/verification*.test.sh`.
+**Notes pour l'agent** : `docs/interface-agent.md` (`### Les signaux de confiance`) fixe les champs et leurs valeurs ; ajoute-y `track` et `--all`. `po-run.sh` écrit la ligne d'un contrôle dans `docs/verif/<id>.md`, que `po-gate` relit : ajoute la durée sans changer ce que la porte lit, et vérifie-le par les tests existants de `po-gate` et de `po-run`. Le coût d'une session n'est écrit nulle part aujourd'hui : ne l'invente pas, laisse `null` et dis-le au chef de projet si tu trouves où le lire. Tu remplis `po/src/trust/` et tu ne touches à aucun autre dossier du crate. Tests hors `Owns` : `tests/gate.test.sh`, `tests/verification*.test.sh`.
+
+### s171-po-prebuilt-and-verified — Une machine sans Rust reçoit `po`, vérifié
+**En tant que** personne qui installe Polype **je veux** recevoir `po` déjà compilé pour ma plateforme, vérifié par sa somme de contrôle **afin de** ne pas avoir à installer Rust et de savoir quel binaire tourne.
+
+- **Complexité** : 4 — risque : la chaîne d'approvisionnement ; un binaire téléchargé puis exécuté sur la machine du porteur n'est sûr que si la somme attendue vient d'ailleurs que du téléchargement lui-même
+- **Dépend de** : s165-decision-inbox, s169-run-from-outside
+- **Surface** : command
+- **Owns** : `bin/po-release`, `.github/workflows/release.yml`, `bin/polype`, `docs/installation.md`, `docs/ci.md`, `tests/po-prebuilt-and-verified.oracle.test.sh`, `tests/po-prebuilt-and-verified.test.sh`
+
+**Critères d'acceptation**
+- [ ] `release_builds_one_binary_per_platform` — `bin/po-release` compile `po` pour la plateforme où il tourne et écrit le binaire et sa somme de contrôle sous un nom qui porte la version et la plateforme ; le workflow de release ne fait que l'appeler, une fois par plateforme publiée, et publier ce qu'il rend.
+- [ ] `installer_downloads_and_verifies` — `bin/polype install` et `update` prennent le binaire de la plateforme par la commande que le test remplace par un double, comparent sa somme à la somme attendue et le posent ; une somme différente ne pose rien, garde le `po` en place et sort en erreur en nommant les deux sommes.
+- [ ] `installer_falls_back_to_sources` — sans binaire publié pour la plateforme, ou sans réseau, l'installeur compile depuis les sources (s164) et le dit ; sans `cargo` non plus, il pose le reste et dit que `po` manque.
+- [ ] `upgrade_cleans_what_the_old_version_left` — une mise à jour qui remplace `po` retire l'ancien binaire et les fichiers de machine que l'ancienne version a laissés et que la nouvelle ne lit plus, et dit ce qu'elle a retiré ; elle ne touche à aucune boîte de décisions ni à aucun fichier suivi par git (ADR-0117).
+- [ ] `check_audits_po` — `bin/polype check` signale un `po` absent, un `po` dont la somme n'est pas celle de la version installée, et un `po` d'une autre version que celle du projet.
+- [ ] `docs_say_what_is_verified` — `docs/installation.md` dit d'où vient le binaire, ce que la somme prouve et ne prouve pas, et comment forcer la compilation depuis les sources ; `docs/ci.md` dit comment publier une version. Documentation : pas de test d'oracle, jugée en revue.
+
+**Notes pour l'agent** : l'ADR-0115 fixe la voie : précompilé et vérifié, compilé en repli. Deux choix techniques restent au porteur, et ton plan porte la ligne `Technical choice: waiting for a human` pour chacun : la liste des plateformes publiées, et l'endroit où l'installeur lit la somme attendue (l'ADR-0115 dit ce que chaque endroit prouve). Un constat de sécurité sur cette chaîne va au porteur, jamais au tracker. Le test ne télécharge jamais rien. Le workflow suit la règle de s159 : il n'appelle que le script, dans une syntaxe que Forgejo Actions lit aussi (ADR-0105). Les fichiers de machine que `run` laisse sont nommés dans le plan de s169. Tests hors `Owns` qui figent l'installeur : `tests/install*.test.sh`, `tests/global-install.test.sh`, `tests/installer-leftovers*.test.sh`.
+
+### s172-commands-read-po-state — `po-session`, `/po-status` et `/po-retro` lisent le même état
+**En tant que** porteur **je veux** que ce que la session affiche au démarrage, ce que `/po-status` rapporte et ce que `/po-retro` chiffre viennent de `po state` **afin qu'** il n'y ait plus qu'une lecture de l'état d'un projet, celle que l'agent extérieur reçoit aussi.
+
+- **Complexité** : 2
+- **Dépend de** : s170-trust-signals
+- **Surface** : command
+- **Corrige** : issue #203 en partie (`Issue tracker: github`)
+- **Owns** : `method/hooks/po-session.sh`, `method/commands/po-status.md`, `method/commands/po-retro.md`, `tests/commands-read-po-state.oracle.test.sh`, `tests/commands-read-po-state.test.sh`, `tests/session-and-gate-checks.test.sh`
+
+**Critères d'acceptation**
+- [ ] `session_hook_prints_from_po_state` — `po-session` tire ce qu'il affiche de `po state` et ne dérive plus rien lui-même ; ce qu'il affiche pour les cas de ses tests existants ne change pas.
+- [ ] `session_hook_survives_a_missing_po` — sans `po` sur la machine, `po-session` affiche une ligne qui nomme l'installeur et sort en 0 ; un avertissement de version de `po` est affiché tel quel.
+- [ ] `status_and_retro_read_po_state` — `/po-status` et `/po-retro` disent de lire `po state` et perdent leurs propres règles de dérivation et de lecture des revues. Règle lue par un modèle : pas de test d'oracle, jugée en revue ; le test vérifie seulement que chacun des deux fichiers compte moins de mots qu'avant.
+
+**Notes pour l'agent** : `po-session.sh` reste en bash (ADR-0116) : il appelle `po` et met en forme. `tests/session-and-gate-checks.test.sh` fige des cas de `po-session` : garde ses cas, change seulement ce qui lisait la dérivation en bash, et dis lesquels dans le plan. Tests hors `Owns` qui figent ces commandes et gardent leurs phrases : `tests/po-retro.test.sh`, `tests/commands-and-texts.test.sh`.
+
+### s173-drive-executes-next — `/po-drive` exécute ce que `po next` lui dit
+**En tant que** porteur **je veux** que `/po-drive` lise la prochaine action de chaque lane dans `po next` au lieu de la déduire de sa prose **afin que** la flotte suive la table de cas, et que le pilote tienne en moitié moins de mots.
+
+- **Complexité** : 3
+- **Dépend de** : s167-record-writes-reports, s168-driver-next-action
+- **Surface** : command
+- **Corrige** : issues #203 et #139 (`Issue tracker: github`)
+- **Owns** : `method/commands/po-drive.md`, `method/commands/po-execute.md`, `tests/drive-executes-next.oracle.test.sh`, `tests/drive-executes-next.test.sh`, `tests/drive.test.sh`, `tests/drive-guards.test.sh`, `tests/fleet-wiring.test.sh`, `tests/fleet-design.test.sh`
+
+**Critères d'acceptation**
+- [ ] `drive_holds_in_2500_words` — `method/commands/po-drive.md` tient en 2 500 mots au plus (5 470 avant).
+- [ ] `drive_executes_what_it_reads` — `/po-drive` dit : lancer `po next`, faire l'action de chaque ligne par la commande ou le subagent qu'elle nomme, recommencer ; il ne décrit plus aucune règle de routage. Règle lue par un modèle : pas de test d'oracle, jugée en revue.
+- [ ] `execute_refuses_a_shape_blocked_fix` — `/po-execute` lancé seul lit `po next` et refuse le fix run quand l'action de la story est `ask` (#139) ; même régime.
+- [ ] `drive_stops_without_po` — sans `po` sur la machine, ou quand `po` sort en 2, `/po-drive` s'arrête en nommant l'installeur et ne route rien de lui-même ; même régime.
+- [ ] `phrase_tests_give_way_to_cases` — les tests de `Owns` perdent les assertions qui figeaient une phrase de routage de `po-drive.md`, que les cas de s168 remplacent ; le plan dit lesquelles, et la suite passe.
+
+**Notes pour l'agent** : la table de cas de s168 est la référence : une règle de routage que tu retires de `po-drive.md` doit y avoir son cas, sinon arrête-toi et dis lequel manque. Ce que le modèle garde : briefer un subagent, lire sa réponse, la passer à `po record`, parler à la personne. `/po-orchestrator` et `/po-flow` ne sont pas touchés ici (ADR-0109, proposée). Les trois critères jugés en revue sont des candidats à un bras de contrôle `po-eval` : liste-les dans le plan.
 
 ## Reportées — s153 à s155, en attente d'un produit
 
