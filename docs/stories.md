@@ -2613,7 +2613,7 @@ Objectif : que Polype se pilote par une commande qui rend du JSON, et non par de
 - **Dépend de** : s164-state-as-json
 - **Surface** : command
 - **Corrige** : issue #204 en partie (`Issue tracker: github`)
-- **Owns** : `po/src/inbox/`, `bin/polype`, `method/AGENTS.md`, `AGENTS.local.md`, `.gitignore`, `docs/a-trancher.md`, `tests/decision-inbox.oracle.test.sh`, `tests/decision-inbox.test.sh`
+- **Owns** : `po/src/inbox/`, `bin/polype`, `method/AGENTS.md`, `AGENTS.local.md`, `.gitignore`, `docs/a-trancher.md`, `tests/decision-inbox.oracle.test.sh`, `tests/decision-inbox.test.sh`, `tests/state-as-json.oracle.test.sh`, `docs/interface-agent.md`, `docs/installation.md`
 
 **Critères d'acceptation**
 - [ ] `add_writes_one_decision_file` — `po inbox add` lit une décision en JSON sur son entrée standard, lui donne l'identifiant suivant (`d-0001`, `d-0002`…) et l'écrit dans `<id>.json` sous le dossier que `Decision inbox` nomme, résolu depuis la racine du dépôt, y compris lancé depuis le worktree d'une story ; il rend l'objet écrit. Sans ligne `Decision inbox` dans `AGENTS.local.md`, il sort en 2 avec `no-inbox-setting`, nomme le réglage et n'écrit rien : aucun emplacement n'est deviné.
@@ -2633,7 +2633,7 @@ Objectif : que Polype se pilote par une commande qui rend du JSON, et non par de
 - **Dépend de** : s165-decision-inbox
 - **Surface** : command
 - **Corrige** : issue #204 en partie (`Issue tracker: github`)
-- **Owns** : `po/src/inbox/`, `method/AGENTS.md`, `tests/answer-comes-back.oracle.test.sh`, `tests/answer-comes-back.test.sh`
+- **Owns** : `po/src/inbox/`, `method/AGENTS.md`, `tests/answer-comes-back.oracle.test.sh`, `tests/answer-comes-back.test.sh`, `tests/state-as-json.oracle.test.sh`
 
 **Critères d'acceptation**
 - [ ] `answer_accepts_only_a_listed_option` — `po answer <id> <key>` passe la décision à `"status": "answered"` avec `answer.key` et `answer.at`, et la rend ; une `key` hors de `options` sort en 1 avec `"error": "not-an-option"` et ne change pas le fichier.
@@ -2651,7 +2651,7 @@ Objectif : que Polype se pilote par une commande qui rend du JSON, et non par de
 - **Dépend de** : s164-state-as-json
 - **Surface** : command
 - **Corrige** : issues #202, #172, #180, #181, #186, #191 et #193 (`Issue tracker: github`)
-- **Owns** : `po/src/record/`, `method/commands/po-review.md`, `method/commands/po-qa.md`, `method/commands/po-orchestrator.md`, `method/commands/po-flow.md`, `method/commands/po-drive.md`, `method/templates/review.md`, `method/templates/qa.md`, `tests/record-writes-reports.oracle.test.sh`, `tests/record-writes-reports.test.sh`, `tests/review-header-recorded.oracle.test.sh`, `tests/review-header-recorded.test.sh`, `tests/qa-report-returned-as-text.test.sh`
+- **Owns** : `po/src/record/`, `method/commands/po-review.md`, `method/commands/po-qa.md`, `method/commands/po-orchestrator.md`, `method/commands/po-flow.md`, `method/commands/po-drive.md`, `method/templates/review.md`, `method/templates/qa.md`, `tests/record-writes-reports.oracle.test.sh`, `tests/record-writes-reports.test.sh`, `tests/review-header-recorded.oracle.test.sh`, `tests/review-header-recorded.test.sh`, `tests/qa-report-returned-as-text.test.sh`, `tests/state-as-json.oracle.test.sh`
 
 **Critères d'acceptation**
 - [ ] `record_writes_header_then_answer` — `po record review <id>` et `po record qa <id>` lisent la réponse du subagent sur leur entrée standard et écrivent `docs/reviews/<id>.md` ou `docs/qa/<id>/report.md` : le titre et la ligne de liens du gabarit, `<id>` remplacé, puis la réponse mot pour mot ; une réponse qui apporte son propre en-tête ne le voit pas doublé.
@@ -2671,7 +2671,7 @@ Objectif : que Polype se pilote par une commande qui rend du JSON, et non par de
 - **Dépend de** : s164-state-as-json, s166-answer-comes-back
 - **Surface** : command
 - **Corrige** : issue #203 en partie, #139 en partie (`Issue tracker: github`)
-- **Owns** : `po/src/next/`, `tests/fixtures/driver-cases/`, `tests/driver-next-action.oracle.test.sh`, `tests/driver-next-action.test.sh`
+- **Owns** : `po/src/next/`, `tests/fixtures/driver-cases/`, `tests/driver-next-action.oracle.test.sh`, `tests/driver-next-action.test.sh`, `tests/state-as-json.oracle.test.sh`
 
 **Critères d'acceptation**
 - [ ] `next_gives_one_action_per_lane` — `po next` rend, pour chaque lane et chaque story prête, une action parmi `plan`, `validate-plan`, `design`, `execute`, `qa`, `review`, `fix`, `ship`, `wait`, `ask`, avec la raison qui nomme la porte ou le fichier lu ; `po state` porte la même dans `lanes[].next`. Une story prête, ou une lane sans recherche ni plan, reçoit `plan` : le planner fait la recherche, choisit la voie et écrit le plan, comme `/po-drive` le lui confie aujourd'hui ; une recherche qui porte `Root cause: not found` donne `ask`. La liste des actions du contrat ne change pas.
@@ -2691,7 +2691,7 @@ Objectif : que Polype se pilote par une commande qui rend du JSON, et non par de
 - **Dépend de** : s166-answer-comes-back, s168-driver-next-action
 - **Surface** : command
 - **Corrige** : issue #204 (`Issue tracker: github`)
-- **Owns** : `po/src/run/`, `docs/interface-agent.md`, `docs/installation.md`, `README.md`, `tests/run-from-outside.oracle.test.sh`, `tests/run-from-outside.test.sh`
+- **Owns** : `po/src/run/`, `docs/interface-agent.md`, `docs/installation.md`, `README.md`, `tests/run-from-outside.oracle.test.sh`, `tests/run-from-outside.test.sh`, `tests/state-as-json.oracle.test.sh`
 
 **Critères d'acceptation**
 - [ ] `run_starts_one_lead_session` — `po run` lance une session de chef de projet à la racine du projet par la commande que le test remplace par un double, avec pour seule consigne la commande que `po state` annonce (l'étape de cadrage manquante, sinon `/po-drive`), et rend `session`, `started` et `command`.
