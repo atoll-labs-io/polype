@@ -34,10 +34,10 @@ Faut-il changer l'ordre et la forme des commandes ? Les étapes et leurs portes,
 
 - **Les étapes restent** : recherche, design, plan avec son oracle, exécution, QA, revue, ship. C'est l'ordre de la Law 1 ; la flotte, qui fait passer le designer après le planner, s'y aligne (#184).
 - **Une seule commande fait avancer le travail** : `/po-drive`, avec un id pour une seule story. `/po-orchestrator` et `/po-flow` disparaissent comme commandes, la voie courte devenant une valeur que l'automate lit ([ADR-0109](decisions/ADR-0109-une-seule-commande-fait-avancer-le-travail.md), proposée, #210). Pas avant s168.
-- **Ce qui est déterministe devient du code** : l'état (`po-state`), l'écriture d'un rapport (`po-record`), le routage (`po-state next`), puis le ship (#211). L'automate est un binaire Rust (ADR-0106). Le modèle garde ce qui demande du jugement : cadrer, planifier, écrire, relire, parler à la personne.
+- **Ce qui est déterministe devient du code** : l'état (`po state`), l'écriture d'un rapport (`po record`), le routage (`po next`), puis le ship (#211). L'automate est un binaire Rust (ADR-0106), `po`, un par machine ([ADR-0117](decisions/ADR-0117-un-binaire-po-par-machine.md)). Le modèle garde ce qui demande du jugement : cadrer, planifier, écrire, relire, parler à la personne.
 - **Une story de complexité 1 ou 2** garde toutes ses portes et passe par trois contextes, le minimum de la Law 2 : un planner, un implementer, un relecteur. Ce qui l'allège, ce sont les mots que chacun lit, pas une porte en moins.
 - **La chaîne de cadrage** ne tourne qu'une fois par projet et ne change pas, à une question près : fixer l'architecture avant de découper les stories, pour que les `Owns` portent sur des chemins connus ([ADR-0110](decisions/ADR-0110-l-architecture-se-fixe-avant-le-decoupage.md), proposée, #212).
-- **Un agent extérieur** n'appelle aucune de ces commandes : il passe par `po-agent`.
+- **Un agent extérieur** n'appelle aucune de ces commandes : il passe par `po`.
 
 ## Ce qui reste
 
@@ -62,7 +62,7 @@ Rien de ceci n'est remis en cause, et M20 à M22 le respectent :
 
 ## Par où reprendre
 
-D1 à D4, puis D11 et D12, ont été tranchées le 2026-11-13 : les ADR-0105 à ADR-0108, ADR-0115 et ADR-0116 sont `accepted`.
+D1 à D4, puis D11 et D12, ont été tranchées le 2026-11-13 : les ADR-0105 à ADR-0108, ADR-0115 à ADR-0117 sont `accepted`.
 
 M20 est livré depuis le 2026-11-13 : la suite tourne sur chaque pull request, et `/po-ship` attend qu'elle passe.
 
