@@ -37,6 +37,7 @@ Model light:       sonnet
 Light up to:       2
 Project CLAUDE file: absorbed
 Forge checks:      —
+Decision inbox:    .polype/inbox/
 ```
 
 | Setting | Values |
@@ -71,6 +72,7 @@ Forge checks:      —
 | Light up to | highest story complexity whose implementer runs on `Model light`; `—` means never |
 | Project CLAUDE file | `absorbed` — the installer moves a root `CLAUDE.md` or `CLAUDE.local.md` into `AGENTS.local.md` and the pre-commit refuses one at any depth (ADR-0086) · `kept` — both stay, the root `CLAUDE.md` starts with `@AGENTS.md` and the pre-commit lets them through (ADR-0089); with the line missing nothing is touched, and the installer, `check` and `po-session` name the setting |
 | Forge checks | `required` — `/po-ship` merges only once the forge's checks pass on the landing commit · `—` — no such wait; a missing line reads `—` and is named |
+| Decision inbox | folder of the decision files waiting for the person, from the repository root or absolute; kept out of git (ADR-0107) |
 
 ## Commands
 
