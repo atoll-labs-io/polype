@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+# The one entry every forge's CI calls: runs the project's Test command from the root, nothing else.
+# It reads no forge variable, so a run on any runner is the run a person gets locally (ADR-0105).
+set -u
+
+root="$(cd "$(dirname "$0")/.." && pwd -P)"
+test_cmd=""
+if [ -f "$root/AGENTS.local.md" ]; then
+  test_cmd="$(sed -n "s/^Test:[[:space:]]*\(.*[^[:space:]]\)[[:space:]]*\$/\1/p" "$root/AGENTS.local.md" | head -n 1)"
+fi
+if [ -z "$test_cmd" ] || [ "$test_cmd" = "—" ]; then
+  printf 'po-ci: no Test command in %s/AGENTS.local.md\n' "$root" >&2
+  exit 2
+fi
+cd "$root" && exec bash -c "$test_cmd"
