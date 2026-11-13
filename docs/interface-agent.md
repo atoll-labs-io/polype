@@ -2,7 +2,7 @@
 
 Polype est du côté de l'intelligence : il cadre, planifie, écrit, relit. Polype reste une brique indépendante et ne suppose aucun agent en particulier. Un agent extérieur, quel qu'il soit (une interface de discussion, un ordonnanceur, ou par exemple un assistant vocal local qui sert de majordome), ne fait que passer les plats : il demande où en est un projet, lit au porteur ce qui l'attend, rapporte sa réponse, lance ou reprend le travail. Il n'a rien à comprendre de la méthode et ne lit jamais de prose.
 
-Ce document est le contrat de cette interface, **version 1**. Il est écrit avant le code : les stories s164 à s173 de [`stories.md`](stories.md) le construisent, et l'[ADR-0107](decisions/ADR-0107-un-agent-exterieur-interroge-polype-par-une-commande-et-du-json.md) en fixe le transport. La commande est le binaire Rust `po`, un par machine ([ADR-0106](decisions/ADR-0106-le-pilote-devient-un-automate-en-code.md), [ADR-0117](decisions/ADR-0117-un-binaire-po-par-machine.md)). `state` existe depuis s164, `inbox` depuis s165 et `answer` depuis s166 ; chaque autre verbe répond `not-built` (code 2) jusqu'à la story qui le construit.
+Ce document est le contrat de cette interface, **version 1**. Il est écrit avant le code : les stories s164 à s173 de [`stories.md`](stories.md) le construisent, et l'[ADR-0107](decisions/ADR-0107-un-agent-exterieur-interroge-polype-par-une-commande-et-du-json.md) en fixe le transport. La commande est le binaire Rust `po`, un par machine ([ADR-0106](decisions/ADR-0106-le-pilote-devient-un-automate-en-code.md), [ADR-0117](decisions/ADR-0117-un-binaire-po-par-machine.md)). `state` existe depuis s164, `inbox` depuis s165, `answer` depuis s166, `run` et `continue` depuis s169.
 
 ## La commande
 
@@ -21,12 +21,12 @@ ${CLAUDE_CONFIG_DIR:-$HOME/.claude}/polype/po <verbe> [arguments]
 | `run` | lance le chef de projet sur le projet | oui, une session |
 | `continue` | relance le chef de projet après une réponse | oui, une session |
 
-Le binaire déclare aussi `next`, `record`, `inbox add`, `inbox --answered` et `inbox consume`, les verbes du chef de projet ; ils ne font pas partie de ce contrat, sauf `inbox add`, décrit sous `## inbox` parce qu'il écrit ce que l'agent extérieur lit, et `inbox --answered` et `inbox consume`, décrits sous `## answer` parce qu'ils changent ce que rend `inbox <id>`.
+Le binaire a aussi les verbes du chef de projet, hors de ce contrat : voir `## Les verbes du chef de projet`.
 
 Règles communes :
 
 - La sortie standard est un seul objet JSON, toujours, y compris en cas d'échec ; rien d'autre n'y est écrit.
-- Le code de sortie vaut `0` quand la demande est faite, `1` quand elle est refusée (réponse hors liste, session déjà en cours), `2` quand elle ne peut pas être lue ou exécutée : hors d'un projet Polype (`not-a-project`), un verbe inconnu (`unknown-verb`), aucun verbe (`usage`), une option inconnue (`unknown-option`), un verbe pas encore construit (`not-built`), une erreur interne (`internal`), une boîte de décisions non réglée (`no-inbox-setting`), illisible (`unreadable-decision`), impossible à écrire (`inbox-unwritable`) ou tenue par un autre `po` (`inbox-busy`).
+- Le code de sortie vaut `0` quand la demande est faite, `1` quand elle est refusée (réponse hors liste, session déjà en cours), `2` quand elle ne peut pas être lue ou exécutée : hors d'un projet Polype (`not-a-project`), un verbe inconnu (`unknown-verb`), aucun verbe (`usage`), une option inconnue (`unknown-option`), un verbe pas encore construit (`not-built`), une erreur interne (`internal`), une session de chef de projet qu'on ne sait pas lire (`session-unreadable`), un état du projet illisible là où `run` en a besoin (`state-unreadable`), un lancement de Claude Code qui échoue (`launch-failed`), une boîte de décisions non réglée (`no-inbox-setting`), illisible (`unreadable-decision`), impossible à écrire (`inbox-unwritable`) ou tenue par un autre `po` (`inbox-busy`).
 - Tout objet porte `"contract": 1`. Un champ ajouté ne change pas ce numéro ; un champ retiré ou renommé le change.
 - Un refus ou un échec a la forme `{"contract": 1, "error": "<code stable>", "message": "<une phrase>"}`.
 - Une valeur que Polype ne peut pas lire vaut `null`. Elle n'est jamais devinée.
@@ -84,8 +84,9 @@ Règles communes :
 - `lanes[].stage` : `research`, `design`, `plan`, `execute`, `qa`, `review`, `ship`, ou `null` quand il ne peut pas être lu. La première règle qui s'applique décide, chaque gate étant le `po-gate` du worktree lancé dans ce worktree : story livrée → `ship` ; sans plan → `research` sans recherche, `design` quand la story a un écran et que `docs/designs/<id>/design.md` manque, sinon `plan` ; `plan-validated` refuse → `plan` ; `ship-allowed` passe → `ship` ; `verif-current` refuse → `execute` ; la story va en QA et `qa-current` refuse → `qa` ; sinon `review`. Une revue bloquée sur un code inchangé reste donc `review`, et une lane livrée encore sur le disque est `ship`, son nettoyage.
 - `lanes[].blocked_by` : le premier arrêt qui attend une personne, `root-cause-not-found`, `technical-choice`, `qa-blocked`, `max-attempts` ou `merge-waiting`, sinon `null`. `next.action` est l'une de `plan`, `validate-plan`, `design`, `execute`, `qa`, `review`, `fix`, `ship`, `wait`, `ask` ; `reason` nomme la porte ou le fichier qui en décide.
 - `held[].reason` : `dependency` (une story dont elle dépend n'est pas livrée), `owns` (une lane en cours tient un de ses chemins), `decision` (une décision attend, `ref` la nomme), `parallel` (la limite `Parallel` est atteinte).
-- `bounds` : `held` quand les bornes des subagents seront tenues dans une session lancée par `run`, `unproven` sinon.
-- `session`, `bounds`, `ready`, `held`, `shipped` et `lanes[].next` valent `null` tant que la story qui les calcule n'est pas livrée.
+- `session` : `running` dit si la session de chef de projet que `run` a lancée tourne encore, `id` en est l'identifiant court (voir `## run et continue`) ; `{"running": false, "id": null}` quand `run` n'a jamais lancé de session, `null` quand l'enregistrement ou la liste des sessions de Claude Code ne se lit pas.
+- `bounds` : `held` quand les bornes des subagents seront tenues dans une session lancée par `run`, `unproven` sinon (voir `## run et continue`).
+- `ready`, `held`, `shipped` et `lanes[].next` valent `null` tant que la story qui les calcule n'est pas livrée.
 - `warnings` est toujours une liste d'objets portant un `code` : `method-version-mismatch` (`po`, `project` : `po` et le projet n'ont pas la même version), `missing-setting` et `unreadable-setting` (`setting`), `orphan-worktree` (`path`, `branch`, `null` sur une tête détachée), `unreadable-decision` (`path`), `no-gate` (`story` : son worktree n'a pas de `po-gate`). Un champ qu'un réglage absent empêche de lire vaut `null`.
 
 ### Les signaux de confiance
@@ -195,15 +196,57 @@ Le chef de projet lit avec `inbox --answered` les décisions répondues qu'il n'
 {"contract": 1, "session": "<identifiant>", "started": "2026-11-12T14:20:00+01:00", "command": "/po-drive"}
 ```
 
-Refus, sans rien lancer :
+- `command` est la seule consigne de la session : `framing.next` tant que le cadrage n'est pas `done`, sinon `/po-drive`. Elle ne vient jamais de celui qui lance.
+- `session` est l'identifiant court de la session, ses huit premiers caractères, celui que prennent `claude attach <id>` et `claude logs <id>` et que `state` rend dans `session.id`.
+- `po` lance `claude --bg --session-id <uuid> <command>` avec un identifiant qu'il tire lui-même ; `continue` lance `claude --bg --resume <uuid> <command>` sur la session que `run` a enregistrée et qui ne tourne plus, et, sans session enregistrée, fait comme `run`. Le programme lancé est `$PO_CLAUDE` quand la variable est posée, sinon `claude`.
+- Une session tourne quand `claude agents --json` la liste avec un `pid` ; une session arrêtée y reste sans `pid`. `state` ne pose cette question à Claude Code que si une session a été enregistrée.
+- `bounds` vaut `held` quand trois conditions sont prouvées : `implementer.md`, `qa.md` et `reviewer.md` sont dans `agents/` de la configuration de Claude Code (`$CLAUDE_CONFIG_DIR`, sinon `~/.claude`) et chacun est le subagent de Polype, dont le frontmatter porte son nom et branche le hook `po-bounds` exactement comme Polype le pose ; aucun des trois n'est dans `.claude/agents/` du dépôt, car Claude Code préfère la copie du dépôt, dont les hooks attendent le dialogue de confiance qu'une session en arrière-plan ne montre jamais ; le projet a un `.polype/hooks/po-bounds.sh` exécutable, le script que ces hooks appellent. Un fichier qui porte seulement le bon nom ne prouve rien : `unproven` dans tous les autres cas.
 
-| Cas | `error` |
-| --- | --- |
-| une session de chef de projet tourne déjà | `already-running` |
-| les bornes des subagents ne peuvent pas être prouvées tenues | `bounds-unproven` |
-| rien à faire : aucune story prête, aucune décision répondue | `nothing-to-do` |
+Refus, dans cet ordre, sans rien lancer ni enregistrer :
+
+| Cas | Code de sortie | `error` |
+| --- | --- | --- |
+| un argument, quel qu'il soit : `run` et `continue` n'ont aucune option | 2 | `unknown-option` |
+| hors d'un projet Polype | 2 | `not-a-project` |
+| un autre `po run` ou `po continue` est en train de lancer : son verrou est tenu par un `po` vivant depuis moins de dix minutes | 1 | `already-running` |
+| l'enregistrement de la session ou la liste des sessions de Claude Code ne se lit pas | 2 | `session-unreadable` |
+| une session de chef de projet tourne déjà | 1 | `already-running` |
+| les bornes des subagents ne peuvent pas être prouvées tenues (`bounds` vaut `unproven`) | 1 | `bounds-unproven` |
+| le cadrage, les lanes, les stories prêtes ou la boîte ne se lisent pas, et rien d'autre ne donne de travail | 2 | `state-unreadable` |
+| rien à faire : cadrage `done`, aucune lane sur le disque, aucune story prête, aucune décision répondue et pas encore consommée | 1 | `nothing-to-do` |
+| Claude Code ne se lance pas ou sort en erreur | 2 | `launch-failed` |
+
+Un cadrage qui n'est pas `done` n'est jamais `nothing-to-do` : `run` lance alors son étape manquante.
+
+Le verrou du lancement porte le pid du `po` qui le tient. Un verrou laissé par un `po` mort (une erreur interne, un processus tué) ou vieux de plus de dix minutes est repris par le lancement suivant : il ne bloque jamais `run` ni `continue` quand `state` dit qu'aucune session ne tourne. `already-running` veut donc toujours dire qu'un lancement ou une session est réellement en cours.
+
+`po run` n'écrit rien dans l'arbre de travail : l'enregistrement de la session et le verrou du lancement vivent sous le dossier commun de git (voir [`installation.md`](installation.md), « Les fichiers d'état »).
 
 Un agent extérieur ne passe jamais de consigne libre à `run` : le travail à faire vient de `docs/stories.md` et de la boîte, pas de celui qui lance. Une idée nouvelle du porteur devient une issue du projet, que le chef de projet lit.
+
+## La boucle d'un agent extérieur
+
+```
+po run                       # une fois : lance le chef de projet
+po state                     # où en est le projet ; session.running dit s'il travaille
+po inbox                     # ce qui attend le porteur, lu à voix haute
+po answer <id> <key>         # rapporte sa réponse
+po continue                  # relance le chef de projet, qui consomme la réponse
+```
+
+L'agent recommence à `po state` à son rythme. `already-running` veut dire que le chef de projet travaille encore : rien à relancer. `nothing-to-do` veut dire que le projet n'attend rien : l'agent le dit au porteur et ne relance pas. `bounds-unproven` va au porteur, qui installe Polype en pose globale (voir [`installation.md`](installation.md)). Pour suivre la session, `claude attach <session>` et `claude logs <session>`.
+
+## Les verbes du chef de projet
+
+Le binaire a d'autres verbes, que lance le chef de projet et jamais l'agent extérieur ; ils ne font pas partie de ce contrat.
+
+| Verbe | Effet | Forme décrite |
+| --- | --- | --- |
+| `next` | la prochaine action de chaque lane et la vague suivante | `lanes[].next`, `ready` et `held` sous `## state` |
+| `record review <id>`, `record qa <id>` | écrit le rapport de revue ou de QA d'une story à partir de la réponse du subagent | `method/commands/po-review.md`, `method/commands/po-qa.md`, [ADR-0102](decisions/ADR-0102-le-rapport-de-qa-revient-en-texte.md), [ADR-0104](decisions/ADR-0104-celui-qui-consigne-une-revue-en-ecrit-l-en-tete.md) |
+| `inbox add` | pose une décision | `### Poser une décision : inbox add`, parce qu'il écrit ce que l'agent extérieur lit |
+| `inbox --answered` | les décisions répondues, pas encore consommées | `## answer`, parce qu'il change ce que rend `inbox <id>` |
+| `inbox consume <id> <ref>` | consomme une décision répondue | `## answer` |
 
 ## Ce que l'interface ne fait pas
 
