@@ -1,5 +1,5 @@
 ---
-description: Hands one story's surface to the qa subagent, which checks it with the driver of that surface and returns its report; this command writes that report word for word, then commits the evidence alone. This command cannot edit files; its shell serves that transcription and that commit.
+description: Hands one story's surface to the qa subagent, which checks it with the driver of that surface and returns its report; this command records that report through po record, then commits the evidence alone. This command cannot edit files; its shell serves the record and the evidence commit.
 argument-hint: <story id or name>
 allowed-tools:
   - Read
@@ -14,7 +14,7 @@ Reads settings: `Worktree root`, `Dev`, `Model strong`
 
 Story: $ARGUMENTS
 
-This command has no Write or Edit tool. Bash serves exactly two uses, the transcription and the evidence commit below; any other shell command is out of bounds. The `qa` subagent checks the story's surface with its driver and returns its report; it fixes nothing, and neither does this command. Never describe a walk the subagent did not report.
+This command has no Write or Edit tool. Bash serves exactly two uses, the record and the evidence commit below; any other shell command is out of bounds. The `qa` subagent checks the story's surface with its driver and returns its report; it fixes nothing, and neither does this command. Never describe a walk the subagent did not report.
 
 No Agent tool available → say so and stop.
 
@@ -37,14 +37,14 @@ Wait for the subagent to finish.
 `Model strong` at `—` passes no `model` at all: the qa subagent runs on the session's model. If the Agent tool rejects the model name, stop and report the setting and its value: no `docs/qa/<id>/report.md`, no evidence commit, and never a retry with another model or with none, because the setting is at fault, not the story.
 
 ## The evidence commit
-The review finds the walk only on the story branch, so the report and its captures are committed there, alone. Do this only when the subagent's answer holds a `QA status:` line, `complete` or `blocked` alike: a blocked walk is evidence too.
+The review finds the walk only on the story branch, so the report and its captures are committed there, alone. A blocked walk is evidence too: `complete` or `blocked` alike.
 1. `git -C <path> rev-parse --abbrev-ref HEAD` must print `story/<id>`; anything else → stop without writing or committing and say so.
-2. Write the answer whole, word for word, into `<path>/docs/qa/<id>/report.md` through one Bash call: `mkdir -p <path>/docs/qa/<id>`, then `cat > <path>/docs/qa/<id>/report.md <<'<DELIM>'`, the answer, and `<DELIM>` alone on the last line. The delimiter is quoted so nothing in the answer expands, and chosen so that no line of the answer equals it; the text never goes into a shell argument (Law 7), since a report quotes command output. You transcribe it, you do not author it: no finding added, softened or dropped, no severity or status changed.
+2. Pipe the answer, whole and word for word, into `cd <path> && "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/polype/po" record qa <id>` through a quoted heredoc whose delimiter no line of the answer equals, never a shell argument (Law 7). `po` writes `docs/qa/<id>/report.md`, its header and its `Method version:` stamp; you do not author it. With no new walk and a report on disk (a resume path), pipe that report back: `< <path>/docs/qa/<id>/report.md`. Exit 1 → no report, no commit; `po` missing or another refusal → stop and name `polype install`.
 3. `git -C <path> add -- docs/qa/<id>/`
 4. `git -C <path> commit -m "<id>: QA evidence" -- docs/qa/<id>/`
 
 The pathspec keeps every other staged or modified file out of this commit. Never pass `--no-verify`: the pre-commit hook's secret scan applies here too. A refused commit is reported with git's message, never worked around. No `QA status:` line → no report, no commit; relay the reason the subagent gave.
 
 ## Report
-This command never authors a report: it writes the one the subagent returned, word for word, and when the subagent stops without one, there is none. Relay what the report says: what was walked, findings by severity and status, what was not seen, the tree, and the path where it was written.
+This command never authors a report: it records the one the subagent returned, word for word, and when the subagent stops without one, there is none. Relay what the report says: what was walked, findings by severity and status, what was not seen, the tree, and the path where it was written.
 End with the hash of the evidence commit, or the reason there is none.

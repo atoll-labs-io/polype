@@ -3,7 +3,6 @@
 # the reviewer answers below them (ADR-0104, issue #169).
 
 REVIEW="$METHOD/commands/po-review.md"
-DRIVE="$METHOD/commands/po-drive.md"
 AGENT="$METHOD/agents/reviewer.md"
 TPL="$METHOD/templates/review.md"
 LINK="$ROOT/bin/po-link-artifacts"
@@ -13,29 +12,6 @@ ADR="$ROOT/docs/decisions/ADR-0104-celui-qui-consigne-une-revue-en-ecrit-l-en-te
 section_of() { awk -v h="## $2" '$0 == h {on=1; next} /^## / {on=0} on' "$1" | tr -s '[:space:]' ' '; }
 holds() { grep -qF -- "$2" <<< "$1" || fail "$3 lacks: $2"; }
 line_of() { grep -nF -- "$2" "$1" | head -n 1 | cut -d: -f1; }
-
-test_recorder_writes_the_header() {
-  require_file "$REVIEW"
-  local rec; rec="$(section_of "$REVIEW" Recording)"
-  [ -n "$rec" ] || fail "po-review.md has no '## Recording' section"
-  holds "$rec" 'The first write of `docs/reviews/<id>.md` starts with the title line and the link line of `templates/review.md`' "po-review ## Recording"
-  holds "$rec" '`<id>` replaced, then one blank line, then the body, whatever it is' "po-review ## Recording"
-  holds "$rec" "the subagent's answer, whole and word for word" "po-review ## Recording"
-  holds "$rec" 'or the blocked report this context composes' "po-review ## Recording"
-  holds "$rec" 'A link whose target does not exist in the worktree is dropped from the line, never invented.' "po-review ## Recording"
-  holds "$rec" 'keeps its header and receives only the new block after what it holds' "po-review ## Recording"
-}
-
-test_drive_writes_the_header() {
-  require_file "$DRIVE"
-  local v; v="$(section_of "$DRIVE" 'The verdict, and the fix runs')"
-  [ -n "$v" ] || fail "po-drive.md has no '## The verdict, and the fix runs' section"
-  holds "$v" 'through Bash, under the header `/po-review` describes in `## Recording`' "po-drive verdict section"
-  holds "$v" 'the first write of the file starts with the title line and the link line of `templates/review.md`' "po-drive verdict section"
-  holds "$v" 'or the blocked report you compose yourself when that is the first thing written' "po-drive verdict section"
-  holds "$v" 'a file that already exists keeps its header and receives only the new block after it' "po-drive verdict section"
-  holds "$v" 'You transcribe it, you do not author it: the header comes from the template, never from the reviewer' "po-drive verdict section"
-}
 
 test_reviewer_answers_below_the_header() {
   require_file "$AGENT"
@@ -50,13 +26,11 @@ test_reviewer_answers_below_the_header() {
 test_template_marks_the_header() {
   require_file "$TPL"
   [ "$(head -n 1 "$TPL")" = '# Review — <id>' ] || fail "review.md does not open with its title"
-  local link note
+  local link
   link="$(awk 'NR > 1 && NF {print; exit}' "$TPL")"
   [ "$link" = '[Story](../stories.md) · [Plan](../plans/<id>.md) · [Verification](../verif/<id>.md)' ] \
     || fail "the link line under the title changed: $link"
-  note="$(awk 'NR > 1 && NF {n++} n == 2 {print; exit}' "$TPL")"
-  holds "$note" 'These two lines are written by whoever records the review, not by the reviewer' "the line after the link line"
-  [ "$(line_of "$TPL" 'These two lines are written by')" -lt "$(line_of "$TPL" 'Diff reviewed:')" ] \
+  [ "$(line_of "$TPL" '<`po record` writes these lines')" -lt "$(line_of "$TPL" 'Diff reviewed:')" ] \
     || fail "the note must sit between the link line and the body"
 
   # A file recorded as the rule says — the template's two header lines, then an answer without

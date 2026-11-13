@@ -67,14 +67,14 @@ When the `## Acceptance tests` section of `docs/plans/<id>.md` names at least on
 ## Stage 6 — QA
 Only for a story that goes to QA (`AGENTS.md`, Law 1); skip it otherwise. `QA stage` missing for a story that has a screen or a `Surface` other than `—` → stop and name the setting.
 
-Apply `/po-qa` as written: its preconditions, the `qa` subagent with `model:` set to `Model strong`, then the evidence commit that this context makes. Run it after every execution, first run and fix run alike, since each one leaves a tree the previous walk never saw. No report → stop with the reason the subagent gave. `QA status: blocked` → commit the report as evidence, then stop for a human with its cause: no review is requested on a walk that did not happen. When `po-gate qa-current <id>` refuses with `is current but`, the report on disk is current and only uncommitted: make the evidence commit alone, no walk (ADR-0041).
+Apply `/po-qa` as written: its preconditions, the `qa` subagent with `model:` set to `Model strong`, then its record and evidence commit. Run it after every execution, first run and fix run alike, since each one leaves a tree the previous walk never saw. An answer without a `QA status:` line → no report: stop with the subagent's reason. `QA status: blocked` → commit the report as evidence, then stop for a human with its cause: no review is requested on a walk that did not happen. `po-gate qa-current <id>` refusing with `is current but` → re-record the report on disk and commit, no walk (ADR-0041).
 
 ## Stage 7 — Review
 Delegate to `reviewer` the way `/po-review` does, `model:` set to `Model strong`, and record `docs/reviews/<id>.md` with its `Fix loop:` as `/po-review` says, its findings-shape check and that check's stop included. A missing or incomplete verdict is recorded as blocked: `Max severity: critical`, `Ship allowed: no`.
 
 Blocked on QA — `Review status: blocked` and a `Next action:` naming `/po-qa` → back to stage 6, then stage 7 again at the same `Fix loop:`; that return is not a fix run and spends none of the two (ADR-0034, ADR-0041).
 
-Blocked on QA evidence — `Review status: blocked` and a `Next action:` naming the `<id>: QA evidence` commit → that evidence commit as stage 6 makes it, without a walk, then stage 7 again at the same `Fix loop:`; it spends none of the two either.
+Blocked on QA evidence — `Review status: blocked` and a `Next action:` naming the `<id>: QA evidence` commit → that evidence commit as stage 6 makes it, without a walk, the report re-recorded, then stage 7 again at the same `Fix loop:`; it spends none of the two either.
 
 A second review blocked on QA or on QA evidence while `story/<id>` already holds two `<id>: QA evidence` commits since the last implementer commit → stop for a human.
 

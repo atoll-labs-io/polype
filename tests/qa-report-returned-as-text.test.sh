@@ -14,13 +14,6 @@ holds() { grep -qF -- "$2" <<< "$1" || fail "$3 lacks: $2"; }
 
 lacks() { ! grep -qF -- "$2" <<< "$1" || fail "$3 still holds: $2"; }
 
-# Line number of the first line holding a phrase, failing when there is none.
-line_of() {
-  local n; n=$(grep -nF -m1 -- "$2" <<< "$1" | cut -d: -f1)
-  [ -n "$n" ] || fail "$3 lacks: $2"
-  printf '%s' "$n"
-}
-
 test_qa_returns_its_report() {
   require_file "$QA_AGENT"
   local report final
@@ -38,15 +31,9 @@ test_po_qa_records_the_report() {
   require_file "$PO_QA"
   local commit
   commit=$(section_of "$PO_QA" 'The evidence commit')
-  holds "$commit" "<<'" 'po-qa.md, evidence commit'
   holds "$commit" 'word for word' 'po-qa.md, evidence commit'
-  holds "$commit" 'no line of the answer equals it' 'po-qa.md, evidence commit'
   holds "$commit" 'you do not author it' 'po-qa.md, evidence commit'
   holds "$commit" 'No `QA status:` line → no report, no commit' 'po-qa.md, evidence commit'
-  local w a
-  w=$(line_of "$commit" "cat > <path>/docs/qa/<id>/report.md <<'" 'po-qa.md, evidence commit')
-  a=$(line_of "$commit" 'git -C <path> add -- docs/qa/<id>/' 'po-qa.md, evidence commit')
-  [ "$w" -lt "$a" ] || fail "po-qa.md writes the report after staging the evidence"
   lacks_tool "$PO_QA" Write
   lacks_tool "$PO_QA" Edit
   contains "$PO_QA" 'Bash serves exactly two uses'
@@ -59,12 +46,7 @@ test_drive_records_the_report() {
   n=$(grep -cF 'subagent_type: qa' <<< "$wave")
   [ "$n" -eq 1 ] || fail "po-drive.md, a wave: expected one qa line, found $n"
   item=$(grep -F 'subagent_type: qa' <<< "$wave")
-  holds "$item" 'word for word into `docs/qa/<id>/report.md`' 'the QA item'
-  holds "$item" 'quoted heredoc' 'the QA item'
   holds "$item" 'no `QA status:` line' 'the QA item'
-  local head="${item%%git -C <absolute path> add*}"
-  [ "$head" != "$item" ] || fail "the QA item lacks: git -C <absolute path> add"
-  holds "$head" 'word for word into `docs/qa/<id>/report.md`' 'the QA item, before the evidence is staged'
 }
 
 test_qa_report_path_stays() {

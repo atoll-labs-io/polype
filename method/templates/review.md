@@ -2,7 +2,7 @@
 
 [Story](../stories.md) · [Plan](../plans/<id>.md) · [Verification](../verif/<id>.md)
 
-<These two lines are written by whoever records the review, not by the reviewer: the reviewer's answer starts below this note.>
+<`po record` writes these lines, `Method version:` and the `Oracle:` line under `## Tests`; the answer starts below this note.>
 
 Diff reviewed: `git diff <Target branch>...story/<id>`, in a context that did not write it. Findings rated critical, major or minor.
 
