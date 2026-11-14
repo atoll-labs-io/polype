@@ -100,7 +100,7 @@ test_session_hook_reports_framing_stage() {
   has_line "$out" 'Framing next: /po-brief'
 
   git -C "$R" rm -q AGENTS.local.md && git -C "$R" commit -qm "no setup"
-  mkdir -p "$R/.polype" && echo 0.2.0 > "$R/.polype/version"
+  mkdir -p "$R/.polype" && sed -n 's/^POLYPE_VERSION="\(.*\)"$/\1/p' "$ROOT/bin/polype" > "$R/.polype/version"
   out="$(session_in "$R")"
   [ "$out" = "Polype project lead — state read from disk and git by po-session; nothing was run or changed."$'\n'"Framing: setup missing → /po-setup" ] \
     || fail "without AGENTS.local.md, expected the setup line alone: $out"

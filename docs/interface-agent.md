@@ -262,7 +262,7 @@ Le binaire a d'autres verbes, que lance le chef de projet et jamais l'agent ext�
 | Verbe | Effet | Forme décrite |
 | --- | --- | --- |
 | `next` | la prochaine action de chaque lane et la vague suivante | `lanes[].next`, `ready` et `held` sous `## state` |
-| `record review <id>`, `record qa <id>` | écrit le rapport de revue ou de QA d'une story à partir de la réponse du subagent | `method/commands/po-review.md`, `method/commands/po-qa.md`, [ADR-0102](decisions/ADR-0102-le-rapport-de-qa-revient-en-texte.md), [ADR-0104](decisions/ADR-0104-celui-qui-consigne-une-revue-en-ecrit-l-en-tete.md) |
+| `record review <id>`, `record qa <id>` | écrit le rapport de revue ou de QA d'une story à partir de la réponse du subagent ; une revue garde de ses constats marqués `[security]` la seule ligne `Security findings: <n> — decision <id>`, leur texte allant dans un fichier sous `Private folder`, hors du dépôt, que désigne une décision `sensitive` de motif `security` ; sans réglage, refus `no-private-folder-setting` (sortie 2), réglage dans le dépôt ou relatif, refus `private-folder-unusable` (sortie 1), et rien n'est écrit | `method/commands/po-review.md`, `method/commands/po-qa.md`, [ADR-0102](decisions/ADR-0102-le-rapport-de-qa-revient-en-texte.md), [ADR-0104](decisions/ADR-0104-celui-qui-consigne-une-revue-en-ecrit-l-en-tete.md), [ADR-0123](decisions/ADR-0123-le-texte-d-un-constat-de-securite-reste-hors-du-depot.md) |
 | `inbox add` | pose une décision | `### Poser une décision : inbox add`, parce qu'il écrit ce que l'agent extérieur lit |
 | `inbox --answered` | les décisions répondues, pas encore consommées | `## answer`, parce qu'il change ce que rend `inbox <id>` |
 | `inbox consume <id> <ref>` | consomme une décision répondue | `## answer` |

@@ -8,6 +8,7 @@ use chrono::SecondsFormat;
 use serde_json::Value;
 
 use super::decision::{id_number, Decision, NewDecision};
+use super::Refused;
 use crate::output;
 use crate::project::{self, Project};
 
@@ -20,51 +21,54 @@ pub fn main() -> i32 {
     };
     let mut input = String::new();
     if let Err(err) = io::stdin().read_to_string(&mut input) {
-        return malformed(format!("stdin is not readable text: {err}"));
+        return malformed(format!("stdin is not readable text: {err}")).print();
     }
     let new: NewDecision = match serde_json::from_str(&input) {
         Ok(new) => new,
-        Err(err) => return malformed(err.to_string()),
+        Err(err) => return malformed(err.to_string()).print(),
     };
-    if let Err(message) = validate(&new) {
-        return malformed(message);
+    match post(&project, &dir, new) {
+        Ok(decision) => output::reply(decision, output::OK),
+        Err(refused) => refused.print(),
     }
+}
+
+/// Validates one decision and writes it under the next id of `dir`; refuses without printing.
+pub(crate) fn post(project: &Project, dir: &Path, new: NewDecision) -> Result<Decision, Refused> {
+    validate(&new).map_err(malformed)?;
     if new.sensitive {
         let outside = new
             .context
             .as_deref()
             .map(Path::new)
-            .is_some_and(|context| context.is_absolute() && place(&project, context) == Place::Outside);
+            .is_some_and(|context| context.is_absolute() && place(project, context) == Place::Outside);
         if !outside {
-            return output::error(
-                output::REFUSED,
-                "sensitive-context-in-repo",
-                "a sensitive decision needs a context: an absolute path outside the repository",
-            );
+            return Err(Refused {
+                code: output::REFUSED,
+                error: "sensitive-context-in-repo",
+                message: "a sensitive decision needs a context: an absolute path outside the repository".into(),
+            });
         }
     }
-    if !kept_out_of_git(&project, &dir) {
-        return output::error(
-            output::REFUSED,
-            "inbox-not-ignored",
-            format!(
+    if !kept_out_of_git(project, dir) {
+        return Err(Refused {
+            code: output::REFUSED,
+            error: "inbox-not-ignored",
+            message: format!(
                 "{} lies in the repository and git does not ignore it: add it to .gitignore or set Decision inbox outside",
                 dir.display()
             ),
-        );
+        });
     }
-    match write(&dir, new) {
-        Ok(decision) => output::reply(decision, output::OK),
-        Err(err) => output::error(
-            output::UNREADABLE,
-            "inbox-unwritable",
-            format!("cannot write into {}: {err}", dir.display()),
-        ),
-    }
+    write(dir, new).map_err(|err| Refused {
+        code: output::UNREADABLE,
+        error: "inbox-unwritable",
+        message: format!("cannot write into {}: {err}", dir.display()),
+    })
 }
 
-fn malformed(message: impl Into<String>) -> i32 {
-    output::error(output::REFUSED, "malformed-decision", message)
+fn malformed(message: impl Into<String>) -> Refused {
+    Refused { code: output::REFUSED, error: "malformed-decision", message: message.into() }
 }
 
 fn validate(new: &NewDecision) -> Result<(), String> {
@@ -100,7 +104,7 @@ fn validate(new: &NewDecision) -> Result<(), String> {
 }
 
 #[derive(PartialEq, Eq, Debug)]
-enum Place {
+pub(crate) enum Place {
     Outside,
     /// Under the root, with the path relative to it.
     InRoot(PathBuf),
@@ -111,7 +115,7 @@ enum Place {
 /// Where `path` lies against the project. A path prefix alone misses a symlink and a worktree
 /// placed outside the root, so the nearest existing ancestor is resolved and asked for its git
 /// common dir.
-fn place(project: &Project, path: &Path) -> Place {
+pub(crate) fn place(project: &Project, path: &Path) -> Place {
     let absolute = if path.is_absolute() { path.to_path_buf() } else { project.root.join(path) };
     let lexical = normalise(&absolute);
     if let Ok(rel) = lexical.strip_prefix(&project.root) {
