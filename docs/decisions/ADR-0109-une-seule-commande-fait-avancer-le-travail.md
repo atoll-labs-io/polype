@@ -1,7 +1,7 @@
 ---
 adr: 0109
 title: Une seule commande fait avancer le travail
-status: proposed
+status: accepted
 date: 2026-11-12
 scope: framing
 supersedes: []
@@ -21,7 +21,7 @@ Classées par les critères du porteur ; les deux premiers ne départagent rien 
 3. **Une entrée, plus aucune commande d'étape** — le moins de texte. Reprendre une seule étape à la main demande alors de passer par l'automate, y compris pour déboguer la méthode.
 
 ## Decision Outcome
-Proposé, à trancher par le porteur. Recommandation : **l'option 1, après s168**, et pas avant : retirer des commandes tant que le routage vit dans leur prose déplacerait le problème. L'ordre retenu est celui de la Law 1 : recherche, design, plan avec son oracle, exécution, QA, revue, ship ; la flotte s'y aligne par la table de cas. La cérémonie d'une story de complexité 1 ou 2 ne baisse pas en retirant des portes, mais en contextes et en mots lus : un planner (recherche et plan en une passe), un implementer, un relecteur, soit le minimum que permet la Law 2.
+Chosen option: **l'option 1**, choisie par le porteur le 2026-11-14 (décision d-0003 de la boîte). Elle était recommandée après s168, et pas avant : retirer des commandes tant que le routage vit dans leur prose aurait déplacé le problème. s168 et s173 sont livrées : `po next` calcule la prochaine action et `/po-drive` l'exécute, la condition est donc remplie. Le retrait de `/po-orchestrator` et de `/po-flow` et la réduction des commandes d'étape sont des stories de M22. L'ordre retenu est celui de la Law 1 : recherche, design, plan avec son oracle, exécution, QA, revue, ship ; la flotte s'y aligne par la table de cas. La cérémonie d'une story de complexité 1 ou 2 ne baisse pas en retirant des portes, mais en contextes et en mots lus : un planner (recherche et plan en une passe), un implementer, un relecteur, soit le minimum que permet la Law 2.
 
 ### Consequences
 - Good, because l'ordre des étapes n'est écrit qu'à un endroit, et un agent extérieur n'a qu'une commande à faire lancer.

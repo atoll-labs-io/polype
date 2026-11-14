@@ -26,7 +26,7 @@ Design source:     —
 Design skill:      —
 Design tool:       —
 Story track:       auto
-Flow threshold:    2
+Flow threshold:    3
 Parallel:          2
 Max attempts:      2
 Tracker:           none
