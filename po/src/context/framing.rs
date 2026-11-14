@@ -1,5 +1,5 @@
-//! The framing stage and the current milestone, by the rules of po-session.sh, read on the
-//! target branch.
+//! The framing stage, each framing item's state and the current milestone, read on the target
+//! branch. These are `po`'s rules: po-session.sh prints the same words.
 
 use serde::Serialize;
 
@@ -12,11 +12,19 @@ use crate::project::Project;
 pub struct Framing {
     pub stage: String,
     pub next: Option<String>,
+    pub items: Vec<Item>,
+}
+
+/// One framing item and its state, in po-session's words.
+#[derive(Serialize, Clone, Debug, PartialEq)]
+pub struct Item {
+    pub item: &'static str,
+    pub state: &'static str,
 }
 
 impl Framing {
     pub fn setup() -> Framing {
-        Framing { stage: "setup".into(), next: Some("/po-setup".into()) }
+        Framing { stage: "setup".into(), next: Some("/po-setup".into()), items: Vec::new() }
     }
 }
 
@@ -62,18 +70,30 @@ pub fn framing(
     };
     let exists = |path: &str| project.on_target(target, path);
 
+    let scope_state = match scope {
+        None => "by hand",
+        Some((file, _)) => match exists(file) {
+            None => "missing",
+            Some(text) if frontmatter_status(&text).as_deref() == Some("approved") => "approved",
+            Some(_) => "in progress",
+        },
+    };
     let review = exists("docs/reviews/stories.md").and_then(|text| {
         let line = text.lines().filter(|line| line.starts_with("Stories ready:")).last()?;
         let word = line["Stories ready:".len()..].split_whitespace().next()?.to_lowercase();
         Some(word.starts_with("yes"))
     });
     let architecture = exists("docs/architecture.md").is_some();
-    let design_system = exists("docs/design-system.md").is_some()
-        || (stories.present && stories.no_story_has_a_screen());
+    let design_system_state = if exists("docs/design-system.md").is_some() {
+        "present"
+    } else if stories.present && stories.no_story_has_a_screen() {
+        "not needed"
+    } else {
+        "missing"
+    };
+    let design_system = design_system_state != "missing";
 
-    let scope_pending = scope.filter(|(file, _)| {
-        exists(file).and_then(|text| frontmatter_status(&text)).as_deref() != Some("approved")
-    });
+    let scope_pending = scope.filter(|_| scope_state != "approved");
 
     let (stage, next) = if let Some((_, command)) = scope_pending {
         ("scope", Some(command))
@@ -88,7 +108,22 @@ pub fn framing(
     } else {
         ("done", None)
     };
-    Some(Framing { stage: stage.into(), next: next.map(str::to_string) })
+    let present = |yes: bool| if yes { "present" } else { "missing" };
+    let items = vec![
+        Item { item: "scope", state: scope_state },
+        Item { item: "stories", state: present(stories.present) },
+        Item {
+            item: "stories-review",
+            state: match review {
+                None => "none",
+                Some(true) => "yes",
+                Some(false) => "no",
+            },
+        },
+        Item { item: "architecture", state: present(architecture) },
+        Item { item: "design-system", state: design_system_state },
+    ];
+    Some(Framing { stage: stage.into(), next: next.map(str::to_string), items })
 }
 
 /// The first `## M…` section of the stories holding a story not shipped yet.

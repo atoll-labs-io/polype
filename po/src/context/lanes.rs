@@ -1,4 +1,4 @@
-//! The lanes in flight: worktrees, landed stories and per-lane stops as po-session.sh reads them,
+//! The lanes in flight: worktrees, landed stories and every per-lane stop that goes to a person,
 //! and each lane's stage through the lane's own po-gate.
 
 use std::collections::HashMap;
@@ -33,14 +33,41 @@ pub enum BlockedBy {
     MergeWaiting,
 }
 
+/// A per-lane stop that goes to a person, with the values po-session prints for it.
+#[derive(Serialize, Clone, Debug, PartialEq)]
+#[serde(tag = "code", rename_all = "kebab-case")]
+pub enum Stop {
+    RootCauseNotFound { file: String },
+    TechnicalChoice { file: String, command: String },
+    QaBlocked { file: String },
+    MaxAttempts { fix_loop: u64, max_attempts: u64 },
+    MergeWaiting { branch: String },
+}
+
+impl Stop {
+    pub fn code(&self) -> BlockedBy {
+        match self {
+            Stop::RootCauseNotFound { .. } => BlockedBy::RootCauseNotFound,
+            Stop::TechnicalChoice { .. } => BlockedBy::TechnicalChoice,
+            Stop::QaBlocked { .. } => BlockedBy::QaBlocked,
+            Stop::MaxAttempts { .. } => BlockedBy::MaxAttempts,
+            Stop::MergeWaiting { .. } => BlockedBy::MergeWaiting,
+        }
+    }
+}
+
 /// A story worktree on its `story/<id>` branch under `Worktree root`.
 pub struct Lane {
     pub story: String,
     // Read by `po next` (a later M21 story) for the lane's research, plan and review files.
     #[allow(dead_code)]
     pub path: PathBuf,
+    /// The path relative to the project root, absolute when the lane lies outside it.
+    pub shown_path: String,
     pub stage: Option<Stage>,
+    /// The code of the first stop.
     pub blocked_by: Option<BlockedBy>,
+    pub stops: Vec<Stop>,
 }
 
 /// The stories landed on the target branch (and its origin copy), by commit subject: `<id>:`, or
@@ -193,8 +220,10 @@ pub fn lanes(
             Some(id) => {
                 let id = id.to_string();
                 let stage = stage(&worktree.path, &id, stories, landed, lane_settings, warnings);
-                let blocked_by = blocked_by(project, &worktree.path, &id, landed, lane_settings);
-                lanes.push(Lane { story: id, path: worktree.path, stage, blocked_by });
+                let stops = stops(project, &worktree.path, &id, landed, lane_settings);
+                let blocked_by = stops.first().map(Stop::code);
+                let shown_path = shown(project, &worktree.path);
+                lanes.push(Lane { story: id, path: worktree.path, shown_path, stage, blocked_by, stops });
             }
             None => {
                 let under_root = path_text.starts_with(&prefix);
@@ -275,29 +304,27 @@ fn has_line(text: &Option<String>, line: &str) -> bool {
     text.as_deref().is_some_and(|text| text.lines().any(|l| l == line))
 }
 
-/// The first per-lane stop po-session reports for a person, as a code.
-fn blocked_by(
-    project: &Project,
-    lane: &Path,
-    id: &str,
-    landed: &Landed,
-    settings: &LaneSettings,
-) -> Option<BlockedBy> {
+/// Every per-lane stop that goes to a person, in po-session's order.
+fn stops(project: &Project, lane: &Path, id: &str, landed: &Landed, settings: &LaneSettings) -> Vec<Stop> {
     let read = |rel: String| std::fs::read_to_string(lane.join(rel)).ok();
     let research = read(format!("docs/research/{id}.md"));
     let plan = read(format!("docs/plans/{id}.md"));
     let qa = read(format!("docs/qa/{id}/report.md"));
     let review = read(format!("docs/reviews/{id}.md"));
     let validated = has_line(&plan, "validated: yes");
+    let mut stops = Vec::new();
 
     if has_line(&research, "Root cause: not found") && !validated {
-        return Some(BlockedBy::RootCauseNotFound);
+        stops.push(Stop::RootCauseNotFound { file: format!("docs/research/{id}.md") });
     }
     if has_line(&plan, "Technical choice: waiting for a human") && !validated {
-        return Some(BlockedBy::TechnicalChoice);
+        stops.push(Stop::TechnicalChoice {
+            file: format!("docs/plans/{id}.md"),
+            command: format!("/po-plan {id}"),
+        });
     }
     if qa.as_deref().and_then(|text| last_value(text, "QA status")).as_deref() == Some("blocked") {
-        return Some(BlockedBy::QaBlocked);
+        stops.push(Stop::QaBlocked { file: format!("docs/qa/{id}/report.md") });
     }
     let review = review.unwrap_or_default();
     let ship = last_value(&review, "Ship allowed");
@@ -311,7 +338,7 @@ fn blocked_by(
             if !waits_for_qa {
                 if let (Some(loops), Some(max)) = (attempts, count(max)) {
                     if loops >= max {
-                        return Some(BlockedBy::MaxAttempts);
+                        stops.push(Stop::MaxAttempts { fix_loop: loops, max_attempts: max });
                     }
                 }
             }
@@ -325,7 +352,7 @@ fn blocked_by(
             .git(&["rev-parse", "--verify", "-q", &format!("refs/remotes/origin/story/{id}")])
             .is_some()
     {
-        return Some(BlockedBy::MergeWaiting);
+        stops.push(Stop::MergeWaiting { branch: format!("story/{id}") });
     }
-    None
+    stops
 }
