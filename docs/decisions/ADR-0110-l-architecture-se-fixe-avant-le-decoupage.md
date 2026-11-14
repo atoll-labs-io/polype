@@ -1,7 +1,7 @@
 ---
 adr: 0110
 title: L'architecture se fixe avant le découpage
-status: proposed
+status: accepted
 date: 2026-11-12
 scope: framing
 supersedes: []
@@ -19,7 +19,9 @@ La chaîne de cadrage va de `/po-setup` au périmètre (`/po-brief` ou `/po-prd`
 3. **Ne rien changer** — les `Owns` faux se découvrent en revue des stories ou au premier refus de `po-bounds`.
 
 ## Decision Outcome
-Proposé, à trancher par le porteur. Recommandation : **l'option 1**, à vérifier sur le prochain projet cadré avant de toucher aux commandes : un seul cas (lophelia) la fonde, et `/po-architect` s'appuie aujourd'hui sur les stories pour repérer les intégrations. Le reste de la chaîne ne change pas : elle ne tourne qu'une fois par projet, en conversation avec la personne, et son coût n'est pas là où Polype dérive.
+Chosen option: **l'option 1**, choisie par le porteur le 2026-11-14 (décision d-0004 de la boîte). Un seul cas la fondait à l'origine (lophelia) ; M21 en a ajouté huit : sur ses treize stories, huit ont demandé une retouche de cadrage avant de pouvoir être construites, presque toujours parce que leur `Owns` avait été écrit avant que le code qu'elles touchent existe.
+
+Le porteur y attache une exigence sur la façon de fixer l'architecture, qui vaut pour `/po-architect` : elle se décide **avec la personne**. Chaque choix technique lui est présenté en détail, avec ses pour et ses contre ; l'agent prend le temps de chercher les architectures les mieux adaptées à une production qui passe à l'échelle, se surveille, se manie facilement par un agent et consomme le moins possible. Aucun choix d'architecture n'est arrêté sans cette discussion (ADR-0077). La forme que prend cette exigence dans `/po-architect` et dans la chaîne de cadrage est une story de M22.
 
 ### Consequences
 - Good, because un `Owns` s'écrit sur des chemins qui existent ou que l'architecture a nommés.
