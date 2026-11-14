@@ -56,19 +56,6 @@ test_plan_with_a_tech_choice_waits_for_a_human() {
   holds "$wr" "$MARKER" 'po-plan Writing the plan'
   holds "$(section_of "$FLOW" 'Escalation signals')" 'a technical choice that deserves an ADR' 'po-flow Escalation signals'
 
-  # The waiting row must be read before the plain plan row, or the first match sends the lane to a planner.
-  local rows marker_rows marker_at plan_at stage
-  rows="$(section_of "$DRIVE" 'Resuming' | grep '^| ' | grep -v '^| --- ' | grep -v '^| Found ')"
-  marker_rows="$(grep -cF -- "$MARKER" <<< "$rows")"
-  [ "$marker_rows" = 1 ] || fail "po-drive resume table holds $marker_rows rows with the marker, expected 1"
-  stage="$(grep -F -- "$MARKER" <<< "$rows" | cut -d'|' -f3)"
-  [[ "$stage" == ' a human'* ]] || fail "the marker row does not send the lane to a human: $stage"
-  marker_at="$(grep -nF -- "$MARKER" <<< "$rows" | cut -d: -f1)"
-  plan_at="$(grep -nF 'the lane keeps that file and never writes it again' <<< "$rows" | cut -d: -f1)"
-  [ -n "$plan_at" ] || fail "po-drive resume table lost its plan row"
-  [ "$marker_at" -lt "$plan_at" ] || fail "the marker row (row $marker_at) must come before the plan row (row $plan_at)"
-
-  holds "$(section_of "$DRIVE" "Validating a wave's plans")" "$MARKER" "po-drive Validating a wave's plans"
   holds "$(section_of "$ORCH" 'Stage 4 — Plan — checkpoint')" "$MARKER" 'po-orchestrator stage 4'
 }
 

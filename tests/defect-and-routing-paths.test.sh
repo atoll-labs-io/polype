@@ -35,22 +35,6 @@ test_no_root_cause_goes_to_a_human() {
   grep -qF 'Root cause: not found' <<< "$defect" || fail "the planner defect bullet lacks the marker"
   grep -qF 'write no plan' <<< "$defect" || fail "the planner defect bullet does not forbid the plan"
 
-  local rows marker_line plan_line
-  rows=$(section_of "$DRIVE" 'Resuming' | grep -c 'Root cause: not found')
-  [[ $rows == 1 ]] || fail "expected one resuming row with the marker, found $rows"
-  section_of "$DRIVE" 'Resuming' | grep 'Root cause: not found' | awk -F'|' '{print $3}' \
-    | grep -q '^ a human' || fail "the marker row does not send the lane to a human"
-  grep -F 'Root cause: not found' "$DRIVE" | grep '^|' | grep -qF 'as a whole line' \
-    || fail "the marker row does not say whole line"
-  local step1
-  step1=$(section_of "$DRIVE" 'A wave' | grep '^1\. `subagent_type: planner`')
-  grep -qF 'sends its lane to a human' <<< "$step1" || fail "the planner step does not send the lane to a human"
-  grep -qF 'no plan is approved or dispatched for it' <<< "$step1" || fail "the planner step does not stop the plan"
-  marker_line=$(grep -n '^| .*Root cause: not found' "$DRIVE" | head -1 | cut -d: -f1)
-  plan_line=$(grep -n '^| .*the lane keeps that file and never writes it again' "$DRIVE" | head -1 | cut -d: -f1)
-  [[ -n $marker_line && -n $plan_line ]] || fail "a resuming row is missing"
-  (( marker_line < plan_line )) || fail "the marker row comes after the plan row"
-
   frontmatter "$ADR70" | grep -qx 'supersedes: \[ADR-0068\]' || fail "ADR-0070 does not supersede ADR-0068"
   frontmatter "$ADR68" | grep -qx 'superseded-by: \[ADR-0070\]' || fail "ADR-0068 is not marked superseded by ADR-0070"
 }

@@ -1,11 +1,12 @@
 ---
-description: Hands an approved plan to the implementer subagent. This command cannot edit files or run a shell, by construction.
+description: Hands an approved plan to the implementer subagent. This command cannot edit files or run a shell, by construction, except po next (ADR-0120).
 argument-hint: <story id or name>
 allowed-tools:
   - Read
   - Glob
   - Grep
   - Agent
+  - Bash("${CLAUDE_CONFIG_DIR:-$HOME/.claude}/polype/po" next)
 ---
 # /po-execute
 
@@ -13,29 +14,35 @@ Reads settings: `Worktree root`, `Test budget`, `Full suite`, `Model strong`, `M
 
 Story: $ARGUMENTS
 
-This command has no Write, Edit or Bash tool. That is deliberate: the context that coordinates a story is unable to write its code. The `implementer` subagent does it. Do not start without an approved plan, do not work outside the story's worktree, and never describe work the implementer did not report.
+This command has no Write or Edit tool; its one shell command, `po next`, only reads, so the `implementer` subagent writes the code. Do not start without an approved plan, do not work outside the story's worktree, and never describe work the implementer did not report.
 
 No Agent tool available → say so and stop.
 
 ## Preconditions, checked by reading files
 1. `AGENTS.local.md` exists; if not, point to `/po-setup`.
 2. $ARGUMENTS matches exactly one id of `docs/stories.md`; otherwise list the ids and stop.
-3. The worktree is registered. First find the shared git directory: if `<repository root>/.git` is a folder, that folder; if it is a file (the repository root is itself a linked worktree), it reads `gitdir: <common>/worktrees/<name>` and the shared directory is `<common>`. Then `<shared>/worktrees/<id>/gitdir` contains `<repository root>/<Worktree root><id>/.git`, and `<shared>/worktrees/<id>/HEAD` contains `ref: refs/heads/story/<id>`. Any difference (missing files, another path, another branch) → point to `/po-research <id>` and stop.
+3. The worktree is registered. First find the shared git directory: if `<repository root>/.git` is a folder, that folder; if it is a file (the repository root is itself a linked worktree), it reads `gitdir: <common>/worktrees/<name>` and the shared directory is `<common>`. Then `<shared>/worktrees/<id>/gitdir` contains `<repository root>/<Worktree root><id>/.git`, and `<shared>/worktrees/<id>/HEAD` contains `ref: refs/heads/story/<id>`. Any difference → point to `/po-research <id>` and stop.
 4. `docs/plans/<id>.md` exists in the worktree; otherwise point to `/po-plan <id>`.
 5. Its frontmatter holds `validated: yes`; otherwise stop with "The plan for <id> is not approved yet. Review it, then run /po-plan <id>."
-6. `docs/reviews/<id>.md` exists in the worktree with `Ship allowed: no` as its last verdict → this is a **fix run**; the review's findings come before anything else. Except a review with `Review status: blocked` and a `Next action:` naming `/po-qa` → stop with "Review blocked on QA for <id>. Run /po-qa <id>, then /po-review <id> again; no fix run is spent.", or with `Review status: blocked` and a `Next action:` naming the `<id>: QA evidence` commit → stop with "Review blocked on uncommitted QA evidence for <id>. Commit it alone: git commit -m "<id>: QA evidence" -- docs/qa/<id>/, then /po-review <id> again; no fix run is spent." (`/po-review`, ADR-0041).
+6. `docs/reviews/<id>.md` exists in the worktree with `Ship allowed: no` as its last verdict → run `"${CLAUDE_CONFIG_DIR:-$HOME/.claude}/polype/po" next` exactly so, from your start directory, without `cd`, and read the entry whose `story` is `<id>`. `po` missing, exiting 2, or listing no entry for `<id>` → stop, naming `polype install`; never read the review's `Next action:` yourself.
+
+| Action | What happens |
+| --- | --- |
+| `fix`, `execute` | a **fix run**, the review's findings first |
+| `qa`, `review`, `ship`, `design` | stop with the reason; next: `/po-qa <id>`, `/po-review <id>`, `/po-ship <id>`, `/po-design <id>` |
+| `plan`, `validate-plan` | stop with the reason; next: `/po-plan <id>` |
+| `wait` | stop with the reason; run again once it clears |
+| `ask` | stop; a person decides, given the reason |
 7. Glob `docs/designs/<id>/*` in the worktree: any match means the story **has a design**, even when no orchestrator runs it.
 8. `Model strong`, `Model light` and `Light up to` are set in `AGENTS.local.md`; a model setting missing → stop and name it.
 9. Read the `## Acceptance tests` section of `docs/plans/<id>.md`: when it names at least one file, the story **has an oracle**.
 
 ## Model
-This section is the single statement of the implementer's model; `/po-drive`, `/po-orchestrator` and `/po-flow` point to it.
-
 - **Rule.** The implementer gets `Model light` when the story's complexity is at most `Light up to`, `Model strong` above it.
 - **Complexity read.** The score after `→` on the first line of `## Complexity` in `docs/research/<id>.md`. No research file → the `Complexité`/`Complexity` of the story in `docs/stories.md`. Neither gives a score → `Model strong`.
 - **`—`.** A model setting at `—` passes no `model` at all: the subagent runs on the session's model. `Light up to: —` means the implementer never takes `Model light`.
 - **Fix run.** A fix run follows the same rule as the first run of the same story.
-- **Refusal.** If the Agent tool rejects the model name, stop and report the setting and its value. Never retry with another model or with none: the setting is at fault, not the story.
+- **Refusal.** If the Agent tool rejects the model name, stop and report the setting and its value. Never retry with another model or with none.
 
 ## Delegation
 Call the Agent tool with `subagent_type: implementer`, `model` as `## Model` settles, description "Implement <id>", and this prompt, filled in:

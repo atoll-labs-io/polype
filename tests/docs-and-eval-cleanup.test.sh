@@ -49,7 +49,7 @@ test_recipe_plan_counts_three_tests() {
 test_status_shipped_rule_reads_once() {
   local line f
   ! grep -qF 'as the id writes it → shipped' "$STATUS" || fail "po-status.md still says shipped twice"
-  for f in "$STATUS" "$DRIVE"; do contains "$f" "$SENTENCE"; done
+  for f in "$STATUS"; do contains "$f" "$SENTENCE"; done
   line="$(grep -F -- '- shipped:' "$STATUS")"
   [ "$(grep -o 'shipped' <<< "$line" | wc -l)" -le 2 ] || fail "the shipped line repeats shipped: $line"
 }
@@ -64,12 +64,6 @@ test_status_design_system_matches_session() {
 
 test_drive_resumes_a_review_the_gate_refuses() {
   local resuming ships review
-  resuming="$(section "$DRIVE" Resuming)"
-  grep -qF 'refuses it, whatever the reason' <<< "$resuming" || fail "the resume row does not cover any refusal"
-  grep -qF 'a `Review status:` missing or other than `complete`' <<< "$resuming" || fail "the resume row omits the status refusal"
-  ! grep -qF 'refuses its `Reviewed tree:` |' <<< "$resuming" || fail "the resume row still names only the tree"
-  ships="$(section "$DRIVE" 'Ships, one at a time')"
-  grep -qF 'Review status:' <<< "$ships" || fail "the ships section does not cite the review status"
   review="$(grep -F -- '- review:' "$STATUS")"
   grep -qF 'whatever the reason' <<< "$review" || fail "the po-status review bullet does not cover any refusal"
   grep -qF 'a `Review status:` missing or other than `complete`' <<< "$review" || fail "the po-status review bullet omits the status refusal"

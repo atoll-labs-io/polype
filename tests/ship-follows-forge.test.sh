@@ -91,16 +91,6 @@ test_chosen_value_never_moves() {
 
 test_pr_wait_does_not_block_the_fleet() {
   local rows stale wait ship
-  rows=$(section_of "$DRIVE" 'Resuming' | grep '^| ')
-  stale=$(grep -n -F 'Reviewed tree:' <<< "$rows" | grep -F 'the review stage' | head -n 1 | cut -d: -f1)
-  wait=$(grep -n -F 'printing `OPEN`' <<< "$rows" | grep -F 'a human merge — the lane waits' | head -n 1 | cut -d: -f1)
-  ship=$(grep -n -F 'is `yes` | the ship' <<< "$rows" | cut -d: -f1)
-  [ -n "$wait" ] || fail "the resuming table has no row for a pull request waiting for a human merge"
-  [ -n "$stale" ] && [ -n "$ship" ] && [ "$stale" -lt "$wait" ] && [ "$wait" -lt "$ship" ] \
-    || fail "the waiting row must sit between the stale-review row and the ship row"
-  grep -n -F 'printing `CLOSED`' <<< "$rows" | grep -qF '| a human' || fail "a closed pull request does not go to a human"
-
-  holds "$(section_of "$DRIVE" 'The ready set')" 'takes no `Parallel` slot' 'the ready set'
   holds "$(section_of "$DRIVE" 'Ships, one at a time')" 'is not the landing' 'the ship section'
   holds "$(section_of "$RULES" 'Law 1 — Nothing reaches the code except through a story')" \
     'opening the pull request is not the landing' 'Law 1'

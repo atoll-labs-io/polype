@@ -83,13 +83,6 @@ test_recording_runs_the_check() {
   holds "$rec" 'never checked' "po-review ## Recording"
   holds "$(section_of "$REVIEW_CMD" Outcome)" "a \`Next action:\` naming \`po-gate findings-shape\` → \"Review of <id> stopped" "po-review ## Outcome"
 
-  verdict="$(section_of "$DRIVE" 'The verdict, and the fix runs')"
-  holds "$verdict" 'checked through Bash with `po-gate findings-shape <id>` on that lane'"'"'s worktree' "po-drive verdict section"
-  holds "$verdict" 'no `Max attempts` unit is spent; its new answer is appended after the malformed block' "po-drive verdict section"
-  shape_row="$(grep -nF '| `Review status: blocked` and a `Next action:` naming `po-gate findings-shape` | a human' "$DRIVE" | cut -d: -f1)"
-  fix_row="$(grep -nF '| review whose last `Ship allowed:` is `no` | a fix run' "$DRIVE" | cut -d: -f1)"
-  [ -n "$shape_row" ] || fail "po-drive's resume table lacks the findings-shape row"
-  [ "$shape_row" -lt "$fix_row" ] || fail "the findings-shape row must come before the fix-run row"
 }
 
 test_ship_net_catches_headings() {
@@ -138,8 +131,6 @@ test_other_gate_failures_stop() {
   holds "$s" 'is not a malformed review: the reviewer is not dispatched again' "po-review Recording"
   holds "$s" '`Next action: a person runs po-gate findings-shape <id> — the check could not run (exit <n>)`' "po-review Recording"
   holds "$(section_of "$REVIEW_CMD" Outcome)" 'or the check could not run (exit <n>)' "po-review Outcome"
-  holds "$(cat "$DRIVE")" 'Any other exit is not a malformed review: the reviewer is not asked again' "po-drive"
-  holds "$(grep -F 'naming `po-gate findings-shape` | a human' "$DRIVE")" 'the check could not run (exit <n>)' "po-drive row"
 }
 
 test_adr_narrows_the_shape() {

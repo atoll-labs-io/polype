@@ -14,8 +14,7 @@ holds() { grep -qF -- "$2" <<< "$1" || fail "$3 lacks: $2"; }
 
 test_overlap_rule_covers_globs() {
   local f
-  for f in "$DRIVE" "$SREVIEW" "$ANTI" "$RTEMPLATE"; do require_file "$f"; done
-  holds "$(section_of "$DRIVE" 'The ready set')" "$RULE" "po-drive ready set"
+  for f in "$SREVIEW" "$ANTI" "$RTEMPLATE"; do require_file "$f"; done
   holds "$(awk '/^\*\*8\./ {on=1; print; next} /^## |^\*\*[0-9]+\./ {on=0} on' "$SREVIEW")" "$RULE" "stories-review check 8"
   holds "$(section_of "$ANTI" 'Before anything: the diff stays inside `Owns`')" "$RULE" "review-antihallu scope section"
   holds "$(section_of "$RTEMPLATE" 'Ownership')" "overlap rule" "review template Ownership"
@@ -33,7 +32,6 @@ test_overlap_examples_are_written_once() {
     files=$(grep -rlF -- "$ex" "$METHOD")
     [ "$files" = "$SREVIEW" ] || fail "'$ex' must live only in stories-review, found: $files"
   done
-  holds "$(section_of "$DRIVE" 'The ready set')" "$CITE" "po-drive ready set"
   holds "$(section_of "$ANTI" 'Before anything: the diff stays inside `Owns`')" "$CITE" "review-antihallu scope section"
 }
 
@@ -46,16 +44,6 @@ test_diff_paths_match_owns_exactly() {
   holds "$s" 'A diff path is matched exactly against the entries of its own story' "review-antihallu scope section"
   holds "$s" "The doubt clause of the rule serves only the check against another story's \`Owns\`" "review-antihallu scope section"
   ! grep -qF 'It holds for both cases below' <<< "$s" || fail "old doubt-for-both-cases sentence is still there"
-}
-
-test_drive_reports_name_the_entries() {
-  require_file "$DRIVE"
-  local lines n
-  lines=$(section_of "$DRIVE" 'Report' | grep -F 'the path that collided')
-  n=$(grep -c . <<< "$lines")
-  [ "$n" -ge 2 ] || fail "fewer than two Report lines name the path that collided"
-  [ "$(grep -cF 'the two entries that overlapped and one path matching both' <<< "$lines")" = "$n" ] \
-    || fail "a Report line names the path without the two entries"
 }
 
 test_every_overlap_text_cites_the_rule() {

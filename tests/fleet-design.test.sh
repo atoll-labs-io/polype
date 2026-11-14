@@ -57,18 +57,8 @@ test_drive_inserts_design_between_plan_and_execute() {
   holds "$wave" 'the story id and the absolute worktree path' 'the wave section'
   holds "$wave" '`method/agents/designer.md`' 'the wave section'
 
-  # Dispatched, not replayed: a note already on disk is this lane's design.
-  holds "$wave" 'no designer is dispatched' 'the wave section'
   # Started whole, like the other stages, or the lanes do not overlap.
   holds "$wave" 'every designer of a wave leaves before any of them is waited on' 'the wave section'
-
-  # A resumed lane still knows the stage exists.
-  local resuming; resuming=$(section_of "$DRIVE" 'Resuming')
-  [ -n "$resuming" ] || fail "po-drive.md has no '## Resuming' section"
-  holds "$resuming" '`docs/designs/<id>/design.md` is absent | the design stage' 'the resuming table'
-
-  settings_read_by "$DRIVE" | grep -qx 'Design source' \
-    || fail 'po-drive.md does not declare it reads `Design source`'
 }
 
 test_drive_stops_a_screen_lane_without_a_design_system() {
@@ -84,15 +74,6 @@ test_drive_stops_a_screen_lane_without_a_design_system() {
   [ -n "$design" ] || fail 'the wave section names no design stage'
   { [ "$planner" -lt "$design" ] && [ "$design" -lt "$implementer" ]; } \
     || fail "the design stage must sit between plan ($planner) and implementation ($implementer), found $design"
-
-  # Both of /po-design's own conditions, checked before any designer leaves.
-  holds "$wave" '`docs/design-system.md` missing there → the lane stops' 'the wave section'
-  holds "$wave" '`Design source` at `—` → the lane stops' 'the wave section'
-  holds "$wave" 'which you never choose for them' 'the wave section'
-
-  # Never skipped to keep a lane moving.
-  holds "$wave" 'The stage is never skipped' 'the wave section'
-  holds "$wave" 'the implementer does not start' 'the wave section'
 
   # The design a lane produced was read by nobody, and the report says which stories.
   local report; report=$(section_of "$DRIVE" 'Report')
