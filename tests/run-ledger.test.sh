@@ -45,7 +45,7 @@ test_po_run_appends_a_row() {
   first="$(sed -n 1p <<< "$rows")" second="$(sed -n 2p <<< "$rows")"
   [[ "$first" == '| Unit suite | `echo LEAK-$((1000 + 234))` | 0 | '* ]] || fail "first row is wrong: $first"
   [[ "$second" == '| Type check | `exit 4` | 4 | '* ]] || fail "second row is wrong or out of order: $second"
-  [[ "$(cell "$first" 1)" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$ ]] || fail "no UTC time: $first"
+  [[ "$(cell "$first" 1)" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z\ \([0-9]+s\)$ ]] || fail "no UTC time: $first"
   ! grep -qF 'LEAK-1234' "$REC" || fail "the command's output was written into the record"
   git status --porcelain | grep -qx '?? src/new.txt' || fail "po-run staged an untracked file in the real index"
 
