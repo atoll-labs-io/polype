@@ -55,3 +55,63 @@ fn matches(pattern: &str, name: &str) -> bool {
     }
     true
 }
+
+/// One path both entries cover, for a pair `overlap` accepted; `None` when the overlap is kept by
+/// prudence only (two wildcards in one segment, a `**` whose tail the other side cannot end with).
+pub fn common_path(a: &str, b: &str) -> Option<String> {
+    let a = segments(a);
+    let b = segments(b);
+    let mut path: Vec<&str> = Vec::new();
+    let mut at = 0;
+    loop {
+        match (a.get(at), b.get(at)) {
+            (None, None) | (None, Some(_)) | (Some(_), None) => return render(&path, &[], false),
+            (Some(x), Some(y)) => {
+                if *x == "**" || *y == "**" {
+                    let from_a = (*x == "**").then(|| across(&path, &a[at + 1..], &b[at..])).flatten();
+                    return from_a.or_else(|| (*y == "**").then(|| across(&path, &b[at + 1..], &a[at..])).flatten());
+                }
+                match (x.contains('*'), y.contains('*')) {
+                    (false, false) if x == y => path.push(x),
+                    (true, false) if matches(x, y) => path.push(y),
+                    (false, true) if matches(y, x) => path.push(x),
+                    _ => return None,
+                }
+            }
+        }
+        at += 1;
+    }
+}
+
+/// `path` continued across a `**` followed by `after`, the other side going on with `rest`.
+fn across(path: &[&str], after: &[&str], rest: &[&str]) -> Option<String> {
+    if after.iter().any(|s| s.contains('*')) {
+        return None;
+    }
+    let folder = rest.last() == Some(&"**");
+    let body = if folder { &rest[..rest.len() - 1] } else { rest };
+    if body.iter().any(|s| s.contains('*')) {
+        return None;
+    }
+    let mut full: Vec<&str> = path.to_vec();
+    full.extend_from_slice(body);
+    if folder {
+        render(&full, after, after.is_empty())
+    } else if body.ends_with(after) {
+        render(&full, &[], false)
+    } else {
+        None
+    }
+}
+
+fn render(path: &[&str], after: &[&str], folder: bool) -> Option<String> {
+    let all: Vec<&str> = path.iter().chain(after).copied().collect();
+    if all.is_empty() {
+        return None;
+    }
+    let mut text = all.join("/");
+    if folder {
+        text.push('/');
+    }
+    Some(text)
+}

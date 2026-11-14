@@ -151,3 +151,13 @@ case_ready_set_14_max_attempts_frees() {
   expect_lane s01-alpha ask 'Max attempts reached'
   expect_ready s02-bravo
 }
+
+# A story held for Owns names the two entries that overlap and one path both cover.
+case_ready_set_15_owns_names_the_path() {
+  story s01-alpha command - 'crates/*/Cargo.toml'
+  story s02-bravo command - 'crates/core/'
+  start
+  lane s01-alpha
+  expect_held s02-bravo owns s01-alpha
+  expect_collision s02-bravo 'crates/core/' 'crates/*/Cargo.toml' 'crates/core/Cargo.toml'
+}

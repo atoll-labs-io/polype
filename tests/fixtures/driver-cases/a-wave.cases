@@ -34,3 +34,20 @@ case_a_wave_03_design_on_disk() {
   design_in s01-alpha
   expect_lane s01-alpha execute 'verif-current refuses'
 }
+
+# Preparing the lanes: a story whose heading origin/main lacks opens no lane, yet keeps its Parallel slot.
+case_a_wave_04_off_the_start_point() {
+  setting Parallel 2
+  story s01-alpha command - 'src/a/'
+  story s03-charlie command - 'src/c/'
+  start
+  git -C "$F" update-ref refs/remotes/origin/main main
+  printf '# Stories\n\n## M1 — Fixture\n\n' > "$F/docs/stories.md"
+  story s01-alpha command - 'src/a/'
+  story s02-bravo command - 'src/b/'
+  story s03-charlie command - 'src/c/'
+  git -C "$F" commit -qam 'framing: s02-bravo'
+  expect_ready s01-alpha
+  expect_held s02-bravo framing origin/main
+  expect_held s03-charlie parallel
+}
