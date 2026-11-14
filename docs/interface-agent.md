@@ -30,7 +30,7 @@ Règles communes :
 - Tout objet porte `"contract": 1`. Un champ ajouté ne change pas ce numéro, pas plus qu'une valeur ajoutée à une liste fermée ; un champ retiré ou renommé le change. Un lecteur tolère une valeur qu'il ne connaît pas.
 - Un refus ou un échec a la forme `{"contract": 1, "error": "<code stable>", "message": "<une phrase>"}`.
 - Une valeur que Polype ne peut pas lire vaut `null`. Elle n'est jamais devinée.
-- `state` et `inbox` ne lancent aucun modèle, n'interrogent aucune forge sans y être invités (`state --remote`) et répondent en moins d'une seconde.
+- `state` et `inbox` ne lancent aucun modèle, n'interrogent aucune forge sans y être invités (`state --remote`) et, sans `--remote`, répondent en moins d'une seconde.
 
 ## `state`
 
@@ -66,6 +66,7 @@ Règles communes :
         "max_severity": "major",
         "not_verified": 1,
         "method_version": "9844988",
+        "track": "full",
         "duration_s": null,
         "cost_usd": null
       }
@@ -86,22 +87,26 @@ Règles communes :
 - `held[].reason` : `dependency` (une story dont elle dépend n'est pas livrée), `owns` (une lane en cours tient un de ses chemins), `decision` (une décision attend, `ref` la nomme), `parallel` (la limite `Parallel` est atteinte), `framing` (aucun titre de `docs/stories.md` ne la nomme sur le point de départ des lanes : `origin/<Target branch>` quand cette référence existe, `<Target branch>` sinon ; `ref` est alors une référence git, pas une story ni une décision, lue dans le dépôt local sans interroger de forge ; la story garde sa place dans `Parallel`). Pour `owns` seulement, l'item porte aussi `entry` (l'entrée `Owns` de la story retenue), `ref_entry` (celle de la story que nomme `ref`) et `path` (un chemin que les deux couvrent, `null` quand le recouvrement n'est gardé que par prudence, par exemple deux jokers dans un même segment ou `**/x.md` contre `src/y.md`) : la première paire qui se recouvre, dans l'ordre `Owns` de la story retenue. Ces trois champs sont absents pour toute autre raison.
 - `session` : `running` dit si la session de chef de projet que `run` a lancée tourne encore, `id` en est l'identifiant court (voir `## run et continue`) ; `{"running": false, "id": null}` quand `run` n'a jamais lancé de session, `null` quand l'enregistrement ou la liste des sessions de Claude Code ne se lit pas.
 - `bounds` : `held` quand les bornes des subagents seront tenues dans une session lancée par `run`, `unproven` sinon (voir `## run et continue`).
-- `ready`, `held`, `shipped` et `lanes[].next` valent `null` tant que la story qui les calcule n'est pas livrée.
+- `ready`, `held` et `lanes[].next` valent `null` tant que la story qui les calcule n'est pas livrée.
 - `warnings` est toujours une liste d'objets portant un `code` : `method-version-mismatch` (`po`, `project` : `po` et le projet n'ont pas la même version), `missing-setting` et `unreadable-setting` (`setting`), `orphan-worktree` (`path`, `branch`, `null` sur une tête détachée), `unreadable-decision` (`path`), `no-gate` (`story` : son worktree n'a pas de `po-gate`). Un champ qu'un réglage absent empêche de lire vaut `null`.
 
 ### Les signaux de confiance
 
-Lus dans les fichiers que le pipeline écrit déjà, pour chaque story livrée (`shipped[].trust`) :
+`shipped` liste les stories livrées du jalon courant (`milestone`) dans l'ordre de `docs/stories.md`, et toutes les stories livrées avec `state --all` ; `[]` quand aucun jalon n'est en cours sans `--all`, `null` quand les stories ou l'ensemble des stories livrées ne se lisent pas. `commit` est le commit court qui a livré la story.
+
+Pour chaque story livrée, `shipped[].trust` est lu dans les fichiers que le pipeline écrit déjà, tels qu'ils sont au commit qui l'a livrée :
 
 | Champ | Valeurs | Lu dans |
 | --- | --- | --- |
-| `checks` | `passed`, `failed`, `none`, `null` | les contrôles de la forge sur le commit atterri (seulement avec `--remote`) |
-| `oracle` | `intact`, `changed-with-reason`, `none` | `po-gate oracle-intact`, tel que la revue l'a consigné |
-| `fix_loops` | un entier | `docs/reviews/<id>.md` |
-| `max_severity` | `none`, `minor`, `major`, `critical` | la dernière ligne `Max severity:` de la revue |
-| `not_verified` | un entier | le nombre d'entrées de `## Not verified` de la revue |
-| `method_version` | un identifiant | l'estampille que `po record` pose dans la revue |
-| `duration_s`, `cost_usd` | un nombre ou `null` | le relevé, quand il les porte |
+| `checks` | `passed`, `failed`, `none`, `null` | les contrôles de GitHub sur le commit livré, par `gh api --hostname github.com`, seulement avec `--remote` ; `null` sur une autre forge, quand `gh` échoue ou tant qu'un contrôle tourne |
+| `oracle` | `intact`, `changed-with-reason`, `none` | la ligne `- Oracle:` que `po record` a écrite dans le dernier bloc de la revue ; `null` pour une revue qu'il n'a pas consignée |
+| `fix_loops` | un entier | la dernière ligne `Fix loop:` de ce bloc |
+| `max_severity` | `none`, `minor`, `major`, `critical` | la dernière ligne `Max severity:` de ce bloc |
+| `not_verified` | un entier | le nombre d'entrées de `## Not verified` de ce bloc |
+| `method_version` | un identifiant | l'estampille `Method version:` que `po record` pose dans la revue |
+| `track` | `full`, `flow` | le frontmatter du plan : `track: flow`, ou `full` sans ligne `track:` |
+| `duration_s` | un entier ou `null` | le relevé : du début du premier contrôle lancé par `po-run` à la fin du dernier, chaque ligne portant son heure de fin et sa durée |
+| `cost_usd` | `null` | aucun fichier ne le porte encore |
 
 Un agent extérieur n'a pas à juger ces signaux : il les rapporte. Celui qui en décide est le porteur, ou le grand modèle à qui il délègue.
 
