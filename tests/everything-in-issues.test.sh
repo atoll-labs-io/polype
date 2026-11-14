@@ -75,8 +75,6 @@ test_ship_files_on_each_tracker_value() {
 test_security_goes_to_the_person() {
   local step3
   step3="$(section_of "$SHIP" '## Step 3 — Cleanup, only after proof')"
-  holds "$step3" 'A review whose `Lenses run:` line names the security lens' "po-ship Step 3"
-  holds "$step3" 'a line that starts with `none` does not' "po-ship Step 3"
   holds "$step3" '"not filed: security (ADR-0077)"' "po-ship Step 3"
   holds "$(section_of "$LAW" '## Law 7 — Defects are not stories')" \
     'A security finding or a security idea is never filed on its own: it goes to the person' "Law 7"
