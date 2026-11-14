@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+# Builds po for the host and writes po-<version>-<platform> and its .sha256 into <out-dir>.
+# It reads no forge variable: every forge's release job calls it unchanged (ADR-0105, ADR-0121).
+set -euo pipefail
+
+[ $# -eq 1 ] && [ -n "$1" ] || { echo "usage: po-release <out-dir>" >&2; exit 2; }
+out_dir="$1"
+root="$(cd "$(dirname "$0")/.." && pwd -P)"
+
+polype_version="$(sed -n 's/^POLYPE_VERSION="\(.*\)"$/\1/p' "$root/bin/polype")"
+crate_version="$(sed -n 's/^version *= *"\(.*\)"$/\1/p' "$root/po/Cargo.toml" | head -n 1)"
+if [ -z "$polype_version" ] || [ "$polype_version" != "$crate_version" ]; then
+  echo "po-release: po/Cargo.toml says ${crate_version:-no version}, bin/polype says ${polype_version:-no version}; bump them together" >&2
+  exit 1
+fi
+
+# The same mapping as po_platform in bin/polype.
+case "$(uname -s)" in Linux) os=linux ;; Darwin) os=macos ;; *) os="" ;; esac
+case "$(uname -m)" in x86_64|amd64) arch=x86_64 ;; aarch64|arm64) arch=aarch64 ;; *) arch="" ;; esac
+if [ -z "$os" ] || [ -z "$arch" ]; then
+  echo "po-release: no release platform for $(uname -s) $(uname -m)" >&2
+  exit 1
+fi
+command -v cargo >/dev/null 2>&1 || { echo "po-release: cargo not found" >&2; exit 1; }
+
+target_dir="${CARGO_TARGET_DIR:-$root/po/target}"
+cargo build --release --locked --manifest-path "$root/po/Cargo.toml" --target-dir "$target_dir"
+
+name="po-$polype_version-$os-$arch"
+mkdir -p "$out_dir"
+cp "$target_dir/release/po" "$out_dir/$name"
+chmod +x "$out_dir/$name"
+if command -v sha256sum >/dev/null 2>&1; then sum="$(sha256sum < "$out_dir/$name" | cut -d' ' -f1)"
+else sum="$(shasum -a 256 < "$out_dir/$name" | cut -d' ' -f1)"; fi
+printf '%s  %s\n' "$sum" "$name" > "$out_dir/$name.sha256"
+echo "$out_dir/$name"
+echo "$out_dir/$name.sha256"

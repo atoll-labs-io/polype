@@ -78,11 +78,52 @@ Il y en a un par machine (ADR-0117), à la racine de la charge utile :
 `${CLAUDE_CONFIG_DIR:-$HOME/.claude}/polype/po`, à côté de `version`, comme un fichier d'état que la
 règle des fichiers étrangers d'ADR-0095 laisse en place.
 
-`install` et `update`, en `--global` comme sur un projet, le construisent à la fin de la pose quand
-ils sont lancés depuis un clone de Polype : `cargo build --release --locked` sur les sources `po/`
-du clone, puis une copie à côté renommée sur `polype/po`. La pose d'un projet crée donc
-`~/.claude/polype/` s'il n'existe pas, pour y mettre le seul `po`. Rien de cette étape n'arrête la
-pose ni ne change son code de sortie ; chaque cas où `po` n'est pas construit est dit sur `stderr` :
+`install` et `update`, en `--global` comme sur un projet, le posent à la fin de la pose. La pose
+d'un projet crée donc `~/.claude/polype/` s'il n'existe pas, pour y mettre le seul `po`.
+
+**D'où il vient.** De préférence, le binaire précompilé que publie la release du tag
+`v<version>` :
+`https://github.com/atoll-labs-io/polype/releases/download/v<version>/po-<version>-<plateforme>`,
+où la plateforme est `linux-x86_64`, `linux-aarch64` ou `macos-aarch64` (ADR-0121). L'installeur
+ne le prend que si `bin/polype` porte, dans son bloc `PO_SUMS`, la somme SHA-256 attendue pour ce
+nom ; il le télécharge (`curl`, sinon `wget`, en HTTPS seulement) à côté de `po`, calcule sa somme
+(`sha256sum`, sinon `shasum -a 256`), et ne le renomme sur `polype/po` que si elle est la bonne.
+Un `po` déjà en place avec la somme attendue est gardé sans rien télécharger.
+
+**Ce que la somme prouve.** Que le binaire posé est exactement celui dont la somme est écrite dans
+le `bin/polype` relu et versionné : la somme ne voyage pas à côté du téléchargement, un fichier
+remplacé sur la release ou en chemin est donc refusé. Elle ne prouve **pas** que ce binaire a été
+compilé depuis ces sources : le runner hébergé qui l'a construit reste de confiance. Elle ne dit
+pas non plus qu'il tournera : un binaire Linux construit sur un runner récent demande une glibc
+récente ; sur une machine plus ancienne, force la compilation (plus bas).
+
+**Le repli sur les sources.** Dans ces cas, et dans cet ordre, l'installeur le dit sur `stderr` puis
+compile `po` comme avant (`cargo build --release --locked` sur les sources `po/` du clone, puis une
+copie à côté renommée sur `polype/po`) :
+
+```
+polype: POLYPE_PO_FROM_SOURCES is set; building po from sources
+polype: neither sha256sum nor shasum found; building po from sources
+polype: no prebuilt po <version> for <plateforme>; building po from sources
+polype: could not download <url>; building po from sources
+```
+
+La troisième vient aussi tant que `PO_SUMS` ne porte aucune somme pour cette version. Pour forcer la
+compilation, lance la commande avec `POLYPE_PO_FROM_SOURCES=1`. La variable `POLYPE_PO_FETCH`
+nomme une commande appelée à la place du téléchargement, avec l'URL et le fichier à écrire : la
+suite de tests la met à `false`, si bien qu'elle ne télécharge jamais rien.
+
+**Le refus.** Une somme différente ne pose rien, garde le `po` en place et fait sortir la commande
+en **1**, une fois la méthode posée :
+
+```
+polype: po refused: <url> has sha256 <trouvée>, bin/polype expects <attendue>; <chemin> kept as it was
+```
+
+Il n'y a pas de repli dans ce cas : un téléchargement altéré se signale, il ne se contourne pas.
+
+Hors de ce refus, rien de cette étape n'arrête la pose ni ne change son code de sortie ; chaque cas
+où `po` n'est pas compilé est dit sur `stderr` :
 
 ```
 polype: cargo not found; po was not built, <chemin> is missing (install Rust, then rerun)
@@ -92,8 +133,11 @@ polype: no po sources in <charge utile>; po was not built, <chemin> kept as it w
 
 La première vient sans `cargo` sur le `PATH` : installe Rust, puis relance la même commande. La
 deuxième est suivie de la sortie de `cargo`. La troisième vient d'un run depuis la charge utile, qui
-ne porte pas les sources : il garde le `po` qu'il trouve, ou le laisse manquant. Jusqu'à s171, qui
-télécharge un binaire précompilé, seul un run depuis un clone construit `po`.
+ne porte pas les sources : il garde le `po` qu'il trouve, ou le laisse manquant.
+
+Chaque `po` posé, précompilé ou compilé, laisse à côté de lui `polype/po.sum`, une ligne
+`<sha256> <version> <prebuilt|sources>` que lit `check` (`-` à la place de la somme sans outil
+SHA-256). Un run qui ne pose pas `po` laisse ce fichier tel quel.
 
 Le binaire porte la version de l'installeur. Quand le `.polype/version` d'un projet en dit une
 autre, `po state` répond quand même et ajoute l'avertissement `method-version-mismatch`.
@@ -206,11 +250,11 @@ identique partout. Sans `payload.sums`, la charge utile lancée depuis elle-mêm
 (ADR-0095).
 
 **Ce qui ne se suit pas** :
-- `~/.claude/polype/manifest`, `~/.claude/polype/checksums`, `~/.claude/polype/version` et le
-  binaire `~/.claude/polype/po` : ces quatre fichiers décrivent l'état d'**une** machine, et `po`
-  est compilé pour elle. Synchronisés, une machine hériterait du
-  manifeste d'une autre et `remove` y supprimerait des chemins qu'elle n'a jamais posés. À exclure
-  explicitement des dotfiles.
+- `~/.claude/polype/manifest`, `~/.claude/polype/checksums`, `~/.claude/polype/version`, le
+  binaire `~/.claude/polype/po` et son relevé `~/.claude/polype/po.sum` : ces cinq fichiers
+  décrivent l'état d'**une** machine, et `po` est posé pour sa plateforme. Synchronisés, une
+  machine hériterait du manifeste d'une autre et `remove` y supprimerait des chemins qu'elle n'a
+  jamais posés. À exclure explicitement des dotfiles.
 - l'`AGENTS.local.md` d'un projet et l'état de ce projet (`.polype/`, `AGENTS.md`, `docs/`) : ils
   vivent dans le dépôt du projet, en git, pas dans les dotfiles.
 - tout secret : jeton, `.env`, clé. Les dotfiles partent sur un remote.
@@ -335,6 +379,7 @@ globale un, `payload.sums`, décrits plus bas.
 | `payload.sums` | global seulement : la signature de la charge utile, `cksum` et chemin, ADR-0095 |
 | `mode` | projet seulement : `init` ou `project`, le mode que garde `update` (ADR-0091) |
 | `po` | global seulement, un par machine : le binaire `po`, voir « Le binaire `po` » |
+| `po.sum` | global seulement, à côté de `po` : sa somme SHA-256, sa version, son origine |
 
 Une pose ou une mise à jour globale lancée depuis un dépôt écrit `payload.sums` avec une ligne par
 fichier de `bin/` et `method/` ; un run depuis la charge utile garde celui qu'elle a apporté.
@@ -346,7 +391,7 @@ d'un fichier modifié à la main.
 
 `po run` et `po continue` laissent deux fichiers de plus, propres à la machine, sous le dossier
 commun de git du projet (`.git/` du checkout principal, partagé par ses worktrees), donc hors de
-l'arbre de travail et jamais dans git ; s171 les nettoie :
+l'arbre de travail et jamais dans git :
 
 | Fichier, sous `<dossier commun de git>/polype/` | Contenu |
 | --- | --- |
@@ -355,6 +400,15 @@ l'arbre de travail et jamais dans git ; s171 les nettoie :
 
 Le verrou est retiré à la fin du lancement. Celui qu'un `po` mort laisse, ou qui a plus de dix
 minutes, est repris par le lancement suivant.
+
+Une pose ou une mise à jour de projet qui vient de poser le `po` de sa version retire de
+`<dossier commun de git>/polype/` chaque fichier ordinaire qu'un `po` plus ancien y a laissé et que
+celui-ci ne lit plus, en le nommant
+(`polype: removed <chemin>: left by an older po, not read by po <version>`). Elle garde les fichiers
+du tableau et leurs fichiers transitoires (`.lead-session.json.<pid>.tmp`, `run.lock.<pid>.stale`),
+n'entre dans aucun dossier — la boîte de décisions est gardée —, ne suit aucun lien et ne touche
+jamais un fichier suivi par git. Un projet hors de git n'a rien à nettoyer ; une pose `--global`
+non plus.
 
 Le programme que `po` lance est `claude`, ou celui que nomme la variable `PO_CLAUDE` quand elle est
 posée, comme le font les tests avec un remplaçant.
@@ -490,9 +544,19 @@ listes n'est pas vide, ou si le fichier `version` manque ; **0** quand tout est 
 alors combien de fichiers sont installés et ne nomme rien. Sans `manifest`, il sort 1 : rien n'est
 installé. En `--global`, les chemins sont relatifs à `~/.claude`, charge utile (`polype/bin/`,
 `polype/method/`) comprise. Sur un projet, `check` liste enfin les mêmes lignes `missing setting:`
-que la mise à jour ; elles ne changent pas son code de sortie. Quand le binaire `po` manque, en
-`--global` comme sur un projet, `check` le dit sur une ligne `po missing: <chemin>`, qui ne change
-pas non plus son code de sortie.
+que la mise à jour ; elles ne changent pas son code de sortie. En `--global` comme sur un projet,
+`check` audite enfin le binaire `po` d'après son relevé `po.sum` :
+
+| Ligne | Cas | Sortie |
+| --- | --- | --- |
+| `po missing: <chemin>` | le binaire manque | inchangée |
+| `po not verified: <chemin> …` | pas de somme relevée : `po` posé avant s171 | inchangée |
+| `po modified: <chemin> (sha256 …, laid as …)` | ce n'est plus le binaire posé | **1** |
+| `po version differs: <chemin> is <x>, …` | `po` d'une autre version que le projet | inchangée |
+
+`po not verified` disparaît au prochain `update`, qui relève la somme. `po version differs` compare
+au `.polype/version` du projet (`this project is <y>`), ou de la pose globale en `--global`
+(`this install is <y>`).
 
 `check` compare chaque copie aux empreintes enregistrées et rien d'autre : il n'applique pas la
 règle « identique au fichier livré » de `update`. Dans un projet qui commite `.claude/`, les copies

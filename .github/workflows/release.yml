@@ -1,0 +1,30 @@
+name: release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  create:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - run: gh release create "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --verify-tag --title "$GITHUB_REF_NAME" --notes "po $GITHUB_REF_NAME"
+
+  po:
+    needs: create
+    strategy:
+      matrix:
+        runner: [ubuntu-latest, ubuntu-24.04-arm, macos-latest]
+    runs-on: ${{ matrix.runner }}
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      # The one step a Forgejo runner swaps is the upload; bin/po-release stays as it is (ADR-0105).
+      - run: bin/po-release dist
+      - run: gh release upload "$GITHUB_REF_NAME" dist/po-* --repo "$GITHUB_REPOSITORY"
