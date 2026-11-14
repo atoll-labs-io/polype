@@ -3,6 +3,7 @@
 
 mod framing;
 mod lanes;
+mod start;
 mod stories;
 
 use std::path::PathBuf;
@@ -14,6 +15,7 @@ use crate::project::{Project, Setting, PO_VERSION};
 
 pub use framing::{Framing, Milestone};
 pub use lanes::{BlockedBy, Lane, LaneSettings, Landed, Stage};
+pub use start::StartPoint;
 pub use stories::{Stories, Story};
 
 #[derive(Serialize, Clone, Debug, PartialEq)]
@@ -100,6 +102,8 @@ pub struct Context {
     /// The target branch's commit, short.
     pub commit: Option<String>,
     pub stories: Option<Stories>,
+    /// Read only when `docs/stories.md` is present on the target branch.
+    pub start: Option<StartPoint>,
     pub landed: Option<Landed>,
     pub framing: Option<Framing>,
     /// The current milestone: the first holding a story not landed.
@@ -130,6 +134,10 @@ impl Context {
         let target = settings.usable("Target branch", &mut warnings);
         let commit = target.as_deref().and_then(|target| project.commit(target));
         let stories = target.as_deref().map(|target| Stories::read(&project, target));
+        let start = match (target.as_deref(), stories.as_ref()) {
+            (Some(target), Some(stories)) if stories.present => Some(StartPoint::read(&project, target, stories)),
+            _ => None,
+        };
         let landed = target.as_deref().map(|target| Landed::read(&project, target));
 
         let framing = if project.has_local_md() {
@@ -166,6 +174,7 @@ impl Context {
             target,
             commit,
             stories,
+            start,
             landed,
             framing,
             milestone,

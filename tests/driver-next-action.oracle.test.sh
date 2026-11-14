@@ -178,12 +178,13 @@ expect_lane() { printf 'lane\t%s\t%s\t%s\n' "$1" "$2" "$3" >> "$SCRATCH/expect";
 expect_ready() { printf 'ready\t%s\n' "$1" >> "$SCRATCH/expect"; }
 expect_held() { printf 'held\t%s\t%s\t%s\n' "$1" "$2" "${3:-null}" >> "$SCRATCH/expect"; }
 expect_none() { printf 'none\t%s\n' "$1" >> "$SCRATCH/expect"; }
+expect_collision() { printf 'collision\t%s\t%s\t%s\t%s\n' "$1" "$2" "$3" "$4" >> "$SCRATCH/expect"; }
 
 # check_expectations: every line of $SCRATCH/expect holds in OUT, the output of `po next`; sets BAD.
 check_expectations() {
-  local kind id a b got
+  local kind id a b c got
   BAD=""
-  while IFS=$'\t' read -r kind id a b; do
+  while IFS=$'\t' read -r kind id a b c; do
     case "$kind" in
       lane)
         got="$(jq -c --arg id "$id" '[.actions[]? | select(.story == $id) | [.action, .reason]]' <<< "$OUT")"
@@ -195,6 +196,10 @@ check_expectations() {
       held)
         got="$(jq -c --arg id "$id" '[.held[]? | select(.story == $id) | [.reason, (.ref // "null")]]' <<< "$OUT")"
         [ "$got" = "$(jq -cn --arg a "$a" --arg b "$b" '[[$a, $b]]')" ] || BAD+="held $id: $got instead of [$a, $b]; " ;;
+      collision)
+        got="$(jq -c --arg id "$id" '[.held[]? | select(.story == $id) | [.entry, .ref_entry, (.path // "null")]]' <<< "$OUT")"
+        [ "$got" = "$(jq -cn --arg a "$a" --arg b "$b" --arg c "$c" '[[$a, $b, $c]]')" ] \
+          || BAD+="collision $id: $got instead of [$a, $b, $c]; " ;;
       none)
         jq -e --arg id "$id" '(.ready | index($id)) == null and all(.held[]; .story != $id)
           and all(.actions[]; .story != $id)' <<< "$OUT" >/dev/null || BAD+="$id is listed although it must not be; " ;;
@@ -285,7 +290,8 @@ test_ready_and_held_say_why() {
     || fail "ready is not the stories that may open, in the order of docs/stories.md, within Parallel: $OUT"
   jq -e '.held == [
       {"story": "s02-bravo", "reason": "dependency", "ref": "s01-alpha"},
-      {"story": "s03-charlie", "reason": "owns", "ref": "s01-alpha"},
+      {"story": "s03-charlie", "reason": "owns", "ref": "s01-alpha",
+       "entry": "src/a/x.txt", "ref_entry": "src/a/", "path": "src/a/x.txt"},
       {"story": "s04-delta", "reason": "decision", "ref": "d-0001"},
       {"story": "s07-golf", "reason": "parallel", "ref": null}]' <<< "$OUT" >/dev/null \
     || fail "held does not say why each story waits: $(jq -c .held <<< "$OUT")"
@@ -314,7 +320,7 @@ test_every_routing_case_is_a_fixture() {
       fi
     done
   done
-  [ "$cases" -ge 54 ] || fail "only $cases routing cases under tests/fixtures/driver-cases/"
+  [ "$cases" -ge 56 ] || fail "only $cases routing cases under tests/fixtures/driver-cases/"
   [ -z "$failed" ] || fail "routing cases that po next does not follow:
 $failed"
 }

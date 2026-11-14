@@ -23,6 +23,16 @@ pub struct Held {
     pub reason: String,
     #[serde(rename = "ref")]
     pub reference: Option<String>,
+    /// For `owns` only: the overlapping pair of entries.
+    #[serde(flatten)]
+    pub collision: Option<Collision>,
+}
+
+#[derive(Serialize, Clone, Debug, PartialEq)]
+pub struct Collision {
+    pub entry: String,
+    pub ref_entry: String,
+    pub path: Option<String>,
 }
 
 #[derive(Serialize)]
