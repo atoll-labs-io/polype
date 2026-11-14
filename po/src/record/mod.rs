@@ -4,6 +4,7 @@
 
 mod compose;
 mod gate;
+mod security;
 
 use std::io::Read;
 use std::path::{Path, PathBuf};
@@ -46,6 +47,9 @@ struct Request {
 struct Written {
     path: String,
     method_version: String,
+    /// The decision holding the review's security findings; absent when none was moved out.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    decision: Option<String>,
 }
 
 #[derive(Serialize)]
@@ -179,71 +183,124 @@ pub fn main(args: &[String]) -> i32 {
 
     let rel = kind.report(id);
     let path = top.join(&rel);
-    let mut body = compose::strip_own_header(&answer).to_string();
-    if kind == Kind::Review && !request.composed {
-        let lines = match gate::run(&top, "oracle-intact", id) {
-            Gate::Ran { code, stdout, stderr } => {
-                let mut lines = vec![format!("- Oracle: `po-gate oracle-intact {id}` → exit {code}")];
-                lines.extend(stdout.lines().chain(stderr.lines()).map(|line| format!("  {line}")));
-                lines
-            }
-            Gate::Missing => vec![format!(
-                "- Oracle: `po-gate oracle-intact {id}` → not run: .polype/hooks/po-gate.sh is missing"
-            )],
-            Gate::Unstartable(err) => {
-                vec![format!("- Oracle: `po-gate oracle-intact {id}` → not run: {err}")]
+    let stripped = compose::strip_own_header(&answer);
+    let checked = kind == Kind::Review && !request.composed;
+    let mut security = None;
+    if checked {
+        let dropped = answer[..answer.len() - stripped.len()].matches('\n').count();
+        let split = match security::split(stripped, dropped) {
+            Ok(split) => split,
+            Err(lines) => {
+                return output::reply(
+                    Refusal {
+                        error: "security-shape".to_string(),
+                        message: "a [security] mark is not a finding in the shape of templates/review.md; nothing was written".to_string(),
+                        written: false,
+                        refused: Some(lines),
+                    },
+                    output::REFUSED,
+                );
             }
         };
-        body = compose::insert_oracle(&body, &lines);
+        if split.count > 0 {
+            match security::prepare() {
+                Ok(keeper) => security = Some((split, keeper)),
+                Err((code, error, message)) => return refuse(code, error, message, false),
+            }
+        }
     }
+    let oracle = checked.then(|| match gate::run(&top, "oracle-intact", id) {
+        Gate::Ran { code, stdout, stderr } => {
+            let mut lines = vec![format!("- Oracle: `po-gate oracle-intact {id}` → exit {code}")];
+            lines.extend(stdout.lines().chain(stderr.lines()).map(|line| format!("  {line}")));
+            lines
+        }
+        Gate::Missing => vec![format!(
+            "- Oracle: `po-gate oracle-intact {id}` → not run: .polype/hooks/po-gate.sh is missing"
+        )],
+        Gate::Unstartable(err) => {
+            vec![format!("- Oracle: `po-gate oracle-intact {id}` → not run: {err}")]
+        }
+    });
 
     let existing = match kind {
         Kind::Review => std::fs::read_to_string(&path).ok(),
         Kind::Qa => None,
     };
-    let text = match existing {
-        Some(existing) => compose::append(&existing, &version, &body),
-        None => {
-            let folder = path.parent().unwrap_or(&top);
-            let header = compose::header(&template, id, folder);
-            compose::first_write(&header, &version, &body)
+    let text_with = |count_line: &str| {
+        let mut body = match &security {
+            Some((split, _)) => split.public(count_line),
+            None => stripped.to_string(),
+        };
+        if let Some(lines) = &oracle {
+            body = compose::insert_oracle(&body, lines);
+        }
+        match &existing {
+            Some(existing) => compose::append(existing, &version, &body),
+            None => {
+                let folder = path.parent().unwrap_or(&top);
+                let header = compose::header(&template, id, folder);
+                compose::first_write(&header, &version, &body)
+            }
         }
     };
-    if let Err(err) = write_atomic(&path, &text) {
+    // The decision is posted only once the shape check has passed, so an answer asked again after
+    // findings-shape leaves no decision and no private file behind; the count line it keeps says so.
+    let count = security.as_ref().map_or(0, |(split, _)| split.count);
+    if let Err(err) = write_atomic(&path, &text_with(&format!("Security findings: {count} — none kept, this answer fails findings-shape"))) {
         return refuse(output::UNREADABLE, "unwritable", format!("{rel} cannot be written: {err}"), false);
     }
+    let shape = checked.then(|| gate::run(&top, "findings-shape", id));
 
-    if kind == Kind::Review && !request.composed {
-        match gate::run(&top, "findings-shape", id) {
-            Gate::Ran { code: 0, .. } => {}
-            Gate::Ran { code: 1, stderr, .. } => {
-                return output::reply(
-                    Refusal {
-                        error: "findings-shape".to_string(),
-                        message: format!("{rel} was written, but its findings are not in the shape of templates/review.md"),
-                        written: true,
-                        refused: Some(stderr.lines().map(str::to_string).collect()),
-                    },
-                    output::REFUSED,
-                );
-            }
-            Gate::Ran { stderr, .. } => {
-                return refuse(output::UNREADABLE, "findings-shape-unrunnable", stderr.trim_end(), true);
-            }
-            Gate::Missing => {
+    let mut decision = None;
+    if let Some((split, keeper)) = &security {
+        if !matches!(shape, Some(Gate::Ran { code: 1, .. })) {
+            let posted = match security::keep(keeper, id, split) {
+                Ok(posted) => posted,
+                Err((code, error, message)) => {
+                    let _ = match &existing {
+                        Some(existing) => write_atomic(&path, existing),
+                        None => std::fs::remove_file(&path),
+                    };
+                    return refuse(code, error, message, false);
+                }
+            };
+            if let Err(err) = write_atomic(&path, &text_with(&format!("Security findings: {count} — decision {posted}"))) {
                 return refuse(
                     output::UNREADABLE,
-                    "findings-shape-unrunnable",
-                    ".polype/hooks/po-gate.sh is missing",
-                    true,
+                    "unwritable",
+                    format!("{rel} cannot be written: {err}; the security findings wait in decision {posted}"),
+                    false,
                 );
             }
-            Gate::Unstartable(err) => {
-                return refuse(output::UNREADABLE, "findings-shape-unrunnable", err, true);
-            }
+            decision = Some(posted);
         }
     }
-    output::reply(Written { path: rel, method_version: version }, output::OK)
+
+    match shape {
+        None | Some(Gate::Ran { code: 0, .. }) => {}
+        Some(Gate::Ran { code: 1, stderr, .. }) => {
+            return output::reply(
+                Refusal {
+                    error: "findings-shape".to_string(),
+                    message: format!("{rel} was written, but its findings are not in the shape of templates/review.md"),
+                    written: true,
+                    refused: Some(stderr.lines().map(str::to_string).collect()),
+                },
+                output::REFUSED,
+            );
+        }
+        Some(Gate::Ran { stderr, .. }) => {
+            return refuse(output::UNREADABLE, "findings-shape-unrunnable", stderr.trim_end(), true);
+        }
+        Some(Gate::Missing) => {
+            return refuse(output::UNREADABLE, "findings-shape-unrunnable", ".polype/hooks/po-gate.sh is missing", true);
+        }
+        Some(Gate::Unstartable(err)) => {
+            return refuse(output::UNREADABLE, "findings-shape-unrunnable", err, true);
+        }
+    }
+    output::reply(Written { path: rel, method_version: version, decision }, output::OK)
 }
 
 /// A temp file beside the report, then a rename: a report re-recorded from itself is read whole

@@ -13,8 +13,10 @@ use serde::Serialize;
 
 use crate::output;
 use crate::project::{Project, Setting};
+pub(crate) use add::{place, post as post_decision, Place};
 use decision::id_number;
 pub use decision::Decision;
+pub(crate) use decision::{Choice, Motive, NewDecision};
 
 const REF_MAX: usize = 200;
 
@@ -103,24 +105,42 @@ pub fn read_decisions(dir: &Path) -> io::Result<(Vec<Decision>, Vec<PathBuf>)> {
     decision::read_dir(dir)
 }
 
+/// A refusal not printed yet, so `po record` can carry it into its own reply.
+pub(crate) struct Refused {
+    pub code: i32,
+    pub error: &'static str,
+    pub message: String,
+}
+
+impl Refused {
+    fn print(self) -> i32 {
+        output::error(self.code, self.error, self.message)
+    }
+}
+
 /// The project and its inbox folder, or the exit code of the refusal already printed.
 fn locate() -> Result<(Project, PathBuf), i32> {
+    find().map_err(Refused::print)
+}
+
+/// The project around the current directory and its inbox folder, printing nothing.
+pub(crate) fn find() -> Result<(Project, PathBuf), Refused> {
     let project = std::env::current_dir().ok().and_then(|cwd| Project::find(&cwd));
     let Some(project) = project else {
-        return Err(output::error(
-            output::UNREADABLE,
-            "not-a-project",
-            "not inside a Polype project: no AGENTS.local.md nor .polype/version at the repository root",
-        ));
+        return Err(Refused {
+            code: output::UNREADABLE,
+            error: "not-a-project",
+            message: "not inside a Polype project: no AGENTS.local.md nor .polype/version at the repository root".into(),
+        });
     };
     let value = match project.setting("Decision inbox") {
         Setting::Value(value) if value != "—" => value,
         _ => {
-            return Err(output::error(
-                output::UNREADABLE,
-                "no-inbox-setting",
-                "AGENTS.local.md sets no Decision inbox folder",
-            ))
+            return Err(Refused {
+                code: output::UNREADABLE,
+                error: "no-inbox-setting",
+                message: "AGENTS.local.md sets no Decision inbox folder".into(),
+            })
         }
     };
     let path = PathBuf::from(&value);

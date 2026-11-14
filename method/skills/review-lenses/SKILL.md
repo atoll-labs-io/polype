@@ -8,7 +8,7 @@ A lens widens **where** you look; it never changes **how** you judge. The proced
 
 ## Which lenses run
 
-Take the list of changed paths the scope check already produced — `git diff --name-only <Target branch>...story/<id>` — and read the diff itself. A lens runs when either column of its row matches.
+Take the changed paths the scope check already listed — `git diff --name-only <Target branch>...story/<id>` — and read the diff itself. A lens runs when either column of its row matches.
 
 | Lens | Paths that trigger it | Content that triggers it |
 | --- | --- | --- |
@@ -19,11 +19,11 @@ Take the list of changed paths the scope check already produced — `git diff --
 
 - A lens whose trigger is absent from the diff does not run, and not running it is not a finding.
 - A lens judges only what the diff changes, and opens what that code calls to confirm a finding: the policy an endpoint relies on, the changelog of a bumped dependency. A finding is still about a line of the diff, never about code the diff leaves alone.
-- Each lens that ran goes on the `Lenses run:` line of the report, with the path or content that set it off; when none ran, the line says `none`.
+- Each lens that ran goes on the `Lenses run:` line of the report, with what set it off; when none ran, the line says `none`.
 
 ## Grading
 
-No scale of its own. Every lens finding is graded on the severity scale of `review-antihallu` and written under `## Findings` beside the others; the review still ends with its single pair of verdict lines. The grades named below are only where that scale already puts those defects.
+No scale of its own. Every lens finding is graded on the severity scale of `review-antihallu` and written under `## Findings` beside the others, a Security finding carrying the `[security]` mark `templates/review.md` shows; the review still ends with its one pair of verdict lines. The grades below are where that scale already puts those defects.
 
 ## Security
 
@@ -48,7 +48,7 @@ No scale of its own. Every lens finding is graded on the severity scale of `revi
 ## Dependencies
 
 - Keep to one dependency per change: a lockfile that moves many packages for one feature is a finding.
-- The plan gives each added or upgraded dependency and its reason in the plan; a dependency the plan never names is a finding.
+- Each added or upgraded dependency has its reason in the plan; a dependency the plan never names is a finding.
 - The changelog between the old and new versions was read, and the record says so.
 - The install scripts were read; an npm lockfile flags them with `"hasInstallScript": true`.
 - A dependency that duplicates one already present, or what the standard library does, needs its reason too.

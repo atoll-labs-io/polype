@@ -5,7 +5,7 @@ status: accepted
 date: 2026-10-14
 scope: story s134-everything-to-handle-is-an-issue
 supersedes: []
-superseded-by: [ADR-0099]
+superseded-by: [ADR-0099, ADR-0123]
 ---
 
 # ADR-0090 — Tout ce qui est à traiter devient une issue

@@ -80,7 +80,7 @@ test_framing_items_are_listed() {
   framing_is done null 'by hand' present yes present present
 
   git -C "$R" rm -qf AGENTS.local.md && commit_all 'no setup'
-  mkdir -p "$R/.polype" && echo 0.2.0 > "$R/.polype/version"
+  mkdir -p "$R/.polype" && sed -n 's/^POLYPE_VERSION="\(.*\)"$/\1/p' "$ROOT/bin/polype" > "$R/.polype/version"
   po_state
   jq -e '.framing == {"stage": "setup", "next": "/po-setup", "items": []}' <<< "$OUT" >/dev/null \
     || fail "without AGENTS.local.md, framing is not the setup stage with no item: $(jq -c .framing <<< "$OUT")"
@@ -201,7 +201,7 @@ test_session_cases_read_the_same() {
   commit_all
   read_the_same "framing stage"
   git -C "$R" rm -q AGENTS.local.md && git -C "$R" commit -qm "no setup"
-  mkdir -p "$R/.polype" && echo 0.2.0 > "$R/.polype/version"
+  mkdir -p "$R/.polype" && sed -n 's/^POLYPE_VERSION="\(.*\)"$/\1/p' "$ROOT/bin/polype" > "$R/.polype/version"
   read_the_same "no setup"
 
   # test_session_hook_lists_human_escalations, with a root CLAUDE.md whose hint stays with the hook
