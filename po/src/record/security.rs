@@ -149,6 +149,7 @@ pub struct Keeper {
 pub fn prepare() -> Result<Keeper, Refusal> {
     let (project, inbox_dir) = inbox::find().map_err(|r| (r.code, r.error, r.message))?;
     let folder = private_folder(&project)?.join(project.name());
+    check_outside(&project, &folder)?;
     Ok(Keeper { project, inbox_dir, folder })
 }
 
@@ -156,7 +157,7 @@ pub fn prepare() -> Result<Keeper, Refusal> {
 /// nothing of the text is left on disk.
 pub fn keep(keeper: &Keeper, id: &str, split: &Split) -> Result<String, Refusal> {
     let Keeper { project, inbox_dir, folder } = keeper;
-    let file = write_private(folder, id, &split.private).map_err(|err| {
+    let file = write_private(project, folder, id, &split.private).map_err(|err| {
         (output::REFUSED, "private-folder-unusable", format!("Private folder: cannot write under {}: {err}", folder.display()))
     })?;
     let plural = if split.count == 1 { "" } else { "s" };
@@ -225,9 +226,24 @@ fn private_folder(project: &Project) -> Result<PathBuf, Refusal> {
     Ok(path)
 }
 
-fn write_private(folder: &Path, id: &str, text: &str) -> std::io::Result<PathBuf> {
+/// The folder the text goes to lies outside the repository: checked before anything is written,
+/// and again on the path the file is then opened under.
+fn check_outside(project: &Project, folder: &Path) -> Result<(), Refusal> {
+    if inbox::place(project, folder) != Place::Outside {
+        return Err((
+            output::REFUSED,
+            "private-folder-unusable",
+            format!("Private folder {} resolves inside the repository; nothing was written", folder.display()),
+        ));
+    }
+    Ok(())
+}
+
+fn write_private(project: &Project, folder: &Path, id: &str, text: &str) -> std::io::Result<PathBuf> {
     // Only the folders created here get 0700; one that exists keeps its mode.
     std::fs::DirBuilder::new().recursive(true).mode(0o700).create(folder)?;
+    let folder = folder.canonicalize()?;
+    check_outside(project, &folder).map_err(|(_, _, message)| std::io::Error::other(message))?;
     let stamp = chrono::Utc::now().format("%Y%m%dT%H%M%SZ");
     let file = folder.join(format!("{id}-{stamp}-{}.md", std::process::id()));
     let mut out = std::fs::OpenOptions::new().write(true).create_new(true).mode(0o600).open(&file)?;
