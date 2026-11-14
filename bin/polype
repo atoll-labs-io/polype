@@ -25,6 +25,12 @@ if [ "${BASH_VERSINFO[0]}" -lt 4 ] || { [ "${BASH_VERSINFO[0]}" -eq 4 ] && [ "${
 fi
 
 POLYPE_VERSION="0.2.0"
+PO_RELEASES="https://github.com/atoll-labs-io/polype/releases/download"
+# The expected SHA-256 of each published po, one line per platform: the .sha256 files bin/po-release
+# writes, pasted here by the commit that follows a release (docs/ci.md). The sum travels in this
+# reviewed file, never beside the download (ADR-0121). Empty: every install builds from sources.
+PO_SUMS='
+'
 
 # $0 is followed through symlinks: ~/.local/bin/polype points at the payload's own script, and
 # the method the payload ships sits next to it, never next to the link.
@@ -299,7 +305,7 @@ is_payload_path() { [ "$mode" = global ] && [ "${1#polype/}" != "$1" ]; }
 is_payload_state_file() {
   case "$1" in
     */*) return 1 ;;
-    manifest|checksums|version|payload.sums|po|*.next|*.polype-next) return 0 ;;
+    manifest|checksums|version|payload.sums|po|po.sum|*.next|*.polype-next) return 0 ;;
     *) return 1 ;;
   esac
 }
@@ -797,16 +803,59 @@ wire_the_project() {
   missing_settings >&2
 }
 
-# po, one per machine at the payload root (ADR-0117), is built from the clone's sources. A run from
-# the payload has none and keeps the po it finds. Nothing here stops the run: the method is laid
-# down whether po builds or not.
+# po, one per machine at the payload root (ADR-0117), is laid prebuilt when bin/polype carries the
+# expected SHA-256 of a published binary for this platform, else built from the clone's sources
+# (ADR-0115, ADR-0121). Only a downloaded binary whose sum differs fails the run, after the method
+# is laid down; in every other case the method is laid whether po is or not.
 po_path() { printf '%s' "$payload_dir/po"; }
+po_refused=no
 
 # How a run that did not build po leaves it, for the line that says so.
 po_left() { if [ -e "$1" ]; then printf '%s kept as it was' "$1"; else printf '%s is missing' "$1"; fi; }
 
+# <os>-<arch> as releases name it; bin/po-release maps it the same way.
+po_platform() {
+  local os arch
+  case "$(uname -s)" in Linux) os=linux ;; Darwin) os=macos ;; *) return 1 ;; esac
+  case "$(uname -m)" in x86_64|amd64) arch=x86_64 ;; aarch64|arm64) arch=aarch64 ;; *) return 1 ;; esac
+  printf '%s-%s' "$os" "$arch"
+}
+
+has_sha256() { command -v sha256sum >/dev/null 2>&1 || command -v shasum >/dev/null 2>&1; }
+
+# Never cksum (sum_of): a CRC proves nothing against a binary chosen to match it.
+sha256_of() {
+  if command -v sha256sum >/dev/null 2>&1; then sha256sum < "$1" | cut -d' ' -f1
+  elif command -v shasum >/dev/null 2>&1; then shasum -a 256 < "$1" | cut -d' ' -f1
+  else return 1; fi
+}
+
+# po_expected_sum <name>: the sum PO_SUMS holds for that file name.
+po_expected_sum() {
+  local sum name
+  while read -r sum name; do
+    if [ "$name" = "$1" ] && [[ "$sum" =~ ^[0-9a-f]{64}$ ]]; then printf '%s' "$sum"; return 0; fi
+  done <<< "$PO_SUMS"
+  return 1
+}
+
+# po_fetch <url> <file>. POLYPE_PO_FETCH replaces the download, so the suite never reaches the network.
+po_fetch() {
+  if [ -n "${POLYPE_PO_FETCH-}" ]; then "$POLYPE_PO_FETCH" "$1" "$2"
+  elif command -v curl >/dev/null 2>&1; then curl -fsSL --proto =https --tlsv1.2 --max-time 300 -o "$2" "$1"
+  elif command -v wget >/dev/null 2>&1; then wget -q --https-only -O "$2" "$1"
+  else return 1; fi
+}
+
+# record_po <sha256|-> <prebuilt|sources>: po.sum, the record check reads.
+record_po() {
+  local dest
+  dest="$(po_path)"
+  printf '%s %s %s\n' "$1" "$POLYPE_VERSION" "$2" > "$dest.sum.polype-next" && mv -f "$dest.sum.polype-next" "$dest.sum"
+}
+
 build_po() {
-  local dest out target_dir
+  local dest out target_dir sum
   dest="$(po_path)"
   if [ ! -f "$base/po/Cargo.toml" ]; then
     echo "polype: no po sources in $base; po was not built, $(po_left "$dest")" >&2
@@ -824,11 +873,114 @@ build_po() {
   fi
   if mkdir -p "$(dirname "$dest")" && cp "$target_dir/release/po" "$dest.polype-next" \
       && chmod +x "$dest.polype-next" && mv -f "$dest.polype-next" "$dest"; then
+    sum="$(sha256_of "$dest")" || sum=-
+    record_po "$sum" sources
     return 0
   fi
   rm -f "$dest.polype-next" 2>/dev/null || true
   echo "polype: po was built but could not be laid at $dest" >&2
   return 0
+}
+
+lay_po() {
+  local dest platform name expected url found
+  dest="$(po_path)"
+  if [ "${POLYPE_PO_FROM_SOURCES-}" = 1 ]; then
+    echo "polype: POLYPE_PO_FROM_SOURCES is set; building po from sources" >&2
+    build_po; return 0
+  fi
+  if ! has_sha256; then
+    echo "polype: neither sha256sum nor shasum found; building po from sources" >&2
+    build_po; return 0
+  fi
+  platform="$(po_platform)" || platform=""
+  name="po-$POLYPE_VERSION-$platform"
+  if [ -z "$platform" ] || ! expected="$(po_expected_sum "$name")"; then
+    echo "polype: no prebuilt po $POLYPE_VERSION for ${platform:-$(uname -s)-$(uname -m)}; building po from sources" >&2
+    build_po; return 0
+  fi
+  if [ -f "$dest" ] && [ "$(sha256_of "$dest")" = "$expected" ]; then
+    record_po "$expected" prebuilt
+    return 0
+  fi
+  url="$PO_RELEASES/v$POLYPE_VERSION/$name"
+  if ! { mkdir -p "$(dirname "$dest")" && po_fetch "$url" "$dest.polype-next" >&2; }; then
+    rm -f "$dest.polype-next" 2>/dev/null || true
+    echo "polype: could not download $url; building po from sources" >&2
+    build_po; return 0
+  fi
+  found="$(sha256_of "$dest.polype-next")" || found=""
+  if [ "$found" != "$expected" ]; then
+    rm -f "$dest.polype-next" 2>/dev/null || true
+    echo "polype: po refused: $url has sha256 $found, bin/polype expects $expected; $(po_left "$dest")" >&2
+    po_refused=yes
+    return 0
+  fi
+  if chmod +x "$dest.polype-next" && mv -f "$dest.polype-next" "$dest"; then
+    record_po "$expected" prebuilt
+    return 0
+  fi
+  rm -f "$dest.polype-next" 2>/dev/null || true
+  echo "polype: po was downloaded but could not be laid at $dest" >&2
+  return 0
+}
+
+# The files po reads or writes under <git common dir>/polype/: lead-session.json and its
+# .lead-session.json.<pid>.tmp (po/src/run/session.rs:36,94), run.lock and its run.lock.<pid>.stale
+# (po/src/run/mod.rs:93,245). A machine file a later po adds must join this list, or the next
+# update removes it.
+is_po_machine_file() {
+  case "$1" in
+    lead-session.json|run.lock|.lead-session.json.*.tmp|run.lock.*.stale) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
+# Once a project run has laid po of this version, removes the plain files an older po left directly
+# under <git common dir>/polype/: never a directory (the decision inbox is one), never a symlink,
+# never deeper. Git-tracked files cannot sit there.
+clean_machine_files() {
+  local dest version common dir entry
+  [ "$mode" != global ] && [ "$po_refused" = no ] || return 0
+  dest="$(po_path)"
+  [ -f "$dest" ] && [ -f "$dest.sum" ] || return 0
+  read -r _ version _ < "$dest.sum" || return 0
+  [ "$version" = "$POLYPE_VERSION" ] || return 0
+  common="$(git -C "$project" rev-parse --path-format=absolute --git-common-dir 2>/dev/null)" || return 0
+  dir="$common/polype"
+  [ -d "$dir" ] && [ ! -L "$dir" ] || return 0
+  for entry in "$dir"/* "$dir"/.[!.]* "$dir"/..?*; do
+    [ -f "$entry" ] && [ ! -L "$entry" ] || continue
+    if is_po_machine_file "${entry##*/}"; then continue; fi
+    if rm -f "$entry"; then
+      echo "polype: removed $entry: left by an older po, not read by po $POLYPE_VERSION" >&2
+    fi
+  done
+}
+
+# The po lines of check; returns 1 only when po's sha256 differs from the one recorded when it was laid.
+check_po() {
+  local dest sum="" version="" found expected label status=0
+  dest="$(po_path)"
+  if [ ! -e "$dest" ]; then
+    echo "po missing: $dest (rerun polype install or update)"
+    return 0
+  fi
+  [ ! -f "$dest.sum" ] || read -r sum version _ < "$dest.sum" || true
+  if [ -z "$sum" ] || [ "$sum" = - ]; then
+    echo "po not verified: $dest has no recorded sha256 (rerun polype update)"
+  elif ! found="$(sha256_of "$dest")"; then
+    echo "po not verified: $dest (neither sha256sum nor shasum found)"
+  elif [ "$found" != "$sum" ]; then
+    echo "po modified: $dest (sha256 $found, laid as $sum)"
+    status=1
+  fi
+  if [ -n "$version" ] && [ -f "$version_file" ]; then
+    expected="$(cat "$version_file")"
+    if [ "$mode" = global ]; then label="this install"; else label="this project"; fi
+    [ "$version" = "$expected" ] || echo "po version differs: $dest is $version, $label is $expected"
+  fi
+  return "$status"
 }
 
 stamp_version() { printf '%s\n' "$POLYPE_VERSION" > "$version_file"; }
@@ -937,12 +1089,14 @@ cmd_install() {
   stamp_mode
   prune_empty_dirs
   wire_the_project
-  build_po
+  lay_po
+  clean_machine_files
   local path
   for path in ${modified[@]+"${modified[@]}"}; do
     echo "polype: modified, left as it is: $path" >&2
   done
   done_message "${#modified[@]}"
+  [ "$po_refused" = no ] || exit 1
 }
 
 cmd_init() {
@@ -998,7 +1152,8 @@ cmd_update() {
   stamp_mode
   prune_empty_dirs
   wire_the_project
-  build_po
+  lay_po
+  clean_machine_files
 
   if [ "$had_local_sums" = no ] && [ -n "$local_sums" ] && [ -f "$local_sums" ]; then
     echo "polype: .claude/.polype-checksums written: the sums of the .claude/ copies now live there, out of git" >&2
@@ -1008,6 +1163,7 @@ cmd_update() {
     echo "polype: modified, left as it is: $path" >&2
   done
   echo "Polype $POLYPE_VERSION updated in $root ($(wc -l < "$manifest") files, $ghosts removed, ${#modified[@]} left modified)."
+  [ "$po_refused" = no ] || exit 1
 }
 
 cmd_check() {
@@ -1044,7 +1200,7 @@ cmd_check() {
   else
     status=1
   fi
-  [ -e "$(po_path)" ] || echo "po missing: $(po_path) (rerun install or update from a Polype clone, with cargo)"
+  check_po || status=1
   missing_settings
   exit "$status"
 }

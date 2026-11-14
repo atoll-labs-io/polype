@@ -9,6 +9,9 @@ files=("$@")
 export CARGO_HOME="${CARGO_HOME:-$HOME/.cargo}" RUSTUP_HOME="${RUSTUP_HOME:-$HOME/.rustup}"
 root="$(cd .. && pwd)"
 export CARGO_TARGET_DIR="${CARGO_TARGET_DIR:-$root/po/target}"
+# The suite never downloads po: an installer run falls back to the sources. A test that needs a
+# download sets its own double.
+export POLYPE_PO_FETCH=false
 # No test may reach the developer's real ~/.claude, even one that never sets it itself.
 claude_tmp="$(mktemp -d)"
 trap 'rm -rf "$claude_tmp"' EXIT
