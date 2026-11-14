@@ -2744,7 +2744,7 @@ Objectif : que Polype se pilote par une commande qui rend du JSON, et non par de
 - **Dépend de** : s167-record-writes-reports, s169-run-from-outside, s174-verbs-read-project-context, s175-held-says-what-collides
 - **Surface** : command
 - **Corrige** : issue #205 (`Issue tracker: github`) ; donne sa mesure à #209
-- **Owns** : `po/src/trust/`, `method/hooks/po-run.sh`, `method/templates/verification-record.md`, `docs/interface-agent.md`, `tests/trust-signals.oracle.test.sh`, `tests/trust-signals.test.sh`, `po/src/context/mod.rs`
+- **Owns** : `po/src/trust/`, `method/hooks/po-run.sh`, `method/templates/verification-record.md`, `docs/interface-agent.md`, `tests/trust-signals.oracle.test.sh`, `tests/trust-signals.test.sh`, `po/src/context/mod.rs`, `tests/run-ledger.test.sh`, `tests/state-as-json.oracle.test.sh`
 
 **Critères d'acceptation**
 - [ ] `shipped_stories_carry_trust` — `po state` rend pour chaque story livrée du jalon en cours `shipped[].trust` avec `oracle`, `fix_loops`, `max_severity`, `not_verified`, `method_version`, lus dans `docs/reviews/<id>.md`, et `track` (`full` ou `flow`), lu dans le plan ; `po state --all` le rend pour toutes les stories livrées.
