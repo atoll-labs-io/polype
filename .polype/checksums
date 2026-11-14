@@ -1,5 +1,5 @@
 2557896153 831 .polype/templates/adr.md
-2983679629 6630 .polype/templates/agents-local.md
+590935243 6660 .polype/templates/agents-local.md
 1857618621 2482 .polype/templates/architecture.md
 3149650530 2053 .polype/templates/brief.md
 1886600924 341 .polype/templates/decisions-log.md
@@ -12,12 +12,12 @@
 3414052628 3683 .polype/templates/profile.md
 510594529 1721 .polype/templates/qa.md
 3332106689 907 .polype/templates/research.md
-2633076259 3242 .polype/templates/review.md
+1744786639 3238 .polype/templates/review.md
 428576552 1847 .polype/templates/stories.md
 2457356057 1737 .polype/templates/stories-review.md
 2623356186 2051 .polype/templates/verification-record.md
 4272742045 39677 .polype/hooks/po-bounds.sh
-2559772101 38012 .polype/hooks/po-gate.sh
+1834982246 38434 .polype/hooks/po-gate.sh
 2128204330 10694 .polype/hooks/po-intake.sh
 1537413280 3470 .polype/hooks/po-run.sh
 3799477057 5400 .polype/hooks/po-session.sh

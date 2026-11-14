@@ -270,7 +270,8 @@ SECRET_MATCHER='
 '
 
 # Prints <file> with each qualifying match of SECRET_PATTERNS replaced by [redacted]; a private key line, through the
-# next END line or the end of the file, becomes one [redacted] line. The file itself is left as it was.
+# next END line or the end of the file, becomes one [redacted] line. Every match is judged on the original line, as the
+# scan judges it, and each run of flagged characters becomes one [redacted]. The file itself is left as it was.
 redact() {
   local file="$1"
   [ -n "$file" ] && [ -f "$file" ] && [ -r "$file" ] || { echo "po-gate: redact: cannot read '$file'" >&2; exit 2; }
@@ -286,14 +287,22 @@ redact() {
         if (substr(line, SM_START + SM_LEN) !~ /-----END[A-Z ]*PRIVATE KEY/) inkey = 1
         next
       }
+      split("", marked)
       for (i = 1; i <= np; i++) {
+        if (prule[i] == "private-key") continue
         from = 1
         while (next_secret(line, i, from)) {
-          line = substr(line, 1, SM_START - 1) "[redacted]" substr(line, SM_START + SM_LEN)
-          from = SM_START + length("[redacted]")
+          for (k = SM_START; k < SM_START + SM_LEN; k++) marked[k] = 1
+          from = SM_START + SM_LEN
         }
       }
-      print line
+      out = ""; n = length(line); k = 1
+      while (k <= n) {
+        if (k in marked) { out = out "[redacted]"; while (k in marked) k++; continue }
+        j = k; while (j <= n && !(j in marked)) j++
+        out = out substr(line, k, j - k); k = j
+      }
+      print out
     }
   ' "$file" || { echo "po-gate: redact: could not read '$file'" >&2; exit 2; }
 }
