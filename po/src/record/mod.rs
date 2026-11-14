@@ -258,19 +258,18 @@ pub fn main(args: &[String]) -> i32 {
             let posted = match security::keep(keeper, id, split) {
                 Ok(posted) => posted,
                 Err((code, error, message)) => {
-                    let _ = match &existing {
-                        Some(existing) => write_atomic(&path, existing),
-                        None => std::fs::remove_file(&path),
-                    };
-                    return refuse(code, error, message, false);
+                    let rolled_back = roll_back(&path, existing.as_deref());
+                    return refuse(code, error, message, !rolled_back);
                 }
             };
             if let Err(err) = write_atomic(&path, &text_with(&format!("Security findings: {count} — decision {posted}"))) {
+                let rolled_back = roll_back(&path, existing.as_deref());
+                let left = if rolled_back { "" } else { "; the review still holds its provisional count line" };
                 return refuse(
                     output::UNREADABLE,
                     "unwritable",
-                    format!("{rel} cannot be written: {err}; the security findings wait in decision {posted}"),
-                    false,
+                    format!("{rel} cannot be written: {err}; the security findings wait in decision {posted}{left}"),
+                    !rolled_back,
                 );
             }
             decision = Some(posted);
@@ -301,6 +300,14 @@ pub fn main(args: &[String]) -> i32 {
         }
     }
     output::reply(Written { path: rel, method_version: version, decision }, output::OK)
+}
+
+/// Puts the review back to its bytes, or removes it when there was none; whether that held.
+fn roll_back(path: &Path, existing: Option<&str>) -> bool {
+    match existing {
+        Some(existing) => write_atomic(path, existing).is_ok(),
+        None => std::fs::remove_file(path).is_ok(),
+    }
 }
 
 /// A temp file beside the report, then a rename: a report re-recorded from itself is read whole

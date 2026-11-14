@@ -110,28 +110,51 @@ pub(crate) enum Place {
     InRoot(PathBuf),
     /// In the repository but not under the root: a worktree placed elsewhere.
     Elsewhere,
+    /// Not verified entirely, so never taken for outside.
+    Unverified,
 }
 
 /// Where `path` lies against the project. A path prefix alone misses a symlink and a worktree
 /// placed outside the root, so the nearest existing ancestor is resolved and asked for its git
-/// common dir.
+/// common dir. A path holding `..` is refused as `Unverified` when a `..` falls after its nearest
+/// existing ancestor, or when reading it through the filesystem and folding it by hand disagree.
 pub(crate) fn place(project: &Project, path: &Path) -> Place {
     let absolute = if path.is_absolute() { path.to_path_buf() } else { project.root.join(path) };
-    let lexical = normalise(&absolute);
-    if let Ok(rel) = lexical.strip_prefix(&project.root) {
-        return Place::InRoot(rel.to_path_buf());
+    if !has_parent_dir(&absolute) {
+        return resolve(project, &absolute);
     }
-    let mut ancestor = lexical.as_path();
+    let as_written = resolve(project, &absolute);
+    if as_written == resolve(project, &normalise(&absolute)) {
+        as_written
+    } else {
+        Place::Unverified
+    }
+}
+
+fn has_parent_dir(path: &Path) -> bool {
+    path.components().any(|c| c == Component::ParentDir)
+}
+
+fn resolve(project: &Project, absolute: &Path) -> Place {
+    if !has_parent_dir(absolute) {
+        if let Ok(rel) = absolute.strip_prefix(&project.root) {
+            return Place::InRoot(normalise(rel));
+        }
+    }
+    let mut ancestor = absolute;
     while !ancestor.exists() {
         match ancestor.parent() {
             Some(parent) => ancestor = parent,
-            None => return Place::Outside,
+            None => return Place::Unverified,
         }
     }
-    let Ok(resolved) = ancestor.canonicalize() else { return Place::Outside };
-    if let Ok(rel) = resolved.strip_prefix(&project.root) {
-        let rest = lexical.strip_prefix(ancestor).unwrap_or(Path::new(""));
-        return Place::InRoot(rel.join(rest));
+    let Ok(rest) = absolute.strip_prefix(ancestor) else { return Place::Unverified };
+    if has_parent_dir(rest) {
+        return Place::Unverified;
+    }
+    let Ok(resolved) = ancestor.canonicalize() else { return Place::Unverified };
+    if let Ok(rel) = resolved.join(rest).strip_prefix(&project.root) {
+        return Place::InRoot(normalise(rel));
     }
     let dir = if resolved.is_dir() { resolved.clone() } else { resolved.parent().unwrap_or(&resolved).to_path_buf() };
     let common = |dir: &Path| {
@@ -163,7 +186,7 @@ fn normalise(path: &Path) -> PathBuf {
 pub(super) fn kept_out_of_git(project: &Project, dir: &Path) -> bool {
     match place(project, dir) {
         Place::Outside => true,
-        Place::Elsewhere => false,
+        Place::Elsewhere | Place::Unverified => false,
         Place::InRoot(rel) => {
             let probe = rel.join("d-0000.json");
             let probe = probe.to_string_lossy();
