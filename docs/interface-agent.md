@@ -40,7 +40,17 @@ Règles communes :
   "project": "polype",
   "commit": "0648923",
   "method_version": "0.2.0",
-  "framing": {"stage": "done", "next": null},
+  "framing": {
+    "stage": "done",
+    "next": null,
+    "items": [
+      {"item": "scope", "state": "approved"},
+      {"item": "stories", "state": "present"},
+      {"item": "stories-review", "state": "yes"},
+      {"item": "architecture", "state": "present"},
+      {"item": "design-system", "state": "not needed"}
+    ]
+  },
   "milestone": {"id": "M20", "stories": 5, "shipped": 0},
   "session": {"running": false, "id": null},
   "bounds": "held",
@@ -48,9 +58,11 @@ Règles communes :
   "lanes": [
     {
       "story": "s160-intake-title-bounded",
+      "path": ".worktrees/s160-intake-title-bounded",
       "stage": "review",
       "next": {"action": "ship", "reason": "ship-allowed passes"},
-      "blocked_by": null
+      "blocked_by": null,
+      "stops": []
     }
   ],
   "ready": ["s161-installer-leftovers"],
@@ -81,9 +93,11 @@ Règles communes :
 - `milestone` est la première section `## M…` de `docs/stories.md` sur `Target branch` qui tient une story pas encore livrée, `id` étant le titre avant ` — ` ; `null` quand toutes le sont.
 - `waiting` liste, triés, les `id` des décisions `pending` du dossier que nomme le réglage `Decision inbox` (`.polype/inbox/` dans le gabarit), lu depuis la racine du projet ou absolu ; `[]` quand le dossier manque.
 
-- `framing.stage` : `setup`, `scope`, `stories`, `stories-review`, `architecture`, `design-system` ou `done` ; `next` est la commande à lancer, ou `null`. Les règles sont celles de `po-session`.
+- `framing.stage` : `setup`, `scope`, `stories`, `stories-review`, `architecture`, `design-system` ou `done` ; `next` est la commande à lancer, ou `null`. `framing.items` donne l'état de chaque élément du cadrage, dans cet ordre : `scope` (`approved`, `in progress`, `missing`, ou `by hand` quand `Entry mode` vaut `—`), `stories` (`present`, `missing`), `stories-review` (`yes`, `no`, `none` sans ligne `Stories ready:`), `architecture` (`present`, `missing`), `design-system` (`present`, `missing`, ou `not needed` quand le fichier manque et qu'aucune story n'a d'écran) ; `[]` au stade `setup`. `po` fait référence pour ces règles : le hook de session lira ces champs (s172) au lieu de les dériver.
 - `lanes[].stage` : `research`, `design`, `plan`, `execute`, `qa`, `review`, `ship`, ou `null` quand il ne peut pas être lu. La première règle qui s'applique décide, chaque gate étant le `po-gate` du worktree lancé dans ce worktree : story livrée → `ship` ; sans plan → `research` sans recherche, `design` quand la story a un écran et que `docs/designs/<id>/design.md` manque, sinon `plan` ; `plan-validated` refuse → `plan` ; `ship-allowed` passe → `ship` ; `verif-current` refuse → `execute` ; la story va en QA et `qa-current` refuse → `qa` ; sinon `review`. Une revue bloquée sur un code inchangé reste donc `review`, et une lane livrée encore sur le disque est `ship`, son nettoyage.
-- `lanes[].blocked_by` : le premier arrêt qui attend une personne, `root-cause-not-found`, `technical-choice`, `qa-blocked`, `max-attempts` ou `merge-waiting`, sinon `null`. `next.action` est l'une de `plan`, `validate-plan`, `design`, `execute`, `qa`, `review`, `fix`, `ship`, `wait`, `ask` ; `reason` nomme la porte ou le fichier qui en décide.
+- `lanes[].path` : le chemin du worktree relatif à la racine du projet, absolu quand il est hors du projet.
+- `lanes[].stops` : chaque arrêt de la lane qui attend une personne, dans cet ordre, `[]` quand il n'y en a pas ; chacun porte un `code` et ses valeurs : `root-cause-not-found` (`file`, la recherche), `technical-choice` (`file`, le plan ; `command`, `/po-plan <id>`), `qa-blocked` (`file`, le rapport de QA), `max-attempts` (`fix_loop` et `max_attempts`, deux entiers), `merge-waiting` (`branch`, `story/<id>`).
+- `lanes[].blocked_by` : le `code` du premier arrêt de `stops`, `null` quand `stops` est vide. `next.action` est l'une de `plan`, `validate-plan`, `design`, `execute`, `qa`, `review`, `fix`, `ship`, `wait`, `ask` ; `reason` nomme la porte ou le fichier qui en décide.
 - `held[].reason` : `dependency` (une story dont elle dépend n'est pas livrée), `owns` (une lane en cours tient un de ses chemins), `decision` (une décision attend, `ref` la nomme), `parallel` (la limite `Parallel` est atteinte), `framing` (aucun titre de `docs/stories.md` ne la nomme sur le point de départ des lanes : `origin/<Target branch>` quand cette référence existe, `<Target branch>` sinon ; `ref` est alors une référence git, pas une story ni une décision, lue dans le dépôt local sans interroger de forge ; la story garde sa place dans `Parallel`). Pour `owns` seulement, l'item porte aussi `entry` (l'entrée `Owns` de la story retenue), `ref_entry` (celle de la story que nomme `ref`) et `path` (un chemin que les deux couvrent, `null` quand le recouvrement n'est gardé que par prudence, par exemple deux jokers dans un même segment ou `**/x.md` contre `src/y.md`) : la première paire qui se recouvre, dans l'ordre `Owns` de la story retenue. Ces trois champs sont absents pour toute autre raison.
 - `session` : `running` dit si la session de chef de projet que `run` a lancée tourne encore, `id` en est l'identifiant court (voir `## run et continue`) ; `{"running": false, "id": null}` quand `run` n'a jamais lancé de session, `null` quand l'enregistrement ou la liste des sessions de Claude Code ne se lit pas.
 - `bounds` : `held` quand les bornes des subagents seront tenues dans une session lancée par `run`, `unproven` sinon (voir `## run et continue`).

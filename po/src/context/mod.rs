@@ -14,7 +14,7 @@ use crate::inbox::{self, Decision};
 use crate::project::{Project, Setting, PO_VERSION};
 
 pub use framing::{Framing, Milestone};
-pub use lanes::{BlockedBy, Lane, LaneSettings, Landed, Stage};
+pub use lanes::{BlockedBy, Lane, LaneSettings, Landed, Stage, Stop};
 pub use start::StartPoint;
 pub use stories::{Stories, Story};
 

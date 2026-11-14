@@ -2,16 +2,18 @@
 
 use serde::Serialize;
 
-use crate::context::{BlockedBy, Context, Framing, Milestone, Stage, Warning};
+use crate::context::{BlockedBy, Context, Framing, Milestone, Stage, Stop, Warning};
 use crate::project::Project;
 use crate::{next, output, run, trust};
 
 #[derive(Serialize, Clone, Debug, PartialEq)]
 pub struct Lane {
     pub story: String,
+    pub path: String,
     pub stage: Option<Stage>,
     pub next: Option<next::NextAction>,
     pub blocked_by: Option<BlockedBy>,
+    pub stops: Vec<Stop>,
 }
 
 #[derive(Serialize)]
@@ -64,9 +66,11 @@ fn compose(context: &Context, options: &trust::StateOptions) -> State {
             .iter()
             .map(|lane| Lane {
                 story: lane.story.clone(),
+                path: lane.shown_path.clone(),
                 stage: lane.stage,
                 next: next::lane_next(context, lane),
                 blocked_by: lane.blocked_by,
+                stops: lane.stops.clone(),
             })
             .collect()
     });
