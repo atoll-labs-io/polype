@@ -4,7 +4,6 @@
 SHIP="$METHOD/commands/po-ship.md"
 DRIVE="$METHOD/commands/po-drive.md"
 RULES="$METHOD/AGENTS.md"
-STATUS="$METHOD/commands/po-status.md"
 MUTANTS="$(mktemp -d)"
 trap 'rm -rf "$MUTANTS"' EXIT
 
@@ -43,19 +42,6 @@ test_fleet_rules_agree() {
   holds "$(section_of "$RULES" 'Law 1 — Nothing reaches the code except through a story')" "$shared" 'AGENTS.md Law 1'
   holds "$(section_of "$DRIVE" 'Ships, one at a time')" 'Proving a ship means seeing it land' 'po-drive ships'
   ! grep -qF 'the next one lands after it, in the order the reviews passed' "$RULES" || fail "AGENTS.md keeps the old order clause"
-
-  local step3 step4 step5
-  step3="$(awk '/^3\. \*\*Per story/ {on=1} /^4\. \*\*Fleet/ {on=0} on' "$STATUS")"
-  step4="$(awk '/^4\. \*\*Fleet/ {on=1} /^5\. \*\*Output/ {on=0} on' "$STATUS")"
-  step5="$(awk '/^5\. \*\*Output/ {on=1} /^6\. \*\*Decisions/ {on=0} on' "$STATUS")"
-  holds "$(grep -F -- '- plan:' <<< "$step3")" 'waiting for a technical choice' 'po-status plan bullet'
-  holds "$(grep -F -- '- plan:' <<< "$step3")" 'Technical choice: waiting for a human' 'po-status plan bullet'
-  holds "$step4" 'a plan waiting for a technical choice' 'po-status blocked stories'
-  holds "$step5" 'a plan waiting for a technical choice' 'po-status Next chain'
-  holds "$(grep -F -- '- research:' <<< "$step3")" 'Root cause: not found' 'po-status research bullet'
-  holds "$(grep -F -- '- research:' <<< "$step3")" 'as a whole line (`grep -x`' 'po-status research bullet'
-  holds "$step4" 'Root cause: not found' 'po-status blocked stories'
-  holds "$step5" 'Root cause: not found' 'po-status Next chain'
 }
 
 # Applies a removal to a mutant file, checks the phrase is gone, the real tree passes and the mutant fails.
@@ -76,18 +62,4 @@ PY
 
 test_fleet_tests_bite() {
   bites commands/po-drive.md ' Meanwhile the other lanes carry on.' escalation-contract.test.sh test_human_stops_do_not_halt_the_fleet
-
-  local m t="$ROOT/tests/short-subject-shipped.test.sh" name=test_short_subject_counts_as_shipped
-  run_against "$METHOD" "$t" "$name" || fail "$name fails on the real tree"
-  m="$(mutant)"
-  python3 -I - "$m/hooks/po-session.sh" <<'PY' || fail "session mutation did not apply"
-import sys
-p = sys.argv[1]
-s = open(p).read()
-a = 'SHORT_SHIPPED["${id%:}"]=1'
-assert s.count(a) == 1
-open(p, "w").write(s.replace(a, ":"))
-PY
-  ! grep -qF 'SHORT_SHIPPED["${id%:}"]=1' "$m/hooks/po-session.sh" || fail "session mutant keeps its line"
-  if run_against "$m" "$t" "$name"; then fail "$name still passes without the short-subject record"; fi
 }

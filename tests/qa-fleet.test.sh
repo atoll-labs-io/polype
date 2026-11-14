@@ -62,11 +62,7 @@ test_drive_wave_includes_qa() {
 
 test_status_reports_qa() {
   require_file "$STATUS"
-  reads_setting "$STATUS" 'QA stage'
-  contains "$STATUS" 'whether `po-gate qa-current <id>` passes'
-  contains "$STATUS" '`QA stage` unset → shown as unset for a story that has a screen or a `Surface` other than `—`, never guessed'
   contains "$STATUS" '· record · qa · review ·'
-  contains "$STATUS" '→ QA (`/po-qa <id>`'
 }
 
 test_help_and_readme_show_qa() {
@@ -127,13 +123,6 @@ test_flow_and_execute_send_qa_blocks_to_qa() {
   holds "$run" "$P2 → stop with \"$M2\"" 'po-flow.md execute, review, ship'
   holds "$run" 'neither spends a fix run' 'po-flow.md execute, review, ship'
   holds "$run" 'Any other `Ship allowed: no` → a fix run of the implementer' 'po-flow.md execute, review, ship'
-}
-
-test_status_agrees_with_the_fleet_on_a_blocked_report() {
-  require_file "$STATUS"; require_file "$DRIVE"
-  contains "$STATUS" 'is `blocked` → "a human decides"'
-  contains "$STATUS" 'a QA report `blocked`, with its cause'
-  contains "$STATUS" '`po-gate qa-current <id>` refusing with `is current but` → the evidence commit'
 }
 
 test_drive_resumes_on_an_uncommitted_report() {

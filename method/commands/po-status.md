@@ -1,5 +1,5 @@
 ---
-description: Tells where each story stands, from the files and git alone, and which command to run next
+description: Tells where each story stands, from po state and the story files, and which command to run next
 allowed-tools:
   - Read
   - Glob
@@ -8,35 +8,25 @@ allowed-tools:
 ---
 # /po-status
 
-Reads settings: `Target branch`, `Worktree root`, `Merge mode`, `Plan validation`, `Entry mode`, `Story track`, `Flow threshold`, `Parallel`, `Max attempts`, `ADR directory`, `QA stage`
+Reads settings: `Target branch`, `Worktree root`, `Merge mode`, `Plan validation`, `Story track`, `Flow threshold`, `ADR directory`
 
-Everything comes from files and git; nothing is guessed. Bash is used read-only: no commit, checkout, merge or file change. `git fetch` is allowed when a remote exists, so that stories merged through a pull request are seen.
+Nothing is guessed. Bash is used read-only: no commit, checkout, merge or file change. `git fetch` is allowed when a remote exists, so that stories merged through a pull request are seen.
 
 1. **Setup.** No `AGENTS.local.md` → the next command is `/po-setup`, full stop. Otherwise one line: `Merge mode`, `Plan validation`, `Target branch`.
-2. **Framing**, read on `Target branch`:
-   - scope: `docs/prd.md` for `Entry mode` `replace` or `adapt`, `docs/brief.md` for `new` — none · in progress (`status: draft` for the PRD, `status: interviewing` for the brief) · approved (`status: approved` in the frontmatter); `Entry mode: —` → "stories by hand";
-   - `docs/stories.md` present or not;
-   - stories review: the `Stories ready:` value of `docs/reviews/stories.md` — yes · no · none;
-   - `docs/architecture.md` present or not;
-   - `docs/design-system.md` present or not; absent while stories exist, each with a `Surface` line and none of them `screen` (the rule of `po-session`), it reads `design system not needed` and `/po-design-system` is never proposed.
-3. **Per story** listed in `docs/stories.md` (none → "No stories yet"), reading from its worktree `<Worktree root><id>` while it exists and from `Target branch` afterwards:
-   - complexity from `docs/stories.md`;
-   - track: `flow` when the plan frontmatter holds `track: flow`, `full` when a plan exists without it; no plan yet → the track the settings predict (`Story track`, and for `auto` the complexity against `Flow threshold`), suffixed `(expected)` — `auto` with no complexity gives `full (expected)`;
-   - research: present or not; a research holding `Root cause: not found` as a whole line (`grep -x`, ADR-0070), with no plan holding `validated: yes`, is shown as `root cause not found`;
-   - design: `docs/designs/<id>/design.md` present or not;
-   - plan: none · draft · waiting for a technical choice (the plan holds `Technical choice: waiting for a human` as a whole line, without `validated: yes`) · approved (`validated: yes` in the frontmatter), and ticked boxes over total;
-   - record: present or not, and whether `po-gate verif-current <id>` passes;
-   - QA: for a story that goes to QA (`AGENTS.md`, Law 1), `docs/qa/<id>/report.md` present or not, its last `QA status:`, and whether `po-gate qa-current <id>` passes; `—` for any other story; `QA stage` unset → shown as unset for a story that has a screen or a `Surface` other than `—`, never guessed;
-   - review: last `Ship allowed:` value — yes · no · none — and its `Fix loop:`, plus whether `po-gate ship-allowed <id>` passes; a `yes` that `po-gate ship-allowed <id>` refuses, whatever the reason — a stale `Reviewed tree:`, or a `Review status:` missing or other than `complete` — is shown as refused with that reason, next `/po-review <id>`;
-   - shipped: a story `s<n>-<slug>` is shipped when a commit on `Target branch` or `origin/<Target branch>` has a subject starting with `<id>:`, or, when no commit does, with `s<n>:` exactly, its number written as the id writes it; an open pull request from `story/<id>` → waiting for merge;
-   - dependencies: if one of them is not shipped, the story shows "waiting for <ids>" instead of a next command.
-4. **Fleet.** The lanes `/po-drive` would see, derived from the same worktrees and the same git, never from a memory of a wave:
-   - **lanes in flight**: a worktree `<Worktree root><id>` whose `git -C <Worktree root><id> rev-parse --abbrev-ref HEAD` prints `story/<id>`; their count against `Parallel`, and for each one the story, the path and the stage of step 3;
-   - **attempts spent**: the `Fix loop:` line of `docs/reviews/<id>.md`, read the way `/po-drive` reads it (`method/commands/po-drive.md`), shown against `Max attempts`; no review file means no attempt spent yet;
-   - **blocked stories**, with the reason and what unblocks it: a dependency not shipped and which one; an `Owns` collision, judged by the overlap rule of check 8 of the `stories-review` skill, with the path that collided, the lane holding it, the two entries that overlapped and one path matching both; `Max attempts` reached, which no fix run may pass and which waits for a human; a QA report `blocked`, with its cause, which a human decides on, as in `/po-drive`; a research holding `Root cause: not found` as a whole line with no validated plan, which a human decides on (ADR-0070), as in `/po-drive`; a plan waiting for a technical choice, with the choice its plan names, which `/po-plan <id>` puts to the person; an orphan worktree — another branch, a detached HEAD, or `story/<id>` checked out at another path — reported as it was found, never repaired here.
-
-   `Parallel` or `Max attempts` unreadable → say which one and print no fleet section; neither is replaced by a guess, and the rest of the report stands.
-5. **Output.** The framing line first, then a line with shipped / in progress / not started counts, then a table: story (complexity) · track · research · design · plan · record · qa · review · shipped · next. "Next" follows the cycle: research → design (`/po-design <id>`, a story with a screen) → plan → approve plan (`/po-plan` again) → execute → for a story that goes to QA: its last `QA status:` is `blocked` → "a human decides", with the report's cause, as `/po-drive` resumes it; `po-gate qa-current <id>` refusing with `is current but` → the evidence commit `git commit -m "<id>: QA evidence" -- docs/qa/<id>/`, not a new walk; any other `qa-current` failure → QA (`/po-qa <id>`, a new walk) → review (`/po-qa <id>` for `Review status: blocked` and a `Next action:` naming `/po-qa`, the evidence commit for `Review status: blocked` and a `Next action:` naming the `<id>: QA evidence` commit, any other blocked review → `/po-execute` fix run) → ship, or "waiting for merge". A story expected on the flow track with no plan yet gets `/po-flow <id>` while it has no worktree; once a worktree exists without a plan, `/po-flow` has escalated, and it gets `/po-research <id>`. Two exits override the chain wherever they apply: when the research holds `Root cause: not found` → "a human decides", never `/po-plan`; when the plan is a plan waiting for a technical choice → "a human decides" with `/po-plan <id>`. One line per shipped story.
-6. **Decisions.** With the `ADR directory` folder present: how many ADRs, and the most recent.
+2. **Project state, from `po state`.** Run `"${CLAUDE_CONFIG_DIR:-$HOME/.claude}/polype/po" state --all` from the repository root. When `po` is missing or exits 2, say so, name `polype install`, and stop. Report from that JSON, citing `po state` as the source of each figure:
+   - the framing items and the framing next;
+   - the milestone;
+   - each lane: its path, stage, `next` and stops;
+   - `ready`, and `held` with its reason and ref, plus for `owns` the two entries and the path;
+   - `shipped`;
+   - the warnings, as they are.
+3. **What `po state` does not carry, read from files.** Per story of `docs/stories.md` (none → "No stories yet"), reading in its worktree `<Worktree root><id>` while it exists and on `Target branch` otherwise:
+   - its complexity, from `docs/stories.md`;
+   - its track: `flow` when the plan holds `track: flow`, `full` for a plan without it; no plan yet → the track `Story track` and `Flow threshold` predict, suffixed `(expected)`;
+   - whether the research, design (`docs/designs/<id>/design.md`), plan, record, QA report and review files are present;
+   - the plan's ticked boxes over total;
+   - its next step: a story with a lane takes `lanes[].next`; a story in `ready` gets `/po-flow <id>` when its expected track is flow, otherwise `/po-research <id>`; a story in `held` shows its reason; a shipped story gets nothing.
+4. **Output.** The framing line first, then a line with shipped / in progress / not started counts, then a table: story (complexity) · track · research · design · plan · record · qa · review · shipped · next. The stops and warnings of step 2 follow the table.
+5. **Decisions.** With the `ADR directory` folder present: how many ADRs, and the most recent.
 
 Finish with the single most useful command, for example "Next: /po-plan s02-refund-order".

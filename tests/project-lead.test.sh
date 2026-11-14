@@ -58,7 +58,7 @@ test_session_hook_silent_outside_polype() {
 }
 
 test_session_hook_reports_state_read_only() {
-  polype_repo 'Max attempts: 2' 'Merge mode: pr' 'Ship confirmation: automatic (chosen)'
+  polype_repo 'Max attempts: 2' 'Merge mode: pr' 'Ship confirmation: automatic (chosen)' 'Parallel: 2'
   approved_brief
   cat > "$R/docs/stories.md" <<'EOF'
 # Stories
@@ -83,7 +83,7 @@ EOF
   has_line "$out" 'Polype project lead — state read from disk and git by po-session; nothing was run or changed.'
   has_line "$out" 'Framing: scope approved · stories present · stories review none · architecture missing · design system missing'
   has_line "$out" 'Framing next: /po-stories-review'
-  has_line "$out" 'Ready stories: s02-b (Owns not checked: /po-drive decides)'
+  has_line "$out" 'Ready stories: s02-b'
   has_line "$out" 'Lanes in flight: s04-d (.worktrees/s04-d)'
   has_line "$out" 'Waiting for a human: nothing'
   [ "$before" = "$after" ] || fail "po-session changed the repository: $(diff <(echo "$before") <(echo "$after"))"

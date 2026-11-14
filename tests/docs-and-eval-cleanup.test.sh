@@ -3,8 +3,6 @@
 
 source <(sed '/^test_/,$d' "$ROOT/tests/reuse-ladder-eval.test.sh")
 
-SENTENCE='a story `s<n>-<slug>` is shipped when a commit on `Target branch` or `origin/<Target branch>` has a subject starting with `<id>:`, or, when no commit does, with `s<n>:` exactly, its number written as the id writes it'
-STATUS="$METHOD/commands/po-status.md"
 DRIVE="$METHOD/commands/po-drive.md"
 
 section() { awk -v h="## $2" '$0 == h {on=1; next} on && /^## / {exit} on {print}' "$1"; }
@@ -44,30 +42,6 @@ test_recipe_plan_counts_three_tests() {
   [ -n "$body" ] || fail "test_demo_app_unchanged is gone"
   ! grep -qF 'wc -l' <<< "$body" || fail "test_demo_app_unchanged still counts recipes"
   ! grep -qF 'eval_archive' <<< "$body" || fail "test_demo_app_unchanged still checks the archive cases"
-}
-
-test_status_shipped_rule_reads_once() {
-  local line f
-  ! grep -qF 'as the id writes it → shipped' "$STATUS" || fail "po-status.md still says shipped twice"
-  for f in "$STATUS"; do contains "$f" "$SENTENCE"; done
-  line="$(grep -F -- '- shipped:' "$STATUS")"
-  [ "$(grep -o 'shipped' <<< "$line" | wc -l)" -le 2 ] || fail "the shipped line repeats shipped: $line"
-}
-
-test_status_design_system_matches_session() {
-  local line
-  line="$(grep -F -- '- `docs/design-system.md` present or not' "$STATUS")"
-  for phrase in '`design system not needed`' '`Surface`' '`screen`' 'never proposed'; do
-    grep -qF -- "$phrase" <<< "$line" || fail "the design-system bullet lacks: $phrase"
-  done
-}
-
-test_drive_resumes_a_review_the_gate_refuses() {
-  local resuming ships review
-  review="$(grep -F -- '- review:' "$STATUS")"
-  grep -qF 'whatever the reason' <<< "$review" || fail "the po-status review bullet does not cover any refusal"
-  grep -qF 'a `Review status:` missing or other than `complete`' <<< "$review" || fail "the po-status review bullet omits the status refusal"
-  ! grep -qF 'no longer matches the code is shown as stale' <<< "$review" || fail "the po-status review bullet still names only the tree"
 }
 
 test_law3_row_states_both_status_checks() {

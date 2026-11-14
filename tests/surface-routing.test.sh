@@ -30,7 +30,6 @@ test_qa_follows_the_qa_stage() {
   contains "$RULES" 'when `QA stage` is `screens` and the story has a screen'
   contains "$RULES" 'when `QA stage` is `surfaces` and its `Surface` line says anything but `—`'
   contains "$RULES" 'a story with no `Surface` line goes only when it has a screen'
-  contains "$STATUS" 'for a story that goes to QA:'
   local f
   for f in "$DRIVE" "$ORCH" "$STATUS"; do
     lacks "$f" '`QA stage` is `screens`'

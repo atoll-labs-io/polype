@@ -37,14 +37,8 @@ test_rules_list_framing_before_the_story_cycle() {
 
 test_status_reports_framing_and_track() {
   require_file "$STATUS"
-  reads_setting "$STATUS" 'Entry mode'
   reads_setting "$STATUS" 'Story track'
   reads_setting "$STATUS" 'Flow threshold'
-  contains "$STATUS" '`docs/prd.md`'
-  contains "$STATUS" '`docs/brief.md`'
-  contains "$STATUS" '`Stories ready:`'
-  contains "$STATUS" '`docs/architecture.md`'
-  contains "$STATUS" '`docs/design-system.md`'
   contains "$STATUS" '`track: flow`'
   contains "$STATUS" '`/po-flow <id>`'
 }

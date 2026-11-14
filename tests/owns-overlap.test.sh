@@ -48,7 +48,7 @@ test_diff_paths_match_owns_exactly() {
 
 test_every_overlap_text_cites_the_rule() {
   local f
-  for f in AGENTS.md commands/po-stories.md commands/po-status.md templates/stories.md templates/stories-review.md; do
+  for f in AGENTS.md commands/po-stories.md templates/stories.md templates/stories-review.md; do
     require_file "$METHOD/$f"
     holds "$(cat "$METHOD/$f")" "$CITE2" "$f"
   done

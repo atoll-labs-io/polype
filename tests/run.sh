@@ -23,6 +23,8 @@ if [ -f "$root/po/Cargo.toml" ]; then
   if ! build=$(cargo build --release --locked --quiet --manifest-path "$root/po/Cargo.toml" 2>&1); then
     echo "po does not build:"; echo "$build"; exit 1
   fi
+  # A copy, not a symlink: an installer test running lay_po on this directory replaces the file.
+  mkdir -p "$CLAUDE_CONFIG_DIR/polype" && cp "$CARGO_TARGET_DIR/release/po" "$CLAUDE_CONFIG_DIR/polype/po"
 fi
 
 passed=0 failed=0 skipped=0

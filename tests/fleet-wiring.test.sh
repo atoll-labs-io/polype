@@ -3,7 +3,6 @@
 
 RULES="$METHOD/AGENTS.md"
 HELP="$METHOD/commands/po-help.md"
-STATUS="$METHOD/commands/po-status.md"
 MATRIX="$ROOT/docs/parite-killer-saas.md"
 
 # The body of one `## <heading>` section, heading excluded; `###` subsections stay inside.
@@ -50,33 +49,6 @@ test_help_lists_po_drive() {
   contains "$HELP" '`/po-drive status`'
   contains "$HELP" 'ce qui est en vol, ce qui attend et pourquoi'
   contains "$HELP" 'ne lance rien'
-}
-
-test_status_shows_lanes_and_attempts() {
-  require_file "$STATUS"
-  reads_setting "$STATUS" 'Parallel'
-  reads_setting "$STATUS" 'Max attempts'
-
-  local fleet; fleet=$(step_of "$STATUS" 'Fleet')
-  [ -n "$fleet" ] || fail "po-status.md has no Fleet step"
-
-  # A lane is a worktree on its own story branch, counted against the cap.
-  holds "$fleet" 'a worktree `<Worktree root><id>` whose `git -C <Worktree root><id> rev-parse --abbrev-ref HEAD` prints `story/<id>`' 'the fleet step'
-  holds "$fleet" 'against `Parallel`' 'the fleet step'
-
-  # Attempts come from the review file, never from memory.
-  holds "$fleet" 'the `Fix loop:` line of `docs/reviews/<id>.md`' 'the fleet step'
-  holds "$fleet" 'against `Max attempts`' 'the fleet step'
-
-  # The four reasons /po-drive can block on.
-  holds "$fleet" 'a dependency not shipped and which one' 'the fleet step'
-  holds "$fleet" 'an `Owns` collision' 'the fleet step'
-  holds "$fleet" '`Max attempts` reached' 'the fleet step'
-  holds "$fleet" 'an orphan worktree' 'the fleet step'
-
-  # A setting that cannot be read stops the section instead of being guessed.
-  holds "$fleet" 'print no fleet section' 'the fleet step'
-  holds "$fleet" 'neither is replaced by a guess' 'the fleet step'
 }
 
 test_parity_matrix_reflects_the_fleet() {

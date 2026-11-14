@@ -26,10 +26,6 @@ test_status_derives_from_files() {
   contains "$STATUS" 'no commit, checkout, merge or file change'
 }
 
-test_status_detects_merged_pull_requests() {
-  contains "$STATUS" 'on `Target branch` or `origin/<Target branch>`'
-}
-
 test_help_is_user_invoked_only() {
   require_file "$HELP"
   frontmatter "$HELP" | grep -qx 'disable-model-invocation: true' || fail "po-help must not be model-invoked"
