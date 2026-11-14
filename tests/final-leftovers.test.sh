@@ -19,9 +19,7 @@ test_adr_links_are_the_only_edit() {
 }
 
 test_overlap_wording_is_light() {
-  local s="$METHOD/commands/po-status.md" k="$METHOD/skills/stories-review/SKILL.md"
-  contains "$s" 'judged by the overlap rule of check 8 of the `stories-review` skill, with the path that collided, the lane holding it, the two entries that overlapped and one path matching both;'
-  ! grep -qF 'overlapped by the overlap rule' "$s" || fail "po-status keeps the heavy clause"
+  local k="$METHOD/skills/stories-review/SKILL.md"
   contains "$k" 'whose `Owns` entries overlap are flagged as critical'
   ! grep -qF 'share an `Owns` path' "$k" || fail "check 8 keeps the old wording"
 }

@@ -45,48 +45,37 @@ stories() {
 
 po_state() { OUT="$(cd "$F" && "$PO" state 2>/dev/null)" || fail "po state failed in $F: $OUT"; }
 
-# What po-session says the next framing command is; `null` when it says the framing is done.
-session_next() {
-  local out line
-  out="$(CLAUDE_PROJECT_DIR="$F" bash "$METHOD/hooks/po-session.sh")"
-  line="$(grep -m1 -E '^Framing next: |^Framing: setup missing → ' <<< "$out")" || fail "po-session gave no framing next: $out"
-  line="${line#Framing next: }"; line="${line#Framing: setup missing → }"
-  [ "$line" = "none — framing done" ] && line=null
-  printf '%s' "$line"
-}
-
-# expect <stage>: po state's framing stage is <stage>, and its next is po-session's.
+# expect <stage> <next>: po state's framing stage is <stage> and its next is <next> (`null` when done).
 expect() {
-  local want got
+  local got
   po_state
   got="$(jq -r '.framing.stage' <<< "$OUT")"
   [ "$got" = "$1" ] || fail "framing stage $got instead of $1: $OUT"
-  want="$(session_next)"
   got="$(jq -r '.framing.next // "null"' <<< "$OUT")"
-  [ "$got" = "$want" ] || fail "at $1, po state says next $got, po-session says $want"
+  [ "$got" = "$2" ] || fail "at $1, po state says next $got instead of $2"
 }
 
-test_framing_next_matches_po_session() {
+test_framing_next_follows_the_stage() {
   need_po
   project_at new
-  expect scope
+  expect scope /po-brief
   printf -- '---\nstatus: approved\n---\n# Brief\n' > "$F/docs/brief.md"; commit_all brief
-  expect stories
+  expect stories /po-stories
   stories screen command; commit_all stories
-  expect stories-review
+  expect stories-review /po-stories-review
   printf 'Stories ready: yes\n' > "$F/docs/reviews/stories.md"; commit_all review
-  expect architecture
+  expect architecture /po-architect
   printf '# Architecture\n' > "$F/docs/architecture.md"; commit_all architecture
-  expect design-system
+  expect design-system /po-design-system
   stories command command; commit_all no-screen
-  expect done
+  expect done null
   stories screen; printf '# Design system\n' > "$F/docs/design-system.md"; commit_all ds
-  expect done
+  expect done null
 
   project_at —
-  expect stories
+  expect stories /po-stories
   rm "$F/AGENTS.local.md"
-  expect setup
+  expect setup /po-setup
 }
 
 test_milestone_is_the_first_with_a_story_not_shipped() {

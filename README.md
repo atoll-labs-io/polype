@@ -56,8 +56,9 @@ Trois gates mécaniques bornent la traversée : pas de code sans plan marqué va
   version plus ancienne. Sur macOS, `/bin/bash` est en 3.2 : `brew install bash`, ouvrir un nouveau
   shell, puis vérifier avec `bash --version`. Rien d'autre que bash n'est promis sur macOS : les
   scripts supposent les outils GNU, et `find`, `sed` ou `readlink` BSD peuvent s'y comporter autrement.
-- **jq** : il fusionne le hook `SessionStart` dans `.claude/settings.json`, et sans lui les hooks des
-  bornes d'`implementer`, de `qa` et de `reviewer` refusent tout appel, donc aucune story n'avance.
+- **jq** : il fusionne le hook `SessionStart` dans `.claude/settings.json`, le hook de session s'en
+  sert pour lire `po state`, et sans lui les hooks des bornes d'`implementer`, de `qa` et de
+  `reviewer` refusent tout appel, donc aucune story n'avance.
 - **gh**, connecté (`gh auth login`), pour un projet dont la forge est GitHub : `/po-ship` y livre
   chaque story par une pull request.
 
