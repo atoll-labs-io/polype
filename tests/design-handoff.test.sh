@@ -25,7 +25,7 @@ test_execute_mentions_the_design_when_present() {
   contains "$EXECUTE" '> This story has a design: docs/designs/<id>/ is expected uncommitted work, like the research and the plan. Read design.md before the screen tasks, build the screen it settles, and commit the folder with the story.'
   local tool
   for tool in Bash Write Edit; do lacks_tool "$EXECUTE" "$tool"; done
-  [ "$(tools_of "$EXECUTE" | sort | tr '\n' ' ')" = "Agent Glob Grep Read " ] \
+  [ "$(tools_of "$EXECUTE" | sort | tr '\n' ' ')" = "Agent Bash(\"\${CLAUDE_CONFIG_DIR:-\$HOME/.claude}/polype/po\" next) Glob Grep Read " ] \
     || fail "po-execute tools changed: $(tools_of "$EXECUTE" | tr '\n' ' ')"
 }
 

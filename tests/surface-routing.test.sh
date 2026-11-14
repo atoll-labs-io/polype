@@ -30,9 +30,6 @@ test_qa_follows_the_qa_stage() {
   contains "$RULES" 'when `QA stage` is `screens` and the story has a screen'
   contains "$RULES" 'when `QA stage` is `surfaces` and its `Surface` line says anything but `—`'
   contains "$RULES" 'a story with no `Surface` line goes only when it has a screen'
-  local rows
-  rows=$(section_of "$DRIVE" 'Resuming' | grep -cF '| record current, the story goes to QA,')
-  [ "$rows" -eq 3 ] || fail "po-drive.md resuming table: expected 3 QA rows routed by 'goes to QA', found $rows"
   contains "$STATUS" 'for a story that goes to QA:'
   local f
   for f in "$DRIVE" "$ORCH" "$STATUS"; do

@@ -120,6 +120,8 @@ check_settings() {
 # announced as unable to touch the code declares no writing tool, and a subagent
 # that judges cannot write.
 
+PO_NEXT_TOOL='Bash("${CLAUDE_CONFIG_DIR:-$HOME/.claude}/polype/po" next)'
+
 check_tools() {
   local f rel tools decl line tool askline
   while IFS= read -r f; do
@@ -141,8 +143,10 @@ check_tools() {
 
     if frontmatter "$f" | grep -qF 'cannot edit files or run a shell'; then
       while IFS=$'\t' read -r line tool; do
+        # ADR-0120: /po-execute may read po next, and that verb only.
+        [ "$rel" = commands/po-execute.md ] && [ "$tool" = "$PO_NEXT_TOOL" ] && continue
         case "$tool" in
-          Write|Edit|Bash) report "$rel" "$line" tools "says it cannot edit files or run a shell but declares $tool" ;;
+          Write|Edit|Bash|Bash\(*) report "$rel" "$line" tools "says it cannot edit files or run a shell but declares $tool" ;;
         esac
       done <<< "$tools"
     fi

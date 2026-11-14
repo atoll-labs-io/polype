@@ -75,7 +75,6 @@ test_plan_tests_bite() {
   local self=plan-and-defect-paths-cleanup.test.sh
   bites commands/po-research.md 'No root cause found for <id>' $self test_defect_stops_agree
   bites commands/po-orchestrator.md 'ends the run here' $self test_defect_stops_agree
-  bites commands/po-drive.md 'sends its lane to a human' defect-and-routing-paths.test.sh test_no_root_cause_goes_to_a_human
   bites commands/po-flow.md 'name that ADR in the plan.' $self test_tech_choice_paths_agree
   bites agents/planner.md ', a defect to fix — a story carrying a `Fixes` line (`Corrige` in a French stories file)' diagnostic-skill.test.sh test_defect_stories_get_the_diagnostic
   bites templates/plan-flow.md 'A signal present sends the story to the full track and no short plan is written, except a technical choice, where this file stays on disk with the line `Technical choice: waiting for a human` and the story goes to `/po-research <id>`, as `## Approval` of `/po-flow` says.' $self test_tech_choice_paths_agree

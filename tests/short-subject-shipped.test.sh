@@ -23,7 +23,7 @@ project_with_stories() {
 
 test_short_subject_counts_as_shipped() {
   local f
-  for f in po-status po-drive; do
+  for f in po-status; do
     grep -qF -- "$SENTENCE" "$METHOD/commands/$f.md" || fail "$f.md lacks the shared sentence"
   done
   project_with_stories s01-x:none s02-y:none

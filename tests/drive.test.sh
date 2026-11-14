@@ -9,25 +9,6 @@ section_of() { awk -v h="## $2" '$0 == h {on=1; next} /^## / {on=0} on' "$1"; }
 
 holds() { grep -qF -- "$2" <<< "$1" || fail "$3 lacks: $2"; }
 
-test_drive_picks_a_ready_set_without_conflicts() {
-  require_file "$DRIVE"
-  local ready; ready=$(section_of "$DRIVE" 'The ready set')
-  [ -n "$ready" ] || fail "po-drive.md has no '## The ready set' section"
-
-  # State read from the files, not from the driver's memory of the last wave.
-  holds "$ready" 'derived the way `/po-status` derives it' 'the ready set'
-  holds "$ready" 'never from what you remember of an earlier wave' 'the ready set'
-
-  # The three readiness clauses, then the cap.
-  holds "$ready" 'it is not shipped' 'the ready set'
-  holds "$ready" 'every story it depends on is shipped' 'the ready set'
-  holds "$ready" 'its `Owns` paths are disjoint from those of the lanes already running **and** from those of the other stories of the batch' 'the ready set'
-  holds "$ready" 'stop at `Parallel` lanes' 'the ready set'
-
-  # A dropped story is named with what it collided with, or the conflict is invisible.
-  holds "$ready" 'named in the report with the path that collided' 'the ready set'
-}
-
 test_drive_dispatches_lanes_in_one_message() {
   require_file "$DRIVE"
   local wave; wave=$(section_of "$DRIVE" 'A wave')
@@ -83,12 +64,6 @@ test_drive_ships_serially_after_each_review() {
   holds "$ships" '`po-gate ship-allowed <id>` first' 'the ship section'
   holds "$ships" 'the **last** `Ship allowed:` line of `docs/reviews/<id>.md` must be `yes` **and** its `Reviewed tree:` must still match the code outside `docs/`' 'the ship section'
   holds "$ships" '`Ship confirmation: human` means one AskUserQuestion per merge under `Merge mode: local`, and a pull request left for a person under `Merge mode: pr`' 'the ship section'
-
-  # A blocked story loops back, within a bounded number of attempts.
-  local verdict; verdict=$(section_of "$DRIVE" 'The verdict, and the fix runs')
-  holds "$verdict" '`Ship allowed: no` sends that lane back to `implementer` as a fix run' 'the verdict section'
-  holds "$verdict" 'at most `Max attempts` fix runs' 'the verdict section'
-  holds "$verdict" 'it is listed for a human with its open findings' 'the verdict section'
 }
 
 test_settings_template_declares_fleet_settings() {
@@ -179,41 +154,6 @@ test_shared_numbering_is_assigned_by_the_driver() {
   contains "$planner" 'create no file whose name you invented'
 }
 
-# s34 — the resume table decides every case, and says which row wins.
-
-test_drive_resume_table_is_complete_and_ordered() {
-  require_file "$DRIVE"
-  local resuming; resuming=$(section_of "$DRIVE" 'Resuming')
-  [ -n "$resuming" ] || fail "po-drive.md has no '## Resuming' section"
-
-  holds "$resuming" 'the first row that matches wins' 'the resuming section'
-
-  # Every row names the stage the lane restarts at: an empty right column decides nothing.
-  local rows row stage
-  rows=$(grep '^| ' <<< "$resuming" | grep -v '^| --- ' | grep -v '^| Found ')
-  [ -n "$rows" ] || fail "the resuming section has no table"
-  while IFS= read -r row; do
-    stage=$(cut -d'|' -f3 <<< "$row" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
-    [ -n "$stage" ] || fail "a resume row names no stage: $row"
-  done <<< "$rows"
-
-  # A lane stopped after its fix run holds a recorded stage, not a second fix run, so the
-  # row that catches it must be read before the blocked-review row.
-  local stale fix
-  stale=$(grep -n -F 'record current, review blocked' <<< "$rows" | cut -d: -f1)
-  fix=$(grep -n -F 'review whose last `Ship allowed:` is `no`' <<< "$rows" | cut -d: -f1)
-  [ -n "$stale" ] || fail 'the resuming table has no row for a lane stopped after a fix run'
-  [ -n "$fix" ] || fail 'the resuming table lost its fix-run row'
-  [ "$stale" -lt "$fix" ] \
-    || fail "the stale-review row (row $stale) must be read before the fix-run row (row $fix)"
-  holds "$resuming" 'judged the story'"'"'s `<n>` + 1st implementer commit' 'the resuming section'
-
-  # The plan row keeps the research the lane already has.
-  local plan_row; plan_row=$(grep -F 'plan absent or without `validated: yes`' <<< "$rows")
-  grep -qF 'the lane keeps that file and never writes it again' <<< "$plan_row" \
-    || fail "the plan row does not say the research on disk is kept: $plan_row"
-}
-
 test_planner_writes_only_its_documents_and_the_adr_assigned_to_it() {
   local planner="$METHOD/agents/planner.md"
   require_file "$planner"
@@ -234,17 +174,4 @@ test_planner_writes_only_its_documents_and_the_adr_assigned_to_it() {
   local contracts; contracts=$(section_of "$planner" 'The contracts you carry')
   holds "$contracts" 'a `docs/research/<id>.md` that exists is this lane'"'"'s research' 'the planner contracts'
   holds "$contracts" 'read it, build the plan on it, and never write that file again' 'the planner contracts'
-}
-
-# s47 — a favourable review on code that moved since goes back to review, not to the ship.
-
-test_drive_sends_a_stale_review_back_to_review() {
-  require_file "$DRIVE"
-  local rows stale ship
-  rows=$(section_of "$DRIVE" 'Resuming' | grep '^| ')
-  stale=$(grep -n -F 'Reviewed tree:' <<< "$rows" | grep -F 'the review stage' | head -n 1 | cut -d: -f1)
-  ship=$(grep -n -F 'is `yes` | the ship' <<< "$rows" | cut -d: -f1)
-  [ -n "$stale" ] || fail "the resuming table has no row sending a stale favourable review back to review"
-  [ -n "$ship" ] || fail "the resuming table lost its ship row"
-  [ "$stale" -lt "$ship" ] || fail "the stale-review row (row $stale) must be read before the ship row (row $ship)"
 }

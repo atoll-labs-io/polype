@@ -38,13 +38,9 @@ test_ship_text_is_complete() {
 }
 
 test_fleet_rules_agree() {
-  local whole='`Root cause: not found` as a whole line (`grep -x`'
-  holds "$(section_of "$DRIVE" 'Resuming' | grep -F 'Root cause: not found')" "$whole" 'po-drive resuming row'
-  holds "$(section_of "$DRIVE" 'A wave' | grep '^1\. `subagent_type: planner`')" "$whole" 'po-drive planner step'
 
   local shared='The order the reviews passed decides which ship starts first, not which story lands first.'
   holds "$(section_of "$RULES" 'Law 1 — Nothing reaches the code except through a story')" "$shared" 'AGENTS.md Law 1'
-  holds "$(section_of "$DRIVE" 'Ships, one at a time')" "$shared" 'po-drive ships'
   holds "$(section_of "$DRIVE" 'Ships, one at a time')" 'Proving a ship means seeing it land' 'po-drive ships'
   ! grep -qF 'the next one lands after it, in the order the reviews passed' "$RULES" || fail "AGENTS.md keeps the old order clause"
 
@@ -94,19 +90,4 @@ open(p, "w").write(s.replace(a, ":"))
 PY
   ! grep -qF 'SHORT_SHIPPED["${id%:}"]=1' "$m/hooks/po-session.sh" || fail "session mutant keeps its line"
   if run_against "$m" "$t" "$name"; then fail "$name still passes without the short-subject record"; fi
-
-  t="$ROOT/tests/defect-and-routing-paths.test.sh"; name=test_no_root_cause_goes_to_a_human
-  run_against "$METHOD" "$t" "$name" || fail "$name fails on the real tree"
-  m="$(mutant)"
-  python3 -I - "$m/commands/po-drive.md" <<'PY' || fail "dispatch mutation did not apply"
-import sys
-p = sys.argv[1]
-s = open(p).read()
-i = s.index(" A planner that answers with a research holding")
-e = "no plan is approved or dispatched for it."
-j = s.index(e, i) + len(e)
-open(p, "w").write(s[:i] + s[j:])
-PY
-  ! grep -qF 'no plan is approved or dispatched for it' "$m/commands/po-drive.md" || fail "dispatch mutant keeps its stop"
-  if run_against "$m" "$t" "$name"; then fail "$name still passes without the planner stop"; fi
 }

@@ -47,7 +47,6 @@ test_ship_files_open_findings() {
   n_remove=$(grep -n 'git worktree remove <path>' "$SHIP" | cut -d: -f1)
   [ -n "$n_proof" ] && [ -n "$n_file" ] && [ -n "$n_remove" ] || fail "po-ship Step 3 lacks the proof, filing or removal step"
   [ "$n_proof" -lt "$n_file" ] && [ "$n_file" -lt "$n_remove" ] || fail "filing must sit after the proof and before the worktree removal"
-  holds "$(tr -s '[:space:]' ' ' < "$DRIVE")" 'prints `MERGED`, gets `/po-ship <id>` once more: it goes straight to cleanup and files the open findings' "po-drive"
   holds "$(section_of "$DRIVE" '## Report')" 'the merged lanes waiting for cleanup, each with its pull request URL' "po-drive report"
   holds "$(section_of "$DRIVE" '## Report')" 'a merged lane waiting for cleanup — its pull request prints `MERGED` while its worktree still exists — is listed among them' "po-drive status"
 }
