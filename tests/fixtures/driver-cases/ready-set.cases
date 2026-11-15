@@ -161,3 +161,68 @@ case_ready_set_15_owns_names_the_path() {
   expect_held s02-bravo owns s01-alpha
   expect_collision s02-bravo 'crates/core/' 'crates/*/Cargo.toml' 'crates/core/Cargo.toml'
 }
+
+# Rule 2 for a lane already open (#306): a dependency not shipped makes the lane wait, naming it.
+case_ready_set_16_lane_waits_on_an_unshipped_dependency() {
+  story s01-alpha command - 'src/a/'
+  story s02-bravo command s01-alpha 'src/b/'
+  start
+  lane s02-bravo
+  research_in s02-bravo
+  expect_lane s02-bravo wait 'dependency s01-alpha'
+  expect_ready s01-alpha
+}
+
+# A lane waiting on its dependency takes no Parallel slot, so the story it waits for may open.
+case_ready_set_17_waiting_lane_takes_no_slot() {
+  setting Parallel 1
+  story s01-alpha command - 'src/a/'
+  story s02-bravo command s01-alpha 'src/b/'
+  start
+  lane s02-bravo
+  research_in s02-bravo
+  expect_lane s02-bravo wait 'dependency s01-alpha'
+  expect_ready s01-alpha
+}
+
+# A lane waiting on its dependency holds no Owns, even when they overlap with that dependency's.
+case_ready_set_18_waiting_lane_holds_nothing() {
+  story s01-alpha command - 'src/a/'
+  story s02-bravo command s01-alpha 'src/a/x.txt'
+  start
+  lane s02-bravo
+  research_in s02-bravo
+  expect_lane s02-bravo wait 'dependency s01-alpha'
+  expect_ready s01-alpha
+}
+
+# The dependency shipped, the lane resumes where its files put it and holds its slot and Owns again.
+case_ready_set_19_lane_resumes_once_shipped() {
+  setting Parallel 1
+  story s01-alpha command - 'src/a/'
+  story s02-bravo command s01-alpha 'src/b/'
+  story s03-charlie command - 'src/b/c.txt'
+  start
+  lane s02-bravo
+  research_in s02-bravo
+  land s01-alpha
+  expect_lane s02-bravo plan 'research, no plan'
+  expect_held s03-charlie owns s02-bravo
+}
+
+# A lane at ship that waits on its dependency does not hold the other ships behind it.
+case_ready_set_20_waiting_lane_is_not_a_ship() {
+  story s01-alpha command - 'src/a/'
+  story s02-bravo command s01-alpha 'src/b/'
+  story s03-charlie command - 'src/c/'
+  start
+  recorded_lane s02-bravo
+  review_in s02-bravo complete 0 yes
+  recorded_lane s03-charlie
+  review_in s03-charlie complete 0 yes
+  reviewed_at s02-bravo '2026-11-13 09:00'
+  reviewed_at s03-charlie '2026-11-13 10:00'
+  expect_lane s02-bravo wait 'dependency s01-alpha'
+  expect_lane s03-charlie ship 'ship-allowed passes'
+  expect_ready s01-alpha
+}

@@ -1,7 +1,7 @@
 //! The ready set of po-drive.md: which stories may open a lane now, and why the others wait.
 
 use super::overlap::{common_path, overlap};
-use super::{holding_decision, Collision, Held};
+use super::{holding_decision, waiting_dependency, Collision, Held};
 use crate::context::{BlockedBy, Context, Lane, Story, Warning};
 use crate::project::Setting;
 
@@ -17,7 +17,11 @@ pub fn ready_and_held(context: &Context) -> Option<(Vec<String>, Vec<Held>)> {
     };
 
     let lane_of = |id: &str| lanes.iter().find(|lane| lane.story == id);
-    let frees = |lane: &Lane| landed.contains(&lane.story) || lane.blocked_by == Some(BlockedBy::MaxAttempts);
+    let frees = |lane: &Lane| {
+        landed.contains(&lane.story)
+            || lane.blocked_by == Some(BlockedBy::MaxAttempts)
+            || waiting_dependency(context, &lane.story).is_some()
+    };
     let busy = lanes
         .iter()
         .filter(|lane| !frees(lane) && lane.blocked_by != Some(BlockedBy::MergeWaiting))
@@ -50,8 +54,8 @@ pub fn ready_and_held(context: &Context) -> Option<(Vec<String>, Vec<Held>)> {
             reference,
             collision: None,
         };
-        if let Some(dependency) = story.depends_on.iter().find(|dep| !landed.contains(dep)) {
-            held.push(hold("dependency", Some(dependency.clone())));
+        if let Some(dependency) = waiting_dependency(context, id) {
+            held.push(hold("dependency", Some(dependency.to_string())));
         } else if let Some(decision) = holding_decision(context, id) {
             held.push(hold("decision", Some(decision.to_string())));
         } else if let Some((holder, collision)) =
