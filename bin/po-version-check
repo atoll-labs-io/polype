@@ -1,0 +1,64 @@
+#!/usr/bin/env bash
+# Usage: bin/po-version-check [<base-ref>]   (default base: origin/<Target branch>)
+# A diff that touches po/ since its merge base with <base-ref> must raise po's version, written the
+# same in po/Cargo.toml, po/Cargo.lock and POLYPE_VERSION of bin/polype (ADR-0122, ADR-0125).
+# It reads no forge variable, fetches nothing and writes no ref, so a local run is the CI run.
+set -u
+
+root="$(cd "$(dirname "$0")/.." && pwd -P)"
+cd "$root" || exit 2
+
+base="${1:-}"
+if [ -z "$base" ]; then
+  target=""
+  if [ -f "$root/AGENTS.local.md" ]; then
+    target="$(sed -n "s/^Target branch:[[:space:]]*\(.*[^[:space:]]\)[[:space:]]*\$/\1/p" "$root/AGENTS.local.md" | head -n 1)"
+  fi
+  if [ -z "$target" ] || [ "$target" = "—" ]; then
+    printf 'po-version-check: no Target branch in %s/AGENTS.local.md; pass the base ref as an argument\n' "$root" >&2
+    exit 2
+  fi
+  base="origin/$target"
+fi
+
+if ! git rev-parse --verify -q "$base^{commit}" >/dev/null; then
+  printf 'po-version-check: %s is not in this repository, so there is no base to compare po/ with\n' "$base" >&2
+  exit 2
+fi
+if ! mb="$(git merge-base HEAD "$base" 2>/dev/null)"; then
+  printf 'po-version-check: HEAD shares no commit with %s\n' "$base" >&2
+  exit 2
+fi
+
+toml_version() { git show "$1:po/Cargo.toml" 2>/dev/null | sed -n 's/^version = "\(.*\)"$/\1/p' | head -n 1; }
+lock_version() {
+  git show "$1:po/Cargo.lock" 2>/dev/null | awk '$0 == "name = \"po\"" {getline; print; exit}' \
+    | sed -n 's/^version = "\(.*\)"$/\1/p'
+}
+polype_version() { git show "$1:bin/polype" 2>/dev/null | sed -n 's/^POLYPE_VERSION="\(.*\)"$/\1/p' | head -n 1; }
+
+toml="$(toml_version HEAD)"
+lock="$(lock_version HEAD)"
+polype="$(polype_version HEAD)"
+if [ -z "$toml" ] || [ "$toml" != "$lock" ] || [ "$toml" != "$polype" ]; then
+  printf 'po-version-check: po'\''s version differs between its three places:\n' >&2
+  printf '  po/Cargo.toml  %s\n  po/Cargo.lock  %s\n  bin/polype     %s\n' \
+    "${toml:-<none>}" "${lock:-<none>}" "${polype:-<none>}" >&2
+  exit 1
+fi
+version="$toml"
+old="$(toml_version "$mb")"
+
+if [ "$version" != "$old" ]; then
+  highest="$(printf '%s\n%s\n' "$old" "$version" | sort -V | tail -n 1)"
+  if [ "$highest" != "$version" ]; then
+    printf 'po-version-check: po goes from %s on %s down to %s; a version only goes up\n' "$old" "$base" "$version" >&2
+    exit 1
+  fi
+elif [ -n "$(git diff --name-only "$mb" HEAD -- po/)" ]; then
+  printf 'po-version-check: po/ changed since %s but po is still at %s: raise po/Cargo.toml, po/Cargo.lock and POLYPE_VERSION in bin/polype together (ADR-0122)\n' \
+    "$base" "$version" >&2
+  exit 1
+fi
+
+printf 'po-version-check: po at %s, consistent with %s\n' "$version" "$base"

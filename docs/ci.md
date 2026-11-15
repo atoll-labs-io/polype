@@ -4,18 +4,21 @@
 
 Une seule entrée : `bin/po-ci`. Elle lit la commande `Test` de `AGENTS.local.md` (ici `bash tests/run.sh`, la suite complète) et la lance depuis la racine du dépôt, en transmettant sa sortie et son code de retour. Elle ne lit aucune variable de la forge et ne lance jamais `po-eval`, dont chaque run est payant (ADR-0105). Lancée à la main, elle fait exactement ce que fait la CI.
 
+Tout changement de `po/` monte la version dans la même story, ensemble dans `po/Cargo.toml`, `po/Cargo.lock` et `POLYPE_VERSION` de `bin/polype`. `bin/po-version-check`, lancé par un test de la suite, compare le diff à sa base de fusion avec `origin/<Target branch>` et refuse sinon : une version qui ne monte pas, ou qui diffère entre ses trois endroits (ADR-0122, ADR-0125).
+
 ## Où
 
 Sur les runners hébergés de GitHub, par `.github/workflows/ci.yml` : à chaque pull request et à chaque push sur `main`. Le job s'appelle `suite` ; il installe `jq` s'il manque, puis appelle `bin/po-ci`, sans autre étape. Le jeton du workflow n'a que le droit de lecture, et `actions/checkout` est épinglé sur un commit.
 
-Sur une pull request, le checkout prend la tête de la branche et la pose en branche locale, pas le commit de fusion détaché que GitHub prend par défaut : la suite clone le dépôt et y lance `git pull`, qui refuse une HEAD détachée. Le check juge donc la tête de la pull request ; au ship, cette tête est le commit d'atterrissage, posé sur `main`.
+Sur une pull request, le checkout prend le commit de fusion que GitHub prépare avec le dépôt de base, avec tout l'historique (`fetch-depth: 0`) : `origin/main` y est la base, et le check juge la fusion de la pull request avec `main`, non plus sa tête. Le contournement par `head_ref` n'a plus lieu d'être depuis que s181 a corrigé #221 : la suite clone une source dont `main` pointe sur `HEAD`, et son `git pull` marche aussi depuis une HEAD détachée.
 
 Passer à Forgejo Actions revient à déplacer ce fichier : Forgejo lit la même syntaxe (#75), et l'installation de `jq` se passe de `sudo` quand le runner tourne en root.
 
 ## Publier une version
 
-1. Monter ensemble `POLYPE_VERSION` dans `bin/polype` et `version` dans `po/Cargo.toml` :
-   `bin/po-release` refuse de construire quand elles diffèrent.
+1. La version a déjà été montée par la story qui a changé `po/`, ensemble dans `POLYPE_VERSION` de
+   `bin/polype`, `version` de `po/Cargo.toml` et `po/Cargo.lock` : `bin/po-version-check` l'exige, et
+   `bin/po-release` refuse de construire quand `bin/polype` et `po/Cargo.toml` diffèrent.
 2. Poser le tag `v<version>` sur `main` et le pousser.
 3. `.github/workflows/release.yml` crée la release du tag, puis, sur un runner par plateforme
    (`linux-x86_64`, `linux-aarch64`, `macos-aarch64`), appelle `bin/po-release dist` et publie
