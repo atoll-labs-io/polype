@@ -29,7 +29,7 @@ A driver file lives in the base directory announced for this skill, the folder h
 - **Marker.** Each lane first runs `mktemp -d "${TMPDIR:-/tmp}/polype-qa-<id>.XXXXXX"`; another `polype-qa-*` there is another lane in QA.
 - **Browser.** A `screen` driver runs its own headless browser from a script in that directory, `TMPDIR` set to it, with the project's own browser-automation package, installing nothing. Without one, the session's browser tool serves only a lane alone in QA; otherwise `QA status: blocked`, naming the marker.
 - **Port.** `Dev` listens on `$((20000 + $(pwd | cksum | cut -d' ' -f1) % 10000))` in the worktree, passed as `PORT` and its command's port option. That port answering before the start, or another port printed → `QA status: blocked`; never reuse a running server.
-- **Deadline.** Each start, page action or capture run by Bash or the lane's script gets 120 seconds: `timeout 120`, or the script's timeout. Past it, stop what the lane started; `QA status: blocked`, naming the action.
+- **Deadline.** Each action, capture or start's answer run by Bash or the lane's script gets 120s (`timeout 120` or the script's, never around `Dev`). Past it, stop what it started; `QA status: blocked`, naming the action.
 
 ## Outside the evidence
 Anything a driver produces besides evidence — a build, a recording, a scratch file — goes into the lane's `mktemp -d` directory, removed when the QA ends, each file written through Bash, since the Write tool reaches only `docs/qa/<id>/`. It is the single exception to the rule that nothing is written outside `docs/qa/<id>/`.
