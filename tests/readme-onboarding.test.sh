@@ -100,6 +100,13 @@ test_quickstart_runs_as_written() {
 
   scratch_repo
   export HOME="$SCRATCH/home"
+  # The shared target holds $PO, the working tree's binary: the clone's install must build elsewhere.
+  export CARGO_TARGET_DIR="$SCRATCH/target"
+  # A source whose main holds HEAD, so the clone is on a branch and `git pull` works even from a detached HEAD.
+  # A clone, not a fetch: a shallow $ROOT (CI) refuses to update a ref of an empty repository.
+  git clone -q --bare "file://$ROOT" "$SCRATCH/polype.git" || fail "could not clone the source into the scratch dir"
+  git -C "$SCRATCH/polype.git" update-ref refs/heads/main "$(git -C "$ROOT" rev-parse HEAD)" || fail "could not point main at HEAD"
+  git -C "$SCRATCH/polype.git" symbolic-ref HEAD refs/heads/main
   # Not the default ~/.claude, so a link hard-coding that path dangles.
   export CLAUDE_CONFIG_DIR="$HOME/.config/claude"
   case "$CLAUDE_CONFIG_DIR" in "$SCRATCH"/*) ;; *) fail "refusing to run outside the scratch dir" ;; esac
@@ -111,8 +118,8 @@ test_quickstart_runs_as_written() {
   for dir in "${dirs[@]}"; do
     if [ -n "$dir" ] && [ ! -e "$dir/polype" ]; then newpath="${newpath:+$newpath:}$dir"; fi
   done
-  script="$(printf '%s\n%s\n%s\n' "$clone" "$sh1" "$sh2" | sed "s|$CLONE_URL|file://$ROOT|")"
-  [ "$(grep -c "file://$ROOT" <<< "$script")" = 1 ] || fail "the clone URL was not substituted exactly once"
+  script="$(printf '%s\n%s\n%s\n' "$clone" "$sh1" "$sh2" | sed "s|$CLONE_URL|file://$SCRATCH/polype.git|")"
+  [ "$(grep -c "file://$SCRATCH/polype.git" <<< "$script")" = 1 ] || fail "the clone URL was not substituted exactly once"
   local out
   out="$(cd "$SCRATCH" && PATH="$newpath" bash -e -c "$script" 2>&1)" || fail "the quickstart failed: $out"
   out="$(cd "$SCRATCH" && PATH="$newpath" bash -e -c "$(grep -F 'ln -s' <<< "$sh1")" 2>&1)" \
