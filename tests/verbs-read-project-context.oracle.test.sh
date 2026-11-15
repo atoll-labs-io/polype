@@ -13,12 +13,12 @@ s164_fixtures() {
 
 # OUT with what may differ between two runs of one fixture replaced: the fixture's own commit, the
 # method version the installer stamps, the scratch path. Fields later stories of M21 compute are
-# dropped, and so are the fields s176 adds (framing items, lane path and stops); lanes are sorted,
-# since git lists worktrees in no promised order.
+# dropped, and so are the fields s176 adds (framing items, lane path and stops) and the field s184
+# adds (answered); lanes are sorted, since git lists worktrees in no promised order.
 normalised() {
   jq -S --arg commit "$(git -C "$F" rev-parse --short=7 main 2>/dev/null)" --arg version "$(shipped_version)" \
     --arg scratch "$SCRATCH" '
-    del(.ready, .held, .session, .bounds, .shipped, .framing.items?)
+    del(.ready, .held, .session, .bounds, .shipped, .answered, .framing.items?)
     | if .lanes then .lanes |= (map(del(.next, .path, .stops)) | sort_by(.story)) else . end
     | walk(if type == "string" then
              (if . == $commit and $commit != "" then "<commit>" elif . == $version then "<version>" else . end)

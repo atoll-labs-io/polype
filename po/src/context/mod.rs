@@ -90,6 +90,13 @@ pub struct Inbox {
     pub unreadable: Vec<PathBuf>,
 }
 
+impl Inbox {
+    /// The decisions answered and not consumed yet, in id order.
+    pub fn answered_not_consumed(&self) -> impl Iterator<Item = &Decision> {
+        self.decisions.iter().filter(|d| d.status == "answered" && d.consumed.is_none())
+    }
+}
+
 /// One read of the project. `project.setting()` gives a later verb any other setting, read without
 /// a warning, so the warnings `po state` prints never depend on which verb asked.
 // Fields only the verbs of later M21 stories read (stories' deps and `Owns`, landed commits, lane

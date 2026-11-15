@@ -167,9 +167,7 @@ fn command(context: &Context) -> Result<String, (i32, &'static str, String)> {
     }
     let lanes = context.lanes.as_ref();
     let ready = next::ready(context);
-    let answered = context.inbox.as_ref().map(|inbox| {
-        inbox.decisions.iter().any(|d| d.status == "answered" && d.consumed.is_none())
-    });
+    let answered = context.inbox.as_ref().map(|inbox| inbox.answered_not_consumed().next().is_some());
     let work = lanes.is_some_and(|lanes| !lanes.is_empty())
         || ready.as_ref().is_some_and(|ready| !ready.is_empty())
         || answered == Some(true);
