@@ -2904,6 +2904,481 @@ Objectif : fermer, avant M22, les deux décisions que le porteur a prises le 202
 
 > **Sorties de ce fichier le 2026-11-14** — s153, s154 et s155 attendent qu'un produit en ait besoin (ADR-0108). Leur texte est dans [`stories-reportees.md`](stories-reportees.md) : `po` ne lit que ce fichier-ci, et tant qu'elles y figuraient, seule leur dépendance à s170 les tenait hors de la flotte ; s170 livrée, `po state` les annonçait prêtes (décision d-0016 du porteur). Elles reviennent ici le jour où un produit les réclame. Leurs issues #153 et #155 restent ouvertes, étiquetées `parked` ; les numéros ADR-0100 et ADR-0101 leur restent réservés.
 
-## M22 — La preuve par le comportement (à cadrer)
+## M22 — La preuve par le comportement
 
-Objectif : que la confiance dans Polype repose sur ce que font les agents, rejoué, et non sur la présence de phrases. Ce jalon n'est pas encore découpé : il dépend de ce que M21 aura livré, et `/po-stories` l'écrit à ce moment-là. Ce qu'il doit porter, par issue : un parcours rejouable de bout en bout sur un dépôt jetable, avec un faux tracker et des réponses de subagents écrites d'avance, que l'automate de M21 fait marcher jusqu'au commit atterri et jusqu'à chacun de ses arrêts (#206) ; le retrait des assertions qui cherchent une phrase qu'aucun script ne lit, une fois ce parcours en place et jamais avant, avec les restes #136 et #164 (#207) ; un budget de mots sur `method/` contrôlé par `po-lint`, et des bras de contrôle de `po-eval` pour d'autres règles que la seule qu'il mesure, une règle dont le retrait ne déplace aucun taux étant retirée (#208) ; la voie courte par défaut jusqu'à la complexité 3, si les signaux de s170 le justifient (#209) ; si le porteur retient l'ADR-0109, une seule commande pour faire avancer le travail, `/po-orchestrator` et `/po-flow` disparaissant (#210), et un `/po-ship` dont les opérations déterministes passent par un script (#211). Après M22, un jalon de méthode ne s'ouvre que pour un défaut vu sur un produit ou par une décision stratégique écrite du porteur (ADR-0108) ; s153, s154 et s155 attendent ce titre-là.
+Objectif : que la confiance dans Polype repose sur ce que font les agents, rejoué, et non sur la présence de phrases. Cadré avec le porteur le 2026-11-15. Trois décisions fixent le jalon. d-0026 b : M22 porte les défauts de l'automate, la version de `po`, la commande unique, le ship en script, le parcours rejouable et le retrait de la prose prouvée par phrase ; l'ordre du cadrage (ADR-0110, #212) et la discipline de version des projets (suite de l'ADR-0122) forment M23, cadré quand le prochain produit se cadre. d-0027 c : le parcours rejouable est marché par un script qui tient le rôle du pilote, sur chaque pull request, et par un vrai modèle, à la main, avant chaque publication de `po`. d-0028 b : des six constats majeurs de revue encore ouverts, ceux qu'un script peut tenir entrent ici (#225, #260, #263) ; #230 attend M23, #234 se corrige en quick fix, #233 se ferme comme conséquence acceptée de l'ADR-0114.
+
+L'ordre est contraint. La suite doit d'abord cesser de remplacer le `po` de travail (s181), puis la règle de version de l'ADR-0122 doit être tenue par un contrôle (s182) : toute story qui touche `po/` monte ensuite la version, donc possède `po/Cargo.toml`, `po/Cargo.lock` et `bin/polype`, et ces stories passent une à la fois. Le ship doit être un script (s192 à s196) avant que le parcours puisse atteindre un commit atterri sans modèle (s199). Les assertions de phrase ne se retirent (s201 à s204) qu'une fois le parcours en place. `Flow threshold` vaut déjà 3 sur ce dépôt (d-0001) : de #209 ne reste que la mesure, lue dans les signaux de s170.
+
+Régime des critères (porteur, 2026-11-13) : un critère qu'un script lit a son test d'oracle ; une règle qui parle à un modèle n'a ni test d'oracle ni test de phrase, le relecteur la juge en lisant, et le plan la liste comme candidate à un bras de contrôle (s206).
+
+### s181-suite-keeps-the-working-po — La suite ne remplace plus le `po` de l'arbre de travail
+**En tant qu'** implementer **je veux** que la suite lance, du premier au dernier test, le `po` construit depuis mon arbre de travail **afin qu'** une story qui change `po` ne voie plus de faux rouge avant d'être commitée.
+
+- **Complexité** : 2
+- **Dépend de** : aucune
+- **Surface** : command
+- **Corrige** : #254 (le test du démarrage rapide construit le `po` de HEAD dans le dossier de construction partagé ; vu sur s167, s168, s169, s170 et s180) et #221 (le même test échoue depuis un checkout en HEAD détachée)
+- **Owns** : `tests/readme-onboarding.test.sh`, `tests/run.sh`, `tests/lib.sh`, `tests/suite-keeps-the-working-po.oracle.test.sh`, `tests/suite-keeps-the-working-po.test.sh`
+
+**Critères d'acceptation**
+- [ ] `working_po_survives_the_suite` — après `tests/readme-onboarding.test.sh`, le binaire que `$PO` désigne est celui construit depuis l'arbre de travail : sur un arbre dont `po/` diffère de HEAD, un test lancé après lui obtient la réponse des sources modifiées.
+- [ ] `quickstart_runs_from_a_detached_head` — le test du démarrage rapide passe depuis un checkout en HEAD détachée.
+- [ ] `quickstart_still_runs_as_written` — les commandes du démarrage rapide de `README.md` sont toujours exécutées telles qu'écrites, sans qu'une ligne du README change.
+
+**Notes pour l'agent** : `tests/run.sh:11` exporte `CARGO_TARGET_DIR`, et `test_quickstart_runs_as_written` (`tests/readme-onboarding.test.sh:71-125`) ne le redéfinit pas : son `install --global`, lancé depuis un clone de `file://$ROOT`, construit donc les sources commitées dans `po/target/` de l'arbre de travail. `tests/po-prebuilt-and-verified.test.sh:14` montre la forme qui isole la construction. `README.md`, `bin/polype` et `.github/workflows/ci.yml` sont hors de ton `Owns` : si le correctif en demande un, arrête-toi et dis-le. Cette story ne touche pas `po/` : aucune version ne monte.
+
+### s182-po-change-needs-a-version — Un diff qui touche `po/` sans monter la version est refusé
+**En tant que** porteur **je veux** qu'une pull request qui change `po/` sans monter la version soit refusée par le contrôle `suite` **afin qu'** un numéro de version désigne toujours un seul état des sources (ADR-0122).
+
+- **Complexité** : 3
+- **Dépend de** : s181-suite-keeps-the-working-po
+- **Surface** : command
+- **Corrige** : #296 (le binaire précompilé est choisi d'après la version seule ; constat majeur de la revue de s171)
+- **Owns** : `bin/po-version-check`, `bin/po-ci`, `.github/workflows/ci.yml`, `tests/run.sh`, `tests/ci-on-every-pr.oracle.test.sh`, `tests/ci-on-every-pr.test.sh`, `tests/po-change-needs-a-version.oracle.test.sh`, `tests/po-change-needs-a-version.test.sh`, `docs/ci.md`, `docs/decisions/`
+
+**Critères d'acceptation**
+- [ ] `po_diff_without_bump_is_refused` — sur un dépôt jetable, un commit qui change un fichier de `po/` sans changer la version fait échouer le contrôle, avec un message qui nomme la version et les fichiers à monter ensemble.
+- [ ] `bump_moves_the_three_places` — le contrôle refuse une version montée dans un seul ou deux des trois endroits (`po/Cargo.toml`, `po/Cargo.lock`, `POLYPE_VERSION` de `bin/polype`), et une version qui recule ou reste égale.
+- [ ] `other_diffs_pass` — un diff qui ne touche pas `po/` passe sans monter la version ; un diff qui la monte sans toucher `po/` passe aussi.
+- [ ] `missing_base_fails` — le contrôle reçoit la base à comparer comme une référence git ; quand cette référence est absente du dépôt, il échoue en la nommant, jamais en passant.
+- [ ] `workflow_brings_the_base` — un essai lit `.github/workflows/ci.yml` : sur une pull request, le checkout rapatrie la branche de base, depuis le dépôt de base et non depuis un fork, et la référence qu'il laisse est celle que le contrôle reçoit.
+- [ ] `ci_still_has_one_entry` — le workflow n'appelle toujours que `bin/po-ci` et l'installation de `jq` dans ses étapes `run:` (ADR-0105).
+
+**Notes pour l'agent** : la version vit à trois endroits, que `tests/record-review-loose-ends.oracle.test.sh:90` (`test_version_goes_up`) et `bin/po-release:10-15` comparent déjà ; reprends leur lecture. Le checkout de `ci.yml` est de profondeur 1 et ne rapatrie pas la base : `tests/ci-on-every-pr.oracle.test.sh` (`test_workflow_only_calls_the_entry`) n'autorise comme étape `run:` que `jq` et `bin/po-ci`, mais ne lit pas les clés `with:` du checkout. Un choix technique t'attend et tu ne le tranches pas (ADR-0077) : où vit le contrôle (un script appelé par la suite, ou autre chose) et comment il trouve la base sur chaque forge sans lire de variable de forge dans `bin/po-ci`. Rédige l'ADR en `proposed`, options classées par les critères du porteur avec le pour et le contre de chacune, et pose `Technical choice: waiting for a human` dans le plan. `bin/po-version-check` est le nom par défaut du script ; si l'option retenue le loge ailleurs, dis-le dans le plan avant de le faire valider. `method/hooks/po-bounds.sh:135-152` (`story_base`) montre comment une base se calcule en local. La preuve sur une vraie pull request ne peut pas venir de cette story, qui ne touche pas `po/` : elle vient de la pull request de s183, dont la revue le note. Cette story ne touche pas `po/` : aucune version ne monte.
+
+### s183-next-waits-on-dependencies — Une lane dont la dépendance n'est pas livrée attend, sans rien retenir
+**En tant que** chef de projet **je veux** que `po next` fasse attendre une story qui a déjà sa lane tant qu'une story dont elle dépend n'est pas livrée **afin que** la flotte ne se bloque plus elle-même quand une story est ajoutée devant une lane ouverte.
+
+- **Complexité** : 2
+- **Dépend de** : s182-po-change-needs-a-version
+- **Surface** : command
+- **Corrige** : #306 (vu le 2026-11-14 : s172, scindée, était routée vers `plan` et sa lane retenait s176, dont elle dépendait)
+- **Owns** : `po/src/next/`, `po/Cargo.toml`, `po/Cargo.lock`, `bin/polype`, `docs/interface-agent.md`, `tests/fixtures/driver-cases/ready-set.cases`, `tests/driver-next-action.oracle.test.sh`, `tests/next-waits-on-dependencies.oracle.test.sh`, `tests/next-waits-on-dependencies.test.sh`
+
+**Critères d'acceptation**
+- [ ] `lane_waits_on_an_unshipped_dependency` — une story qui a une lane et dont une dépendance n'est pas livrée reçoit `wait`, raison `dependency`, avec l'id de la story attendue ; `po state` rend la même action.
+- [ ] `waiting_lane_takes_no_slot` — cette lane ne compte pas dans `Parallel` : avec `Parallel: 1`, la story dont elle dépend est `ready`.
+- [ ] `waiting_lane_holds_nothing` — cette lane ne retient aucune story pour `owns` : la story dont elle dépend n'est pas dans `held`, même quand leurs `Owns` se recouvrent.
+- [ ] `lane_resumes_once_shipped` — la dépendance livrée, la lane reprend à l'étape où ses fichiers la placent.
+- [ ] `version_goes_up` — la version de `po` monte d'un cran correctif, aux trois endroits.
+
+**Notes pour l'agent** : `po/src/next/lane.rs:21-84` (`next`) ne lit jamais `Story.depends_on` ; `po/src/next/wave.rs:21-31` compte toute lane non libérée dans `busy` et dans les détenteurs d'`owns`. Les cas de routage sont des fixtures : ajoute les tiens à `ready-set.cases`, `test_every_routing_case_is_a_fixture` en exige au moins 56 et il y en a 56. `docs/interface-agent.md:100` liste les raisons de `wait` : ajoute `dependency`, `contract` restant à `1` (une valeur ajoutée à une liste fermée, décision d-0012). Les décisions (`decisions.cases`) et les ships (`ships.cases`) sont à s185 et s186 : n'y touche pas.
+
+### s184-session-shows-what-waits — `po-session` dit ce qui attend dans la boîte, et lit un cadrage tenu par jalon
+**En tant que** porteur **je veux** que le démarrage d'une session liste les décisions qui m'attendent et ne dise plus qu'une revue de stories manque quand elle existe par jalon **afin de** pouvoir me fier à ce que la session affiche.
+
+- **Complexité** : 3
+- **Dépend de** : s183-next-waits-on-dependencies
+- **Surface** : command
+- **Corrige** : #315 (`Waiting for a human: nothing` avec cinq décisions en attente, 2026-11-14) et #244 (`stories review none · architecture missing` sur un dépôt dont les revues de stories sont par jalon, 2026-11-13)
+- **Owns** : `method/hooks/po-session.sh`, `po/src/context/`, `po/src/state/`, `po/src/run/`, `po/Cargo.toml`, `po/Cargo.lock`, `bin/polype`, `docs/interface-agent.md`, `docs/reviews/stories.md`, `tests/session-shows-what-waits.oracle.test.sh`, `tests/session-shows-what-waits.test.sh`, `tests/state-carries-session-lines.oracle.test.sh`, `tests/commands-read-po-state.oracle.test.sh`, `tests/project-lead.test.sh`, `tests/claude-md-setting.test.sh`, `tests/no-claude-md.test.sh`, `tests/state-as-json.test.sh`, `tests/state-as-json.oracle.test.sh`, `tests/session-and-gate-checks.test.sh`, `tests/verbs-read-project-context.oracle.test.sh`, `tests/decision-inbox.test.sh`, `docs/decisions/`
+
+**Critères d'acceptation**
+- [ ] `session_lists_pending_decisions` — quand `po state` rend des décisions dans `waiting`, `po-session` les liste sous `Waiting for a human` par leur id, et ne dit `nothing` que si rien n'attend ; une décision `sensitive` n'y figure que par son id.
+- [ ] `session_counts_answered_not_consumed` — `po-session` dit combien de décisions sont répondues et pas encore consommées, et renvoie à `po inbox --answered`.
+- [ ] `this_repository_reads_reviewed` — sur ce dépôt, `framing.items` ne dit plus `none` pour `stories-review` alors que la revue de son dernier jalon se termine par `Stories ready: yes`. Selon l'option que le porteur retient : `po` reconnaît une revue par jalon, et un essai le montre sur un dépôt jetable qui en tient deux ; ou ce dépôt tient désormais `docs/reviews/stories.md`, et un essai lit `po state` sur ce dépôt.
+- [ ] `single_file_projects_read_the_same` — sur un projet qui tient `docs/reviews/stories.md`, `framing` rend ce qu'il rendait.
+- [ ] `version_goes_up` — la version de `po` monte d'un cran mineur, aux trois endroits.
+
+**Notes pour l'agent** : le programme `jq` de `po-session.sh:48-76` ne lit jamais `.waiting`. `po state` ne porte pas le compte des décisions répondues et non consommées : seul `po/src/run/mod.rs:170-175` le calcule, et `po/src/run/` est dans ton `Owns` pour que ce compte ne soit pas écrit deux fois ; si tu ajoutes un champ à `po state`, `tests/verbs-read-project-context.oracle.test.sh` (`test_state_output_does_not_move`) fige l'objet et est dans ton `Owns` pour cela. Pour #244, `po/src/context/framing.rs:81-86` ne lit que `docs/reviews/stories.md` et `docs/architecture.md`, que la Loi 6 nomme. Un choix t'attend et tu ne le tranches pas : reconnaître des fichiers de revue par jalon, ou aligner ce dépôt sur le fichier unique ; et ce que `architecture` doit dire sur un dépôt en `Entry mode: —`. Pose-le au porteur avec le pour et le contre, `Technical choice: waiting for a human` dans le plan. `method/AGENTS.md` et les commandes de cadrage sont hors de ton `Owns` : si l'option retenue change une phrase de la Loi 6, arrête-toi et dis-le. La copie installée `.polype/hooks/po-session.sh` n'est jamais changée par une story.
+
+### s185-ship-order-and-closed-pr — L'ordre des ships vient d'une ligne datée, et une pull request fermée est vue
+**En tant que** chef de projet **je veux** que `po next` ordonne les ships d'après une date écrite dans la revue, et qu'il voie sur demande une pull request fermée sans fusion **afin que** ni une copie de fichier ni une fermeture à la main ne dérègle la flotte.
+
+- **Complexité** : 3
+- **Dépend de** : s184-session-shows-what-waits
+- **Surface** : command
+- **Corrige** : #278 (l'ordre des ships est lu dans la date de modification du fichier de revue) et #286 (`po next` ne voit pas une pull request fermée sans fusion ; décision d-0009 du porteur : derrière une option explicite, avec la lecture de forge de s170)
+- **Owns** : `po/src/next/`, `po/src/record/`, `po/src/trust/`, `po/Cargo.toml`, `po/Cargo.lock`, `bin/polype`, `method/templates/review.md`, `method/commands/po-drive.md`, `docs/interface-agent.md`, `tests/fixtures/driver-cases/ships.cases`, `tests/driver-next-action.oracle.test.sh`, `tests/driver-next-action.test.sh`, `tests/record-writes-reports.oracle.test.sh`, `tests/record-writes-reports.test.sh`, `tests/security-findings-stay-private.oracle.test.sh`, `tests/ship-order-and-closed-pr.oracle.test.sh`, `tests/ship-order-and-closed-pr.test.sh`, `tests/ship-files-the-other-findings.oracle.test.sh`
+
+**Critères d'acceptation**
+- [ ] `record_dates_each_verdict` — `po record review` écrit dans chaque bloc une ligne datée, avec son décalage horaire ; réenregistrer un rapport sur lui-même n'en ajoute pas une seconde.
+- [ ] `ships_follow_the_written_date` — `po next` ordonne les ships par cette ligne : changer la date de modification d'un fichier de revue ne change pas l'ordre.
+- [ ] `older_reviews_fall_back` — une revue sans ligne datée est ordonnée par sa date de modification, comme avant.
+- [ ] `gates_read_the_block_as_before` — `po-gate ship-allowed`, `po-gate findings-shape` et les signaux de confiance rendent le même verdict sur une revue qui porte la ligne.
+- [ ] `closed_pr_goes_to_a_human` — avec l'option de lecture de forge, une lane dont la pull request est fermée sans fusion reçoit `ask` avec une raison qui le dit ; sans l'option, `po next` n'interroge aucune forge et rend ce qu'il rendait.
+- [ ] `drive_no_longer_decides_it` — `po-drive.md` ne porte plus la règle de la pull request fermée, que `po next` rend ; le fichier ne compte pas plus de mots qu'avant. Règle lue par un modèle : pas de test d'oracle, jugée en revue.
+- [ ] `version_goes_up` — la version de `po` monte d'un cran mineur, aux trois endroits.
+
+**Notes pour l'agent** : `po/src/next/lane.rs:193-200` lit `reviewed_at` dans la date de modification ; `po/src/record/compose.rs` (`first_write`, `append`, `strip_own_header`) écrit l'en-tête de chaque bloc. Les lecteurs de bloc doivent tolérer la ligne : `po/src/trust/signals.rs:20-30` et `method/hooks/po-gate.sh:51,88,105`, ce dernier hors de ton `Owns` — s'il doit changer, arrête-toi et dis-le. `tests/record-writes-reports.oracle.test.sh:121` exige une seule ligne `Method version:` par bloc. `method/templates/review.md` compte 556 mots pour des plafonds de 557 (`tests/security-findings-stay-private.oracle.test.sh:161`) et 558 (`tests/record-writes-reports.test.sh:26`), tous deux dans ton `Owns` : retire autant de mots que tu en ajoutes, ou dis dans le plan le plafond qui bouge. Pour la forge, `po/src/trust/forge.rs` lit déjà GitHub par `gh api`, et `PO_GH` permet une doublure (`tests/trust-signals.test.sh:11`) ; `po next` refuse aujourd'hui tout argument (`po/src/next/mod.rs:54-56`, `test_next_refuses_an_option`). Le nom de l'option et le fait que `/po-drive` la passe sont à dire dans le plan. `tests/ship-files-the-other-findings.oracle.test.sh` plafonne `po-drive.md` à 2 483 mots : il est dans ton `Owns` pour le seul cas où ce plafond baisse.
+
+### s186-stale-decisions-are-flagged — Une décision dont la story est livrée est signalée périmée
+**En tant que** porteur **je veux** qu'une décision en attente dont la story a été livrée entre-temps me soit signalée comme périmée **afin de** ne pas répondre à une question dont une option n'existe plus.
+
+- **Complexité** : 3
+- **Dépend de** : s185-ship-order-and-closed-pr
+- **Surface** : command
+- **Corrige** : #331 (d-0022 offrait « fix it in s178 » alors que s178 était livrée, 2026-11-14) et #279 (le contrat ne dit pas qu'une décision retient ses lanes jusqu'à sa consommation)
+- **Owns** : `po/src/next/`, `po/src/state/`, `po/src/inbox/`, `po/Cargo.toml`, `po/Cargo.lock`, `bin/polype`, `docs/interface-agent.md`, `tests/fixtures/driver-cases/decisions.cases`, `tests/driver-next-action.oracle.test.sh`, `tests/answer-comes-back.oracle.test.sh`, `tests/decision-inbox.test.sh`, `tests/state-as-json.oracle.test.sh`, `tests/verbs-read-project-context.oracle.test.sh`, `tests/stale-decisions-are-flagged.oracle.test.sh`, `tests/stale-decisions-are-flagged.test.sh`, `docs/decisions/`
+
+**Critères d'acceptation**
+- [ ] `stale_decision_is_flagged` — une décision `pending` dont toutes les stories de `blocks` sont livrées est rendue par `po state` et par `po inbox` avec une marque qui le dit ; une décision dont une story de `blocks` reste à livrer ne la porte pas.
+- [ ] `framing_blocks_are_never_stale` — une décision dont `blocks` nomme une étape de cadrage, ou rien, n'est jamais marquée.
+- [ ] `answer_on_a_stale_decision_says_so` — `po answer` sur une décision périmée ne l'enregistre jamais en silence. Selon l'option que le porteur retient : il la refuse, code de sortie 1 et une erreur nouvelle que `docs/interface-agent.md` liste, la décision restant `pending` ; ou il l'enregistre, et sa sortie porte la marque de péremption.
+- [ ] `contract_says_held_until_consumed` — `docs/interface-agent.md` dit qu'une décision retient ses lanes jusqu'à sa consommation, répondue ou non, ce que `case_decisions_02_answered_not_consumed` fige déjà. Document sans sortie qu'un script lise : jugé en revue.
+- [ ] `version_goes_up` — la version de `po` monte d'un cran mineur, aux trois endroits.
+
+**Notes pour l'agent** : `po/src/next/mod.rs:110-121` (`holding_decision`) lit `blocks` sans regarder le statut ; `po/src/state/mod.rs:56-63` construit `waiting` sans regarder `blocks` ni les stories livrées (`context.landed`). L'issue #331 ne tranche rien : ce que `po answer` fait d'une décision périmée (la refuser, l'accepter en le signalant) est un choix que tu poses au porteur avec le pour et le contre, `Technical choice: waiting for a human` dans le plan. Une valeur ou un champ ajouté garde `contract` à `1` (d-0012). `tests/verbs-read-project-context.oracle.test.sh` fige l'objet de `po state` : il est dans ton `Owns` pour le champ nouveau, rien d'autre n'y bouge.
+
+### s187-inbox-guards-bite — Les gardes de la boîte de décisions ont un test qui mord
+**En tant que** relecteur **je veux** qu'une régression sur le verrou d'une décision ou sur le contrôle de son chemin fasse échouer la suite à chaque passage **afin que** la boîte ne tienne plus sur une lecture de code.
+
+- **Complexité** : 2
+- **Dépend de** : s186-stale-decisions-are-flagged
+- **Surface** : command
+- **Corrige** : #263 (le verrou exclusif cassé n'échoue qu'un passage sur trois, majeur de la revue de s166), #260 (aucun test du chemin dans un worktree hors de la racine, majeur de la revue de s165), #329 (la parité du contrôle de chemin n'est tenue par aucun test), #328 (un chemin non vérifié est dit « dans le dépôt ») et #290 (`output::not_built` est du code mort que le contrat liste encore)
+- **Owns** : `po/src/inbox/`, `po/src/record/security.rs`, `po/src/output.rs`, `po/Cargo.toml`, `po/Cargo.lock`, `bin/polype`, `docs/interface-agent.md`, `tests/answer-comes-back.test.sh`, `tests/record-review-loose-ends.test.sh`, `tests/inbox-guards-bite.oracle.test.sh`, `tests/inbox-guards-bite.test.sh`
+
+**Critères d'acceptation**
+- [ ] `held_lock_is_refused_every_time` — un essai tient le fichier de verrou d'une décision et obtient `inbox-busy` de `po answer` ; le verrou relâché, la réponse passe. Le relecteur prouve par mutation que cet essai échoue à chaque passage quand le verrou est rendu non exclusif.
+- [ ] `path_in_an_outside_worktree_is_refused` — un `context` qui désigne, par un chemin ordinaire, un fichier d'un worktree du même dépôt placé hors de la racine est refusé pour une décision `sensitive`.
+- [ ] `written_and_folded_paths_agree` — un essai passe par la comparaison du chemin tel qu'écrit avec le chemin replié : un chemin que seule cette comparaison refuse est refusé. Le relecteur prouve par mutation que l'essai échoue quand elle est désactivée.
+- [ ] `unverified_path_says_so` — le message d'un refus pour un chemin non vérifiable ne dit plus que le chemin est dans le dépôt ni de l'ajouter au `.gitignore` ; les codes d'erreur ne changent pas.
+- [ ] `not_built_is_gone` — `po` se construit sans avertissement `dead_code`, et `docs/interface-agent.md` ne liste plus `not-built`.
+- [ ] `version_goes_up` — la version de `po` monte d'un cran correctif, aux trois endroits.
+
+**Notes pour l'agent** : `po/src/inbox/rewrite.rs:95-108` (`take`) prend le verrou par `create_new` ; `test_parallel_answers_record_one` (`tests/answer-comes-back.test.sh:48-72`) reste, ton essai s'y ajoute. `po/src/inbox/add.rs:121-168` (`place`, `resolve`) : `unverified_layout` (`tests/record-review-loose-ends.test.sh:44-52`) crée déjà un worktree hors de la racine, mais ne l'atteint que par `..`. Les messages à corriger : `add.rs:49,57-60`, `rewrite.rs:47-52`, `po/src/record/security.rs:223-236`. Ce que `po inbox add` accepte et refuse ne change pour aucun chemin : les tests existants restent verts sans être modifiés. Ne mets dans aucun fichier, test compris, un texte qui décrit comment contourner le contrôle : un nom de test ne décrit pas la faiblesse.
+
+### s188-orphan-copy-survives — Une copie orpheline de l'`AGENTS.md` d'une personne n'est jamais supprimée
+**En tant que** personne qui installe Polype **je veux** qu'un `AGENTS.md.before-polype` que Polype n'a pas mis de côté lui-même reste intact à chaque passage de l'installeur **afin de** ne jamais perdre un fichier que j'ai écrit.
+
+- **Complexité** : 3
+- **Dépend de** : s187-inbox-guards-bite
+- **Surface** : command
+- **Corrige** : #225 (l'orphelin n'est gardé que pour une exécution : au `update` suivant il est absorbé puis supprimé ; majeur de la revue de s161, reproduit)
+- **Owns** : `bin/polype`, `tests/install-collisions.test.sh`, `tests/orphan-copy-survives.oracle.test.sh`, `tests/orphan-copy-survives.test.sh`, `docs/installation.md`, `docs/decisions/`
+
+**Critères d'acceptation**
+- [ ] `orphan_survives_every_run` — sur un projet qui a `AGENTS.local.md` et un `AGENTS.md.before-polype` orphelin, un `install` suivi de deux `update` laisse l'orphelin identique, et chaque passage le nomme.
+- [ ] `pending_copy_is_still_absorbed` — la copie que Polype a mise de côté lui-même est toujours absorbée dans `AGENTS.local.md` puis supprimée au premier `update` qui trouve `AGENTS.local.md` (ADR-0088).
+- [ ] `remove_restores_as_before` — `remove` rend à la personne ce qu'il rendait.
+- [ ] `existing_installs_lose_nothing` — sur un projet posé par la version précédente, où rien ne dit d'où vient une copie mise de côté, aucun passage ne supprime un fichier sans l'avoir absorbé.
+
+**Notes pour l'agent** : `assemble_agents_md` (`bin/polype:549-560`) pose toujours un `AGENTS.md` marqué ; au passage suivant, `absorb_agents_md` (`:513-547`) voit « copie mise de côté + `AGENTS.md` marqué » et prend l'orphelin pour la copie en attente. Rien ne distingue aujourd'hui les deux. Un choix technique t'attend et tu ne le tranches pas : où Polype note qu'une copie mise de côté est la sienne. Rédige un ADR en `proposed`, qui remplace en partie l'ADR-0112, avec le pour et le contre de chaque option, et pose `Technical choice: waiting for a human` dans le plan. `tests/installer-leftovers.oracle.test.sh` (oracle de s161) et `tests/install.test.sh` sont hors de ton `Owns` et restent verts. `bin/polype` porte aussi la version : cette story ne touche pas `po/`, aucune version ne monte.
+
+### s189-first-release-holds — Une publication de `po` tient de l'étiquette aux sommes
+**En tant que** porteur **je veux** que la publication d'une version de `po` refuse une étiquette qui ne correspond pas à la version, se relance sans échouer, et que le nettoyage qui suit une pose soit gardé par des tests **afin de** publier la première version sans surprise.
+
+- **Complexité** : 3
+- **Dépend de** : s188-orphan-copy-survives
+- **Surface** : command
+- **Corrige** : #297 (deux gardes de `clean_machine_files` sans test, majeur de la revue de s171) et #299 (`gh release upload` sans `--clobber`)
+- **Owns** : `bin/polype`, `bin/po-release`, `.github/workflows/release.yml`, `docs/ci.md`, `docs/installation.md`, `tests/po-prebuilt-and-verified.oracle.test.sh`, `tests/po-prebuilt-and-verified.test.sh`, `tests/first-release-holds.oracle.test.sh`, `tests/first-release-holds.test.sh`
+
+**Critères d'acceptation**
+- [ ] `tag_must_match_the_version` — la publication échoue, sans rien téléverser, quand l'étiquette poussée n'est pas `v<version>` de `bin/polype` et de `po/Cargo.toml`.
+- [ ] `release_reruns_cleanly` — relancer la publication d'une étiquette déjà publiée n'échoue ni sur la version existante ni sur un fichier déjà téléversé.
+- [ ] `cleanup_waits_for_the_new_po` — une mise à jour qui n'a pas pu poser le `po` de sa version ne supprime aucun fichier de machine ; la garde retirée, cet essai échoue.
+- [ ] `refused_po_cleans_nothing` — une pose dont le `po` téléchargé est refusé pour sa somme ne supprime aucun fichier de machine ; la garde retirée, cet essai échoue.
+- [ ] `sums_are_written_by_a_command` — une commande lit les fichiers `.sha256` d'une publication et écrit le bloc `PO_SUMS` de `bin/polype`, au lieu d'un collage à la main (ADR-0121, ADR-0122) ; relancée, elle n'écrit rien de plus.
+
+**Notes pour l'agent** : `clean_machine_files` est à `bin/polype:942-959`, ses gardes à `:944` et `:947-948` ; le seul essai positif est `test_upgrade_cleans_what_the_old_version_left`. `fetch_double` et `path_without_cargo` vivent dans l'oracle de s171, « copiés, non sourcés ». `test_release_builds_one_binary_per_platform` exige de `release.yml` des `run:` sur une ligne, qui soient `bin/po-release <dir>` ou commencent par `gh release ` : dis dans le plan où loge le contrôle de l'étiquette. Pousser l'étiquette de la première version et coller ses sommes restent des gestes que le chef de projet propose au porteur une fois la story livrée : la story ne publie rien. Elle ne touche pas `po/` : aucune version ne monte.
+
+### s190-next-names-the-track — `po next` dit la voie d'une story et place le design avant le plan
+**En tant que** chef de projet **je veux** que `po next` rende la voie, courte ou complète, de chaque story à planifier, et route le design avant le plan **afin que** la voie courte soit une valeur que l'automate lit et que l'ordre des étapes ne soit écrit qu'à un endroit (ADR-0109).
+
+- **Complexité** : 3
+- **Dépend de** : s189-first-release-holds
+- **Surface** : command
+- **Owns** : `po/src/next/`, `po/src/context/`, `po/Cargo.toml`, `po/Cargo.lock`, `bin/polype`, `docs/interface-agent.md`, `method/commands/po-drive.md`, `method/agents/planner.md`, `tests/fixtures/driver-cases/`, `tests/driver-next-action.oracle.test.sh`, `tests/driver-next-action.test.sh`, `tests/drive-executes-next.oracle.test.sh`, `tests/next-names-the-track.oracle.test.sh`, `tests/next-names-the-track.test.sh`, `tests/planner.test.sh`, `tests/state-as-json.oracle.test.sh`, `tests/verbs-read-project-context.oracle.test.sh`, `tests/ship-files-the-other-findings.oracle.test.sh`
+
+**Critères d'acceptation**
+- [ ] `plan_action_names_its_track` — toute action `plan` porte la voie : `flow` quand `Story track` et `Flow threshold` l'admettent pour la complexité de la story, `full` sinon ; une story qui porte `Corrige`/`Fixes`, qui va en QA ou qui a un écran est `full`.
+- [ ] `unreadable_track_settings_ask` — `Story track` ou `Flow threshold` illisible, ou une story sans complexité sous `auto`, donne `ask` avec la raison, jamais une voie devinée.
+- [ ] `design_comes_before_plan` — une story qui a un écran et pas de design reçoit `design` avant `plan` (Loi 1 ; l'ADR-0109 retient cet ordre, #184).
+- [ ] `stories_file_reads_both_languages` — la complexité et la ligne de correctif sont lues dans un fichier de stories français comme anglais.
+- [ ] `planner_follows_the_track_it_is_given` — le planner prend la voie que `po next` rend ; il garde le droit de la relever à `full` quand sa lecture du code montre un signal que les fichiers ne disent pas (migration, contrat d'API, dépendance, choix qui mérite un ADR), et le dit. `planner.md` et `po-drive.md` ne comptent pas plus de mots qu'avant. Règle lue par un modèle : pas de test d'oracle, jugée en revue.
+- [ ] `version_goes_up` — la version de `po` monte d'un cran mineur, aux trois endroits.
+
+**Notes pour l'agent** : `po` ne lit aujourd'hui ni `Story track` ni `Flow threshold` ; `po/src/context/stories.rs` ne lit ni la complexité ni `Corrige`. La voie est décidée en prose par `method/agents/planner.md:13,26-31`, `po-flow.md` et `po-orchestrator.md` ; ces deux commandes sont à s191, n'y touche pas. `has_screen` et `goes_to_qa` existent (`po/src/context/lanes.rs:254-268`). L'ordre : `lanes.rs:233-241` place `Design` avant `Plan`, mais `lane.rs:37-68` rend `plan` avant `design`. Les signaux de confiance lisent la voie dans le frontmatter du plan (`track: flow`) : cela ne change pas. Un champ ajouté à une action garde `contract` à `1` (d-0012). `tests/planner.test.sh:52-54` fige la phrase de `planner.md` sur `Flow threshold` que tu réécris. Les règles de plus de six tâches et de refus de `po-flow.md` qui ne se lisent qu'après le plan restent au planner.
+
+### s191-drive-takes-one-story — `/po-drive <id>` fait avancer une story, et deux commandes disparaissent
+**En tant que** personne qui pilote un projet **je veux** une seule commande pour faire avancer le travail, `/po-drive` pour tout ce qui est prêt et `/po-drive <id>` pour une story **afin que** le parcours d'une story ne soit plus décrit à trois endroits (ADR-0109, #210).
+
+- **Complexité** : 4 — risque : dix-huit fichiers de tests lisent `po-orchestrator.md` ou `po-flow.md`, et des règles que seules ces deux commandes portent peuvent disparaître avec elles sans qu'aucun test le dise
+- **Dépend de** : s190-next-names-the-track
+- **Surface** : command
+- **Owns** : `method/commands/po-orchestrator.md`, `method/commands/po-flow.md`, `method/commands/po-drive.md`, `method/commands/po-help.md`, `method/commands/po-status.md`, `method/commands/po-execute.md`, `method/commands/po-research.md`, `method/AGENTS.md`, `method/agents/planner.md`, `method/templates/plan-flow.md`, `method/skills/diagnostic/SKILL.md`, `README.md`, `docs/migration.md`, `docs/parite-killer-saas.md`, `docs/direction.md`, `tests/flow.test.sh`, `tests/wiring.test.sh`, `tests/escalation-contract.test.sh`, `tests/defect-and-routing-paths.test.sh`, `tests/diagnostic-skill.test.sh`, `tests/drive-guards.test.sh`, `tests/framing-realign-and-orchestrator-log.test.sh`, `tests/pilot.test.sh`, `tests/model-routing.test.sh`, `tests/qa-fleet.test.sh`, `tests/plan-and-defect-paths-cleanup.test.sh`, `tests/planner-writes-the-oracle.test.sh`, `tests/resume-shape-stop.test.sh`, `tests/reuse-ladder.test.sh`, `tests/surface-routing.test.sh`, `tests/tech-choice-backstop.test.sh`, `tests/ship-through-pr.test.sh`, `tests/record-writes-reports.test.sh`, `tests/fleet-wiring.test.sh`, `tests/planner.test.sh`, `tests/drive.test.sh`, `tests/drive-takes-one-story.oracle.test.sh`, `tests/drive-takes-one-story.test.sh`, `tests/ship-files-the-other-findings.oracle.test.sh`, `tests/decision-inbox.test.sh`, `tests/answer-comes-back.test.sh`
+
+**Critères d'acceptation**
+- [ ] `two_commands_are_gone` — `method/commands/po-orchestrator.md` et `method/commands/po-flow.md` n'existent plus, et aucun fichier de `method/`, ni `README.md`, ne les nomme ; `bin/po-lint` passe.
+- [ ] `update_removes_them_from_a_project` — sur un projet posé avec la version précédente, `polype update` retire les deux commandes sans les garder comme fichiers de la personne quand elles sont intactes.
+- [ ] `drive_takes_an_id` — `/po-drive <id>` ne fait avancer que cette story, par les mêmes actions de `po next` ; un argument qui n'est pas un id exact est rapproché de `docs/stories.md`, et zéro ou plusieurs correspondances arrêtent en listant. Règle lue par un modèle : pas de test d'oracle, jugée en revue.
+- [ ] `nothing_only_they_said_is_lost` — le plan liste chaque règle que seule l'une des deux commandes portait, et dit pour chacune où elle vit désormais (`po next`, `po-drive.md`, `planner.md`) ou pourquoi elle tombe ; le relecteur vérifie la liste contre les deux fichiers supprimés. Même régime.
+- [ ] `words_go_down` — `method/` compte au moins 3 000 mots de moins qu'avant la story, et aucun fichier que la story touche n'en compte plus.
+
+**Notes pour l'agent** : `po-orchestrator.md` fait 1 907 mots et `po-flow.md` 1 569. Les mentions à retirer hors de ces deux fichiers : `po-help.md:35,40,46`, `method/AGENTS.md:45,47`, `templates/plan-flow.md:9,15`, `po-status.md:28`, `skills/diagnostic/SKILL.md:3`, `po-execute.md:36`, `po-research.md:24`, `README.md:45`. `po-drive.md:3` ne connaît que `status` ; `po run` lance `"/po-drive"` en dur et n'est pas touché ici. `tests/record-writes-reports.test.sh:22` compte les mots des deux fichiers : sa ligne tombe avec eux. Pour chaque fichier de tests de ton `Owns`, dis dans le plan quelles assertions tombent, une par une : celles qui lisaient une phrase des deux commandes tombent sans remplacement par un test de phrase ; un test qui lit un champ ou un script reste. Les stories, plans, revues et ADR déjà livrés qui nomment ces commandes sont de l'histoire : n'y touche pas. Les copies installées ne sont pas changées par la story. Elle ne touche pas `po/` : aucune version ne monte.
+
+### s192-ship-reads-the-forge — La confirmation effective d'un ship est calculée par `po`
+**En tant que** chef de projet **je veux** que `po` lise la forge et rende la valeur effective de `Ship confirmation` **afin que** la règle de revue de la forge ne soit plus réinterprétée par un modèle à chaque ship (#211, première partie).
+
+- **Complexité** : 4 — risque : `po` ne lit aujourd'hui la forge que pour les contrôles d'un commit ; il lirait ici les collaborateurs et les règles de protection, sur trois familles de forge, sans jamais recevoir un jeton par un argument
+- **Dépend de** : s191-drive-takes-one-story
+- **Surface** : command
+- **Owns** : `po/src/ship/`, `po/src/trust/`, `po/src/main.rs`, `po/Cargo.toml`, `po/Cargo.lock`, `bin/polype`, `docs/interface-agent.md`, `docs/decisions/`, `method/commands/po-ship.md`, `method/commands/po-setup.md`, `tests/ship-reads-the-forge.oracle.test.sh`, `tests/ship-reads-the-forge.test.sh`, `tests/ship-follows-forge.test.sh`, `tests/forge-token-host.test.sh`, `tests/ship-files-the-other-findings.oracle.test.sh`, `tests/defects-seen-on-products.oracle.test.sh`, `tests/ship-resumes-cleanly.test.sh`
+
+**Critères d'acceptation**
+- [ ] `verdict_follows_the_three_signals` — contre une doublure de forge, la commande rend `collaborative`, `solo` ou `unreadable` d'après les collaborateurs, `CODEOWNERS` lu sur la branche cible et les règles de protection, et la valeur effective qui en découle : `human` sur un dépôt collaboratif quelle que soit la ligne, la ligne elle-même sinon.
+- [ ] `absence_is_not_an_error` — une réponse 404 ou 403 d'un des trois signaux compte comme une absence ; une forge injoignable rend `unreadable`, jamais `solo`.
+- [ ] `chosen_is_never_rewritten` — pour une ligne `(chosen)`, la commande ne propose aucune réécriture ; pour une ligne `(forge)` qui ne suit plus la forge, elle rend la valeur à écrire, et n'écrit rien elle-même sur `Target branch`.
+- [ ] `token_never_travels` — aucun jeton n'est lu depuis un argument ni écrit dans une sortie ; les outils de forge sont lancés sans leurs variables de jeton, comme aujourd'hui (ADR-0083).
+- [ ] `ship_command_reads_the_value` — `/po-ship` lit la valeur effective dans la sortie de la commande et ne décrit plus comment la calculer ; `po-setup.md` y renvoie. `po-ship.md` compte au moins 600 mots de moins qu'avant, `po-setup.md` pas un de plus. Règle lue par un modèle : pas de test d'oracle, jugée en revue.
+- [ ] `version_goes_up` — la version de `po` monte d'un cran mineur, aux trois endroits.
+
+**Notes pour l'agent** : la règle est dans `po-ship.md:24-48` (`## The forge's review rule`), que `po-setup.md:27,67,74-75,81,90` cite. `po/src/trust/forge.rs` reconnaît github.com et lance `gh api --hostname github.com` ; `PO_GH` permet une doublure. GitLab et Forgejo n'ont jamais été éprouvés pour de vrai (#75, `parked`) : dis dans le plan ce que la commande rend pour elles, sans rien inventer que la prose actuelle ne dise. Un choix technique t'attend et tu ne le tranches pas (ADR-0077) : le ship entre-t-il dans le binaire `po`, qui n'écrit aujourd'hui aucun état git, ou dans un script à part ; et la forme de la commande (un verbe `ship` à sous-étapes, ou plusieurs verbes). L'ADR-0116 a mis dans le binaire tout ce que M21 ajoutait : rédige un ADR en `proposed` avec le pour et le contre de chaque option, et pose `Technical choice: waiting for a human` dans le plan. `po/src/ship/` est le dossier par défaut ; si l'option retenue est un script, l'`Owns` change : dis-le avant de faire valider le plan. La réécriture de la ligne `(forge)` par une pull request en brouillon reste dans `po-ship.md` jusqu'à s194. Le titre `## The forge's review rule` reste dans `po-ship.md`, réduit à la lecture de la valeur : `method/AGENTS.md:141` et `po-intake.md:76` le citent et sont hors de ton `Owns`. Si le choix retenu est un script hors de `po`, les `Owns` de s193 à s196 sont à reprendre en cadrage avant leur plan : dis-le au chef de projet. `tests/ship-follows-forge.test.sh` (37 assertions) et `tests/forge-token-host.test.sh` lisent des phrases que tu retires : dis lesquelles tombent, une par une.
+
+### s193-ship-builds-the-landing-commit — Le commit d'atterrissage d'une story est construit par une commande
+**En tant que** chef de projet **je veux** que la porte de ship et la construction du commit d'atterrissage soient faites par une commande qui rend chaque étape en JSON **afin qu'** aucun modèle ne refasse de mémoire des opérations git (#211, deuxième partie).
+
+- **Complexité** : 3
+- **Dépend de** : s192-ship-reads-the-forge
+- **Surface** : command
+- **Owns** : `po/src/ship/`, `po/src/main.rs`, `po/Cargo.toml`, `po/Cargo.lock`, `bin/polype`, `docs/interface-agent.md`, `method/commands/po-ship.md`, `tests/ship-builds-the-landing-commit.oracle.test.sh`, `tests/ship-builds-the-landing-commit.test.sh`, `tests/ship.test.sh`, `tests/session-and-gate-checks.test.sh`, `tests/review-tree-gate.test.sh`, `tests/ship-files-the-other-findings.oracle.test.sh`, `tests/ship-through-pr.test.sh`, `tests/ship-and-fleet-cleanup.test.sh`
+
+**Critères d'acceptation**
+- [ ] `gate_comes_first` — sans `po-gate ship-allowed`, la commande s'arrête avant toute écriture et rend la raison du refus.
+- [ ] `one_commit_no_merge` — sur un dépôt jetable, la commande construit un seul commit `<id>: <titre>` sur la base fraîche, sans commit de fusion, dont l'arbre hors de `docs/` est celui que la revue a jugé ; la branche `story/<id>` garde son arbre relu.
+- [ ] `conflict_goes_to_a_human` — un conflit avec la base arrête la commande, qui rend les chemins en conflit et n'écrit rien.
+- [ ] `local_mode_lands_here` — sous `Merge mode: local`, sans dépôt distant, le commit atterrit par avance rapide sur `Target branch` d'une racine propre, et rien n'est envoyé ; une racine qui porte un travail non commité arrête la commande.
+- [ ] `ship_command_calls_it` — `/po-ship` lance la commande pour ces étapes et ne les décrit plus ; `po-ship.md` compte au moins 400 mots de moins qu'avant. Règle lue par un modèle : pas de test d'oracle, jugée en revue.
+- [ ] `version_goes_up` — la version de `po` monte d'un cran mineur, aux trois endroits.
+
+**Notes pour l'agent** : les opérations sont dans `po-ship.md:11-22` (préambule, étape 0), `:50-57` (étape 1) et le début de l'étape 2 (`:59-72`) ; lis l'ADR-0080 et l'ADR-0081 avant ton plan. Les contrôles coûteux de l'étape 1 passent par `po-run` et `po-gate verif-current` : la commande les appelle, elle ne les réécrit pas ; la question « le diff touche-t-il au routage » de `Build stage: ship-if-route` reste au modèle, dis comment il la passe. La confirmation `Merge / Not now` du mode local reste posée par `/po-ship`. La forme de la commande suit le choix que le porteur a fait à s192 ; si ce choix est un script hors de `po`, ton `Owns` est à reprendre en cadrage avant ton plan : arrête-toi et dis-le. L'envoi, la pull request et la fusion sont à s194 ; le nettoyage et les constats à s195 et s196 : n'y touche pas. `po-setup.md:67,81` cite le contrôle du dépôt distant et le commit « as in `/po-ship` » et est hors de ton `Owns` : ces deux renvois doivent rester vrais, sinon arrête-toi et dis-le. Pour chaque fichier de tests de ton `Owns`, dis quelles assertions de phrase tombent, une par une.
+
+### s194-ship-lands-through-a-pull-request — Une story atterrit par sa pull request sans qu'un modèle rejoue la forge
+**En tant que** chef de projet **je veux** que l'envoi du commit d'atterrissage, la pull request, l'attente des contrôles et la fusion soient faits par la commande de ship, et qu'un ship interrompu reprenne où il en était **afin que** la seule étape qui écrit sur la forge ne dépende plus d'une relecture de prose (#211, troisième partie).
+
+- **Complexité** : 4 — risque : c'est la seule étape qui écrit sur la forge et qui ne se défait pas ; le bail de l'envoi forcé, la reprise d'un ship interrompu et la fusion liée au commit envoyé doivent rendre exactement ce que la prose garantit aujourd'hui
+- **Dépend de** : s193-ship-builds-the-landing-commit
+- **Surface** : command
+- **Owns** : `po/src/ship/`, `po/src/main.rs`, `po/Cargo.toml`, `po/Cargo.lock`, `bin/polype`, `docs/interface-agent.md`, `method/commands/po-ship.md`, `tests/ship-lands-through-a-pull-request.oracle.test.sh`, `tests/ship-lands-through-a-pull-request.test.sh`, `tests/ship-through-pr.test.sh`, `tests/ship-resumes-cleanly.test.sh`, `tests/ship-and-fleet-cleanup.test.sh`, `tests/ship-follows-forge.test.sh`, `tests/ship-files-the-other-findings.oracle.test.sh`
+
+**Critères d'acceptation**
+- [ ] `pr_mode_never_pushes_target` — sous `Merge mode: pr`, contre un dépôt distant local et une forge doublée, la commande envoie le commit sur la branche de la story avec un bail, ouvre la pull request ou reprend celle qui existe, et n'envoie jamais `Target branch`, vérifié sur les appels reçus par les doublures.
+- [ ] `human_stops_at_the_pull_request` — sous une confirmation effective `human`, la commande s'arrête une fois la pull request ouverte et le dit.
+- [ ] `automatic_waits_for_checks` — sous `automatic` avec `Forge checks: required`, la commande ne fusionne qu'une fois les contrôles passés et la porte relue, par une fusion liée au commit envoyé ; un contrôle en échec renvoie la story à un fix run et ne fusionne rien.
+- [ ] `resumed_ship_does_not_land_twice` — relancée après une interruption à chaque étape, la commande reprend où elle en était : une pull request déjà fusionnée mène au nettoyage, un commit déjà envoyé n'est pas reconstruit sous un autre identifiant.
+- [ ] `forge_line_is_rewritten_by_the_command` — pour une ligne `Ship confirmation` marquée `(forge)` qui ne suit plus la forge, la commande ouvre la pull request en brouillon qui la réécrit, sur une branche à part, jamais sur `Target branch` ; une ligne `(chosen)` n'est jamais touchée.
+- [ ] `description_stays_with_the_model` — `/po-ship` écrit la description de la pull request (quoi, pourquoi, comment vérifier, le verdict) et la passe à la commande par un fichier ; `po-ship.md` compte au moins 600 mots de moins qu'avant. Règle lue par un modèle : pas de test d'oracle, jugée en revue.
+- [ ] `version_goes_up` — la version de `po` monte d'un cran mineur, aux trois endroits.
+
+**Notes pour l'agent** : les opérations sont dans la fin de l'étape 2 (`po-ship.md:72-82`) et dans la réécriture de la ligne `(forge)` (`:24-48`, que s192 a laissée) ; lis l'ADR-0079, l'ADR-0081 et l'ADR-0083 avant ton plan. Aucune doublure de `gh pr view`, `create`, `merge` ni `checks` n'existe : celles de `tests/trust-signals.test.sh:11` (`PO_GH`) et de `tests/failing-check-files-an-issue.test.sh:14-24` (en tête du `PATH`) donnent la forme. Le dépôt distant d'essai est un dépôt nu local. Le texte de la description ne voyage jamais dans un argument (Loi 7). L'attente des contrôles dure aujourd'hui jusqu'à trente minutes par pas de trente secondes : dis dans le plan comment un essai la traverse sans attendre. Le nettoyage et le dépôt des constats (étape 3) sont à s195 et s196 : n'y touche pas. Pour chaque fichier de tests de ton `Owns`, dis quelles assertions de phrase tombent, une par une ; `tests/ship-and-fleet-cleanup.test.sh` porte des mutants de `po-ship.md` : dis ce qu'ils deviennent.
+
+### s195-ship-files-open-findings — Les constats ouverts d'une revue livrée sont déposés par une commande
+**En tant que** chef de projet **je veux** que le dépôt des constats ouverts d'une revue, une fois l'atterrissage prouvé, soit fait par une commande **afin que** plus aucun constat ne se perde sur une commande `sed` recopiée de la prose (#211, quatrième partie).
+
+- **Complexité** : 4 — risque : le dépôt écrit dans le tracker, où un doublon ou un constat de sécurité déposé par erreur ne se rattrape pas
+- **Dépend de** : s194-ship-lands-through-a-pull-request
+- **Surface** : command
+- **Corrige** : #84 (le `sed` de l'étape 3 de `/po-ship` dépend d'une locale installée)
+- **Owns** : `po/src/ship/`, `po/src/main.rs`, `po/Cargo.toml`, `po/Cargo.lock`, `bin/polype`, `docs/interface-agent.md`, `method/commands/po-ship.md`, `tests/ship-files-open-findings.oracle.test.sh`, `tests/ship-files-open-findings.test.sh`, `tests/everything-in-issues.test.sh`, `tests/review-findings-shape.test.sh`, `tests/ship-files-the-other-findings.oracle.test.sh`
+
+**Critères d'acceptation**
+- [ ] `nothing_before_the_proof` — sans preuve de l'atterrissage (pull request fusionnée, ou commit ancêtre de `Target branch`), la commande ne dépose rien.
+- [ ] `open_findings_are_filed_once` — les constats du dernier bloc de la revue sont déposés un par un dans le tracker, titre et corps passés par des fichiers ; un titre déjà présent n'est pas déposé une seconde fois ; relancée, la commande ne dépose rien de plus.
+- [ ] `security_findings_are_never_filed` — un constat marqué `[security]` n'est jamais déposé ; il est rendu par son seul identifiant de décision.
+- [ ] `failed_listing_files_nothing` — une liste des issues qui échoue, ou qui atteint la limite de mille titres, fait que rien n'est déposé, et la commande le dit.
+- [ ] `every_tracker_value_is_handled` — sous `github` les issues sont créées ; sous `taskwarrior` les tâches ; sous `—` rien n'est déposé et les constats sont rendus pour la personne.
+- [ ] `findings_read_in_any_locale` — les constats sont lus de la même façon quelle que soit la locale de la machine.
+- [ ] `unmarked_security_stays_with_the_model` — `/po-ship` retient pour la personne un constat ordinaire dont le texte touche à la sécurité, et décide ce qui compte comme « marqué corrigé », avant de passer la liste à la commande ; `po-ship.md` compte au moins 400 mots de moins qu'avant. Règle lue par un modèle : pas de test d'oracle, jugée en revue.
+- [ ] `version_goes_up` — la version de `po` monte d'un cran mineur, aux trois endroits.
+
+**Notes pour l'agent** : le dépôt est à `po-ship.md:84-99`, et les commandes `sed` à `:91-92`. `tests/everything-in-issues.test.sh:125` (`cut_finding`) extrait ces commandes de la prose et les exécute : c'est le seul essai de comportement de l'étape, remplace-le par un essai de la commande. La forme d'un constat est celle que `po-gate findings-shape` accepte (ADR-0096) ; `method/hooks/po-gate.sh` est hors de ton `Owns`. Les doublures de `gh issue` et de `task` existent (`tests/failing-check-files-an-issue.test.sh:14-24`, `tests/intake-title-bounded.oracle.test.sh:17-32`). Le titre `## Step 3` de `po-ship.md` et sa règle de preuve restent citables : `method/AGENTS.md:129`, `po-intake.md:24` et `po-setup.md:74` y renvoient et sont hors de ton `Owns`. Lis l'ADR-0090, l'ADR-0123 et l'ADR-0124 avant ton plan : ce qui reste retenu pour la personne ne change pas. Le nettoyage de la lane est à s196.
+
+### s196-ship-cleans-the-lane — Le nettoyage d'une lane livrée est fait par une commande
+**En tant que** chef de projet **je veux** que le retrait du worktree et des branches d'une story livrée soit fait par la commande de ship, une fois l'atterrissage prouvé **afin qu'** une lane ne soit jamais supprimée sur une preuve mal lue (#211, cinquième partie).
+
+- **Complexité** : 2
+- **Dépend de** : s195-ship-files-open-findings
+- **Surface** : command
+- **Owns** : `po/src/ship/`, `po/src/main.rs`, `po/Cargo.toml`, `po/Cargo.lock`, `bin/polype`, `docs/interface-agent.md`, `method/commands/po-ship.md`, `method/commands/po-drive.md`, `tests/ship-cleans-the-lane.oracle.test.sh`, `tests/ship-cleans-the-lane.test.sh`, `tests/ship-and-fleet-cleanup.test.sh`, `tests/ship-resumes-cleanly.test.sh`, `tests/ship-files-the-other-findings.oracle.test.sh`, `tests/ship.test.sh`, `tests/everything-in-issues.test.sh`, `tests/drive.test.sh`, `tests/ship-follows-forge.test.sh`
+
+**Critères d'acceptation**
+- [ ] `nothing_is_removed_before_the_proof` — sans preuve de l'atterrissage, la commande ne supprime ni worktree ni branche.
+- [ ] `cleanup_is_not_forced` — le worktree est retiré sans forcer, puis la branche locale et la branche distante sont supprimées ; un worktree qui porte un travail non commité arrête la commande, qui le nomme.
+- [ ] `landed_lane_is_cleaned_alone` — pour une lane que `po next` rend `ship`, raison `landed`, la commande ne fait que le nettoyage, sans porte ni commit.
+- [ ] `cleanup_reruns_cleanly` — relancée après une interruption, la commande finit ce qui restait et ne rend pas d'erreur pour ce qui est déjà retiré.
+- [ ] `ship_is_a_short_command` — `po-ship.md` compte moins de 1 000 mots, et `po-drive.md` pas un de plus qu'avant. Règle lue par un modèle pour ce qui reste : pas de test d'oracle, jugée en revue.
+- [ ] `version_goes_up` — la version de `po` monte d'un cran mineur, aux trois endroits.
+
+**Notes pour l'agent** : le nettoyage est à `po-ship.md:99-103`, et `po-drive.md:95-100` le cite pour une lane qu'une personne a fusionnée. `po-ship.md` faisait 3 302 mots avant s192 : ce qui lui reste est le jugement — la description de la pull request, ce qui va à la personne, les constats retenus. `tests/ship-files-the-other-findings.oracle.test.sh` plafonne `po-ship.md` et `po-drive.md` : il est dans ton `Owns` pour le seul cas où un plafond baisse.
+
+### s197-own-context-commands-are-briefs — `/po-research`, `/po-plan` et `/po-design` ne redisent plus ce que `po next` décide
+**En tant que** personne qui reprend une étape à la main **je veux** que les trois commandes qui travaillent dans leur propre contexte se réduisent à la procédure de leur étape **afin que** le routage, les préconditions et la préparation d'un worktree ne soient écrits qu'une fois (ADR-0109).
+
+- **Complexité** : 4 — risque : `planner.md` et `designer.md` lisent ces trois commandes comme leur procédure ; y couper change le contrat de deux subagents
+- **Dépend de** : s196-ship-cleans-the-lane
+- **Surface** : command
+- **Owns** : `method/commands/po-research.md`, `method/commands/po-plan.md`, `method/commands/po-design.md`, `method/commands/po-drive.md`, `method/agents/planner.md`, `method/agents/designer.md`, `bin/po-lint`, `tests/own-context-commands-are-briefs.oracle.test.sh`, `tests/own-context-commands-are-briefs.test.sh`, `tests/research.test.sh`, `tests/plan.test.sh`, `tests/design.test.sh`, `tests/planner.test.sh`, `tests/designer-browser.test.sh`, `tests/fleet-design.test.sh`, `tests/design-handoff.test.sh`, `tests/diagnostic-skill.test.sh`, `tests/wiring.test.sh`, `tests/model-routing.test.sh`, `tests/lint.test.sh`, `tests/escalation-contract.test.sh`, `tests/planner-writes-the-oracle.test.sh`, `tests/reuse-ladder.test.sh`, `tests/plan-and-defect-paths-cleanup.test.sh`, `tests/tech-choice-backstop.test.sh`, `tests/defect-and-routing-paths.test.sh`, `tests/framing-through-pr.test.sh`, `tests/framing-commands-cleanup.test.sh`, `tests/stories-review.test.sh`, `tests/adr-directory.test.sh`, `tests/session-and-gate-checks.test.sh`, `tests/defects-seen-on-products.oracle.test.sh`, `tests/ship-files-the-other-findings.oracle.test.sh`, `tests/drive.test.sh`, `tests/drive-guards.test.sh`, `tests/grouped-validation.test.sh`, `tests/resume.test.sh`
+
+**Critères d'acceptation**
+- [ ] `routing_is_said_once` — aucune des trois commandes ne redit une précondition ou une issue que `po next` calcule ou que `po-gate` vérifie. Règle lue par un modèle : pas de test d'oracle, jugée en revue.
+- [ ] `worktree_is_prepared_in_one_place` — la préparation d'un worktree n'est décrite qu'à un endroit, que `/po-drive` et `/po-research` suivent tous deux. Même régime.
+- [ ] `subagents_keep_their_procedure` — le plan liste chaque règle retirée d'une commande et dit où elle vit désormais (`po next`, `po-gate`, l'agent, `po-drive.md`) ou pourquoi elle tombe ; ce que `planner.md` et `designer.md` lisaient dans une commande reste lisible par eux. Le relecteur vérifie la liste. Même régime.
+- [ ] `commands_still_lint` — `bin/po-lint` passe sur `method/`, chaque commande gardant sa ligne `Reads settings:` et ses outils déclarés ; ses essais par mutation restent verts ou sont déplacés vers un fichier qui existe encore.
+- [ ] `words_go_down` — les trois commandes comptent ensemble au moins 700 mots de moins qu'avant (2 521 le 2026-11-15), et aucun fichier de `method/` que la story touche n'en compte plus.
+
+**Notes pour l'agent** : `method/agents/planner.md:36` fait lire `po-research.md` et `po-plan.md` au planner, `method/agents/designer.md:28` fait lire `po-design.md` au designer. Les redites relevées : la création du worktree (`po-research.md:26-38`, `po-drive.md:52`), l'approbation du plan (`po-plan.md:108-114`, `po-drive.md:71-86`), les arrêts `Root cause` (`po-research.md:55`, `po-plan.md:83`) et les contrôles de `po-design.md:18-24`, que `po next` rend déjà. `tests/lint.test.sh` mute `po-plan.md` et `po-design.md` ; des tests d'installation prennent `po-plan.md` comme fichier témoin : les trois fichiers restent. Pour chaque fichier de tests de ton `Owns`, dis quelles assertions de phrase tombent, une par une, sans les remplacer par d'autres tests de phrase ; un fichier que s191 a déjà vidé n'existe plus, passe-le. Cette story ne touche pas `po/` : aucune version ne monte.
+
+### s198-delegating-commands-are-briefs — `/po-execute`, `/po-qa` et `/po-review` ne redisent plus ce que `po next` décide
+**En tant que** personne qui reprend une étape à la main **je veux** que les trois commandes qui délèguent à un subagent se réduisent au brief de ce subagent et à l'enregistrement de sa réponse **afin que** leurs préconditions et leurs issues ne soient écrites qu'une fois (ADR-0109).
+
+- **Complexité** : 3
+- **Dépend de** : s197-own-context-commands-are-briefs
+- **Surface** : command
+- **Owns** : `method/commands/po-execute.md`, `method/commands/po-qa.md`, `method/commands/po-review.md`, `method/commands/po-drive.md`, `method/commands/po-help.md`, `bin/po-lint`, `tests/delegating-commands-are-briefs.oracle.test.sh`, `tests/delegating-commands-are-briefs.test.sh`, `tests/execute.test.sh`, `tests/qa.test.sh`, `tests/review.test.sh`, `tests/qa-gate.test.sh`, `tests/qa-drivers.test.sh`, `tests/qa-fleet.test.sh`, `tests/qa-report-returned-as-text.test.sh`, `tests/review-findings-shape.test.sh`, `tests/review-header-recorded.oracle.test.sh`, `tests/resume-shape-stop.test.sh`, `tests/drive.test.sh`, `tests/pilot.test.sh`, `tests/gate.test.sh`, `tests/model-routing.test.sh`, `tests/lint.test.sh`, `tests/planner-writes-the-oracle.test.sh`, `tests/design-handoff.test.sh`, `tests/project-lead.test.sh`, `tests/distribution-wiring.test.sh`, `tests/drive-executes-next.oracle.test.sh`, `tests/drive-executes-next.test.sh`, `tests/security-findings-stay-private.oracle.test.sh`, `tests/record-writes-reports.test.sh`, `tests/ship-files-the-other-findings.oracle.test.sh`
+
+**Critères d'acceptation**
+- [ ] `routing_is_said_once` — aucune des trois commandes ne redit une précondition ou une issue que `po next` calcule ou que `po-gate` vérifie : elle lance `po next` pour sa story, s'arrête si l'action rendue n'est pas la sienne, brief son subagent et enregistre sa réponse. Règle lue par un modèle : pas de test d'oracle, jugée en revue.
+- [ ] `drive_and_commands_share_one_text` — le prompt d'un subagent et l'enregistrement de sa réponse ne sont écrits qu'à un endroit, que `/po-drive` et la commande d'étape suivent tous deux. Même régime.
+- [ ] `nothing_is_lost` — le plan liste chaque règle retirée et dit où elle vit désormais ou pourquoi elle tombe ; le relecteur vérifie la liste. Même régime.
+- [ ] `commands_still_lint` — `bin/po-lint` passe, et la permission étroite de `/po-execute` sur `po next` (ADR-0120) tient ; ses essais par mutation restent verts.
+- [ ] `words_go_down` — les trois commandes comptent ensemble au moins 700 mots de moins qu'avant (2 707 le 2026-11-15), et aucun fichier de `method/` que la story touche n'en compte plus.
+
+**Notes pour l'agent** : les redites relevées : les préconditions et la table de routage de `po-execute.md:91-102`, son `## Model` (`:107-112`, redit à `po-drive.md:36,63`), les préconditions de `po-qa.md:24-27`, le commit de preuve (`po-qa.md:39-46`, cité par `po-drive.md:37,64`), l'enregistrement et l'issue de `po-review.md:87-101` (cités par `po-drive.md:89-91`). `po-execute.md` ne lance que `po next` par une permission étroite (ADR-0120) : étendre cette forme à `/po-qa` et `/po-review` change leurs outils, dis-le dans le plan, et arrête-toi si cela demande un choix que l'ADR-0120 ne couvre pas. `tests/lint.test.sh` mute `po-execute.md`, et des tests d'installation le prennent comme fichier témoin : les trois fichiers restent. Pour chaque fichier de tests de ton `Owns`, dis quelles assertions de phrase tombent, une par une ; un fichier déjà vidé par une story précédente n'existe plus, passe-le. Cette story ne touche pas `po/` : aucune version ne monte.
+
+### s199-journey-runs-to-a-landed-commit — Un parcours rejoué mène une story jusqu'au commit atterri
+**En tant que** porteur **je veux** qu'un script fasse marcher une story de bout en bout sur un dépôt jetable, de l'action `plan` au commit atterri, sans aucun modèle **afin que** chaque pull request prouve que l'automate, les portes et le ship tiennent ensemble (#206, décision d-0027).
+
+- **Complexité** : 4 — risque : un parcours qui pose lui-même les fichiers que `po next` attend peut passer en contournant une porte ; chaque étape doit franchir la vraie porte, par le vrai script
+- **Dépend de** : s198-delegating-commands-are-briefs
+- **Surface** : command
+- **Owns** : `tests/journey/`, `tests/journey-runs-to-a-landed-commit.oracle.test.sh`, `tests/journey-runs-to-a-landed-commit.test.sh`, `tests/lib.sh`, `docs/harnais.md`
+
+**Critères d'acceptation**
+- [ ] `journey_follows_po_next` — le script du parcours ne décide aucune route : il lance `po next`, applique à chaque action la réponse écrite d'avance pour cette étape, et relance `po next` ; une action sans réponse écrite arrête le parcours en la nommant.
+- [ ] `story_lands_on_the_full_track` — une story de voie complète, sans écran, va de `plan` au commit `<id>: <titre>` sur `Target branch`, sous `Merge mode: local` ; `po state` la rend livrée, sa lane a disparu.
+- [ ] `story_lands_through_a_pull_request` — la même story atterrit sous `Merge mode: pr` contre un dépôt distant local et une forge doublée, sans qu'aucun appel reçu par la doublure n'envoie `Target branch`.
+- [ ] `two_lanes_ship_in_order` — deux stories prêtes avancent dans la même vague et atterrissent une à la fois, dans l'ordre où leurs revues ont passé.
+- [ ] `real_gates_are_crossed` — le plan est validé par la ligne que `po-gate plan-validated` lit, le relevé est écrit par `po-run`, la revue par `po record review`, et le pre-commit de la méthode est actif dans le dépôt jetable ; retirer l'une de ces étapes du parcours le fait s'arrêter à la porte correspondante.
+- [ ] `journey_runs_in_the_suite` — le parcours tourne dans `tests/run.sh` sans réseau, sans compte de forge et sans appel payant : la forge est doublée, le dépôt distant est local, et aucune doublure ne reçoit d'appel hors de ceux que le parcours attend.
+
+**Notes pour l'agent** : `po` n'a aucun test Rust : tout est en bash et lance le binaire construit. Les fixtures les plus proches sont le petit langage de `tests/driver-next-action.oracle.test.sh:24-208` (`project`, `story`, `lane`, `plan_in`, `record_in`, `review_in`…) et `evals/lib.sh` (`eval_base` pose une vraie installation par `bin/polype install`). La différence avec ces fixtures est le critère `real_gates_are_crossed` : elles écrivent les fichiers de chaque étape à la main, le parcours passe par les scripts. Ce que chaque action doit laisser pour que `po next` avance est vérifié dans `po/src/context/lanes.rs:204-270` et `method/hooks/po-gate.sh` (`plan_validated` `:44-48`, `verif_current` `:134-208`, `ship_allowed` `:78-96`). Une réponse écrite d'avance est ce qu'un subagent aurait rendu : un plan, un diff de code, un texte de revue ; elle vit sous `tests/journey/`. Le ship passe par la commande de s193 à s196, avec leurs doublures. `docs/harnais.md` dit en quelques lignes ce que le parcours prouve et ce qu'il ne prouve pas (qu'un modèle suive la prose : c'est s206). Le design, la QA et les arrêts sont à s200. Dis dans le plan si le parcours demande un changement hors de ton `Owns`, et arrête-toi dans ce cas. Cette story ne touche pas `po/` : aucune version ne monte.
+
+### s200-journey-reaches-every-stop — Le parcours rejoué atteint chaque arrêt de l'automate
+**En tant que** porteur **je veux** que le parcours rejoué passe aussi par la voie courte, par un écran, par la QA, et par chacun des arrêts qui vont à un humain **afin qu'** aucune route de `po next` ne reste sans un passage de bout en bout.
+
+- **Complexité** : 3
+- **Dépend de** : s199-journey-runs-to-a-landed-commit
+- **Surface** : command
+- **Owns** : `tests/journey/`, `tests/journey-reaches-every-stop.oracle.test.sh`, `tests/journey-reaches-every-stop.test.sh`, `docs/harnais.md`
+
+**Critères d'acceptation**
+- [ ] `short_track_lands` — une story de voie courte atterrit avec un plan sans recherche, par les mêmes portes.
+- [ ] `screen_story_goes_through_design_and_qa` — une story à écran passe par `design` avant `plan`, puis par `qa` avant `review`, sous `QA stage: screens`, avec un rapport enregistré par `po record qa` et sa preuve commitée seule.
+- [ ] `blocked_review_loops_then_asks` — une revue qui refuse le ship mène à `fix`, puis à une nouvelle revue ; `Max attempts` atteint, le parcours s'arrête sur `ask`, raison `Max attempts reached`, sans rien atterrir.
+- [ ] `pending_decision_holds_the_lane` — une décision de la boîte qui nomme la story la tient en `wait` ; répondue puis consommée, la lane reprend et atterrit.
+- [ ] `human_confirmation_waits_for_the_merge` — sous une confirmation `human`, le parcours s'arrête sur `merge waiting`, pull request ouverte ; la fusion faite par la doublure, la relance mène au nettoyage.
+- [ ] `every_ask_reason_is_reached` — chaque raison d'`ask` que `po next` peut rendre est atteinte par au moins un parcours, et un essai échoue quand `po/src/next/` en porte une que les parcours n'atteignent pas.
+
+**Notes pour l'agent** : les raisons d'`ask` sont dans `po/src/next/lane.rs` : `no po-gate`, `setting unreadable: QA stage`, `Root cause: not found`, `Technical choice: waiting for a human`, `setting unreadable: Plan validation`, `no docs/design-system.md`, `Design source unset`, `QA status: blocked`, `review without verdict`, `QA evidence committed twice`, `findings-shape refused`, `setting unreadable: Max attempts`, `Max attempts reached`, plus celles que s185 et s190 ajoutent. Le dernier critère lit la liste dans les sources de `po`, sans la recopier dans le test. Aucun navigateur n'est lancé : la réponse de QA écrite d'avance est un rapport et une preuve factice. Reprends le script et les réponses de s199 sans changer ses essais ; `tests/lib.sh` est hors de ton `Owns`. Cette story ne touche pas `po/`.
+
+### s201-routing-phrase-tests-retired — Les tests de phrase du routage et de la flotte sont retirés
+**En tant que** personne qui change la méthode **je veux** que les tests du pilote, du plan, de l'exécution et de la revue ne gardent que ce qui porte sur un script, ou sur un champ qu'un script lit **afin qu'** une reformulation ne casse plus un test, et qu'un test vert dise quelque chose d'un comportement (#207, première famille).
+
+- **Complexité** : 3
+- **Dépend de** : s200-journey-reaches-every-stop
+- **Surface** : command
+- **Corrige** : #136 et #164 (deux assertions de phrase relevées en revue), et le motif récurrent de `docs/defauts.md` (défauts 5, 7, 9, 10 et 11)
+- **Owns** : `tests/routing-phrase-tests-retired.oracle.test.sh`, `tests/drive.test.sh`, `tests/drive-guards.test.sh`, `tests/drive-executes-next.test.sh`, `tests/fleet-wiring.test.sh`, `tests/pilot.test.sh`, `tests/wiring.test.sh`, `tests/model-routing.test.sh`, `tests/surface-routing.test.sh`, `tests/escalation-contract.test.sh`, `tests/tech-choice-backstop.test.sh`, `tests/defect-and-routing-paths.test.sh`, `tests/plan-and-defect-paths-cleanup.test.sh`, `tests/planner.test.sh`, `tests/planner-writes-the-oracle.test.sh`, `tests/plan.test.sh`, `tests/research.test.sh`, `tests/execute.test.sh`, `tests/review.test.sh`, `tests/review-lenses.test.sh`, `tests/review-findings-shape.test.sh`, `tests/review-header-recorded.oracle.test.sh`, `tests/review-tree-gate.test.sh`, `tests/resume.test.sh`, `tests/resume-shape-stop.test.sh`, `tests/reuse-ladder.test.sh`, `tests/grouped-validation.test.sh`, `tests/ownership.test.sh`, `tests/owns-overlap.test.sh`, `tests/diagnostic-skill.test.sh`, `tests/tests-beyond-examples.test.sh`, `tests/oracle-intact-gate.oracle.test.sh`, `tests/floor-guard.test.sh`, `tests/gate.test.sh`, `tests/project-lead.test.sh`, `tests/commands-and-texts.test.sh`, `tests/structure.test.sh`, `tests/post-m7-texts.test.sh`, `tests/leftovers.test.sh`, `tests/final-leftovers.test.sh`, `tests/docs-and-eval-cleanup.test.sh`, `tests/strict-checks-by-default.test.sh`, `tests/drop-keeps-modified.test.sh`, `docs/harnais.md`, `docs/defauts.md`
+
+**Critères d'acceptation**
+- [ ] `kept_assertions_have_a_reader` — le plan classe chaque fichier de la famille : dans chacun, une assertion ne reste que si le plan nomme le script qui lit ce qu'elle fige (`po`, `po-gate`, `po-bounds`, `po-lint`, l'installeur, un hook). Le relecteur vérifie le classement sur un échantillon qu'il choisit. Règle lue par un modèle : pas de test d'oracle, jugée en revue.
+- [ ] `contract_tests_stay` — les tests de contrat de la famille restent : noms de réglages du gabarit, lignes de verdict, frontmatter et outils d'une commande ou d'un agent, plafonds de mots, comportement des scripts. `bin/po-lint` passe.
+- [ ] `no_script_lost_its_tests` — un script compte, pour chaque script de `method/hooks/` et de `bin/` et pour `po`, les fonctions de test qui le lancent ; ce compte ne baisse pour aucun d'eux entre la branche cible et la story.
+- [ ] `suite_still_runs_clean` — `bash tests/run.sh` passe, et aucun fichier de tests ne reste sans fonction `test_`.
+- [ ] `journey_covers_what_left` — le plan dit, pour chaque groupe d'assertions retiré, quel parcours de s199 ou de s200 prouve le comportement, ou que la règle parle à un modèle et relève de s206. Même régime que le premier critère.
+
+**Notes pour l'agent** : la carte du 2026-11-15 comptait 161 fichiers de tests et 828 fonctions, dont 73 fichiers qui ne cherchent que des phrases dans `method/` ou `docs/` et 62 mixtes ; refais ce compte avant ton plan, s191 à s198 en ont déjà retiré, et un fichier de ton `Owns` qui n'existe plus se passe. Les plus gros de ta famille : `drive` (56 assertions), `escalation-contract` (42), `planner-writes-the-oracle` (38), `model-routing` (35), `surface-routing` (33). Un test par mutation d'un fichier de `method/` (`tech-choice-backstop`, `plan-and-defect-paths-cleanup`…) prouve qu'un script mord : il reste. Les fichiers d'oracle de stories livrées peuvent être allégés ici, `po-gate oracle-intact` ne lisant que l'oracle d'une story en cours. Les plafonds de mots restent où ils sont jusqu'à s205. Le script de compte du critère `no_script_lost_its_tests` vit dans ton fichier d'oracle, que les oracles de s202, s203 et s204 sourcent sans le changer ; il compare à une référence git de base qu'on lui donne, échoue en la nommant quand elle est absente, et ne compare rien sur la base elle-même. #136 est dans `tests/drop-keeps-modified.test.sh:184`, #164 dans `tests/strict-checks-by-default.test.sh`. Cette story ne touche ni `method/` ni `po/`.
+
+### s202-ship-phrase-tests-retired — Les tests de phrase du ship, de l'intake et du tracker sont retirés
+**En tant que** personne qui change la méthode **je veux** que les tests du ship, de l'intake et du dépôt des constats ne gardent que ce qui porte sur un script **afin que** la commande de ship soit prouvée par ses essais et par le parcours, et plus par des phrases (#207, deuxième famille).
+
+- **Complexité** : 2
+- **Dépend de** : s201-routing-phrase-tests-retired
+- **Surface** : command
+- **Owns** : `tests/ship.test.sh`, `tests/ship-through-pr.test.sh`, `tests/ship-follows-forge.test.sh`, `tests/ship-resumes-cleanly.test.sh`, `tests/ship-and-fleet-cleanup.test.sh`, `tests/forge-token-host.test.sh`, `tests/everything-in-issues.test.sh`, `tests/short-subject-shipped.test.sh`, `tests/intake-issue-becomes-a-story.test.sh`, `tests/intake-issue-becomes-a-story.oracle.test.sh`, `tests/intake-follow-ups.oracle.test.sh`, `tests/failing-check-files-an-issue.oracle.test.sh`, `tests/po-retro.test.sh`, `tests/session-and-gate-checks.test.sh`, `tests/framing-second-landing.test.sh`, `tests/ship-phrase-tests-retired.oracle.test.sh`
+
+**Critères d'acceptation**
+- [ ] `kept_assertions_have_a_reader` — comme à s201, pour les fichiers de cette famille. Règle lue par un modèle : jugée en revue.
+- [ ] `contract_tests_stay` — les tests de contrat de la famille restent, plafonds de mots compris.
+- [ ] `no_script_lost_its_tests` — le compte de s201 ne baisse pour aucun script.
+- [ ] `suite_still_runs_clean` — `bash tests/run.sh` passe, et aucun fichier de tests ne reste sans fonction `test_`.
+- [ ] `journey_covers_what_left` — comme à s201.
+
+**Notes pour l'agent** : lis la story s201 et sa revue : même règle de classement, même script de compte, que ton oracle source depuis `tests/routing-phrase-tests-retired.oracle.test.sh` sans le changer. s192 à s196 ont déjà retiré les phrases que la commande de ship a remplacées : il reste ce qui lit `po-intake.md`, `po-retro.md`, `po-setup.md` et la Loi 7. `tests/intake-issue-becomes-a-story.oracle.test.sh` fige des lignes `superseded-by` d'ADR, qu'aucun script ne lit mais qui tiennent un registre : dis dans le plan ce que tu en fais. Cette story ne touche ni `method/` ni `po/`.
+
+### s203-qa-and-design-phrase-tests-retired — Les tests de phrase de la QA, du design et des plateformes sont retirés
+**En tant que** personne qui change la méthode **je veux** que les tests de la QA, du design, des pilotes et des profils de plateforme ne gardent que ce qui porte sur un script **afin que** ces règles, que seul un produit avec écran éprouve, ne soient plus tenues par des phrases (#207, troisième famille).
+
+- **Complexité** : 3
+- **Dépend de** : s202-ship-phrase-tests-retired
+- **Surface** : command
+- **Owns** : `tests/qa.test.sh`, `tests/qa-gate.test.sh`, `tests/qa-drivers.test.sh`, `tests/qa-fleet.test.sh`, `tests/qa-contract-holds.test.sh`, `tests/qa-evidence-set-aside.test.sh`, `tests/qa-reads-ignore-rules.test.sh`, `tests/qa-report-returned-as-text.test.sh`, `tests/qa-lanes-isolated.oracle.test.sh`, `tests/design.test.sh`, `tests/design-system.test.sh`, `tests/design-handoff.test.sh`, `tests/designer-browser.test.sh`, `tests/fleet-design.test.sh`, `tests/accessibility.test.sh`, `tests/scenario-driver.test.sh`, `tests/mobile-web-driver.test.sh`, `tests/godot-scene-driver.test.sh`, `tests/ros-simulation-driver.test.sh`, `tests/scene-and-simulation-drivers.test.sh`, `tests/platform-setting.test.sh`, `tests/profile.test.sh`, `tests/profiles-hold.test.sh`, `tests/cli-api-profiles.test.sh`, `tests/expo-profile.test.sh`, `tests/flutter-profile.test.sh`, `tests/native-profiles.test.sh`, `tests/next-forge-profile.test.sh`, `tests/throwaway-zone-holds.test.sh`, `tests/bricks.test.sh`, `tests/capability-bricks.test.sh`, `tests/catalogue-wiring.test.sh`, `tests/qa-and-design-phrase-tests-retired.oracle.test.sh`
+
+**Critères d'acceptation**
+- [ ] `kept_assertions_have_a_reader` — comme à s201, pour les fichiers de cette famille. Règle lue par un modèle : jugée en revue.
+- [ ] `contract_tests_stay` — les tests de contrat de la famille restent : ce que `po-lint` vérifie d'un profil, ce que `po-bounds` laisse lire et écrire à la QA, ce que `po-gate qa-current` lit d'un rapport.
+- [ ] `no_script_lost_its_tests` — le compte de s201 ne baisse pour aucun script.
+- [ ] `suite_still_runs_clean` — `bash tests/run.sh` passe, et aucun fichier de tests ne reste sans fonction `test_`.
+- [ ] `what_only_a_product_proves_is_listed` — le plan liste les règles de QA et de design dont le test tombe et qu'aucun parcours ne prouve, faute de navigateur ou de simulateur dans la suite ; `docs/harnais.md` est hors de ton `Owns`, la liste va dans le plan et dans la revue. Même régime que le premier critère.
+
+**Notes pour l'agent** : lis la story s201 et sa revue : même règle de classement, même script de compte. Les plus gros de ta famille : `qa-fleet` (38 assertions), `fleet-design` (33), `qa-report-returned-as-text` (26), `scenario-driver` (23). Les tests de profil lancent `po-lint` sur des profils mutés : ils restent. Les pilotes Godot, ROS, iOS et mobile-web n'ont jamais tourné pour de vrai (#76, `parked`) : leurs tests de phrase étaient leur seule trace, d'où le dernier critère. Cette story ne touche ni `method/` ni `po/`.
+
+### s204-framing-and-installer-phrase-tests-retired — Les tests de phrase du cadrage, de l'installeur et de la documentation sont retirés
+**En tant que** personne qui change la méthode **je veux** que les tests du cadrage, de l'installeur et des documents ne gardent que ce qui porte sur un script **afin que** la suite entière ne contienne plus un test qui cherche une phrase qu'aucun script ne lit (#207, dernière famille).
+
+- **Complexité** : 3
+- **Dépend de** : s203-qa-and-design-phrase-tests-retired
+- **Surface** : command
+- **Owns** : `tests/architect.test.sh`, `tests/brief.test.sh`, `tests/prd.test.sh`, `tests/stories.test.sh`, `tests/stories-review.test.sh`, `tests/conversational-framing.test.sh`, `tests/setup-modes.test.sh`, `tests/framing-commands-cleanup.test.sh`, `tests/framing-realign-and-orchestrator-log.test.sh`, `tests/framing-through-pr.test.sh`, `tests/adr-directory.test.sh`, `tests/any-harness-docs.test.sh`, `tests/migration-doc.test.sh`, `tests/distribution-wiring.test.sh`, `tests/hooks-installer-docs-cleanup.test.sh`, `tests/install.test.sh`, `tests/installer.test.sh`, `tests/install-collisions.test.sh`, `tests/installer-leftovers.oracle.test.sh`, `tests/global-install.test.sh`, `tests/claude-md-setting.test.sh`, `tests/no-claude-md.test.sh`, `tests/local-copy-checksums.test.sh`, `tests/payload-edit-not-spread.test.sh`, `tests/payload-kept-outside.test.sh`, `tests/payload-refuses-foreign-files.test.sh`, `tests/update-keeps-mode.test.sh`, `tests/artifact-link-templates.test.sh`, `tests/lint.test.sh`, `tests/bounds.test.sh`, `tests/bounds-messages.test.sh`, `tests/defects-seen-on-products.oracle.test.sh`, `tests/commands-read-po-state.test.sh`, `tests/record-writes-reports.test.sh`, `tests/security-findings-stay-private.test.sh`, `tests/decision-inbox.test.sh`, `tests/answer-comes-back.test.sh`, `docs/harnais.md`, `tests/framing-and-installer-phrase-tests-retired.oracle.test.sh`, `tests/run-ledger.test.sh`, `tests/readme-onboarding.test.sh`
+
+**Critères d'acceptation**
+- [ ] `kept_assertions_have_a_reader` — comme à s201, pour les fichiers de cette famille. Règle lue par un modèle : jugée en revue.
+- [ ] `contract_tests_stay` — les tests de contrat de la famille restent : ce que l'installeur pose, garde et refuse, ce que `po-bounds` et `po-lint` décident, les plafonds de mots.
+- [ ] `no_script_lost_its_tests` — le compte de s201 ne baisse pour aucun script.
+- [ ] `suite_still_runs_clean` — `bash tests/run.sh` passe, et aucun fichier de tests ne reste sans fonction `test_`.
+- [ ] `no_phrase_test_is_left` — le plan liste chaque fichier de `tests/` hors des quatre familles et dit pourquoi il n'en relève pas ; `docs/harnais.md` dit ce que la suite prouve désormais et par quoi. Même régime que le premier critère.
+
+**Notes pour l'agent** : lis la story s201 et sa revue : même règle de classement, même script de compte. Les plus gros de ta famille : `migration-doc` (54 assertions), `distribution-wiring` (53), `conversational-framing` (25), `stories-review` (23), `architect` (23). Les tests de l'installeur lancent `bin/polype` sur des dossiers jetables : presque tout y reste, seules les phrases de `docs/installation.md` et de `method/AGENTS.md` tombent. `tests/overlap.test.sh` (ADR-0006) reste et n'est pas dans ton `Owns`. `tests/run-ledger.test.sh:140-157` et `tests/readme-onboarding.test.sh:62-69,127-155` portent des phrases de `implementer.md`, du skill `testing-doctrine`, de `README.md` et de `docs/installation.md` : ils sont dans ton `Owns` pour elles seules. Les tests qui lancent `po` (`state-as-json`, `driver-next-action`, `record-*`, `run-from-outside`, `trust-signals`…) ne relèvent d'aucune famille. Cette story ne touche ni `method/` ni `po/`.
+
+### s205-word-budget-is-linted — Le budget de mots de la méthode est tenu par `po-lint`
+**En tant que** porteur **je veux** qu'un seul fichier dise combien de mots chaque fichier de `method/` et leur total peuvent compter, et que `po-lint` le vérifie **afin que** la méthode ne grossisse plus sans que je l'aie décidé (#208).
+
+- **Complexité** : 3
+- **Dépend de** : s204-framing-and-installer-phrase-tests-retired
+- **Surface** : command
+- **Owns** : `bin/po-lint`, `method/word-budget`, `tests/`, `docs/harnais.md`, `docs/installation.md`, `bin/polype`
+
+**Critères d'acceptation**
+- [ ] `budget_is_one_file` — un fichier liste le plafond de chaque fichier de `method/` et le plafond du total ; `po-lint` échoue quand un fichier dépasse le sien, quand le total dépasse, ou quand un fichier de `method/` n'a pas de ligne.
+- [ ] `budget_starts_at_todays_counts` — à la livraison, chaque plafond est le compte du jour, et le total est inférieur à 57 589 mots, le compte du 2026-11-15.
+- [ ] `raising_a_ceiling_is_visible` — `po-lint`, à qui l'on donne une référence git de base, refuse un plafond relevé par rapport à elle quand la ligne du fichier de budget ne cite pas la décision du porteur ; un plafond qui baisse passe ; une base absente fait échouer le contrôle en la nommant ; sans base donnée, seuls les dépassements sont vérifiés.
+- [ ] `scattered_ceilings_are_gone` — plus aucun test ne porte un plafond de mots écrit en dur : les douze fichiers qui en portaient lisent le budget ou perdent cette assertion.
+- [ ] `budget_is_not_installed` — le fichier de budget n'est posé dans aucun projet par l'installeur.
+
+**Notes pour l'agent** : `bin/po-lint` (352 lignes) vérifie les réglages, les outils, la fermeture par défaut et les profils ; il n'a aucun contrôle de mots ni aucune lecture de git. Les plafonds vivent aujourd'hui dans douze fichiers de tests, listés dans la recherche de cadrage : `ship-files-the-other-findings.oracle`, `drive-executes-next(.oracle)`, `security-findings-stay-private.oracle`, `record-writes-reports`, `defects-seen-on-products.oracle`, `qa-lanes-isolated.oracle`, `commands-read-po-state`, `decision-inbox`, `answer-comes-back`, `installer-leftovers.oracle`, `intake-follow-ups.oracle`. Certains plafonnent une section (`## What goes to the person` ≤ 378, `## Installed files` ≤ 516) : dis dans le plan si le budget les reprend. `method/word-budget` est le nom par défaut ; `bin/polype` copie `method/commands` et les autres dossiers en entier, il est dans ton `Owns` pour le seul cas où le fichier demande une exclusion. Le compte se fait comme `wc -w`. Pour le critère du plafond relevé, `method/hooks/po-bounds.sh:135-152` montre comment une base se calcule. La retraite d'une règle dont le retrait ne déplace aucun taux est à s206. Ton `Owns` porte `tests/` : cette story passe seule.
+
+### s206-real-run-before-a-release — Un passage réel sur un dépôt jetable précède chaque publication
+**En tant que** porteur **je veux** lancer, avant de publier une version, un vrai chef de projet sur le dépôt jetable du parcours, et mesurer par un bras de contrôle ce que chaque règle lue par un modèle change **afin de** savoir si un modèle suit encore la méthode, et de retirer une règle qui ne change rien (#208, #332, décision d-0027).
+
+- **Complexité** : 4 — risque : chaque passage est payant et son résultat varie ; une mesure sur trop peu de passages ferait retirer une règle utile ou garder une règle morte
+- **Dépend de** : s205-word-budget-is-linted
+- **Surface** : command
+- **Owns** : `bin/po-eval`, `evals/`, `docs/evals/`, `docs/ci.md`, `docs/harnais.md`, `tests/evals.test.sh`, `tests/eval-arms-same-environment.test.sh`, `tests/reuse-ladder-eval.test.sh`, `tests/run-ledger.test.sh`, `tests/real-run-before-a-release.oracle.test.sh`, `tests/real-run-before-a-release.test.sh`, `docs/decisions/`, `tests/rebuilt-helper-single-defect.test.sh`
+
+**Critères d'acceptation**
+- [ ] `real_run_drives_the_journey_repository` — une commande construit le dépôt jetable du parcours, y lance un vrai `/po-drive`, et note pour chaque story si elle a atterri, par quelles actions, en combien de boucles de correction ; rien n'est lancé avant que le nombre de passages payants soit affiché et confirmé.
+- [ ] `a_run_is_graded_by_scripts` — un passage est noté par ce que `po state`, `po-gate` et git rendent sur le dépôt après coup ; aucun modèle n'en note un autre.
+- [ ] `suite_never_pays` — `tests/run.sh` ne lance aucun passage payant, et l'essai de la commande tourne contre une doublure.
+- [ ] `any_rule_can_have_a_control_arm` — un bras de contrôle se déclare pour une règle par le fichier et la phrase qu'il retire, sans changer `bin/po-eval` ; les deux bras tournent sur des configurations temporaires identiques, avec le même modèle.
+- [ ] `m21_bis_rules_have_their_cases` — les règles lues par un modèle livrées par s177 à s180 et par ce jalon, que leurs plans ont listées comme candidates, ont chacune un cas ou une ligne qui dit pourquoi elle n'en a pas.
+- [ ] `release_names_its_real_run` — `docs/ci.md` dit qu'une publication cite le passage réel fait sur la version publiée ; `docs/evals/` en garde le relevé, daté, avec le modèle et les taux par bras. Document qu'aucun script ne lit : jugé en revue.
+- [ ] `a_rule_that_moves_nothing_is_reported` — la commande liste les règles dont le retrait n'a déplacé aucun taux sur le nombre de passages demandé ; elle n'en retire aucune elle-même.
+
+**Notes pour l'agent** : `bin/po-eval` (257 lignes) lance aujourd'hui le relecteur sur des stories à défaut planté (`evals/cases/`, huit cas) et sait un seul bras de contrôle, celui de la phrase de réutilisation de `review-antihallu` (`--control`, `docs/evals/reuse-ladder.md`). Il a besoin d'un jeton dans l'environnement et ne lit aucun identifiant de la machine. `po run` refuse de lancer une session tant que les bornes ne sont pas prouvées (`bounds: unproven`) : lis `po/src/run/` avant ton plan, et dis comment le passage réel lance son chef de projet ; si cela demande de changer `po/`, arrête-toi et dis-le, il est hors de ton `Owns`. Un choix technique t'attend et tu ne le tranches pas : combien de passages fondent le retrait d'une règle, et ce qu'un passage réel coûte, à présenter au porteur avec le pour et le contre, `Technical choice: waiting for a human` dans le plan. Retirer une règle reste une décision du porteur, posée par la boîte avec le relevé. Le premier passage réel et la première publication sont des gestes que le chef de projet propose au porteur une fois la story livrée. Ne nomme aucune installation particulière dans la documentation (`docs/direction.md`).
+
+## M23 — Le cadrage et la version des projets (à cadrer)
+
+Ce jalon n'est pas découpé : il se cadre avec le porteur quand le prochain produit se cadre, parce que ce qu'il porte ne se vérifie que sur un produit (décision d-0026). Ce qu'il doit porter : l'ordre du cadrage, périmètre, architecture, stories, revue des stories, design system (ADR-0110, #212), avec l'exigence du porteur sur `/po-architect` — l'architecture se décide avec la personne, chaque choix technique détaillé avec ses pour et ses contre ; la discipline de version d'un projet construit avec Polype, que l'ADR-0122 annonce (schéma de version, qui monte le numéro et quand, journal des changements, étiquettes de publication) ; et le constat #230 (`/po-setup` ne dit plus comment changer un `Ship confirmation` choisi). Après M22, un jalon de méthode ne s'ouvre que pour un défaut vu sur un produit ou par une décision stratégique écrite du porteur (ADR-0108) ; s153, s154 et s155 attendent ce titre-là.

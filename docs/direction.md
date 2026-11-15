@@ -23,8 +23,9 @@ Ce qu'un script peut décider ou écrire quitte la prose et le modèle. La méth
 | Jalon | Ce qu'il livre | État |
 | --- | --- | --- |
 | **M20 — Le ménage** | la suite sur chaque pull request, les défauts vus sur les produits et les restes de revue fermés | livré le 2026-11-13 (s159 à s163) ; deux constats majeurs de s163 restent ouverts (#233, #234) |
-| **M21 — L'interface** | l'état en JSON, la boîte de décisions, la réponse, les rapports écrits par du code, la prochaine action calculée, le lancement, les signaux de confiance, le binaire `po` précompilé et vérifié | cadré le 2026-11-13 pour le binaire Rust `po` (s164 à s173 ; [ADR-0106](decisions/ADR-0106-le-pilote-devient-un-automate-en-code.md), [ADR-0115](decisions/ADR-0115-le-binaire-de-l-automate-est-precompile-et-verifie.md) à [ADR-0117](decisions/ADR-0117-un-binaire-po-par-machine.md)) ; à construire |
-| **M22 — La preuve par le comportement** | un parcours rejouable de bout en bout, le retrait des tests de phrase, le budget de mots, les bras de contrôle, une seule commande d'entrée, le ship en script | à cadrer quand M21 est livré |
+| **M21 — L'interface** | l'état en JSON, la boîte de décisions, la réponse, les rapports écrits par du code, la prochaine action calculée, le lancement, les signaux de confiance, le binaire `po` précompilé et vérifié | cadré le 2026-11-13 pour le binaire Rust `po` (s164 à s173 ; [ADR-0106](decisions/ADR-0106-le-pilote-devient-un-automate-en-code.md), [ADR-0115](decisions/ADR-0115-le-binaire-de-l-automate-est-precompile-et-verifie.md) à [ADR-0117](decisions/ADR-0117-un-binaire-po-par-machine.md)) ; livré le 2026-11-14, avec M21 bis (s174 à s180) |
+| **M22 — La preuve par le comportement** | les défauts de l'automate, la version de `po` tenue par un contrôle, une seule commande d'entrée, le ship en script, un parcours rejouable de bout en bout, le retrait des tests de phrase, le budget de mots, un passage réel et ses bras de contrôle | cadré le 2026-11-15 (s181 à s206) ; à construire |
+| **M23 — Le cadrage et la version des projets** | l'architecture avant le découpage, décidée avec la personne (ADR-0110) ; la discipline de version d'un projet construit avec Polype | à cadrer quand le prochain produit se cadre |
 
 Ensuite, Polype sert les projets qui l'utilisent et ne change que quand l'un d'eux bute sur lui.
 
@@ -33,10 +34,10 @@ Ensuite, Polype sert les projets qui l'utilisent et ne change que quand l'un d'e
 Faut-il changer l'ordre et la forme des commandes ? Les étapes et leurs portes, non. Le nombre de commandes et la part de prose, oui.
 
 - **Les étapes restent** : recherche, design, plan avec son oracle, exécution, QA, revue, ship. C'est l'ordre de la Law 1 ; la flotte, qui fait passer le designer après le planner, s'y aligne (#184).
-- **Une seule commande fait avancer le travail** : `/po-drive`, avec un id pour une seule story. `/po-orchestrator` et `/po-flow` disparaissent comme commandes, la voie courte devenant une valeur que l'automate lit ([ADR-0109](decisions/ADR-0109-une-seule-commande-fait-avancer-le-travail.md), proposée, #210). Pas avant s168.
+- **Une seule commande fait avancer le travail** : `/po-drive`, avec un id pour une seule story. `/po-orchestrator` et `/po-flow` disparaissent comme commandes, la voie courte devenant une valeur que l'automate lit ([ADR-0109](decisions/ADR-0109-une-seule-commande-fait-avancer-le-travail.md), acceptée, #210). Pas avant s168.
 - **Ce qui est déterministe devient du code** : l'état (`po state`), l'écriture d'un rapport (`po record`), le routage (`po next`), puis le ship (#211). L'automate est un binaire Rust (ADR-0106), `po`, un par machine ([ADR-0117](decisions/ADR-0117-un-binaire-po-par-machine.md)). Le modèle garde ce qui demande du jugement : cadrer, planifier, écrire, relire, parler à la personne.
 - **Une story de complexité 1 ou 2** garde toutes ses portes et passe par trois contextes, le minimum de la Law 2 : un planner, un implementer, un relecteur. Ce qui l'allège, ce sont les mots que chacun lit, pas une porte en moins.
-- **La chaîne de cadrage** ne tourne qu'une fois par projet et ne change pas, à une question près : fixer l'architecture avant de découper les stories, pour que les `Owns` portent sur des chemins connus ([ADR-0110](decisions/ADR-0110-l-architecture-se-fixe-avant-le-decoupage.md), proposée, #212).
+- **La chaîne de cadrage** ne tourne qu'une fois par projet et ne change pas, à une question près : fixer l'architecture avant de découper les stories, pour que les `Owns` portent sur des chemins connus ([ADR-0110](decisions/ADR-0110-l-architecture-se-fixe-avant-le-decoupage.md), acceptée, #212, M23).
 - **Un agent extérieur** n'appelle aucune de ces commandes : il passe par `po`.
 
 ## Ce qui reste
@@ -64,7 +65,6 @@ Rien de ceci n'est remis en cause, et M20 à M22 le respectent :
 
 D1 à D4, puis D11 et D12, ont été tranchées le 2026-11-13 : les ADR-0105 à ADR-0108, ADR-0115 à ADR-0117 sont `accepted`.
 
-M20 est livré depuis le 2026-11-13 : la suite tourne sur chaque pull request, et `/po-ship` attend qu'elle passe.
+M20 est livré depuis le 2026-11-13 : la suite tourne sur chaque pull request, et `/po-ship` attend qu'elle passe. M21 et M21 bis sont livrés depuis le 2026-11-14, et le contrôle `suite` est obligatoire sur `main`.
 
-1. Rendre le contrôle `suite` obligatoire sur `main` (D8), geste du porteur décrit dans [`ci.md`](ci.md).
-2. `/po-drive` sur M21 (s164 à s173), quand le porteur le demande. D5 à D10 peuvent attendre.
+M22 est cadré depuis le 2026-11-15 : `/po-drive` sur s181 à s206, quand le porteur le demande.
