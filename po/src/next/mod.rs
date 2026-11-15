@@ -107,6 +107,13 @@ pub fn held(context: &Context) -> Option<Vec<Held>> {
     wave::ready_and_held(context).map(|(_, held)| held)
 }
 
+/// The first dependency of `id`, in declared order, that has not shipped.
+fn waiting_dependency<'a>(context: &'a Context, id: &str) -> Option<&'a str> {
+    let landed = context.landed.as_ref()?;
+    let story = context.stories.as_ref()?.find(id)?;
+    story.depends_on.iter().find(|dep| !landed.contains(dep)).map(String::as_str)
+}
+
 /// The first decision, in id order, that names `id` in `blocks` and has not been consumed.
 fn holding_decision<'a>(context: &'a Context, id: &str) -> Option<&'a str> {
     let inbox = context.inbox.as_ref()?;

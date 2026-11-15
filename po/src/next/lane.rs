@@ -6,7 +6,7 @@ use std::path::Path;
 use std::process::{Command, Stdio};
 use std::time::SystemTime;
 
-use super::{holding_decision, NextAction};
+use super::{holding_decision, waiting_dependency, NextAction};
 use crate::context::{BlockedBy, Context, Lane, Stage};
 use crate::project::{self, Setting};
 
@@ -23,6 +23,9 @@ pub fn next(context: &Context, lane: &Lane) -> NextAction {
     let path = lane.path.as_path();
     if landed(context, id) {
         return act("ship", "landed");
+    }
+    if let Some(dependency) = waiting_dependency(context, id) {
+        return act("wait", format!("dependency {dependency}"));
     }
     if let Some(decision) = holding_decision(context, id) {
         return act("wait", format!("decision {decision}"));
@@ -178,6 +181,7 @@ fn ship(context: &Context, lane: &Lane) -> NextAction {
             && !landed(context, &other.story)
             && other.blocked_by != Some(BlockedBy::MergeWaiting)
             && holding_decision(context, &other.story).is_none()
+            && waiting_dependency(context, &other.story).is_none()
     });
     let first = competing
         .min_by_key(|other| (reviewed_at(other), story_rank(context, &other.story), other.story.clone()))
