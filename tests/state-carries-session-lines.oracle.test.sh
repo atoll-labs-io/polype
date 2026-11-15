@@ -166,7 +166,8 @@ def stop_line($id):
  elif (.lanes | length) == 0 then "Lanes in flight: none"
  else "Lanes in flight: " + ([.lanes[] | .story + " (" + .path + ")"] | join(", ")) end),
 (if .lanes == null then empty else
-  ([.lanes[] | .story as $id | .stops[] | stop_line($id)]
+  ([(.waiting // [])[] | "\(.): decision pending → po inbox \(.)"]
+   + [.lanes[] | .story as $id | .stops[] | stop_line($id)]
    + [.warnings[] | select(.code == "orphan-worktree") | "\(.path): orphan worktree (\(.branch // "detached HEAD"))"]) as $l
   | if ($l | length) == 0 then "Waiting for a human: nothing" else ("Waiting for a human:", ($l[] | "- " + .)) end
  end)'

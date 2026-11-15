@@ -55,6 +55,7 @@ Règles communes :
   "session": {"running": false, "id": null},
   "bounds": "held",
   "waiting": ["d-0003"],
+  "answered": [],
   "lanes": [
     {
       "story": "s160-intake-title-bounded",
@@ -92,6 +93,7 @@ Règles communes :
 - `project` est le nom du dossier du projet ; `commit` le commit court de `Target branch` ; `method_version` la première ligne de `.polype/version`.
 - `milestone` est la première section `## M…` de `docs/stories.md` sur `Target branch` qui tient une story pas encore livrée, `id` étant le titre avant ` — ` ; `null` quand toutes le sont.
 - `waiting` liste, triés, les `id` des décisions `pending` du dossier que nomme le réglage `Decision inbox` (`.polype/inbox/` dans le gabarit), lu depuis la racine du projet ou absolu ; `[]` quand le dossier manque.
+- `answered` liste, triés, les `id` des décisions `answered` que le chef de projet n'a pas encore consommées : la même liste que `inbox --answered` ; `null` quand `waiting` l'est.
 
 - `framing.stage` : `setup`, `scope`, `stories`, `stories-review`, `architecture`, `design-system` ou `done` ; `next` est la commande à lancer, ou `null`. `framing.items` donne l'état de chaque élément du cadrage, dans cet ordre : `scope` (`approved`, `in progress`, `missing`, ou `by hand` quand `Entry mode` vaut `—`), `stories` (`present`, `missing`), `stories-review` (`yes`, `no`, `none` sans ligne `Stories ready:`), `architecture` (`present`, `missing`), `design-system` (`present`, `missing`, ou `not needed` quand le fichier manque et qu'aucune story n'a d'écran) ; `[]` au stade `setup`. `po` fait référence pour ces règles : le hook de session lira ces champs (s172) au lieu de les dériver.
 - `lanes[].stage` : `research`, `design`, `plan`, `execute`, `qa`, `review`, `ship`, ou `null` quand il ne peut pas être lu. La première règle qui s'applique décide, chaque gate étant le `po-gate` du worktree lancé dans ce worktree : story livrée → `ship` ; sans plan → `research` sans recherche, `design` quand la story a un écran et que `docs/designs/<id>/design.md` manque, sinon `plan` ; `plan-validated` refuse → `plan` ; `ship-allowed` passe → `ship` ; `verif-current` refuse → `execute` ; la story va en QA et `qa-current` refuse → `qa` ; sinon `review`. Une revue bloquée sur un code inchangé reste donc `review`, et une lane livrée encore sur le disque est `ship`, son nettoyage.
