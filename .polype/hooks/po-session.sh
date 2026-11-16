@@ -71,6 +71,11 @@ mapfile -t tagged < <(jq -r --arg parallel "$parallel" '
       (if .lanes != null then
          "P\tLanes in flight: \(if (.lanes | length) == 0 then "none" else .lanes | map("\(.story) (\(.path))") | join(", ") end)"
        else empty end),
+      "P\tDecisions answered, not consumed: \(
+         if .answered == null then "not read by po"
+         elif (.answered | length) == 0 then "none"
+         else "\(.answered | length) → po inbox --answered" end)",
+      ((.waiting // [])[] | "W\t\(.): decision pending → po inbox \(.)"),
       ((.lanes // [])[] | .story as $id | (.stops // [])[] | "W\t\(stop($id))"),
       ((.warnings // [])[] | select(.code == "orphan-worktree") | "W\t\(.path): orphan worktree (\(.branch // "detached HEAD"))")
     end' <<< "$json")
