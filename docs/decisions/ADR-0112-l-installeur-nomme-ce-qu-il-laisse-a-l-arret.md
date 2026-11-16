@@ -5,7 +5,7 @@ status: accepted
 date: 2026-11-13
 scope: story s161-installer-leftovers
 supersedes: [ADR-0095]
-superseded-by: []
+superseded-by: [ADR-0128]
 ---
 
 # ADR-0112 — L'installeur nomme ce qu'il laisse derrière un arrêt

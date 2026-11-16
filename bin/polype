@@ -15,7 +15,8 @@
 # State files describe an install. Three sit next to each other: manifest (what was laid down),
 # checksums (what it contained) and version, in .polype/ for a project, in ~/.claude/polype/ for
 # the global one. A project adds .polype/mode, the activation mode (init or project) that update
-# keeps (ADR-0091), and .claude/.polype-checksums, holding the sums of the .claude/ copies: they
+# keeps (ADR-0091), .polype/agents-md-aside, the sum of the AGENTS.md copy Polype set aside itself
+# (ADR-0128), and .claude/.polype-checksums, holding the sums of the .claude/ copies: they
 # describe this checkout's copies, so they are never committed, and a refresh pulled from another
 # checkout cannot make these copies look hand-edited (ADR-0087).
 set -euo pipefail
@@ -507,21 +508,23 @@ hand_written_agents_md() {
 
 # A hand-written AGENTS.md joins the settings whatever Project CLAUDE file says, as a CLAUDE.md does
 # only under absorbed (ADR-0086, ADR-0088, ADR-0089). Without an
-# AGENTS.local.md it waits as AGENTS.md.before-polype next to Polype's AGENTS.md, and the first
-# run that finds the pair absorbs it. An aside with no AGENTS.md of Polype is not one Polype made:
-# it stays, named (ADR-0112).
+# AGENTS.local.md it waits as AGENTS.md.before-polype, its sum recorded in .polype/, and the first
+# run that finds AGENTS.local.md absorbs it. Any other aside, a recorded one edited since included,
+# is not the waiting copy: it stays, named on every run (ADR-0112, ADR-0128).
 absorb_agents_md() {
-  local aside="$project/AGENTS.md.before-polype" sources=() from_aside=no
-  if [ -f "$aside" ] && [ -f "$project/AGENTS.md" ] && head -n 1 "$project/AGENTS.md" | grep -qF "$marker"; then
+  local aside="$project/AGENTS.md.before-polype" record="$state_dir/agents-md-aside" sources=() from_aside=no
+  if [ -f "$aside" ] && [ ! -L "$aside" ] && [ -f "$record" ] && [ "$(cat "$record")" = "$(sum_of "$aside")" ]; then
     sources+=("$aside")
     from_aside=yes
+  else
+    rm -f "$record"
   fi
   if hand_written_agents_md; then sources+=("$project/AGENTS.md"); fi
   # Without AGENTS.local.md, a hand-written AGENTS.md moves onto the aside, which the preflight of
   # refuse_collisions has found identical: that aside is the waiting copy, not an orphan.
   if [ "$from_aside" = no ] && { [ -e "$aside" ] || [ -L "$aside" ]; } \
       && { [ -f "$project/AGENTS.local.md" ] || ! hand_written_agents_md; }; then
-    echo "polype: $aside kept as it is: no AGENTS.md laid by Polype goes with it; move its notes into AGENTS.local.md or delete it" >&2
+    echo "polype: $aside kept as it is: Polype did not set it aside, or it changed since; move its notes into AGENTS.local.md or delete it" >&2
   fi
   [ ${#sources[@]} -gt 0 ] || return 0
   if [ -f "$project/AGENTS.local.md" ]; then
@@ -533,7 +536,7 @@ absorb_agents_md() {
     } > "$project/AGENTS.local.md.polype-next"
     mv -f "$project/AGENTS.local.md.polype-next" "$project/AGENTS.local.md"
     if [ "$from_aside" = yes ]; then
-      rm -f "$aside"
+      rm -f "$aside" "$record"
       echo "polype: AGENTS.md.before-polype moved into AGENTS.local.md under ## Notes moved from AGENTS.md, then deleted" >&2
     else
       echo "polype: AGENTS.md moved into AGENTS.local.md under ## Notes moved from AGENTS.md" >&2
@@ -542,6 +545,7 @@ absorb_agents_md() {
     local again='polype update .'
     [ "$mode" = init ] && again='polype init .'
     mv "$project/AGENTS.md" "$aside"
+    sum_of "$aside" > "$record"
     echo "polype: AGENTS.md kept as AGENTS.md.before-polype: no AGENTS.local.md to move it into; run /po-setup, then $again" >&2
   fi
 }
@@ -1255,7 +1259,7 @@ cmd_remove() {
       drop_laid_file "$path" || true
     fi
   done < "$manifest"
-  rm -f "$manifest" "$checksums" "$version_file" "$mode_file"
+  rm -f "$manifest" "$checksums" "$version_file" "$mode_file" "$state_dir/agents-md-aside"
   if [ -n "$local_sums" ]; then rm -f "$local_sums"; fi
   # The payload lives there too, and nothing else does.
   if [ "$mode" = global ]; then rm -rf "$state_dir"; else unwire_session_hook; fi
