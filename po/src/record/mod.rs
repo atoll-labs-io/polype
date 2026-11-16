@@ -227,6 +227,9 @@ pub fn main(args: &[String]) -> i32 {
         Kind::Review => std::fs::read_to_string(&path).ok(),
         Kind::Qa => None,
     };
+    // Taken once, so both writes of a review with security findings carry the same date.
+    let recorded = (kind == Kind::Review)
+        .then(|| chrono::Local::now().to_rfc3339_opts(chrono::SecondsFormat::Secs, false));
     let text_with = |count_line: &str| {
         let mut body = match &security {
             Some((split, _)) => split.public(count_line),
@@ -236,11 +239,11 @@ pub fn main(args: &[String]) -> i32 {
             body = compose::insert_oracle(&body, lines);
         }
         match &existing {
-            Some(existing) => compose::append(existing, &version, &body),
+            Some(existing) => compose::append(existing, &version, recorded.as_deref(), &body),
             None => {
                 let folder = path.parent().unwrap_or(&top);
                 let header = compose::header(&template, id, folder);
-                compose::first_write(&header, &version, &body)
+                compose::first_write(&header, &version, recorded.as_deref(), &body)
             }
         }
     };

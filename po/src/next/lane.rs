@@ -4,7 +4,7 @@
 
 use std::path::Path;
 use std::process::{Command, Stdio};
-use std::time::SystemTime;
+use std::time::UNIX_EPOCH;
 
 use super::{holding_decision, waiting_dependency, NextAction};
 use crate::context::{BlockedBy, Context, Lane, Stage};
@@ -14,11 +14,12 @@ fn act(action: &str, reason: impl Into<String>) -> NextAction {
     NextAction { action: action.to_string(), reason: reason.into() }
 }
 
-fn landed(context: &Context, id: &str) -> bool {
+pub(super) fn landed(context: &Context, id: &str) -> bool {
     context.landed.as_ref().is_some_and(|landed| landed.contains(id))
 }
 
-pub fn next(context: &Context, lane: &Lane) -> NextAction {
+/// `closed` holds the lanes whose pull request the forge reads as closed without a merge.
+pub fn next(context: &Context, lane: &Lane, closed: &[String]) -> NextAction {
     let id = lane.story.as_str();
     let path = lane.path.as_path();
     if landed(context, id) {
@@ -81,7 +82,7 @@ pub fn next(context: &Context, lane: &Lane) -> NextAction {
                 act("qa", "qa-current refuses")
             }
         }
-        Stage::Ship => ship(context, lane),
+        Stage::Ship => ship(context, lane, closed),
         _ => review(context, lane),
     }
 }
@@ -170,8 +171,12 @@ fn review(context: &Context, lane: &Lane) -> NextAction {
     }
 }
 
-/// Stage `ship`: one ship at a time, in the order the reviews were recorded.
-fn ship(context: &Context, lane: &Lane) -> NextAction {
+/// Stage `ship`: one ship at a time, in the order the reviews were recorded; a pull request closed
+/// without a merge goes to a person and leaves that order.
+fn ship(context: &Context, lane: &Lane, closed: &[String]) -> NextAction {
+    if closed.contains(&lane.story) {
+        return act("ask", "pull request closed");
+    }
     if lane.blocked_by == Some(BlockedBy::MergeWaiting) {
         return act("wait", "merge waiting");
     }
@@ -180,6 +185,7 @@ fn ship(context: &Context, lane: &Lane) -> NextAction {
         other.stage == Some(Stage::Ship)
             && !landed(context, &other.story)
             && other.blocked_by != Some(BlockedBy::MergeWaiting)
+            && !closed.contains(&other.story)
             && holding_decision(context, &other.story).is_none()
             && waiting_dependency(context, &other.story).is_none()
     });
@@ -194,13 +200,34 @@ fn ship(context: &Context, lane: &Lane) -> NextAction {
     }
 }
 
-/// The review file's modification time, which `po record` sets by its rename; a lane without one
-/// sorts last.
-fn reviewed_at(lane: &Lane) -> (bool, Option<SystemTime>) {
-    let time = std::fs::metadata(lane.path.join(format!("docs/reviews/{}.md", lane.story)))
-        .and_then(|meta| meta.modified())
-        .ok();
+/// When the review was recorded, as seconds and nanoseconds since the epoch: the newest `Recorded:`
+/// line `po record review` writes right under a `Method version:` line, else the file's
+/// modification time for a review recorded before that line existed. A lane without either sorts
+/// last.
+fn reviewed_at(lane: &Lane) -> (bool, Option<(i64, u32)>) {
+    let file = lane.path.join(format!("docs/reviews/{}.md", lane.story));
+    let time = std::fs::read_to_string(&file)
+        .ok()
+        .and_then(|text| recorded(&text))
+        .or_else(|| {
+            let modified = std::fs::metadata(&file).and_then(|meta| meta.modified()).ok()?;
+            let since = modified.duration_since(UNIX_EPOCH).ok()?;
+            Some((i64::try_from(since.as_secs()).ok()?, since.subsec_nanos()))
+        });
     (time.is_none(), time)
+}
+
+/// The newest rather than the last: a review recorded onto itself carries its older blocks, stamps
+/// included, after the stamp of the block just written.
+fn recorded(text: &str) -> Option<(i64, u32)> {
+    let lines: Vec<&str> = text.lines().collect();
+    lines
+        .windows(2)
+        .filter(|pair| pair[0].starts_with("Method version:"))
+        .filter_map(|pair| pair[1].strip_prefix("Recorded:"))
+        .filter_map(|value| chrono::DateTime::parse_from_rfc3339(value.trim()).ok())
+        .map(|date| (date.timestamp(), 0))
+        .max()
 }
 
 fn story_rank(context: &Context, id: &str) -> usize {

@@ -10,6 +10,7 @@ use serde::Serialize;
 use crate::context::{self, Context, Warning};
 use crate::output;
 use crate::project::Project;
+use crate::trust::forge::Forge;
 
 #[derive(Serialize, Clone, Debug, PartialEq)]
 pub struct NextAction {
@@ -51,9 +52,10 @@ struct Next {
 }
 
 pub fn main(args: &[String]) -> i32 {
-    if let Some(arg) = args.first() {
+    if let Some(arg) = args.iter().find(|arg| *arg != "--remote") {
         return output::error(output::UNREADABLE, "unknown-option", format!("po next takes no option {arg}"));
     }
+    let remote = !args.is_empty();
     let Ok(cwd) = std::env::current_dir() else {
         return output::error(output::UNREADABLE, "not-a-project", "the current directory cannot be read");
     };
@@ -65,13 +67,14 @@ pub fn main(args: &[String]) -> i32 {
         );
     };
     let context = Context::read(project);
+    let closed = if remote { closed_pull_requests(&context) } else { Vec::new() };
     let wave = wave::ready_and_held(&context);
     let actions = context.lanes.as_ref().filter(|_| stories_read(&context)).map(|lanes| {
         let mut actions: Vec<Entry> = lanes
             .iter()
-            .filter_map(|lane| {
-                let next = lane_next(&context, lane)?;
-                Some(Entry { story: lane.story.clone(), action: next.action, reason: next.reason })
+            .map(|lane| {
+                let next = lane::next(&context, lane, &closed);
+                Entry { story: lane.story.clone(), action: next.action, reason: next.reason }
             })
             .collect();
         if let Some((ready, _)) = &wave {
@@ -96,7 +99,27 @@ fn stories_read(context: &Context) -> bool {
 
 /// `None` only when `docs/stories.md` cannot be read on the target branch.
 pub fn lane_next(context: &Context, lane: &context::Lane) -> Option<NextAction> {
-    stories_read(context).then(|| lane::next(context, lane))
+    stories_read(context).then(|| lane::next(context, lane, &[]))
+}
+
+/// The lanes at `ship`, not landed nor held, whose pull request on github.com was closed without a
+/// merge; under `Merge mode: pr` only. A forge that cannot be read closes nothing.
+fn closed_pull_requests(context: &Context) -> Vec<String> {
+    let pr = context.lane_settings.as_ref().and_then(|settings| settings.merge_mode.as_deref()) == Some("pr");
+    let (Some(forge), true, Some(lanes)) = (Forge::of(&context.project), pr, context.lanes.as_ref()) else {
+        return Vec::new();
+    };
+    lanes
+        .iter()
+        .filter(|lane| {
+            lane.stage == Some(context::Stage::Ship)
+                && !lane::landed(context, &lane.story)
+                && waiting_dependency(context, &lane.story).is_none()
+                && holding_decision(context, &lane.story).is_none()
+                && forge.pull_request_closed(&format!("story/{}", lane.story)) == Some(true)
+        })
+        .map(|lane| lane.story.clone())
+        .collect()
 }
 
 pub fn ready(context: &Context) -> Option<Vec<String>> {

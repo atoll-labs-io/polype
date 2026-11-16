@@ -60,3 +60,46 @@ case_ships_04_cleanup_is_not_a_ship() {
   expect_lane s01-alpha ship 'landed'
   expect_lane s02-bravo ship 'ship-allowed passes'
 }
+
+# dated <id> <date>: the review opens with the stamp `po record review` writes on each block, the
+# date its verdict was recorded with its offset.
+dated() {
+  local file="$F/.worktrees/$1/docs/reviews/$1.md"
+  { printf 'Method version: 0.0.0-case\nRecorded: %s\n\n' "$2"; cat "$file"; } > "$file.new"
+  mv "$file.new" "$file"
+}
+
+# The written date orders the ships, offset included, whatever the files' modification times say:
+# s01 passed at 08:30 UTC and s02 at 09:00 UTC, while s01's file was touched last.
+case_ships_05_written_date_orders_the_ships() {
+  story s01-alpha command - 'src/a/'
+  story s02-bravo command - 'src/b/'
+  start
+  recorded_lane s01-alpha
+  review_in s01-alpha complete 0 yes
+  recorded_lane s02-bravo
+  review_in s02-bravo complete 0 yes
+  dated s01-alpha '2026-11-13T10:30:00+02:00'
+  dated s02-bravo '2026-11-13T09:00:00+00:00'
+  reviewed_at s01-alpha '@1794571200'
+  reviewed_at s02-bravo '@1794553200'
+  expect_lane s01-alpha ship 'ship-allowed passes'
+  expect_lane s02-bravo wait 'ships serial: s01-alpha'
+}
+
+# A review recorded before the dated line is ordered by its modification time, held against the
+# other review's written date: s02 (file at 09:00 UTC) before s01 (written 10:00 UTC, file at 07:00).
+case_ships_06_undated_review_falls_back() {
+  story s01-alpha command - 'src/a/'
+  story s02-bravo command - 'src/b/'
+  start
+  recorded_lane s01-alpha
+  review_in s01-alpha complete 0 yes
+  recorded_lane s02-bravo
+  review_in s02-bravo complete 0 yes
+  dated s01-alpha '2026-11-13T10:00:00+00:00'
+  reviewed_at s01-alpha '@1794553200'
+  reviewed_at s02-bravo '@1794560400'
+  expect_lane s02-bravo ship 'ship-allowed passes'
+  expect_lane s01-alpha wait 'ships serial: s02-bravo'
+}

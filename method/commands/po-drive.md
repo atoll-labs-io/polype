@@ -26,7 +26,7 @@ You drive the fleet: `po next` says what each lane does next, and you do it. You
 - `Tracker: github` → say that publishing to GitHub is not handled yet, and carry on.
 
 ## The next action
-Run `"${CLAUDE_CONFIG_DIR:-$HOME/.claude}/polype/po" next` from where you were started. It reads files and git, never your memory, and prints `actions`, `ready`, `held` and `warnings`. You do each entry of `actions` and choose no route of your own. Run `po next` again once a stage's answers are recorded; the wave ends when every entry is `wait` or `ask` and `ready` is empty.
+Run `"${CLAUDE_CONFIG_DIR:-$HOME/.claude}/polype/po" next --remote` from where you were started. It reads files and git, never your memory, and prints `actions`, `ready`, `held` and `warnings`. You do each entry of `actions` and choose no route of your own. Run it again once a stage's answers are recorded; the wave ends when every entry is `wait` or `ask` and `ready` is empty.
 
 | Action | What you do |
 | --- | --- |
@@ -40,7 +40,7 @@ Run `"${CLAUDE_CONFIG_DIR:-$HOME/.claude}/polype/po" next` from where you were s
 | `wait` | nothing; reported |
 | `ask` | `po inbox add` first, options and recommendation included, then the person at once, with the reason |
 
-Two rules stay yours, since `po` cannot see them. Under `Merge mode: pr`, a lane at `ship`, or at `wait` for `merge waiting`, whose `gh pr view story/<id> --json state --jq .state` prints `CLOSED` goes to a human. A failed ship sends its story back to a fix run under the same `Max attempts` cap.
+One rule stays yours, since `po` cannot see it: a failed ship sends its story back to a fix run under the same `Max attempts` cap.
 
 **A stage already recorded is resumed, never replayed.** No research, plan, record or review is overwritten to give a lane a clean slate.
 
