@@ -291,11 +291,12 @@ En plus des copies, `init` comme `install <projet>` :
 - réécrit `AGENTS.md` = les règles de la méthode, puis `---`, puis l'`AGENTS.local.md` du projet ;
   un `AGENTS.md` écrit à la main va d'abord à la fin d'`AGENTS.local.md`, sous
   `## Notes moved from AGENTS.md`, quel que soit `Project CLAUDE file` (ADR-0088). Sans
-  `AGENTS.local.md`, il attend en `AGENTS.md.before-polype`, et la première pose qui trouve un
-  `AGENTS.local.md` l'y absorbe et le dit. Un `AGENTS.md.before-polype` sans `AGENTS.md`
-  assemblé par Polype à côté n'est pas cette copie en attente : il n'est ni absorbé ni supprimé,
-  et la pose le nomme sur `stderr` ; à la personne d'en reporter les notes dans `AGENTS.local.md`
-  ou de le supprimer (ADR-0112) ;
+  `AGENTS.local.md`, il attend en `AGENTS.md.before-polype` et Polype note sa somme dans
+  `.polype/agents-md-aside` ; la première pose qui trouve un `AGENTS.local.md` l'y absorbe, tant
+  que la copie n'a pas changé depuis, et le dit. Tout autre `AGENTS.md.before-polype`, y compris
+  une copie retouchée ou laissée par un installeur plus ancien, n'est ni absorbé ni supprimé, et
+  chaque pose le nomme sur `stderr` ; à la personne d'en reporter les notes dans `AGENTS.local.md`
+  ou de le supprimer (ADR-0112, ADR-0128) ;
 - traite le `CLAUDE.md` et le `CLAUDE.local.md` de la racine selon `Project CLAUDE file` (ADR-0089).
   Avec `absorbed`, la valeur du template, il les absorbe avant d'assembler `AGENTS.md` (ADR-0086) :
   leur contenu, sans la ligne `@AGENTS.md`, va à la fin d'`AGENTS.local.md` sous

@@ -198,7 +198,7 @@ test_adr_records_the_payload_rule() {
   contains "$adr" 'polype.kept'
   contains "$adr" 'payload.sums'
   old="$(ls "$ROOT"/docs/decisions/ADR-0088-*.md)"
-  frontmatter "$old" | grep -qx 'superseded-by: \[ADR-0092, ADR-0095\]' || fail "ADR-0088 does not link to ADR-0095"
+  frontmatter "$old" | grep -qx 'superseded-by: \[ADR-0092, ADR-0095, ADR-0128\]' || fail "ADR-0088 does not link to ADR-0095"
   frontmatter "$old" | grep -qx 'status: accepted' || fail "ADR-0088 must stay accepted"
   contains "$doc" 'payload.sums'
   contains "$doc" 'ADR-0095'
