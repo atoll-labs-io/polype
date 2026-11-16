@@ -26,7 +26,7 @@ Le binaire a aussi les verbes du chef de projet, hors de ce contrat : voir `## L
 Règles communes :
 
 - La sortie standard est un seul objet JSON, toujours, y compris en cas d'échec ; rien d'autre n'y est écrit.
-- Le code de sortie vaut `0` quand la demande est faite, `1` quand elle est refusée (réponse hors liste, session déjà en cours), `2` quand elle ne peut pas être lue ou exécutée : hors d'un projet Polype (`not-a-project`), un verbe inconnu (`unknown-verb`), aucun verbe (`usage`), une option inconnue (`unknown-option`), un verbe pas encore construit (`not-built`), une erreur interne (`internal`), une session de chef de projet qu'on ne sait pas lire (`session-unreadable`), un état du projet illisible là où `run` en a besoin (`state-unreadable`), un lancement de Claude Code qui échoue (`launch-failed`), une boîte de décisions non réglée (`no-inbox-setting`), illisible (`unreadable-decision`), impossible à écrire (`inbox-unwritable`) ou tenue par un autre `po` (`inbox-busy`).
+- Le code de sortie vaut `0` quand la demande est faite, `1` quand elle est refusée (réponse hors liste, session déjà en cours), `2` quand elle ne peut pas être lue ou exécutée : hors d'un projet Polype (`not-a-project`), un verbe inconnu (`unknown-verb`), aucun verbe (`usage`), une option inconnue (`unknown-option`), une erreur interne (`internal`), une session de chef de projet qu'on ne sait pas lire (`session-unreadable`), un état du projet illisible là où `run` en a besoin (`state-unreadable`), un lancement de Claude Code qui échoue (`launch-failed`), une boîte de décisions non réglée (`no-inbox-setting`), illisible (`unreadable-decision`), impossible à écrire (`inbox-unwritable`) ou tenue par un autre `po` (`inbox-busy`).
 - Tout objet porte `"contract": 1`. Un champ ajouté ne change pas ce numéro, pas plus qu'une valeur ajoutée à une liste fermée ; un champ retiré ou renommé le change. Un lecteur tolère une valeur qu'il ne connaît pas.
 - Un refus ou un échec a la forme `{"contract": 1, "error": "<code stable>", "message": "<une phrase>"}`.
 - Une valeur que Polype ne peut pas lire vaut `null`. Elle n'est jamais devinée.
@@ -176,8 +176,8 @@ La boîte est le dossier que nomme le réglage `Decision inbox`, depuis la racin
 | --- | --- | --- |
 | `Decision inbox` absent ou `—` (aussi pour `inbox` et `inbox <id>`) | 2 | `no-inbox-setting` |
 | JSON illisible, champ manquant, inconnu ou mal typé, `motive` hors liste, `question` vide, sur plusieurs lignes ou de plus de 200 caractères, moins de deux ou plus de trois `options`, `key` vide ou en double, `recommended` hors des `key`, `why` vide, `story` qui n'a pas la forme `s<nombre>-<slug>` | 1 | `malformed-decision` |
-| décision `sensitive` dont `context` manque, est relatif ou pointe dans le dépôt | 1 | `sensitive-context-in-repo` |
-| boîte dans le dépôt que git n'ignore pas | 1 | `inbox-not-ignored` |
+| décision `sensitive` dont `context` manque, est relatif, pointe dans le dépôt ou ne se vérifie pas | 1 | `sensitive-context-in-repo` |
+| boîte dans le dépôt que git n'ignore pas, ou dont l'emplacement ne se vérifie pas | 1 | `inbox-not-ignored` |
 | écriture impossible | 2 | `inbox-unwritable` |
 | `inbox <id>` : identifiant inconnu ou qui n'a pas la forme `d-<chiffres>` | 1 | `unknown-decision` |
 | `inbox <id>` : fichier qui ne se lit pas | 2 | `unreadable-decision` |
@@ -194,7 +194,7 @@ Un refus n'écrit rien.
 | `<id>` inconnu ou qui n'a pas la forme `d-<chiffres>` | 1 | `unknown-decision` |
 | décision déjà répondue | 1 | `already-answered` |
 | `<key>` hors de la liste, clé vide comprise, comparée octet par octet, sans rognage ni casse ignorée | 1 | `not-an-option` |
-| boîte dans le dépôt que git n'ignore pas | 1 | `inbox-not-ignored` |
+| boîte dans le dépôt que git n'ignore pas, ou dont l'emplacement ne se vérifie pas | 1 | `inbox-not-ignored` |
 | fichier de la décision qui ne se lit pas | 2 | `unreadable-decision` |
 | décision tenue par un autre `po` au-delà d'une seconde environ | 2 | `inbox-busy` |
 | écriture impossible | 2 | `inbox-unwritable` |

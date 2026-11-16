@@ -14,7 +14,7 @@ use serde::Serialize;
 use crate::context::Landed;
 use crate::output;
 use crate::project::{Project, Setting};
-pub(crate) use add::{place, post as post_decision, Place};
+pub(crate) use add::{place, post as post_decision};
 use decision::id_number;
 pub use decision::Decision;
 pub(crate) use decision::{is_story_id, Choice, Motive, NewDecision};
