@@ -30,11 +30,12 @@ pub fn now() -> String {
     chrono::Local::now().to_rfc3339_opts(chrono::SecondsFormat::Secs, false)
 }
 
+/// `change` returns the stale mark the reply carries; the file never holds it.
 pub fn rewrite(
     project: &Project,
     dir: &Path,
     id: &str,
-    change: impl FnOnce(&mut Decision) -> Result<(), Refusal>,
+    change: impl FnOnce(&mut Decision) -> Result<bool, Refusal>,
 ) -> i32 {
     // The id becomes a path: only `d-<digits>` may reach the filesystem.
     if id_number(id).is_none() {
@@ -72,9 +73,10 @@ pub fn rewrite(
             format!("{} does not parse as a decision", path.display()),
         );
     };
-    if let Err((code, message)) = change(&mut decision) {
-        return output::error(output::REFUSED, code, message);
-    }
+    let stale = match change(&mut decision) {
+        Ok(stale) => stale,
+        Err((code, message)) => return output::error(output::REFUSED, code, message),
+    };
     let temp = dir.join(format!(".{id}.json.{}.tmp", std::process::id()));
     let written = serde_json::to_string_pretty(&decision)
         .map_err(io::Error::from)
@@ -88,7 +90,7 @@ pub fn rewrite(
         let _ = fs::remove_file(&temp);
         return unwritable(dir, err);
     }
-    output::reply(decision, output::OK)
+    output::reply(super::Shown { decision: &decision, stale }, output::OK)
 }
 
 /// The lock, `Err(None)` when another `po` still holds it after every try.

@@ -7,7 +7,7 @@ use std::path::{Component, Path, PathBuf};
 use chrono::SecondsFormat;
 use serde_json::Value;
 
-use super::decision::{id_number, Decision, NewDecision};
+use super::decision::{id_number, is_story_id, Decision, NewDecision};
 use super::Refused;
 use crate::output;
 use crate::project::{self, Project};
@@ -99,6 +99,9 @@ fn validate(new: &NewDecision) -> Result<(), String> {
     }
     if new.why.trim().is_empty() {
         return Err("why is empty".into());
+    }
+    if let Some(story) = new.story.as_deref().filter(|story| !is_story_id(story)) {
+        return Err(format!("story {story:?} is not a story id s<number>-<slug>"));
     }
     Ok(())
 }
@@ -222,6 +225,7 @@ fn write(dir: &Path, new: NewDecision) -> io::Result<Decision> {
         recommended: Some(new.recommended),
         why: Some(new.why),
         reversible: Some(new.reversible),
+        story: new.story,
         blocks: Some(new.blocks),
         status: "pending".to_string(),
         answer: None,
