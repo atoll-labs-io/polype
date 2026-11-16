@@ -3,7 +3,6 @@ use serde::Serialize;
 pub const CONTRACT: u32 = 1;
 
 pub const OK: i32 = 0;
-#[allow(dead_code)]
 pub const REFUSED: i32 = 1;
 pub const UNREADABLE: i32 = 2;
 
@@ -41,14 +40,6 @@ pub fn error(code: i32, error: &str, message: impl Into<String>) -> i32 {
         message: message.into(),
     });
     code
-}
-
-pub fn not_built(verb: &str) -> i32 {
-    error(
-        UNREADABLE,
-        "not-built",
-        format!("po {verb} is not built yet; a later story of M21 brings it"),
-    )
 }
 
 /// A panic still prints one object on stdout, and nothing else, then exits 2.

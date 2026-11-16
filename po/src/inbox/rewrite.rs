@@ -45,12 +45,8 @@ pub fn rewrite(
     if !path.is_file() {
         return super::unknown(id);
     }
-    if !super::add::kept_out_of_git(project, dir) {
-        return output::error(
-            output::REFUSED,
-            "inbox-not-ignored",
-            format!("{} lies in the repository and git does not ignore it", dir.display()),
-        );
+    if let Err(why) = super::add::kept_out_of_git(project, dir) {
+        return output::error(output::REFUSED, "inbox-not-ignored", format!("{} {why}", dir.display()));
     }
     // A lock beside the file, not on it: the rename below puts a new inode in place, so a waiter
     // locking the decision itself would then read the old one.

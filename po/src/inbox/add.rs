@@ -37,27 +37,22 @@ pub fn main() -> i32 {
 pub(crate) fn post(project: &Project, dir: &Path, new: NewDecision) -> Result<Decision, Refused> {
     validate(&new).map_err(malformed)?;
     if new.sensitive {
-        let outside = new
-            .context
-            .as_deref()
-            .map(Path::new)
-            .is_some_and(|context| context.is_absolute() && place(project, context) == Place::Outside);
-        if !outside {
-            return Err(Refused {
-                code: output::REFUSED,
-                error: "sensitive-context-in-repo",
-                message: "a sensitive decision needs a context: an absolute path outside the repository".into(),
-            });
+        let context = new.context.as_deref().map(Path::new).filter(|context| context.is_absolute());
+        let message = match context {
+            None => Some("a sensitive decision needs a context: an absolute path outside the repository".to_string()),
+            Some(context) => place(project, context).reason().map(|why| {
+                format!("a sensitive decision needs a context outside the repository: {} {why}", context.display())
+            }),
+        };
+        if let Some(message) = message {
+            return Err(Refused { code: output::REFUSED, error: "sensitive-context-in-repo", message });
         }
     }
-    if !kept_out_of_git(project, dir) {
+    if let Err(why) = kept_out_of_git(project, dir) {
         return Err(Refused {
             code: output::REFUSED,
             error: "inbox-not-ignored",
-            message: format!(
-                "{} lies in the repository and git does not ignore it: add it to .gitignore or set Decision inbox outside",
-                dir.display()
-            ),
+            message: format!("{} {why}", dir.display()),
         });
     }
     write(dir, new).map_err(|err| Refused {
@@ -115,6 +110,20 @@ pub(crate) enum Place {
     Elsewhere,
     /// Not verified entirely, so never taken for outside.
     Unverified,
+}
+
+impl Place {
+    /// Why the path is not outside the repository; `None` for a path that is.
+    pub(crate) fn reason(&self) -> Option<&'static str> {
+        match self {
+            Place::Outside => None,
+            Place::InRoot(_) => Some("lies in the repository"),
+            Place::Elsewhere => Some("lies in another worktree of the repository"),
+            Place::Unverified => {
+                Some("could not be verified to lie outside the repository: write it without `..`")
+            }
+        }
+    }
 }
 
 /// Where `path` lies against the project. A path prefix alone misses a symlink and a worktree
@@ -186,15 +195,18 @@ fn normalise(path: &Path) -> PathBuf {
 
 /// The folder lies outside the repository, or git ignores what would be written in it; asked from
 /// the root, never from a worktree whose own .gitignore could differ.
-pub(super) fn kept_out_of_git(project: &Project, dir: &Path) -> bool {
+pub(super) fn kept_out_of_git(project: &Project, dir: &Path) -> Result<(), String> {
     match place(project, dir) {
-        Place::Outside => true,
-        Place::Elsewhere | Place::Unverified => false,
         Place::InRoot(rel) => {
             let probe = rel.join("d-0000.json");
             let probe = probe.to_string_lossy();
-            project.git(&["check-ignore", "-q", "--", &probe]).is_some()
+            if project.git(&["check-ignore", "-q", "--", &probe]).is_some() {
+                Ok(())
+            } else {
+                Err("lies in the repository and git does not ignore it: add it to .gitignore or set Decision inbox outside".into())
+            }
         }
+        other => other.reason().map_or(Ok(()), |why| Err(why.to_string())),
     }
 }
 

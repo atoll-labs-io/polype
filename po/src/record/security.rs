@@ -8,7 +8,7 @@ use std::io::Write;
 use std::os::unix::fs::{DirBuilderExt, OpenOptionsExt};
 use std::path::{Path, PathBuf};
 
-use crate::inbox::{self, is_story_id, Choice, Motive, NewDecision, Place};
+use crate::inbox::{self, is_story_id, Choice, Motive, NewDecision};
 use crate::output;
 use crate::project::{Project, Setting};
 
@@ -222,8 +222,8 @@ fn private_folder(project: &Project) -> Result<PathBuf, Refusal> {
     if !path.is_absolute() {
         return Err(unusable("is not an absolute path nor one starting with ~/"));
     }
-    if inbox::place(project, &path) != Place::Outside {
-        return Err(unusable("lies inside the repository"));
+    if let Some(why) = inbox::place(project, &path).reason() {
+        return Err(unusable(why));
     }
     Ok(path)
 }
@@ -231,11 +231,11 @@ fn private_folder(project: &Project) -> Result<PathBuf, Refusal> {
 /// The folder the text goes to lies outside the repository: checked before anything is written,
 /// and again on the path the file is then opened under.
 fn check_outside(project: &Project, folder: &Path) -> Result<(), Refusal> {
-    if inbox::place(project, folder) != Place::Outside {
+    if let Some(why) = inbox::place(project, folder).reason() {
         return Err((
             output::REFUSED,
             "private-folder-unusable",
-            format!("Private folder {} resolves inside the repository; nothing was written", folder.display()),
+            format!("Private folder {} {why}; nothing was written", folder.display()),
         ));
     }
     Ok(())
