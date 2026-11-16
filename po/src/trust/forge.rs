@@ -1,5 +1,6 @@
-//! The forge's checks on a landed commit, asked through `gh api` pinned to github.com (ADR-0083):
-//! `po` reads no token and makes no HTTP call of its own. Only `po state --remote` gets here.
+//! The forge's checks on a landed commit and a branch's pull request, asked through `gh api` pinned
+//! to github.com (ADR-0083): `po` reads no token and makes no HTTP call of its own. Only
+//! `po state --remote` and `po next --remote` get here.
 
 use std::ffi::OsString;
 use std::process::{Command, Stdio};
@@ -33,6 +34,19 @@ fn github_repo(url: &str) -> Option<String> {
     (valid(owner) && valid(repo)).then(|| format!("{owner}/{repo}"))
 }
 
+fn gh_api(path: &str) -> Option<Value> {
+    let output = Command::new(gh_program())
+        .args(["api", "--hostname", "github.com", path])
+        .stdin(Stdio::null())
+        .stderr(Stdio::null())
+        .output()
+        .ok()?;
+    if !output.status.success() {
+        return None;
+    }
+    serde_json::from_slice(&output.stdout).ok()
+}
+
 impl Forge {
     /// The project's forge, when its `origin` is on github.com.
     pub fn of(project: &Project) -> Option<Forge> {
@@ -43,21 +57,7 @@ impl Forge {
     /// `passed`, `failed` or `none` for the check runs on `commit`; `None` when they cannot be read
     /// or one has not finished.
     pub fn checks(&self, commit: &str) -> Option<String> {
-        let output = Command::new(gh_program())
-            .args([
-                "api",
-                "--hostname",
-                "github.com",
-                &format!("repos/{}/commits/{commit}/check-runs?per_page=100", self.repo),
-            ])
-            .stdin(Stdio::null())
-            .stderr(Stdio::null())
-            .output()
-            .ok()?;
-        if !output.status.success() {
-            return None;
-        }
-        let answer: Value = serde_json::from_slice(&output.stdout).ok()?;
+        let answer = gh_api(&format!("repos/{}/commits/{commit}/check-runs?per_page=100", self.repo))?;
         let total = answer.get("total_count")?.as_u64()?;
         let runs = answer.get("check_runs")?.as_array()?;
         if total > runs.len() as u64 {
@@ -74,5 +74,21 @@ impl Forge {
             .iter()
             .any(|run| run.get("conclusion").and_then(Value::as_str).is_some_and(|c| failing.contains(&c)));
         Some(if failed { "failed" } else { "passed" }.to_string())
+    }
+
+    /// Whether the newest pull request of `branch` (highest `number`) was closed without a merge;
+    /// `Some(false)` when the branch has none, `None` when the answer cannot be read.
+    pub fn pull_request_closed(&self, branch: &str) -> Option<bool> {
+        let owner = self.repo.split('/').next()?;
+        let answer =
+            gh_api(&format!("repos/{}/pulls?head={owner}:{branch}&state=all&per_page=100", self.repo))?;
+        let newest = answer
+            .as_array()?
+            .iter()
+            .max_by_key(|pull| pull.get("number").and_then(Value::as_u64).unwrap_or(0));
+        Some(newest.is_some_and(|pull| {
+            pull.get("state").and_then(Value::as_str) == Some("closed")
+                && pull.get("merged_at").is_none_or(Value::is_null)
+        }))
     }
 }

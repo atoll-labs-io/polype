@@ -53,7 +53,8 @@ fn link_target(part: &str) -> Option<&str> {
 }
 
 /// The answer from its first line that is not part of a header: blank lines, a `# Review` or `# QA`
-/// title, a `[Story](` link line and a `Method version:` line are what `po` writes itself.
+/// title, a `[Story](` link line, a `Method version:` line and a `Recorded:` line are what `po`
+/// writes itself.
 pub fn strip_own_header(answer: &str) -> &str {
     let mut start = 0;
     for line in answer.split_inclusive('\n') {
@@ -62,7 +63,8 @@ pub fn strip_own_header(answer: &str) -> &str {
             || text.starts_with("# Review")
             || text.starts_with("# QA")
             || text.starts_with("[Story](")
-            || text.starts_with("Method version:");
+            || text.starts_with("Method version:")
+            || text.starts_with("Recorded:");
         if !header {
             break;
         }
@@ -103,18 +105,25 @@ pub fn insert_oracle(body: &str, lines: &[String]) -> String {
     }
 }
 
-pub fn first_write(header: &[String], version: &str, body: &str) -> String {
+pub fn first_write(header: &[String], version: &str, recorded: Option<&str>, body: &str) -> String {
     let mut text = String::new();
     for line in header {
         text.push_str(line);
         text.push_str("\n\n");
     }
-    text.push_str(&format!("Method version: {version}\n\n"));
+    text.push_str(&stamp(version, recorded));
     text.push_str(body);
     text
 }
 
-pub fn append(existing: &str, version: &str, body: &str) -> String {
+pub fn append(existing: &str, version: &str, recorded: Option<&str>, body: &str) -> String {
     let sep = if existing.ends_with('\n') { "" } else { "\n" };
-    format!("{existing}{sep}\nMethod version: {version}\n\n{body}")
+    format!("{existing}{sep}\n{}{body}", stamp(version, recorded))
+}
+
+fn stamp(version: &str, recorded: Option<&str>) -> String {
+    match recorded {
+        Some(date) => format!("Method version: {version}\nRecorded: {date}\n\n"),
+        None => format!("Method version: {version}\n\n"),
+    }
 }
