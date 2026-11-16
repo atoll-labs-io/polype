@@ -8,7 +8,7 @@ use std::io::Write;
 use std::os::unix::fs::{DirBuilderExt, OpenOptionsExt};
 use std::path::{Path, PathBuf};
 
-use crate::inbox::{self, Choice, Motive, NewDecision, Place};
+use crate::inbox::{self, is_story_id, Choice, Motive, NewDecision, Place};
 use crate::output;
 use crate::project::{Project, Setting};
 
@@ -183,6 +183,8 @@ pub fn keep(keeper: &Keeper, id: &str, split: &Split) -> Result<String, Refusal>
         recommended: "fix-here".into(),
         why: "A weakness is best fixed before the story that found it is published.".into(),
         reversible: true,
+        // An id `po record` accepts but not of story form posts no origin rather than a refusal.
+        story: is_story_id(id).then(|| id.to_string()),
         blocks: if split.holds_critical_or_major() { vec![id.to_string()] } else { Vec::new() },
     };
     match inbox::post_decision(project, inbox_dir, new) {

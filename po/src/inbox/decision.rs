@@ -6,6 +6,8 @@ use std::path::{Path, PathBuf};
 use serde::{Deserialize, Serialize};
 use serde_json::{Map, Value};
 
+use crate::context::Landed;
+
 #[derive(Serialize, Deserialize, Clone, Copy, PartialEq, Eq, Debug)]
 #[serde(rename_all = "kebab-case")]
 pub enum Motive {
@@ -31,6 +33,9 @@ pub struct NewDecision {
     pub recommended: String,
     pub why: String,
     pub reversible: bool,
+    /// The story the decision is about, `s<number>-<slug>`; it holds no lane, `blocks` does.
+    #[serde(default)]
+    pub story: Option<String>,
     pub blocks: Vec<String>,
 }
 
@@ -57,6 +62,9 @@ pub struct Decision {
     pub recommended: Option<String>,
     pub why: Option<String>,
     pub reversible: Option<bool>,
+    /// Absent when the decision names no origin story, so a file written without it reads as before.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub story: Option<String>,
     pub blocks: Option<Vec<String>>,
     pub status: String,
     pub answer: Option<Value>,
@@ -66,6 +74,30 @@ pub struct Decision {
     pub consumed: Option<Value>,
     #[serde(flatten)]
     pub extra: Map<String, Value>,
+}
+
+impl Decision {
+    /// A pending decision whose named stories, its origin and its `blocks`, have all landed. A
+    /// `blocks` entry not of story form is a framing stage, never landed, so it keeps the mark off.
+    pub fn stale(&self, landed: &Landed) -> bool {
+        if self.status != "pending" {
+            return false;
+        }
+        let blocks = self.blocks.iter().flatten();
+        if blocks.clone().any(|entry| !is_story_id(entry)) {
+            return false;
+        }
+        let mut named = self.story.iter().chain(blocks).peekable();
+        named.peek().is_some() && named.all(|id| landed.contains(id))
+    }
+}
+
+/// The whole string is a story id `s<number>-<slug>`, the slug in `[a-z0-9-]`.
+pub(crate) fn is_story_id(s: &str) -> bool {
+    let Some(rest) = s.strip_prefix('s') else { return false };
+    let digits = rest.bytes().take_while(u8::is_ascii_digit).count();
+    let Some(slug) = rest[digits..].strip_prefix('-') else { return false };
+    digits > 0 && !slug.is_empty() && slug.bytes().all(|b| b.is_ascii_lowercase() || b.is_ascii_digit() || b == b'-')
 }
 
 /// The number of an id `d-<digits>`; anything else is no id `po` hands out.

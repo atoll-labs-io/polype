@@ -55,6 +55,7 @@ Règles communes :
   "session": {"running": false, "id": null},
   "bounds": "held",
   "waiting": ["d-0003"],
+  "stale": [],
   "answered": [],
   "lanes": [
     {
@@ -93,6 +94,7 @@ Règles communes :
 - `project` est le nom du dossier du projet ; `commit` le commit court de `Target branch` ; `method_version` la première ligne de `.polype/version`.
 - `milestone` est la première section `## M…` de `docs/stories.md` sur `Target branch` qui tient une story pas encore livrée, `id` étant le titre avant ` — ` ; `null` quand toutes le sont.
 - `waiting` liste, triés, les `id` des décisions `pending` du dossier que nomme le réglage `Decision inbox` (`.polype/inbox/` dans le gabarit), lu depuis la racine du projet ou absolu ; `[]` quand le dossier manque.
+- `stale` liste, triés, les `id` des décisions `pending` périmées selon la règle de `## inbox` ; `null` quand `waiting` l'est ou quand l'ensemble des stories livrées ne se lit pas.
 - `answered` liste, triés, les `id` des décisions `answered` que le chef de projet n'a pas encore consommées : la même liste que `inbox --answered` ; `null` quand `waiting` l'est.
 
 - `framing.stage` : `setup`, `scope`, `stories`, `stories-review`, `architecture`, `design-system` ou `done` ; `next` est la commande à lancer, ou `null`. `framing.items` donne l'état de chaque élément du cadrage, dans cet ordre : `scope` (`approved`, `in progress`, `missing`, ou `by hand` quand `Entry mode` vaut `—`), `stories` (`present`, `missing`), `stories-review` (`yes`, `no`, `none` sans ligne `Stories ready:`), `architecture` (`present`, `missing`), `design-system` (`present`, `missing`, ou `not needed` quand le fichier manque et qu'aucune story n'a d'écran) ; `[]` au stade `setup`. `po` fait référence pour ces règles : le hook de session lira ces champs (s172) au lieu de les dériver.
@@ -156,8 +158,10 @@ Un agent extérieur n'a pas à juger ces signaux : il les rapporte. Celui qui en
 - `question` tient en une phrase, lisible à voix haute. `options` en compte deux ou trois, jamais plus ; chaque `label` se dit en quelques mots.
 - `recommended` nomme une `key` de la liste, `why` en donne la raison en une phrase.
 - `reversible` dit si la décision se défait sans perte ; une décision difficile à défaire se lit en entier au porteur avant sa réponse.
-- `blocks` liste les stories ou les étapes de cadrage qui attendent.
-- `consumed` (`{"ref", "at"}`) n'apparaît qu'une fois la décision consommée par le chef de projet ; jusque-là, la décision a exactement la forme ci-dessus.
+- `blocks` liste les stories ou les étapes de cadrage qui attendent. Une décision tient les lanes qu'elle nomme jusqu'à ce qu'elle soit consommée, répondue ou non, périmée ou non.
+- `story` nomme, sous la forme `s<nombre>-<slug>`, la story d'où vient la décision, sans tenir sa lane : c'est le rôle de `blocks`. Il est absent quand le chef de projet ne le donne pas ; `po record review` le pose sur la décision de sécurité qu'il publie.
+- Une décision `pending` est **périmée** quand les stories qu'elle nomme, `story` et `blocks` ensemble, sont au moins une et toutes livrées sur `Target branch`. Une entrée de `blocks` qui n'a pas la forme d'une story est une étape de cadrage et empêche la marque ; une décision qui ne nomme aucune story n'est jamais périmée. `inbox` et `inbox <id>` portent alors `"stale": true` sur la décision : la marque se calcule à la lecture, n'est présente que sur une décision `pending` périmée et n'est jamais écrite dans le fichier. Sans `Target branch`, aucune décision n'est marquée.
+- `consumed` (`{"ref", "at"}`) n'apparaît qu'une fois la décision consommée par le chef de projet. `story`, `stale` et `consumed` sont les seuls champs qui peuvent manquer ; en dehors d'eux, la décision a exactement la forme ci-dessus.
 - `sensitive: true` : la décision touche à la sécurité. `question` et `options` ne décrivent alors aucun moyen d'exploiter quoi que ce soit, `context` pointe un fichier hors du dépôt, et la décision n'est jamais recopiée dans git, dans une issue ni dans un journal.
 
 `inbox <id>` rend une décision seule, répondue ou non. `inbox` saute un fichier qui ne se lit pas ; `state` le signale par l'avertissement `unreadable-decision`.
@@ -171,7 +175,7 @@ La boîte est le dossier que nomme le réglage `Decision inbox`, depuis la racin
 | Cas | Code de sortie | `error` |
 | --- | --- | --- |
 | `Decision inbox` absent ou `—` (aussi pour `inbox` et `inbox <id>`) | 2 | `no-inbox-setting` |
-| JSON illisible, champ manquant, inconnu ou mal typé, `motive` hors liste, `question` vide, sur plusieurs lignes ou de plus de 200 caractères, moins de deux ou plus de trois `options`, `key` vide ou en double, `recommended` hors des `key`, `why` vide | 1 | `malformed-decision` |
+| JSON illisible, champ manquant, inconnu ou mal typé, `motive` hors liste, `question` vide, sur plusieurs lignes ou de plus de 200 caractères, moins de deux ou plus de trois `options`, `key` vide ou en double, `recommended` hors des `key`, `why` vide, `story` qui n'a pas la forme `s<nombre>-<slug>` | 1 | `malformed-decision` |
 | décision `sensitive` dont `context` manque, est relatif ou pointe dans le dépôt | 1 | `sensitive-context-in-repo` |
 | boîte dans le dépôt que git n'ignore pas | 1 | `inbox-not-ignored` |
 | écriture impossible | 2 | `inbox-unwritable` |
@@ -196,7 +200,7 @@ Un refus n'écrit rien.
 | écriture impossible | 2 | `inbox-unwritable` |
 | autre chose que deux arguments | 2 | `unknown-option` |
 
-Une réponse acceptée rend la décision, avec `"status": "answered"` et `"answer": {"key": "a", "at": "<date>"}`. Le porteur qui ne veut aucune des options ne répond pas par cette commande : il ouvre la session (`claude attach`) et le dit au chef de projet, qui repose une décision.
+Une réponse acceptée rend la décision, avec `"status": "answered"` et `"answer": {"key": "a", "at": "<date>"}`. Sur une décision périmée, la réponse est enregistrée et porte aussi `"stale": true` : c'est le seul endroit où une décision répondue la montre (ADR-0127). Le porteur qui ne veut aucune des options ne répond pas par cette commande : il ouvre la session (`claude attach`) et le dit au chef de projet, qui repose une décision.
 
 Répondre ne lance rien. C'est `continue` qui relance le chef de projet ; il lit les décisions répondues, écrit ce que chacune produit là où cela doit vivre (une ADR qui passe à `accepted`, une story, une ligne de plan) en citant son `id`, consomme chacune avec `inbox consume`, la `ref` nommant ce que la réponse a produit, puis reprend les lanes qu'elle bloquait.
 

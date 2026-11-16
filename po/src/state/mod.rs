@@ -26,6 +26,7 @@ pub struct State {
     pub session: Option<run::Session>,
     pub bounds: Option<run::Bounds>,
     pub waiting: Option<Vec<String>>,
+    pub stale: Option<Vec<String>>,
     pub answered: Option<Vec<String>>,
     pub lanes: Option<Vec<Lane>>,
     pub ready: Option<Vec<String>>,
@@ -62,6 +63,14 @@ fn compose(context: &Context, options: &trust::StateOptions) -> State {
             .map(|decision| decision.id.clone())
             .collect()
     });
+    let stale = context.inbox.as_ref().zip(context.landed.as_ref()).map(|(inbox, landed)| {
+        inbox
+            .decisions
+            .iter()
+            .filter(|decision| decision.stale(landed))
+            .map(|decision| decision.id.clone())
+            .collect()
+    });
     let answered = context
         .inbox
         .as_ref()
@@ -88,6 +97,7 @@ fn compose(context: &Context, options: &trust::StateOptions) -> State {
         session: run::session(context),
         bounds: run::bounds(context),
         waiting,
+        stale,
         answered,
         lanes,
         ready: next::ready(context),

@@ -11,18 +11,43 @@ use std::path::{Path, PathBuf};
 
 use serde::Serialize;
 
+use crate::context::Landed;
 use crate::output;
 use crate::project::{Project, Setting};
 pub(crate) use add::{place, post as post_decision, Place};
 use decision::id_number;
 pub use decision::Decision;
-pub(crate) use decision::{Choice, Motive, NewDecision};
+pub(crate) use decision::{is_story_id, Choice, Motive, NewDecision};
 
 const REF_MAX: usize = 200;
 
 #[derive(Serialize)]
-struct List {
-    pending: Vec<Decision>,
+struct List<'a> {
+    pending: Vec<Shown<'a>>,
+}
+
+/// A decision as a reply shows it: the stale mark is computed on read and never written, since a
+/// story may land after the file was.
+#[derive(Serialize)]
+struct Shown<'a> {
+    #[serde(flatten)]
+    decision: &'a Decision,
+    #[serde(skip_serializing_if = "std::ops::Not::not")]
+    stale: bool,
+}
+
+impl<'a> Shown<'a> {
+    fn of(decision: &'a Decision, landed: Option<&Landed>) -> Shown<'a> {
+        Shown { decision, stale: landed.is_some_and(|landed| decision.stale(landed)) }
+    }
+}
+
+/// The stories landed on `Target branch`; none without the setting, so no mark rather than a refusal.
+fn landed(project: &Project) -> Option<Landed> {
+    match project.setting("Target branch") {
+        Setting::Value(target) if target != "—" => Some(Landed::read(project, &target)),
+        _ => None,
+    }
 }
 
 #[derive(Serialize)]
@@ -52,6 +77,7 @@ pub fn answer(args: &[String]) -> i32 {
         Ok(found) => found,
         Err(code) => return code,
     };
+    let landed = landed(&project);
     rewrite::rewrite(&project, &dir, id, |decision| {
         if decision.status != "pending" {
             return Err(("already-answered", format!("{id} is {}, not pending", decision.status)));
@@ -65,9 +91,10 @@ pub fn answer(args: &[String]) -> i32 {
         if !keys.contains(&key.as_str()) {
             return Err(("not-an-option", format!("{key:?} is not an option of {id}; its keys: {}", keys.join(", "))));
         }
+        let stale = landed.as_ref().is_some_and(|landed| decision.stale(landed));
         decision.status = "answered".to_string();
         decision.answer = Some(serde_json::json!({ "key": key, "at": rewrite::now() }));
-        Ok(())
+        Ok(stale)
     })
 }
 
@@ -91,7 +118,7 @@ fn consume(id: &str, reference: &str) -> i32 {
             return Err(("already-consumed", format!("{id} was already consumed")));
         }
         decision.consumed = Some(serde_json::json!({ "ref": reference, "at": rewrite::now() }));
-        Ok(())
+        Ok(false)
     })
 }
 
@@ -149,14 +176,19 @@ pub(crate) fn find() -> Result<(Project, PathBuf), Refused> {
 }
 
 fn list() -> i32 {
-    let (_, dir) = match locate() {
+    let (project, dir) = match locate() {
         Ok(found) => found,
         Err(code) => return code,
     };
     // A file that does not parse is skipped here; `po state` names it as unreadable-decision.
     match decision::read_dir(&dir) {
         Ok((decisions, _)) => {
-            let pending = decisions.into_iter().filter(|d| d.status == "pending").collect();
+            let landed = landed(&project);
+            let pending = decisions
+                .iter()
+                .filter(|d| d.status == "pending")
+                .map(|d| Shown::of(d, landed.as_ref()))
+                .collect();
             output::reply(List { pending }, output::OK)
         }
         Err(err) => output::error(
@@ -189,7 +221,7 @@ fn answered() -> i32 {
 }
 
 fn show(id: &str) -> i32 {
-    let (_, dir) = match locate() {
+    let (project, dir) = match locate() {
         Ok(found) => found,
         Err(code) => return code,
     };
@@ -203,7 +235,7 @@ fn show(id: &str) -> i32 {
         _ => {}
     }
     match decision::read_file(&path) {
-        Some(decision) => output::reply(decision, output::OK),
+        Some(decision) => output::reply(Shown::of(&decision, landed(&project).as_ref()), output::OK),
         None => output::error(
             output::UNREADABLE,
             "unreadable-decision",
