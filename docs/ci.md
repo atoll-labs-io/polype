@@ -19,12 +19,33 @@ Passer à Forgejo Actions revient à déplacer ce fichier : Forgejo lit la même
 1. La version a déjà été montée par la story qui a changé `po/`, ensemble dans `POLYPE_VERSION` de
    `bin/polype`, `version` de `po/Cargo.toml` et `po/Cargo.lock` : `bin/po-version-check` l'exige, et
    `bin/po-release` refuse de construire quand `bin/polype` et `po/Cargo.toml` diffèrent.
-2. Poser le tag `v<version>` sur `main` et le pousser.
-3. `.github/workflows/release.yml` crée la release du tag, puis, sur un runner par plateforme
+2. Poser le tag `v<version>` sur un commit de `main`, et sur aucun autre, puis le pousser.
+3. Le `.github/workflows/release.yml` de `main` lance d'abord, dans chaque job,
+   `bin/po-release --tag <tag> origin/main`, qui refuse un tag autre que `v<version>`, un commit
+   tagué hors de `main`, et une version dont un commit de `main` a déjà porté une somme dans le
+   `PO_SUMS` de `bin/polype`, même remplacée depuis par une version suivante. Il refuse aussi
+   quand il ne peut pas lire ce qu'il compare : checkout superficiel, `origin/main` absent,
+   historique illisible, ou `bin/polype` sans bloc `PO_SUMS`. Sur un refus, le job s'arrête avant
+   de rien créer ni publier. Sinon il crée la release du tag, puis, sur un runner par plateforme
    (`linux-x86_64`, `linux-aarch64`, `macos-aarch64`), appelle `bin/po-release dist` et publie
-   `po-<version>-<plateforme>` et son `.sha256`.
-4. Une pull request colle les lignes des `.sha256` dans le bloc `PO_SUMS` de `bin/polype`. Tant
-   qu'elle n'a pas atterri, les installeurs compilent `po` depuis les sources.
+   `po-<version>-<plateforme>` et son `.sha256`. Tant que les sommes n'ont pas atterri, relancer
+   la release, tous ses jobs ou ceux en échec, garde la release existante et remplace les fichiers.
+4. Depuis un clone de `main` à jour, tags compris (`git fetch --tags origin`) :
+   `gh release download v<version> --pattern '*.sha256' --dir <dossier>`, puis
+   `bin/po-release --sums <dossier> origin/main`, puis une pull request avec le `bin/polype`
+   qu'il a écrit. `--sums` refuse quand le tag `v<version>` manque au clone ou n'est pas un commit
+   de `origin/main`, et quand un `.sha256` n'est pas une ligne `<somme>  po-<version>-<plateforme>`
+   d'une plateforme connue ; il n'écrit rien quand le bloc porte déjà ces sommes. Tant que la pull
+   request n'a pas atterri, les installeurs compilent `po` depuis les sources.
+   `--sums` ne prouve pas que les `.sha256` de la release sont ceux que le commit tagué a construits :
+   prenez-les juste après la publication et faites atterrir les sommes seulement si personne d'autre
+   que vous n'a pu écrire sur le dépôt ni sur ses releases entre-temps
+   ([ADR-0129](decisions/ADR-0129-les-sommes-de-po-reposent-sur-l-ecriture-restreinte-au-porteur.md)).
+
+Une fois les sommes atterries, la release de cette version refuse pour toujours de se relancer,
+même après que les sommes d'une version suivante ont remplacé les siennes : une nouvelle
+compilation changerait le binaire, et tous les installeurs le refuseraient. Publiez plutôt une
+nouvelle version.
 
 `bin/po-release` ne lit aucune variable de la forge, comme `bin/po-ci`. Sur Forgejo, seule change
 l'étape qui publie (`gh release`) ; l'appel à `bin/po-release` reste le même (ADR-0105, ADR-0121).
