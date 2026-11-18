@@ -3121,9 +3121,9 @@ Régime des critères (porteur, 2026-11-13) : un critère qu'un script lit a son
 
 **Critères d'acceptation**
 - [ ] `verdict_follows_the_three_signals` — contre une doublure de forge, la commande rend `collaborative`, `solo` ou `unreadable` d'après les collaborateurs, `CODEOWNERS` lu sur la branche cible et les règles de protection, et la valeur effective qui en découle : `human` sur un dépôt collaboratif quelle que soit la ligne, la ligne elle-même sinon.
-- [ ] `absence_is_not_an_error` — une réponse 404 ou 403 d'un des trois signaux compte comme une absence ; une forge injoignable rend `unreadable`, jamais `solo`.
+- [ ] `absence_is_not_an_error` — seules les réponses que l'ADR-0079 nomme comptent comme une absence : le 404 d'une branche sans protection, une liste vide, et le 403 dont le message dit que la fonction demande une autre offre ; tout autre échec d'un signal, et une forge injoignable, rendent `unreadable`, jamais `solo` (décision d-0042 du porteur).
 - [ ] `chosen_is_never_rewritten` — pour une ligne `(chosen)`, la commande ne propose aucune réécriture ; pour une ligne `(forge)` qui ne suit plus la forge, elle rend la valeur à écrire, et n'écrit rien elle-même sur `Target branch`.
-- [ ] `token_never_travels` — aucun jeton n'est lu depuis un argument ni écrit dans une sortie ; les outils de forge sont lancés sans leurs variables de jeton, comme aujourd'hui (ADR-0083).
+- [ ] `token_never_travels` — aucun jeton n'est lu depuis un argument ni écrit dans une sortie ; `glab` et `tea` sont lancés sans leurs variables de jeton, `gh` et son repli `curl` ne donnent `GH_TOKEN` ou `GITHUB_TOKEN` qu'à `github.com`, comme aujourd'hui (ADR-0083).
 - [ ] `ship_command_reads_the_value` — `/po-ship` lit la valeur effective dans la sortie de la commande et ne décrit plus comment la calculer ; `po-setup.md` y renvoie. `po-ship.md` compte au moins 600 mots de moins qu'avant, `po-setup.md` pas un de plus. Règle lue par un modèle : pas de test d'oracle, jugée en revue.
 - [ ] `version_goes_up` — la version de `po` monte d'un cran mineur, aux trois endroits.
 
