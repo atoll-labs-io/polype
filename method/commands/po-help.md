@@ -32,18 +32,17 @@ Polype vise tout agent ou harness ; pris en charge aujourd'hui : Claude Code ; p
    - `/po-design <story>` — pour une story avec écran (`Surface: screen`, ou sans ligne `Surface` un texte qui montre un écran) : dérive l'écran du design system dans `docs/designs/<id>/`.
 2. `/po-plan <story>` — découpe en tâches testables, puis approbation.
 3. `/po-execute <story>` — l'implementer code, trace ses vérifications, commite.
-   - `/po-qa <story>` — pour une story que `QA stage` envoie en QA : un agent vérifie sa surface avec le pilote qui lui va (navigateur, scénarios, rendu de scène, simulation) et laisse ses preuves dans `docs/qa/<id>/`, sans rien corriger. `/po-orchestrator` et `/po-drive` la lancent eux-mêmes quand `QA stage` vaut `screens` (les stories `screen`) ou `surfaces` (toute surface autre que `—`) ; une story sans ligne `Surface` n'y va que si elle a un écran.
+   - `/po-qa <story>` — pour une story que `QA stage` envoie en QA : un agent vérifie sa surface avec le pilote qui lui va (navigateur, scénarios, rendu de scène, simulation) et laisse ses preuves dans `docs/qa/<id>/`, sans rien corriger. `/po-drive` la lance lui-même quand `QA stage` vaut `screens` (les stories `screen`) ou `surfaces` (toute surface autre que `—`) ; une story sans ligne `Surface` n'y va que si elle a un écran.
 4. `/po-review <story>` — relecture par un autre contexte, tests mis à l'épreuve, verdict.
 5. `/po-ship <story>` — verdict vérifié, contrôles lourds une fois, un commit par PR, nettoyage.
 
 ## Outils
-- `/po-orchestrator <story>` — choisit la piste (complète ou courte), ajoute le design pour une story avec écran et la QA pour une story que `QA stage` y envoie, enchaîne les étapes et ne s'arrête que pour tes décisions.
 - `/po-drive` — la flotte : fait avancer en parallèle toutes les stories prêtes, une lane par story, et ship une par une.
+  - `/po-drive <story>` — une seule story, par les mêmes étapes. Pour approuver un écran toi-même, lance `/po-design <story>` avant : `/po-drive` n'approuve aucun design.
   - `/po-drive status` — le même état en lecture seule : ce qui est en vol, ce qui attend et pourquoi ; ne prépare aucun worktree et ne lance rien.
 - `/po-status` — l'état du cadrage, puis de chaque story (piste comprise) et la commande suivante.
 - `/po-retro <jalon | premier..dernier>` — résume un jalon ou une plage de stories depuis les revues, les relevés et les rapports QA : sévérités, boucles de correction, revues et QA bloquées, majeurs encore ouverts ; chaque chiffre cite sa ligne, rien n'est écrit.
 - `/po-intake` — transforme les issues déposées par `po-intake` en stories de correction, les fait relire sur leur issue, puis les fait atterrir comme un cadrage ; une issue de sécurité reste à toi. À planifier juste après les contrôles.
-- `/po-flow <story>` — voie courte pour une petite story : research et plan en une passe, puis le même cycle, sans rien alléger.
 
 ## Repères
 - Plan non approuvé : pas de code. Verdict négatif : pas de ship.

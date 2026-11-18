@@ -17,8 +17,8 @@ test_one_commit_per_story() {
   contains "$METHOD/AGENTS.md" 'one commit titled `<id>: <story title>`'
   contains "$METHOD/AGENTS.md" 'no merge commit'
   local f
-  for f in AGENTS.md commands/po-ship.md commands/po-drive.md commands/po-flow.md \
-           commands/po-orchestrator.md commands/po-help.md agents/implementer.md templates/agents-local.md; do
+  for f in AGENTS.md commands/po-ship.md commands/po-drive.md \
+           commands/po-help.md agents/implementer.md templates/agents-local.md; do
     require_file "$METHOD/$f"
     ! grep -qi 'squash' "$METHOD/$f" || fail "method/$f still says squash"
   done

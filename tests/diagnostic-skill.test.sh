@@ -3,7 +3,6 @@
 
 SKILL="$METHOD/skills/diagnostic/SKILL.md"
 PLANNER="$METHOD/agents/planner.md"
-FLOW="$METHOD/commands/po-flow.md"
 PLAN_FLOW="$METHOD/templates/plan-flow.md"
 STORIES_TEMPLATE="$METHOD/templates/stories.md"
 AGENTIC="$METHOD/skills/agentic-stories/SKILL.md"
@@ -44,10 +43,8 @@ test_defect_stories_get_the_diagnostic() {
   done
   section_of "$PLANNER" 'Which track' | grep -qF 'a defect to fix — a story carrying a `Fixes` line' || fail "planner Which track lacks the Fixes signal"
   section_of "$PLANNER" 'Which track' | grep -qF 'Corrige' || fail "planner Which track lacks Corrige"
-  section_of "$FLOW" 'Escalation signals' | grep -qF '`Fixes`' || fail "po-flow signals lack Fixes"
-  section_of "$FLOW" 'Escalation signals' | grep -qF 'Corrige' || fail "po-flow signals lack Corrige"
   grep -qE '^- \*\*Fixes\*\*:.*Corrige' "$STORIES_TEMPLATE" || fail "stories template lacks the Fixes line naming Corrige"
-  for f in "$PLANNER" "$FLOW" "$PLAN_FLOW"; do
+  for f in "$PLANNER" "$PLAN_FLOW"; do
     ! grep -qi 'five signals\|of the five' "$f" || fail "${f#"$ROOT"/} still counts five signals"
   done
 }

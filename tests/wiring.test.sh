@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
-# s20 — framing and short track wired into rules, status, orchestrator and reviewer.
+# s20 — framing and short track wired into rules, status and reviewer.
 
 RULES="$METHOD/AGENTS.md"
-ORCH="$METHOD/commands/po-orchestrator.md"
 STATUS="$METHOD/commands/po-status.md"
 AGENT="$METHOD/agents/reviewer.md"
 
@@ -28,7 +27,6 @@ test_rules_list_framing_before_the_story_cycle() {
     holds "$framing" "\`$cmd\`" "framing table"
   done
   holds "$per_story" '`/po-design`' "per-story cycle"
-  holds "$per_story" '`/po-flow`' "per-story cycle"
   local r d pl
   r=$(line_of "$per_story" '`/po-research`'); d=$(line_of "$per_story" '`/po-design`'); pl=$(line_of "$per_story" '`/po-plan`')
   [ -n "$r" ] && [ -n "$d" ] && [ -n "$pl" ] && [ "$r" -lt "$d" ] && [ "$d" -lt "$pl" ] \
@@ -40,43 +38,11 @@ test_status_reports_framing_and_track() {
   reads_setting "$STATUS" 'Story track'
   reads_setting "$STATUS" 'Flow threshold'
   contains "$STATUS" '`track: flow`'
-  contains "$STATUS" '`/po-flow <id>`'
-}
-
-test_orchestrator_picks_the_track_and_runs_design() {
-  require_file "$ORCH"
-  reads_setting "$ORCH" 'Story track'
-  reads_setting "$ORCH" 'Flow threshold'
-  local track; track=$(section_of "$ORCH" 'Stage 1 — Track')
-  holds "$track" '`Story track`' "track stage"
-  holds "$track" '`Flow threshold`' "track stage"
-  holds "$track" 'is at most `Flow threshold`; above it, or with no complexity written, the full track' "track stage"
-  holds "$track" '`/po-flow`' "track stage"
-  local d p
-  d=$(grep -n '^## Stage [0-9]* — Design$' "$ORCH" | head -n 1 | cut -d: -f1)
-  p=$(grep -n '^## Stage [0-9]* — Plan — checkpoint$' "$ORCH" | head -n 1 | cut -d: -f1)
-  [ -n "$d" ] && [ -n "$p" ] && [ "$d" -lt "$p" ] || fail "a design stage must come before the plan checkpoint"
-  holds "$(section_of "$ORCH" "$(sed -n "${d}p" "$ORCH" | sed 's/^## //')")" '`/po-design`' "design stage"
-}
-
-test_orchestrator_stops_without_approved_scope() {
-  require_file "$ORCH"
-  reads_setting "$ORCH" 'Entry mode'
-  local gate; gate=$(section_of "$ORCH" 'Stage 0 — Can this start?')
-  holds "$gate" '`docs/prd.md` with `status: approved`' "framing check"
-  holds "$gate" 'stop and point to `/po-prd`' "framing check"
-  holds "$gate" '`docs/brief.md` with `status: approved`' "framing check"
-  holds "$gate" 'stop and point to `/po-brief`' "framing check"
-  holds "$gate" 'there is no scope to check' "framing check"
-  holds "$gate" 'that verdict informs, it does not block' "framing check"
 }
 
 test_design_files_reach_the_implementer() {
-  require_file "$RULES"; require_file "$ORCH"
+  require_file "$RULES"
   contains "$RULES" 'the design of a story with a screen (`docs/designs/<id>/`)'
-  local exec; exec=$(section_of "$ORCH" 'Stage 5 — Execute')
-  holds "$exec" 'docs/designs/<id>/ is expected uncommitted work' "execute stage"
-  holds "$(section_of "$ORCH" 'Stage 4 — Plan — checkpoint')" 'When `docs/designs/<id>/design.md` exists, read it' "plan stage"
 }
 
 test_reviewer_checks_design_conformity_without_measuring() {

@@ -4,8 +4,6 @@
 RULES="$METHOD/AGENTS.md"
 DRIVE="$METHOD/commands/po-drive.md"
 PLAN_CMD="$METHOD/commands/po-plan.md"
-FLOW="$METHOD/commands/po-flow.md"
-ORCH="$METHOD/commands/po-orchestrator.md"
 ARCHITECT="$METHOD/commands/po-architect.md"
 PLANNER="$METHOD/agents/planner.md"
 BRICKS="$METHOD/skills/capability-bricks/SKILL.md"
@@ -42,8 +40,7 @@ test_tech_choices_are_never_settled_alone() {
 }
 
 test_plan_with_a_tech_choice_waits_for_a_human() {
-  local f
-  for f in "$FLOW" "$PLANNER"; do contains "$f" "$WHATEVER"; done
+  contains "$PLANNER" "$WHATEVER"
   contains "$PLANNER" "$MARKER"
   contains "$PLANNER" 'status: proposed'
   local appr; appr="$(section_of "$PLAN_CMD" 'Approval — per `Plan validation`')"
@@ -54,9 +51,6 @@ test_plan_with_a_tech_choice_waits_for_a_human() {
   local wr; wr="$(section_of "$PLAN_CMD" 'Writing the plan')"
   holds "$wr" 'status: proposed' 'po-plan Writing the plan'
   holds "$wr" "$MARKER" 'po-plan Writing the plan'
-  holds "$(section_of "$FLOW" 'Escalation signals')" 'a technical choice that deserves an ADR' 'po-flow Escalation signals'
-
-  holds "$(section_of "$ORCH" 'Stage 4 — Plan — checkpoint')" "$MARKER" 'po-orchestrator stage 4'
 }
 
 test_human_stops_do_not_halt_the_fleet() {
@@ -64,8 +58,6 @@ test_human_stops_do_not_halt_the_fleet() {
   holds "$wave" 'at once, in a message of its own' 'po-drive A wave'
   holds "$wave" 'Meanwhile the other lanes carry on.' 'po-drive A wave'
   holds "$wave" 'it is not asked through AskUserQuestion, which would hold every other lane' 'po-drive A wave'
-  holds "$(section_of "$ORCH" 'Stage 0 — Can this start?')" 'ends this run at once and reports that stop alone' 'po-orchestrator stage 0'
-  contains "$ORCH" 'nothing here pauses them'
   local s; s="$(person_section)" || exit 1
   holds "$s" 'goes to the person at once, one at a time, and the fleet carries on with its other lanes' 'What goes to the person'
   holds "$s" 'No gate opens any other way than before' 'What goes to the person'

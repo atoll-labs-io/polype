@@ -1,6 +1,6 @@
 ---
 name: diagnostic
-description: How to research a story that fixes a defect — reproduce it, find and prove the root cause, and only then plan the fix. Applied to a story carrying a `Fixes` line by the planner, `/po-research` and `/po-orchestrator`.
+description: How to research a story that fixes a defect — reproduce it, find and prove the root cause, and only then plan the fix. Applied to a story carrying a `Fixes` line by the planner and `/po-research`.
 ---
 # Diagnostic
 

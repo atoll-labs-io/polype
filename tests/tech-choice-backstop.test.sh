@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# s111 — a short-track plan sent back keeps its marker, and the tests that guard the
+# s111 — a plan's checks stop on the marker, and the tests that guard the
 # marker and two stories-framing rules fail when those rules are deleted.
 
 MARKER='Technical choice: waiting for a human'
@@ -21,20 +21,7 @@ run_against() {
   ( METHOD="$1"; CMDS="$1/commands"; source "$2"; "$3" ) >/dev/null 2>&1
 }
 
-test_flow_plan_sent_back_keeps_the_marker() {
-  local flow="$METHOD/commands/po-flow.md" s
-  s="$(section_of "$flow" 'Approval')"
-  local want
-  for want in "$MARKER" 'validated: no' 'status: proposed' 'Ranking the options' 'templates/adr.md' \
-      '/po-research <id>' 'whatever `Plan validation` says' 'in their ranked order'; do
-    holds "$s" "$want" 'po-flow Approval'
-  done
-  local m_at a_at
-  m_at="$(grep -nF -- "$MARKER" <<< "$s" | head -1 | cut -d: -f1)"
-  a_at="$(grep -nF -- '- `autonomous`' <<< "$s" | head -1 | cut -d: -f1)"
-  [ -n "$m_at" ] && [ -n "$a_at" ] || fail "po-flow Approval lost the marker or the autonomous bullet"
-  [ "$m_at" -lt "$a_at" ] || fail "po-flow Approval puts the autonomous bullet before the marker"
-  settings_read_by "$flow" | grep -qxF 'ADR directory' || fail "po-flow does not list ADR directory in Reads settings"
+test_plan_checks_stop_on_the_marker() {
   holds "$(section_of "$METHOD/commands/po-plan.md" 'Checks first')" "$MARKER" 'po-plan Checks first'
 }
 
