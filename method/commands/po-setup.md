@@ -24,7 +24,7 @@ Collect what the repository states on its own:
 - the scripts the project really defines (package manifest, Makefile, task runner) — candidates for `Install`, `Test`, `Typecheck`, `E2E`, `Build`, and `Dev`, the command that starts the development server;
 - the default branch: `git symbolic-ref --short refs/remotes/origin/HEAD`, or the current branch when there is no remote;
 - whether the repository has a base, as `/po-architect` defines it: a package manifest, or source files outside Polype's own files (`AGENTS*.md`, `CLAUDE.md`, `docs/`, `.claude/`, `.polype/`, `.gitignore`);
-- the forge `origin` names. The rest of its reading — whether it could be read and, if not, why, and whether the repository is collaborative — is made exactly as `/po-ship` reads it (`## The forge's review rule` of `method/commands/po-ship.md`) once question 1 of Step 2 has given `Target branch`, since the `CODEOWNERS` and protection signals read that branch.
+- the forge `origin` names, read as in `## The forge's review rule` of `method/commands/po-ship.md`: `"${CLAUDE_CONFIG_DIR:-$HOME/.claude}/polype/po" ship forge --target <Target branch>`, once question 1 of Step 2 has given `Target branch`, since the `CODEOWNERS` and protection signals read that branch. `po` missing → the forge is unreadable, and the `Ship confirmation` question says so.
 
 These become the suggested answers. A command you did not find in a file stays `—`.
 
@@ -72,7 +72,7 @@ Every framing command lands its commit this way: this one, `/po-brief`, `/po-prd
   - In the root, `git merge --ff-only origin/<Target branch>`, whatever the slug and before anything else is decided. A root already at or ahead of that ref stays as it is. A refusal is reported and the landing carries on: no stash, checkout or reset forces it.
   - No `origin/framing/<slug>` (`git rev-parse --verify --quiet refs/remotes/origin/framing/<slug>` fails) → `<base>` is `origin/<Target branch>`.
 - A framing branch already on the remote is proven merged or not, as step 3 of `/po-ship` proves a ship:
-  - On GitHub, the forge `## The forge's review rule` of `method/commands/po-ship.md` recognises from `origin`, the proof is the pull request: `gh pr view framing/<slug> --json state --jq .state` prints exactly `MERGED`. Any other state, or no pull request from that branch, means not merged. `gh` missing or not logged in → stop: ancestry is never the proof of a merge on GitHub, which rebuilds every commit it lands (ADR-0081).
+  - On GitHub, the `forge` `po ship forge` reports (`## The forge's review rule` of `method/commands/po-ship.md`), the proof is the pull request: `gh pr view framing/<slug> --json state --jq .state` prints exactly `MERGED`. Any other state, or no pull request from that branch, means not merged. `gh` missing or not logged in → stop: ancestry is never the proof of a merge on GitHub, which rebuilds every commit it lands (ADR-0081).
   - On any other forge, where the merge is a true fast-forward (ADR-0081), the proof is `git merge-base --is-ancestor origin/framing/<slug> origin/<Target branch>`.
 - Not merged → `<base>` is `origin/framing/<slug>`, whether a pull request is open or not. The new commit stacks on what the branch already carries, and an open pull request carries both.
 - Merged → `git push origin --delete framing/<slug>`, and `<base>` is `origin/<Target branch>`. A merged branch is never taken as a base.
@@ -87,7 +87,7 @@ Every framing command lands its commit this way: this one, `/po-brief`, `/po-prd
 **`Merge mode: pr`**
 - `git push --force-with-lease=framing/<slug> origin <sha>:refs/heads/framing/<slug>`. A refused push is never forced: stop and report it.
 - Reuse the pull request already open from `framing/<slug>`, or open one with `gh pr create --base <Target branch> --head framing/<slug>`, titled `<message>`. On a forge where no pull request is opened yet (ADR-0081: GitHub only), the branch is sent and the report asks a person to open the pull request.
-- The effective `Ship confirmation` is the one `## The forge's review rule` of `method/commands/po-ship.md` settles; the line itself is never rewritten here.
+- The effective `Ship confirmation` is the `effective` of `po ship forge` (`## The forge's review rule` of `method/commands/po-ship.md`); the line itself is never rewritten here.
 - `human` → stop with "Framing pull request ready: <url>. Land it with Rebase and merge; /po-research starts a story only once its section is on `origin/<Target branch>`." Once a person merges, the next landing of any framing command fast-forwards the root, as **Base** says; the merged `framing/<slug>` is deleted only by the next landing on that same slug, and stays on the remote until then.
 - `automatic` → when the pull request has checks, wait for them to pass; a failing check → stop and leave the pull request open. Then `gh pr merge <url> --rebase --match-head-commit <sha>`.
 - Proof: `gh pr view <url> --json state --jq .state` prints exactly `MERGED`; anything else is not proof, and nothing below runs.

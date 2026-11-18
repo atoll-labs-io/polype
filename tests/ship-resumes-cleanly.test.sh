@@ -1,9 +1,7 @@
 #!/usr/bin/env bash
-# s108 — a resumed ship merges the head it already pushed; the forge read pins its host and skips curlrc.
+# s108 — a resumed ship merges the head it already pushed.
 
 SHIP="$METHOD/commands/po-ship.md"
-
-section_of() { awk -v h="## $2" '$0 == h {on=1; next} /^## / {on=0} on' "$1"; }
 
 holds() { grep -qF -- "$2" <<< "$1" || fail "$3 lacks: $2"; }
 
@@ -21,14 +19,3 @@ test_resumed_ship_merges_the_pushed_head() {
   holds "${merge#*:}" '--match-head-commit <sha>' "the merge line"
 }
 
-test_forge_read_pins_and_skips_curlrc() {
-  local forge probes
-  forge=$(section_of "$SHIP" "The forge's review rule")
-  holds "$forge" '`gh api`, pinned with `--hostname github.com`' "the forge section"
-  probes=$(grep -F 'curl' <<< "$forge" | grep -F 'carries no token' || true)
-  [ -n "$probes" ] || fail "no forge line says a curl carries no token"
-  while IFS= read -r l; do
-    holds "$l" '`curl -q`' "a tokenless curl line"
-    ! grep -qF 'plain `curl`,' <<< "$l" || fail "a plain curl without -q remains"
-  done <<< "$probes"
-}
