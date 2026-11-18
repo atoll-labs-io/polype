@@ -11,7 +11,7 @@ test_no_file_grows() {
     'skills/agentic-stories/SKILL.md 1119' \
     'skills/stories-review/SKILL.md 1248' \
     'agents/stories-reviewer.md 451' \
-    'commands/po-setup.md 2278'; do
+    'commands/po-setup.md 2272'; do
     path="${entry% *}"; ceiling="${entry##* }"
     require_file "$METHOD/$path"
     words="$(LC_ALL=C wc -w < "$METHOD/$path" | tr -d ' ')"

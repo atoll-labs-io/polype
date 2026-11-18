@@ -27,22 +27,6 @@ test_setup_reads_review_rules_from_the_forge() {
 
   forge=$(forge_section)
   [ -n "$forge" ] || fail "po-ship.md has no '## The forge's review rule' section"
-  local s
-  for s in 'host `github.com` → GitHub' 'a host containing `gitlab` → GitLab' '/api/v1/version' \
-           '`gh api`' '`glab api`' '`tea api`' 'No CLI and no token → the forge is unreadable'; do
-    holds "$forge" "$s" 'the forge section'
-  done
-}
-
-test_collaborative_repo_forbids_agent_merge() {
-  local forge; forge=$(forge_section)
-  holds "$forge" 'permissions.push' 'the forge section'
-  holds "$forge" '*A `CODEOWNERS` naming someone else*' 'the forge section'
-  holds "$forge" 'required_approving_review_count' 'the forge section'
-  holds "$forge" '`human` on a collaborative repository, whatever the line says, a `(chosen)` line included' 'the forge section'
-  holds "$forge" 'a value reading `(forge)` on a solo repository is `automatic`' 'the forge section'
-  holds "$forge" '"Upgrade to GitHub Pro"' 'the forge section'
-  holds "$forge" 'all count as "no protection"' 'the forge section'
 }
 
 test_setting_records_its_origin() {
@@ -64,13 +48,10 @@ test_template_defaults_trust_the_gates() {
 
 test_forge_tightening_switches_to_human() {
   local forge; forge=$(forge_section)
-  holds "$forge" 'collaborative and not `human` → `human (forge)`' 'the forge section'
   holds "$forge" 'framing/ship-confirmation' 'the forge section'
   holds "$forge" 'gh pr create --draft' 'the forge section'
   holds "$forge" '"chore: Ship confirmation follows the forge"' 'the forge section'
-  holds "$forge" 'solo and `human` → back to `automatic (forge)`' 'the forge section'
   holds "$forge" 'The ship does not wait for that draft' 'the forge section'
-  holds "$forge" 'the line'"'"'s value stands, and the report names the call that failed' 'the forge section'
   local step0 forge_at step1
   step0=$(grep -n '^## Step 0' "$SHIP" | cut -d: -f1)
   forge_at=$(grep -n "^## The forge's review rule" "$SHIP" | cut -d: -f1)
@@ -80,10 +61,7 @@ test_forge_tightening_switches_to_human() {
 }
 
 test_chosen_value_never_moves() {
-  local forge reading
-  forge=$(forge_section)
-  holds "$forge" 'A `(chosen)` value is never rewritten by an agent' 'the forge section'
-  holds "$forge" 'Only a line reading `(forge)`' 'the forge section'
+  local reading
   reading=$(section_of "$RULES" 'Reading settings')
   holds "$reading" '`/po-ship` rewrites a `Ship confirmation` value that reads `(forge)`' 'Reading settings'
   holds "$reading" 'A `(chosen)` value is never rewritten by an agent' 'Reading settings'

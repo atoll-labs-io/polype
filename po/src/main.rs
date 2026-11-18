@@ -5,6 +5,7 @@ mod output;
 mod project;
 mod record;
 mod run;
+mod ship;
 mod state;
 mod trust;
 
@@ -17,7 +18,7 @@ fn main() {
         None => output::error(
             output::UNREADABLE,
             "usage",
-            "usage: po <state|next|inbox|answer|record|run|continue> [arguments]",
+            "usage: po <state|next|inbox|answer|record|run|continue|ship> [arguments]",
         ),
         Some("state") => state::main(&rest),
         Some("next") => next::main(&rest),
@@ -26,6 +27,7 @@ fn main() {
         Some("record") => record::main(&rest),
         Some("run") => run::main(&rest),
         Some("continue") => run::resume(&rest),
+        Some("ship") => ship::main(&rest),
         Some(other) => output::error(
             output::UNREADABLE,
             "unknown-verb",
