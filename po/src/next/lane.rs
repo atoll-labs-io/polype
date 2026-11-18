@@ -1,4 +1,4 @@
-//! A lane's next action: the first rule that holds, in the order of po-drive.md's `## Resuming`.
+//! A lane's next action: the first rule that holds, in the order `next` checks them below.
 //! Stage and stops come from the context; only `qa-current` (stage `qa`) and `git log` (a review
 //! that blocked) are asked again, and only for this lane.
 
@@ -6,12 +6,43 @@ use std::path::Path;
 use std::process::{Command, Stdio};
 use std::time::UNIX_EPOCH;
 
-use super::{holding_decision, waiting_dependency, NextAction};
-use crate::context::{BlockedBy, Context, Lane, Stage};
+use super::{holding_decision, waiting_dependency, NextAction, Track};
+use crate::context::{goes_to_qa, BlockedBy, Context, Lane, Stage};
 use crate::project::{self, Setting};
 
 fn act(action: &str, reason: impl Into<String>) -> NextAction {
-    NextAction { action: action.to_string(), reason: reason.into() }
+    NextAction { action: action.to_string(), reason: reason.into(), track: None }
+}
+
+/// A `plan` action with the story's track, or the `ask` of a track that cannot be read: `Story
+/// track` first, then the signals that force `full`, then `Flow threshold` under `auto` only.
+pub(super) fn plan(context: &Context, id: &str, reason: &str) -> NextAction {
+    let mode = setting(context, "Story track");
+    if !matches!(mode.as_deref(), Some("full" | "flow" | "auto")) {
+        return act("ask", "setting unreadable: Story track");
+    }
+    let track = |track| NextAction { track: Some(track), ..act("plan", reason) };
+    if mode.as_deref() == Some("full") {
+        return track(Track::Full);
+    }
+    let story = context.stories.as_ref().and_then(|stories| stories.find(id));
+    let qa_stage = context.lane_settings.as_ref().and_then(|settings| settings.qa_stage.as_deref());
+    let forced = story.is_some_and(|story| story.fixes || story.has_screen());
+    match goes_to_qa(story, qa_stage) {
+        Err(_) => return act("ask", "setting unreadable: QA stage"),
+        Ok(qa) if forced || qa => return track(Track::Full),
+        Ok(_) => {}
+    }
+    if mode.as_deref() == Some("flow") {
+        return track(Track::Flow);
+    }
+    let Some(threshold) = setting(context, "Flow threshold").as_deref().and_then(number) else {
+        return act("ask", "setting unreadable: Flow threshold");
+    };
+    let Some(complexity) = story.and_then(|story| story.complexity) else {
+        return act("ask", "no complexity");
+    };
+    track(if u64::from(complexity) <= threshold { Track::Flow } else { Track::Full })
 }
 
 pub(super) fn landed(context: &Context, id: &str) -> bool {
@@ -38,24 +69,14 @@ pub fn next(context: &Context, lane: &Lane, closed: &[String]) -> NextAction {
         return act("ask", "setting unreadable: QA stage");
     };
     let research = path.join(format!("docs/research/{id}.md")).is_file();
-    let plan = path.join(format!("docs/plans/{id}.md")).is_file();
-    if !research && !plan {
-        return act("plan", "no research");
+    let planned = path.join(format!("docs/plans/{id}.md")).is_file();
+    if !research && !planned {
+        return plan(context, id, "no research");
     }
     match lane.blocked_by {
         Some(BlockedBy::RootCauseNotFound) => return act("ask", "Root cause: not found"),
         Some(BlockedBy::TechnicalChoice) => return act("ask", "Technical choice: waiting for a human"),
         _ => {}
-    }
-    if !plan {
-        return act("plan", "research, no plan");
-    }
-    if stage == Stage::Plan {
-        return match setting(context, "Plan validation").as_deref() {
-            Some("human") => act("validate-plan", "plan-validated refuses"),
-            Some("autonomous") => act("plan", "plan-validated refuses"),
-            _ => act("ask", "setting unreadable: Plan validation"),
-        };
     }
     let has_screen = context
         .stories
@@ -69,6 +90,16 @@ pub fn next(context: &Context, lane: &Lane, closed: &[String]) -> NextAction {
         return match setting(context, "Design source").as_deref() {
             None | Some("—") => act("ask", "Design source unset"),
             Some(_) => act("design", "no design"),
+        };
+    }
+    if !planned {
+        return plan(context, id, "research, no plan");
+    }
+    if stage == Stage::Plan {
+        return match setting(context, "Plan validation").as_deref() {
+            Some("human") => act("validate-plan", "plan-validated refuses"),
+            Some("autonomous") => plan(context, id, "plan-validated refuses"),
+            _ => act("ask", "setting unreadable: Plan validation"),
         };
     }
     match stage {

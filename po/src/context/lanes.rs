@@ -7,7 +7,7 @@ use std::process::{Command, Stdio};
 
 use serde::Serialize;
 
-use super::stories::Stories;
+use super::stories::{Stories, Story};
 use super::{Settings, Warning, Warnings};
 use crate::project::Project;
 
@@ -276,17 +276,10 @@ fn stage(
     if !gate(lane, &script, "verif-current", id) {
         return Some(Stage::Execute);
     }
-    let has_surface = story.and_then(|story| story.surface.as_deref()).is_some_and(|surface| surface != "—");
-    let goes_to_qa = match settings.qa_stage.as_deref() {
-        None if has_screen || has_surface => {
-            warnings.push(Warning::MissingSetting { setting: "QA stage".into() });
-            return None;
-        }
-        None | Some("—") => false,
-        Some("screens") => has_screen,
-        Some("surfaces") => has_surface,
-        Some(_) => {
-            warnings.push(Warning::UnreadableSetting { setting: "QA stage".into() });
+    let goes_to_qa = match goes_to_qa(story, settings.qa_stage.as_deref()) {
+        Ok(goes) => goes,
+        Err(warning) => {
+            warnings.push(warning);
             return None;
         }
     };
@@ -294,6 +287,19 @@ fn stage(
         return Some(Stage::Qa);
     }
     Some(Stage::Review)
+}
+
+/// Whether the story goes to QA under `QA stage`; the warning when that setting cannot route it.
+pub fn goes_to_qa(story: Option<&Story>, qa_stage: Option<&str>) -> Result<bool, Warning> {
+    let has_screen = story.is_some_and(|story| story.has_screen());
+    let has_surface = story.and_then(|story| story.surface.as_deref()).is_some_and(|surface| surface != "—");
+    match qa_stage {
+        None if has_screen || has_surface => Err(Warning::MissingSetting { setting: "QA stage".into() }),
+        None | Some("—") => Ok(false),
+        Some("screens") => Ok(has_screen),
+        Some("surfaces") => Ok(has_surface),
+        Some(_) => Err(Warning::UnreadableSetting { setting: "QA stage".into() }),
+    }
 }
 
 fn count(value: &str) -> Option<u64> {

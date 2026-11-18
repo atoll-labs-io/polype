@@ -43,6 +43,8 @@ Merge mode:        local
 Target branch:     main
 Ship confirmation: automatic
 Plan validation:   autonomous
+Story track:       auto
+Flow threshold:    2
 QA stage:          —
 Design source:     internal
 Worktree root:     .worktrees/
@@ -262,7 +264,7 @@ EOF
   po_in "$W" state
   [ "$STATUS" -eq 0 ] || fail "po state exited $STATUS: $OUT"
   jq -e --argjson n "$next" '
-      ([.lanes[] | {story, action: .next.action, reason: .next.reason}] | sort_by(.story))
+      ([.lanes[] | {story} + .next] | sort_by(.story))
         == ($n.actions | map(select(.story as $s | $n.ready | index($s) | not)) | sort_by(.story))
       and .ready == $n.ready and .held == $n.held' <<< "$OUT" >/dev/null \
     || fail "po state does not carry what po next computes.

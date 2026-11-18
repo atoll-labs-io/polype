@@ -67,7 +67,7 @@ test_ready_and_held_null_without_parallel() {
   lane s01-alpha
   po_in "$F" next
   next_shape "po next"
-  jq -e '.ready == null and .held == null and .actions == [{"story": "s01-alpha", "action": "plan", "reason": "no research"}]' \
+  jq -e '.ready == null and .held == null and .actions == [{"story": "s01-alpha", "action": "plan", "reason": "no research", "track": "flow"}]' \
     <<< "$OUT" >/dev/null || fail "without Parallel: $OUT"
   po_in "$F" state
   jq -e '.ready == null and .held == null and .lanes[0].next.action == "plan"' <<< "$OUT" >/dev/null \

@@ -25,7 +25,7 @@ if [ "${BASH_VERSINFO[0]}" -lt 4 ] || { [ "${BASH_VERSINFO[0]}" -eq 4 ] && [ "${
   exit 1
 fi
 
-POLYPE_VERSION="0.6.1"
+POLYPE_VERSION="0.7.0"
 PO_RELEASES="https://github.com/atoll-labs-io/polype/releases/download"
 # The expected SHA-256 of each published po, one line per platform: written by
 # `bin/po-release --sums` from a release's .sha256 files, in the commit that follows it (docs/ci.md).
