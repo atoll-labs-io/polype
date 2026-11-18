@@ -12,10 +12,20 @@ use crate::output;
 use crate::project::Project;
 use crate::trust::forge::Forge;
 
+#[derive(Serialize, Clone, Copy, Debug, PartialEq)]
+#[serde(rename_all = "lowercase")]
+pub enum Track {
+    Full,
+    Flow,
+}
+
+/// `track` is set on a `plan` action only.
 #[derive(Serialize, Clone, Debug, PartialEq)]
 pub struct NextAction {
     pub action: String,
     pub reason: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub track: Option<Track>,
 }
 
 #[derive(Serialize, Clone, Debug, PartialEq)]
@@ -41,6 +51,14 @@ struct Entry {
     story: String,
     action: String,
     reason: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    track: Option<Track>,
+}
+
+impl Entry {
+    fn of(story: &str, next: NextAction) -> Entry {
+        Entry { story: story.to_string(), action: next.action, reason: next.reason, track: next.track }
+    }
 }
 
 #[derive(Serialize)]
@@ -72,17 +90,10 @@ pub fn main(args: &[String]) -> i32 {
     let actions = context.lanes.as_ref().filter(|_| stories_read(&context)).map(|lanes| {
         let mut actions: Vec<Entry> = lanes
             .iter()
-            .map(|lane| {
-                let next = lane::next(&context, lane, &closed);
-                Entry { story: lane.story.clone(), action: next.action, reason: next.reason }
-            })
+            .map(|lane| Entry::of(&lane.story, lane::next(&context, lane, &closed)))
             .collect();
         if let Some((ready, _)) = &wave {
-            actions.extend(ready.iter().map(|id| Entry {
-                story: id.clone(),
-                action: "plan".to_string(),
-                reason: "ready".to_string(),
-            }));
+            actions.extend(ready.iter().map(|id| Entry::of(id, lane::plan(&context, id, "ready"))));
         }
         actions
     });

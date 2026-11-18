@@ -1,5 +1,5 @@
 //! `docs/stories.md` as committed on the target branch: each story's id, surface, dependencies,
-//! `Owns` and milestone, read by the rules of po-session.sh.
+//! `Owns`, milestone, complexity and fix line, in a French or an English stories file.
 
 use crate::project::Project;
 
@@ -15,6 +15,10 @@ pub struct Story {
     // Read by `po state`'s `shipped` (a later M21 story).
     #[allow(dead_code)]
     pub milestone: Option<String>,
+    /// The leading digits of its `- **Complexity**` / `- **Complexité**` value.
+    pub complexity: Option<u32>,
+    /// It carries a `- **Fixes**` / `- **Corrige**` line with a value.
+    pub fixes: bool,
 }
 
 impl Story {
@@ -114,7 +118,15 @@ impl Stories {
                             milestone = Some(section.id.clone());
                         }
                     }
-                    list.push(Story { id, surface: None, depends_on: Vec::new(), owns: Vec::new(), milestone });
+                    list.push(Story {
+                        id,
+                        surface: None,
+                        depends_on: Vec::new(),
+                        owns: Vec::new(),
+                        milestone,
+                        complexity: None,
+                        fixes: false,
+                    });
                     in_story = true;
                 } else {
                     in_story = false;
@@ -140,6 +152,12 @@ impl Stories {
                 story.depends_on.extend(story_ids(value(line)));
             } else if line.starts_with("- **Owns**") {
                 story.owns.extend(backticked(value(line)));
+            } else if line.starts_with("- **Complexity**") || line.starts_with("- **Complexité**") {
+                let value = value(line).trim();
+                let digits = value.bytes().take_while(u8::is_ascii_digit).count();
+                story.complexity = value[..digits].parse().ok();
+            } else if line.starts_with("- **Fixes**") || line.starts_with("- **Corrige**") {
+                story.fixes = !value(line).trim().is_empty();
             }
         }
         Stories { present: true, list, milestones }

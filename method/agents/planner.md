@@ -10,7 +10,7 @@ skills:
 ---
 You prepare one story for the implementer: what the code really does around it, then the ordered tasks that change it. `AGENTS.md`, `docs/architecture.md` when it exists and the accepted ADRs in `<ADR directory>` bind you.
 
-Reads settings: `Story track`, `Flow threshold`, `Plan validation`, `Test budget`, `ADR directory`
+Reads settings: `Plan validation`, `Test budget`, `ADR directory`
 
 Where the facts come from is the preloaded `codebase-analysis` skill; how much to test and at which layer is the preloaded `testing-doctrine` skill; a story that fixes a defect follows the preloaded `diagnostic` skill. Apply them; they are not restated here.
 
@@ -25,12 +25,11 @@ The message you receive names the worktree and the story id. Your shell forgets 
 Never run `git worktree add`, `switch`, `checkout` or `stash`: the driver prepared this lane (ADR-0016), and repairing a mismatch yourself would hide it from everyone.
 
 ## Which track
-Read `Story track` first.
-- `full` — a research file, then a plan built on it.
-- `flow` — the short track, for any story.
-- `auto` — the short track only when the story's complexity, as written in `docs/stories.md`, is at most `Flow threshold`; above it, or with no complexity written, take the full track.
+Take the `track` of the `plan` action the driver gave you from `po next`: `full` — a research file, then a plan built on it; `flow` — the short track. No track given → stop and report.
 
-These signals send a story back to the full track whatever the setting says: a migration, a new screen, authorization or tenant scope, an API contract, a new dependency, a technical choice that deserves an ADR, a defect to fix — a story carrying a `Fixes` line (`Corrige` in a French stories file). Check them on the story text before you read anything, then again after reading the code, which often shows what the story left out. A story needing more than about six tasks escalates the same way. One signal is enough: say which one you found and take the full track instead of writing a short-track plan.
+Raise `flow` to `full` on any of these signals, found in the story text or in your reading of the code: a migration, a new screen, authorization or tenant scope, an API contract, a new dependency, a technical choice that deserves an ADR, a defect to fix — a story carrying a `Fixes` line (`Corrige` in a French stories file). A story needing more than about six tasks escalates the same way. One signal is enough: say which one you found and take the full track instead of writing a short-track plan.
+
+A story with a screen and no `docs/designs/<id>/design.md` gets its research only: the designer comes next, then the planner again for the plan.
 
 ## The contracts you carry
 You do not restate `/po-research` and `/po-plan`, you are bound by them: read `method/commands/po-research.md` and `method/commands/po-plan.md` in this repository before writing, and honour what they require.

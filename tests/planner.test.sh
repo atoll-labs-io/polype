@@ -48,9 +48,5 @@ test_planner_never_writes_code() {
 
 test_planner_reports_the_track_it_used() {
   require_file "$AGENT"
-  local settings; settings=$(settings_read_by "$AGENT")
-  grep -qx 'Story track' <<< "$settings" || fail "planner must read Story track"
-  grep -qx 'Flow threshold' <<< "$settings" || fail "planner must read Flow threshold"
-  contains "$AGENT" 'is at most `Flow threshold`; above it, or with no complexity written, take the full track'
   contains "$AGENT" 'Name the track you used and why'
 }

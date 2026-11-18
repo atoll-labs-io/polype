@@ -51,3 +51,13 @@ case_a_wave_04_off_the_start_point() {
   expect_held s02-bravo framing origin/main
   expect_held s03-charlie parallel
 }
+
+# Dispatching, step 2: research on disk and no plan yet — the design's own stops come before the plan.
+case_a_wave_05_design_asks_before_the_plan() {
+  story s01-alpha screen -
+  rm "$F/docs/design-system.md"
+  start
+  lane s01-alpha
+  research_in s01-alpha
+  expect_lane s01-alpha ask 'no docs/design-system.md'
+}

@@ -26,7 +26,7 @@ You drive the fleet: `po next` says what each lane does next, and you do it. You
 - `Tracker: github` → say that publishing to GitHub is not handled yet, and carry on.
 
 ## The next action
-Run `"${CLAUDE_CONFIG_DIR:-$HOME/.claude}/polype/po" next --remote` from where you were started. It reads files and git, never your memory, and prints `actions`, `ready`, `held` and `warnings`. You do each entry of `actions` and choose no route of your own. Run it again once a stage's answers are recorded; the wave ends when every entry is `wait` or `ask` and `ready` is empty.
+Run `"${CLAUDE_CONFIG_DIR:-$HOME/.claude}/polype/po" next --remote` from where you were started. It reads files and git, never your memory, and prints `actions`, `ready`, `held` and `warnings`. You do each entry of `actions` and choose no route of your own. Run it again once a stage's answers are recorded; the wave ends when every entry is `wait` or `ask`, those of `ready` included.
 
 | Action | What you do |
 | --- | --- |
@@ -58,7 +58,7 @@ ADR numbers are a shared resource no `Owns` line can divide, so you assign them 
 ### Dispatching
 The lanes of a wave must **overlap in time**: every subagent of a stage is started before any of them is waited on. No dispatch shape is imposed: a subagent starts in the background and hands the call back at once, so counting messages proves nothing. Each lane's **activity window**, which `## Report` states, shows the overlap. Never two calls for the same story at once. This holds stage by stage: every planner, then every designer, then every implementer, then every qa, then every reviewer — a stage is started whole. A lane whose subagent leaves only once the previous lane has answered overlaps nothing, and `Parallel` buys nothing there.
 
-1. `subagent_type: planner`, `model:` set to `Model strong` — the story id and the absolute worktree path; its research and its plan are its own contract. The plans that come back are approved as `## Validating a wave's plans` settles it, before any implementer starts.
+1. `subagent_type: planner`, `model:` set to `Model strong` — the story id, the absolute worktree path and the action's `track`, under its own contract. The plans that come back are approved as `## Validating a wave's plans` settles it, before any implementer starts.
 2. **The design stage**, for a story with a screen (`AGENTS.md`, Law 1): `subagent_type: designer`, `model:` set to `Model strong` — the story id and the absolute worktree path, under its own contract (`method/agents/designer.md`). Like the others, every designer of a wave leaves before any of them is waited on.
 3. `subagent_type: implementer`, its model following `/po-execute`'s `## Model`: `Model light` up to `Light up to`, `Model strong` above — the prompt `/po-execute` fixes (`method/commands/po-execute.md`), word for word, for each lane whose `docs/plans/<id>.md` holds `validated: yes`. A plan without that line never reaches an implementer.
 4. **The QA stage**: `subagent_type: qa`, `model:` set to `Model strong` — the prompt `/po-qa` fixes (`method/commands/po-qa.md`), word for word. An answer with a `QA status:` line goes through `/po-qa`'s `## The evidence commit`: `po record qa <id>`, then the `<id>: QA evidence` commit `-- docs/qa/<id>/` (ADR-0102); with no `QA status:` line, the lane stops with the reason the subagent gave. Like the others, every qa of a wave leaves before any of them is waited on.
