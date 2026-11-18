@@ -27,9 +27,10 @@ fi
 
 POLYPE_VERSION="0.6.1"
 PO_RELEASES="https://github.com/atoll-labs-io/polype/releases/download"
-# The expected SHA-256 of each published po, one line per platform: the .sha256 files bin/po-release
-# writes, pasted here by the commit that follows a release (docs/ci.md). The sum travels in this
-# reviewed file, never beside the download (ADR-0121). Empty: every install builds from sources.
+# The expected SHA-256 of each published po, one line per platform: written by
+# `bin/po-release --sums` from a release's .sha256 files, in the commit that follows it (docs/ci.md).
+# The sum travels in this reviewed file, never beside the download (ADR-0121). Empty: every install
+# builds from sources.
 PO_SUMS='
 '
 

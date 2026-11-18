@@ -129,7 +129,9 @@ test_release_builds_one_binary_per_platform() {
   while IFS= read -r line; do
     value="$(sed -E 's/^[[:space:]]*(- )?run:[[:space:]]*//; s/[[:space:]]+$//' <<< "$line")"
     case "$value" in ''|'|'*|'>'*) fail "each run: must stay on one line: $line" ;; esac
-    if [[ "$value" =~ ^(bash\ )?(\./)?bin/po-release\ ([^[:space:]]+)$ ]]; then
+    if [[ "$value" =~ ^(bash\ )?(\./)?bin/po-release\ --tag\ \"\$GITHUB_REF_NAME\"\ [[:alnum:]/._-]+$ ]]; then
+      :
+    elif [[ "$value" =~ ^(bash\ )?(\./)?bin/po-release\ ([^[:space:]]+)$ ]]; then
       dir="${BASH_REMATCH[3]}"; runs=$((runs + 1))
     elif [[ "$value" == "gh release "* ]]; then
       releases=$((releases + 1))

@@ -1,11 +1,23 @@
 #!/usr/bin/env bash
 # Builds po for the host and writes po-<version>-<platform> and its .sha256 into <out-dir>.
-# It reads no forge variable: every forge's release job calls it unchanged (ADR-0105, ADR-0121).
+# --tag <tag> <target-ref> checks that a release tag is v<version>, that HEAD is a commit of
+# <target-ref> and that no commit of <target-ref> ever held a sum of that version in bin/polype;
+# --sums <dir> <target-ref> writes the PO_SUMS block of bin/polype from the .sha256 files of the
+# release tagged v<version>, once that tag is a commit of <target-ref>. It reads no forge variable:
+# every forge's release job calls it unchanged (ADR-0105, ADR-0121).
 set -euo pipefail
 
-[ $# -eq 1 ] && [ -n "$1" ] || { echo "usage: po-release <out-dir>" >&2; exit 2; }
-out_dir="$1"
+usage() { echo "usage: po-release <out-dir> | --tag <tag> <target-ref> | --sums <dir> <target-ref>" >&2; exit 2; }
+mode=build
+case "${1-}" in
+  --tag) [ $# -eq 3 ] && [ -n "$2" ] && [ -n "$3" ] && [ "${3#-}" = "$3" ] || usage; mode=tag; arg="$2"; target_ref="$3" ;;
+  --sums) [ $# -eq 3 ] && [ -n "$2" ] && [ -n "$3" ] && [ "${3#-}" = "$3" ] || usage; mode=sums; arg="$2"; target_ref="$3" ;;
+  ''|-*) usage ;;
+  *) [ $# -eq 1 ] || usage; arg="$1" ;;
+esac
 root="$(cd "$(dirname "$0")/.." && pwd -P)"
+# Each refusal of --tag and --sums fails closed: a guard that cannot read what it compares never passes.
+refuse() { echo "po-release: $1" >&2; exit 1; }
 
 polype_version="$(sed -n 's/^POLYPE_VERSION="\(.*\)"$/\1/p' "$root/bin/polype")"
 crate_version="$(sed -n 's/^version *= *"\(.*\)"$/\1/p' "$root/po/Cargo.toml" | head -n 1)"
@@ -13,6 +25,88 @@ if [ -z "$polype_version" ] || [ "$polype_version" != "$crate_version" ]; then
   echo "po-release: po/Cargo.toml says ${crate_version:-no version}, bin/polype says ${polype_version:-no version}; bump them together" >&2
   exit 1
 fi
+
+if [ "$mode" = tag ]; then
+  if [ "$arg" != "v$polype_version" ]; then
+    echo "po-release: tag $arg is not v$polype_version, the version of bin/polype and po/Cargo.toml" >&2
+    exit 1
+  fi
+  [ "$(git -C "$root" rev-parse --is-shallow-repository 2>/dev/null)" = false ] \
+    || refuse "the checkout is shallow or not a git repository, so the history of $target_ref cannot be read"
+  git -C "$root" merge-base --is-ancestor HEAD "$target_ref" 2>/dev/null \
+    || refuse "HEAD is not a commit of $target_ref; tag a commit of $target_ref"
+  tip="$(git -C "$root" show "$target_ref:bin/polype" 2>/dev/null)" \
+    || refuse "cannot read bin/polype at $target_ref, so whether $polype_version is already published is unknown"
+  grep -qx "PO_SUMS='" <<< "$tip" \
+    || refuse "bin/polype at $target_ref holds no PO_SUMS block, so whether $polype_version is already published is unknown"
+  # --sums replaces the whole block, so sums that landed once may be gone from the tip: every
+  # commit of the history that added or removed such a line is read.
+  commits="$(git -C "$root" log --full-history --format=%H -S "  po-$polype_version-" "$target_ref" -- bin/polype)" \
+    || refuse "cannot read the history of bin/polype at $target_ref"
+  for commit in $commits; do
+    released="$(git -C "$root" show "$commit:bin/polype" 2>/dev/null)" \
+      || refuse "cannot read bin/polype at commit $commit of $target_ref"
+    # Not a pipe: under pipefail, grep -q closing it early could fail the test and pass the guard.
+    released_sums="$(awk "/^PO_SUMS='\$/ {inside=1; next} inside && /^'\$/ {exit} inside {print}" <<< "$released")"
+    if grep -qF "  po-$polype_version-" <<< "$released_sums"; then
+      refuse "PO_SUMS of bin/polype at $target_ref held the sums of $polype_version (commit $commit); rebuilding it would replace binaries every installer refuses, so publish a new version"
+    fi
+  done
+  echo "po-release: tag $arg matches version $polype_version, not yet summed at $target_ref"
+  exit 0
+fi
+
+if [ "$mode" = sums ]; then
+  tagged="$(git -C "$root" rev-parse --verify -q "refs/tags/v$polype_version^{commit}" 2>/dev/null)" \
+    || refuse "no tag v$polype_version in this checkout; fetch the tags, then run --sums again"
+  git -C "$root" merge-base --is-ancestor "$tagged" "$target_ref" 2>/dev/null \
+    || refuse "tag v$polype_version is not a commit of $target_ref; its release is not the one to sum"
+  polype="$root/bin/polype"
+  lines=""
+  shopt -s nullglob
+  files=("$arg/po-$polype_version-"*.sha256)
+  shopt -u nullglob
+  [ ${#files[@]} -gt 0 ] || { echo "po-release: no po-$polype_version-*.sha256 in $arg" >&2; exit 1; }
+  for f in "${files[@]}"; do
+    file_name="${f##*/}"
+    name="${file_name%.sha256}"
+    case "${name#"po-$polype_version-"}" in
+      linux-x86_64|linux-aarch64|macos-x86_64|macos-aarch64) ;;
+      *) echo "po-release: $f does not name a release platform" >&2; exit 1 ;;
+    esac
+    content="$(cat "$f")"
+    if [ "$(wc -l < "$f" | tr -d ' ')" != 1 ] \
+      || ! [[ "$content" =~ ^[0-9a-f]{64}\ \ (.*)$ ]] || [ "${BASH_REMATCH[1]}" != "$name" ]; then
+      echo "po-release: $f is not one line '<sha256>  $name'" >&2
+      exit 1
+    fi
+    lines+="$content"$'\n'
+  done
+  lines="$(LC_ALL=C sort -k2 <<< "${lines%$'\n'}")"
+
+  [ "$(grep -c "^PO_SUMS='\$" "$polype")" = 1 ] || { echo "po-release: $polype holds no single PO_SUMS=' line" >&2; exit 1; }
+  new="$(mktemp "$polype.XXXXXX")"
+  trap 'rm -f "$new"' EXIT
+  cp -p "$polype" "$new"
+  # Every line of the block is replaced: lay_po only reads the sums of POLYPE_VERSION.
+  SUMS="$lines" awk '
+    inside && /^'\''$/ { inside = 0 }
+    inside { next }
+    { print }
+    /^PO_SUMS='\''$/ { print ENVIRON["SUMS"]; inside = 1 }
+  ' "$polype" > "$new"
+  if cmp -s "$polype" "$new"; then
+    echo "po-release: PO_SUMS of bin/polype already holds these sums"
+    exit 0
+  fi
+  bash -n "$new" || { echo "po-release: bin/polype would no longer parse" >&2; exit 1; }
+  mv "$new" "$polype"
+  trap - EXIT
+  printf '%s\n' "$lines"
+  exit 0
+fi
+
+out_dir="$arg"
 
 # The same mapping as po_platform in bin/polype.
 case "$(uname -s)" in Linux) os=linux ;; Darwin) os=macos ;; *) os="" ;; esac

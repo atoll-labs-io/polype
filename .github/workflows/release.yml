@@ -13,7 +13,13 @@ jobs:
     env:
       GH_TOKEN: ${{ github.token }}
     steps:
-      - run: gh release create "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --verify-tag --title "$GITHUB_REF_NAME" --notes "po $GITHUB_REF_NAME"
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          # Brings origin/main, whose PO_SUMS says whether this version is already published.
+          fetch-depth: 0
+      - run: bin/po-release --tag "$GITHUB_REF_NAME" origin/main
+      # A rerun finds the release already there and keeps it.
+      - run: gh release view "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1 || gh release create "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --verify-tag --title "$GITHUB_REF_NAME" --notes "po $GITHUB_REF_NAME"
 
   po:
     needs: create
@@ -25,6 +31,10 @@ jobs:
       GH_TOKEN: ${{ github.token }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          fetch-depth: 0
+      # Rerunning only this job skips create, so the same guard runs before the build.
+      - run: bin/po-release --tag "$GITHUB_REF_NAME" origin/main
       # The one step a Forgejo runner swaps is the upload; bin/po-release stays as it is (ADR-0105).
       - run: bin/po-release dist
-      - run: gh release upload "$GITHUB_REF_NAME" dist/po-* --repo "$GITHUB_REPOSITORY"
+      - run: gh release upload "$GITHUB_REF_NAME" dist/po-* --repo "$GITHUB_REPOSITORY" --clobber
