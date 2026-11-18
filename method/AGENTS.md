@@ -42,9 +42,9 @@ A story walks these stages, none skipped, none reordered:
 
 **Design and QA, by surface.** A story **has a screen** when its `Surface` line says `screen`, or when it has no `Surface` line and its text shows a screen (ADR-0054); the design stage is for it alone. A story **goes to QA** when `QA stage` is `screens` and the story has a screen, or when `QA stage` is `surfaces` and its `Surface` line says anything but `—`; a story with no `Surface` line goes only when it has a screen. With `QA stage: —`, no story goes to QA. With `QA stage` missing, a story that has a screen or a `Surface` other than `—` cannot be routed and stops, naming the setting; any other story carries on, since no value would send it to QA. Every command, agent and template that routes a story uses these two terms and does not restate the rule (ADR-0058).
 
-The short track, `/po-flow`, does research and plan in one context for a story that `Story track` and `Flow threshold` allow, then runs the same execute, review and ship; every gate stays in place.
+The short track is the `track` that `po next` gives the planner when `Story track` and `Flow threshold` allow it: research and plan in one file, then the same execute, review and ship; every gate stays in place.
 
-`/po-orchestrator` walks one story through its cycle, choosing the track and adding design when the story has a screen; `/po-status` reports the framing and where each story is; `/po-help` shows this map. Launch these commands rather than briefing an agent by hand: the command files hold the fix mode, the subagent contracts and the gates, and a hand-written brief silently drops them.
+`/po-drive <id>` walks one story through its cycle; `/po-status` reports the framing and where each story is; `/po-help` shows this map. Launch these commands rather than briefing an agent by hand: the command files hold the fix mode, the subagent contracts and the gates, and a hand-written brief silently drops them.
 
 Stories are written in `docs/stories.md`, following `templates/stories.md`.
 

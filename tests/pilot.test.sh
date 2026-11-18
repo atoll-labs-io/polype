@@ -1,23 +1,8 @@
 #!/usr/bin/env bash
-# s08 — orchestrator, status, help, ADR template.
+# s08 — status, help, ADR template.
 
-ORCH="$METHOD/commands/po-orchestrator.md"
 STATUS="$METHOD/commands/po-status.md"
 HELP="$METHOD/commands/po-help.md"
-
-test_orchestrator_has_two_real_checkpoints() {
-  require_file "$ORCH"
-  needs_tool "$ORCH" AskUserQuestion
-  local checkpoints; checkpoints=$(grep -c '^## Stage .* — checkpoint$' "$ORCH" || true)
-  [ "$checkpoints" -eq 2 ] || fail "expected 2 checkpoint stages, found $checkpoints"
-  contains "$ORCH" 'a question in your text output is not a checkpoint'
-}
-
-test_orchestrator_never_codes() {
-  lacks_tool "$ORCH" Edit
-  contains "$ORCH" 'Delegate to `implementer` the way `/po-execute` does'
-  contains "$ORCH" 'Delegate to `reviewer` the way `/po-review` does'
-}
 
 test_status_derives_from_files() {
   require_file "$STATUS"

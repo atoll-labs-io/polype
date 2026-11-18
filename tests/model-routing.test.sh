@@ -42,11 +42,8 @@ test_deciders_always_run_on_the_strong_model() {
   dispatches_on_strong "$CMDS/po-review.md" reviewer
   dispatches_on_strong "$CMDS/po-qa.md" qa
   dispatches_on_strong "$CMDS/po-stories-review.md" stories-reviewer
-  dispatches_on_strong "$CMDS/po-flow.md" reviewer
   local role
   for role in planner designer qa reviewer; do dispatches_on_strong "$CMDS/po-drive.md" "$role"; done
-  grep -F 'the `qa` subagent' "$CMDS/po-orchestrator.md" | grep -qF '`Model strong`' || fail "orchestrator QA stage lacks Model strong"
-  grep -F 'Delegate to `reviewer`' "$CMDS/po-orchestrator.md" | grep -qF '`Model strong`' || fail "orchestrator review stage lacks Model strong"
   local f
   for f in po-review po-qa po-stories-review; do
     contains "$CMDS/$f.md" '`Model strong` missing → stop and name it.'
@@ -54,7 +51,7 @@ test_deciders_always_run_on_the_strong_model() {
 }
 
 test_only_the_implementer_adapts() {
-  local exec="$CMDS/po-execute.md" f
+  local exec="$CMDS/po-execute.md"
   contains "$exec" 'The implementer gets `Model light` when the story'"'"'s complexity is at most `Light up to`, `Model strong` above it.'
   contains "$exec" 'the first line of `## Complexity` in `docs/research/<id>.md`'
   contains "$exec" 'No research file → the `Complexité`/`Complexity` of the story in `docs/stories.md`'
@@ -62,9 +59,6 @@ test_only_the_implementer_adapts() {
   contains "$exec" 'A model setting at `—` passes no `model` at all'
   contains "$exec" 'Never retry with another model or with none'
   contains "$exec" '`subagent_type: implementer`, `model` as `## Model` settles'
-  for f in po-orchestrator po-flow; do
-    contains "$CMDS/$f.md" "run on the session's model, which no command can choose (ADR-0036)"
-  done
 }
 
 test_drive_reports_the_model_of_each_lane() {
@@ -105,13 +99,7 @@ test_model_refusal_stops_everywhere() {
       || fail "$f ## Delegation does not stop on a refused model name"
   done
   contains "$CMDS/po-drive.md" 'If the Agent tool rejects a model name, that lane stops, named in the report with the setting and its value'
-  for f in po-flow po-orchestrator; do
-    grep -E -- '`subagent_type: implementer`|Delegate to `implementer`' "$CMDS/$f.md" \
-      | grep -qF "\`/po-execute\`'s \`## Model\`" || fail "$f does not defer the implementer's model to /po-execute's ## Model"
-  done
-  contains "$CMDS/po-flow.md" 'delegate as `/po-review` does'
-  contains "$CMDS/po-orchestrator.md" 'Delegate to `reviewer` the way `/po-review` does'
-  for f in po-drive po-flow po-orchestrator; do implementer_adapts_in "$CMDS/$f.md"; done
+  implementer_adapts_in "$CMDS/po-drive.md"
   grep -F 'fix-run sentence' "$CMDS/po-drive.md" \
     | grep -qF '`Model light` up to `Light up to`, `Model strong` above' || fail "drive fix runs drop the model rule"
 }

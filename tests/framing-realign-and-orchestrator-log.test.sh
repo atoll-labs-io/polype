@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
-# s121 — every pr landing realigns the root; the orchestrator logs every kind of lone decision.
+# s121 — every pr landing realigns the root.
 
 SETUP="$METHOD/commands/po-setup.md"
-ORCH="$METHOD/commands/po-orchestrator.md"
 
 section_of() { awk -v h="## $2" '$0 == h {on=1; next} /^## / {on=0} on' "$1"; }
 
@@ -36,16 +35,4 @@ test_every_landing_realigns_the_root() {
   if grep -qF -- 'the next landing of any framing command realigns the root as **Base** says' <<< "$land"; then
     fail "the human bullet still promises a realignment the command does not make"
   fi
-}
-
-test_orchestrator_logs_every_lone_decision() {
-  require_file "$ORCH"
-  local l; l=$(section_of "$ORCH" 'The decisions log')
-  [ -n "$l" ] || fail "po-orchestrator.md has no decisions log section"
-  local s
-  for s in 'the track it chose at Stage 1' 'each implementation detail it settled without the person' \
-    'each answer it gave without asking' 'writes its rows at that moment' 'a `pr` ship never inspects the root' \
-    '`Merge mode: local`' '"Not now"' 'staged in the root'; do
-    holds "$l" "$s" 'the decisions log'
-  done
 }

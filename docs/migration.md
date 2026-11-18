@@ -136,7 +136,7 @@ qu'aucun worktree de `/drive` n'est ouvert et que l'arbre est propre : `polype i
 (ou `polype install <projet>` pour un dépôt partagé), puis `/po-setup` pour écrire
 `AGENTS.local.md`, puis le cadrage — `/po-prd` ou `/po-brief` — `/po-stories`,
 `/po-stories-review`, `/po-architect`, et `/po-design-system` si le produit a des écrans. C'est
-seulement là que `/po-orchestrator` ou `/po-drive` ont de quoi travailler.
+seulement là que `/po-drive` a de quoi travailler.
 
 ## 4. Ce qui ne bouge pas
 

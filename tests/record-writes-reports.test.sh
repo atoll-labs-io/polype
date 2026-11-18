@@ -19,7 +19,7 @@ test_composed_report_is_not_checked() {
 # Word counts before s167 (LC_ALL=C wc -w): each command that hands its recording to po loses words.
 test_commands_lose_words() {
   local f limit words
-  for f in po-review:1244 po-qa:724 po-orchestrator:1908 po-flow:1572 po-drive:5470; do
+  for f in po-review:1244 po-qa:724 po-drive:5470; do
     limit="${f#*:}"; words="$(LC_ALL=C wc -w < "$METHOD/commands/${f%%:*}.md")"
     [ "$words" -lt "$limit" ] || fail "${f%%:*}.md holds $words words, not fewer than $limit"
   done

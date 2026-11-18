@@ -7,9 +7,7 @@ PLAN_FLOW="$METHOD/templates/plan-flow.md"
 PLANNER="$METHOD/agents/planner.md"
 IMPLEMENTER="$METHOD/agents/implementer.md"
 PO_PLAN="$METHOD/commands/po-plan.md"
-PO_FLOW="$METHOD/commands/po-flow.md"
 PO_EXECUTE="$METHOD/commands/po-execute.md"
-PO_ORCH="$METHOD/commands/po-orchestrator.md"
 RECORD="$METHOD/templates/verification-record.md"
 DOCTRINE="$METHOD/skills/testing-doctrine/SKILL.md"
 ADR="$ROOT/docs/decisions/ADR-0098-le-planner-ecrit-l-oracle-d-acceptation.md"
@@ -62,21 +60,16 @@ test_planner_writes_oracle_files() {
   section="$(section_of "$PO_PLAN" 'Writing the plan')"
   holds "$section" 'no other test file' "po-plan ## Writing the plan"
   holds "$section" '## Acceptance tests' "po-plan ## Writing the plan"
-  section="$(section_of "$PO_FLOW" 'The plan')"
-  holds "$section" 'no other test file' "po-flow ## The plan"
-  holds "$section" '## Acceptance tests' "po-flow ## The plan"
 }
 
 test_oracle_files_are_expected_work() {
-  local exec_line orch_line
+  local exec_line
   contains "$METHOD/AGENTS.md" "$NAMED_FILES"
   grep -F -- 'status --porcelain' "$PLANNER" | grep -qF -- "$NAMED_FILES" \
     || fail "the planner's state check does not accept the oracle files"
   grep -F -- 'status --porcelain' "$IMPLEMENTER" | grep -qF -- "$NAMED_FILES" \
     || fail "the implementer does not expect the oracle files"
   exec_line="$(grep -m1 -F -- '> This story has an oracle:' "$PO_EXECUTE")" || fail "po-execute lacks the oracle sentence"
-  orch_line="$(grep -m1 -F -- '> This story has an oracle:' "$PO_ORCH")" || fail "po-orchestrator lacks the oracle sentence"
-  [ "$exec_line" = "$orch_line" ] || fail "the oracle sentence differs between po-execute and po-orchestrator"
   holds "$exec_line" 'is expected uncommitted work' "the oracle sentence"
   holds "$exec_line" 'commit them with the story' "the oracle sentence"
 }

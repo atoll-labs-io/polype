@@ -1,6 +1,6 @@
 ---
 description: Drives the fleet — advances every ready story in parallel, one lane per story, and ships the finished ones one at a time
-argument-hint: [status]
+argument-hint: [status | <id>]
 allowed-tools:
   - Read
   - Glob
@@ -13,7 +13,7 @@ allowed-tools:
 
 Reads settings: `Target branch`, `Worktree root`, `Install`, `Plan validation`, `Max attempts`, `Merge mode`, `Ship confirmation`, `ADR directory`, `Tracker`, `Model strong`, `Model light`, `Light up to`, `Issue tracker`
 
-Argument: $ARGUMENTS — `status` reports the fleet and changes nothing; empty runs a wave.
+Argument: $ARGUMENTS — `status` reports the fleet and changes nothing; empty runs a wave; anything else names one story.
 
 You drive the fleet: `po next` says what each lane does next, and you do it. You have neither Write nor Edit, so you write no code and decide no verdict: each subagent works under its own file's contract (ADR-0016), and Bash only runs `po` and `gh pr view`, prepares worktrees, writes `validated: yes` and the decisions log, and records what a subagent handed you; it never edits a source file.
 
@@ -23,10 +23,11 @@ You drive the fleet: `po next` says what each lane does next, and you do it. You
 - `docs/stories.md` missing → stop and point to `/po-stories`; never invent a story to fill a lane.
 - One of the settings above missing → stop and name it, never guessing.
 - `po` missing, or `po next` exiting 2 → stop, name `polype install`, and route nothing yourself.
+- An argument other than `status` is matched against `docs/stories.md` as `AGENTS.md` (`## Ids and branches`) says; zero or several matches → list them and stop.
 - `Tracker: github` → say that publishing to GitHub is not handled yet, and carry on.
 
 ## The next action
-Run `"${CLAUDE_CONFIG_DIR:-$HOME/.claude}/polype/po" next --remote` from where you were started. It reads files and git, never your memory, and prints `actions`, `ready`, `held` and `warnings`. You do each entry of `actions` and choose no route of your own. Run it again once a stage's answers are recorded; the wave ends when every entry is `wait` or `ask`, those of `ready` included.
+Run `"${CLAUDE_CONFIG_DIR:-$HOME/.claude}/polype/po" next --remote`. It prints `actions`, `ready`, `held` and `warnings`. You do each entry of `actions` and choose no route of your own. Run it again once a stage's answers are recorded; the wave ends when every entry is `wait` or `ask`, those of `ready` included. With an id, keep only that story's entries: its `actions` entry, or its `held` reason and `ref`, reported with nothing launched; no entry at all (shipped, or absent from `po next`) → say so and stop.
 
 | Action | What you do |
 | --- | --- |
@@ -42,7 +43,7 @@ Run `"${CLAUDE_CONFIG_DIR:-$HOME/.claude}/polype/po" next --remote` from where y
 
 One rule stays yours, since `po` cannot see it: a failed ship sends its story back to a fix run under the same `Max attempts` cap.
 
-**A stage already recorded is resumed, never replayed.** No research, plan, record or review is overwritten to give a lane a clean slate.
+**A stage already recorded is resumed, never replayed.**
 
 ## A wave
 
@@ -53,7 +54,7 @@ You prepare each lane's worktree yourself, before any subagent starts, as `/po-r
 
 A worktree `po` reports in an `orphan-worktree` warning is named in the report with the path and the branch actually found, drops that lane from the wave, and waits for a human: you run no `git worktree add --force`, `worktree remove`, `worktree prune`, `switch`, `checkout` or `stash` to make it fit.
 
-ADR numbers are a shared resource no `Owns` line can divide, so you assign them before the wave leaves — read the highest `ADR-NNNN` on `Target branch`, then hand each lane of the wave its own number, the following ones in sequence, in the order of `docs/stories.md`. A lane that needs no ADR leaves its number unused and the gap stays a gap: a number is never handed to a second lane of the same wave. A lane that needs more numbers than it was given says so in its answer and writes none beyond its reservation.
+ADR numbers are a shared resource no `Owns` line can divide, so you assign them before the wave leaves — read the highest `ADR-NNNN` on `Target branch`, then hand each lane of the wave its own number, the following ones in sequence, in the order of `docs/stories.md`. A lane that needs no ADR leaves its number unused and the gap stays a gap: a number is never handed to a second lane of the same wave.
 
 ### Dispatching
 The lanes of a wave must **overlap in time**: every subagent of a stage is started before any of them is waited on. No dispatch shape is imposed: a subagent starts in the background and hands the call back at once, so counting messages proves nothing. Each lane's **activity window**, which `## Report` states, shows the overlap. Never two calls for the same story at once. This holds stage by stage: every planner, then every designer, then every implementer, then every qa, then every reviewer — a stage is started whole. A lane whose subagent leaves only once the previous lane has answered overlaps nothing, and `Parallel` buys nothing there.
@@ -73,7 +74,7 @@ The plans a wave produced are approved together, per `Plan validation`.
 
 Under `autonomous`, nothing is asked: each plan comes back from its lane already holding `validated: yes`, checked against its own acceptance criteria by the planner that wrote it.
 
-Under `human`, the whole wave goes into **one AskUserQuestion**, never one per story: a question per story would serialise the very lanes you started in parallel. The question shows, for each plan, the story id, its tasks and its test strategy, and the path `docs/plans/<id>.md`, so any plan can be opened and read whole before answering. Three answers:
+Under `human`, the whole wave goes into **one AskUserQuestion**, never one per story: a question per story would serialise the very lanes you started in parallel. The question shows, for each plan, the story id, its tasks and its test strategy, and the path `docs/plans/<id>.md`. Three answers:
 
 | Answer | What it does |
 | --- | --- |
@@ -100,7 +101,7 @@ Each ship is `/po-ship` applied as written: `po-gate ship-allowed <id>` first �
 Under an effective `human` with `Merge mode: pr`, opening the pull request ends that ship but is not the landing: you may open the next one at once. `po-gate ship-allowed <id>` is required before any merge, whatever the value of `Ship confirmation`.
 
 ## The decisions log
-Once the ships are done, after the wave's last ship, record what the wave decided without the person (ADR-0077): append through Bash, to `docs/decisions-log.md` in the repository root, one row per decision — each story launched and each one held back, with why; each fix run started; each re-review of a late commit; each plan approved without a human; each lane handed to a human; each implementation detail you settled without the person; each answer you gave without asking. This list follows every kind of lone decision that `AGENTS.md` (`## What goes to the person`) names. The file is created from `templates/decisions-log.md` when it is absent. Rows are dated `YYYY-MM-DD` and carry their reason, a security finding as its decision id, never its text; none already there is rewritten.
+Once the ships are done, after the wave's last ship, record what the wave decided without the person (ADR-0077): append through Bash, to `docs/decisions-log.md` in the repository root, one row per decision — each story launched and each one held back, with why; each fix run started; each re-review of a late commit; each plan approved without a human; each track a planner raised to `full`; each lane handed to a human; each implementation detail you settled without the person; each answer you gave without asking. The file is created from `templates/decisions-log.md` when it is absent. Rows are dated `YYYY-MM-DD` and carry their reason, a security finding as its decision id, never its text; none already there is rewritten.
 
 Land it as `## Landing the framing` of `/po-setup` says, slug `decisions-log`, path `docs/decisions-log.md`, message `docs: decisions log`. A stop of that landing ends the landing, never the wave's report; a log left uncommitted is landed by the next wave together with its own rows. Under `Merge mode: local` with an effective `human`, a "Not now" leaves `docs/decisions-log.md` staged in the root, so the next local ship stops on it until the log is landed.
 

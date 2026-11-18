@@ -14,7 +14,7 @@ Reads settings: `Worktree root`, `Test budget`, `Full suite`, `Model strong`, `M
 
 Story: $ARGUMENTS
 
-This command has no Write or Edit tool; its one shell command, `po next`, only reads, so the `implementer` subagent writes the code. Do not start without an approved plan, do not work outside the story's worktree, and never describe work the implementer did not report.
+This command has no Write or Edit tool; its one shell command, `po next`, only reads, so the `implementer` subagent writes the code.
 
 No Agent tool available → say so and stop.
 
@@ -33,7 +33,7 @@ No Agent tool available → say so and stop.
 | `plan`, `validate-plan` | stop with the reason; next: `/po-plan <id>` |
 | `wait` | stop with the reason; run again once it clears |
 | `ask` | stop; a person decides, given the reason |
-7. Glob `docs/designs/<id>/*` in the worktree: any match means the story **has a design**, even when no orchestrator runs it.
+7. Glob `docs/designs/<id>/*` in the worktree: any match means the story **has a design**.
 8. `Model strong`, `Model light` and `Light up to` are set in `AGENTS.local.md`; a model setting missing → stop and name it.
 9. Read the `## Acceptance tests` section of `docs/plans/<id>.md`: when it names at least one file, the story **has an oracle**.
 
@@ -57,6 +57,10 @@ When the story has a design, append:
 
 > This story has a design: docs/designs/<id>/ is expected uncommitted work, like the research and the plan. Read design.md before the screen tasks, build the screen it settles, and commit the folder with the story.
 
+When the plan's frontmatter holds `track: flow`, append:
+
+> This story is on the short track: there is no docs/research/<id>.md. The `## Verified facts` section of the plan takes its place.
+
 When the story has an oracle, append:
 
 > This story has an oracle: each file that `## Acceptance tests` of docs/plans/<id>.md names is expected uncommitted work, like the research and the plan. Leave its tests as the planner wrote them, change one only through `## Oracle changes` of docs/verif/<id>.md, and commit them with the story.
@@ -64,6 +68,6 @@ When the story has an oracle, append:
 Wait for the subagent to finish.
 
 ## Report
-From the subagent's answer: tasks completed, files changed, tests added or removed, the contents of `docs/verif/<id>.md` (commands, exit codes, tree), deviations from the plan and blockers, and the model passed to the implementer (or `session` when `—` passed none). A summary, not a transcript.
+From the subagent's answer: tasks completed, files changed, tests added or removed, the contents of `docs/verif/<id>.md` (commands, exit codes, tree), deviations from the plan and blockers, and the model passed to the implementer (or `session` when `—` passed none).
 
 Finish with: "Implementation finished. Next: /po-review <id>"

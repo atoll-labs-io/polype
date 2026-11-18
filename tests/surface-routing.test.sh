@@ -3,9 +3,7 @@
 
 RULES="$METHOD/AGENTS.md"
 DRIVE="$METHOD/commands/po-drive.md"
-ORCH="$METHOD/commands/po-orchestrator.md"
 STATUS="$METHOD/commands/po-status.md"
-FLOW="$METHOD/commands/po-flow.md"
 HELP="$METHOD/commands/po-help.md"
 SKILL="$METHOD/skills/review-antihallu/SKILL.md"
 REVIEWER="$METHOD/agents/reviewer.md"
@@ -21,9 +19,8 @@ lacks() { ! grep -qF -- "$2" "$1" || fail "${1#"$ROOT"/} still says: $2"; }
 test_design_follows_a_screen_surface() {
   require_file "$RULES"
   contains "$RULES" 'A story **has a screen** when its `Surface` line says `screen`, or when it has no `Surface` line and its text shows a screen'
-  contains "$ORCH" 'A story with a screen (`AGENTS.md`, Law 1) also needs'
   local f
-  for f in "$DRIVE" "$ORCH" "$STATUS" "$FLOW"; do lacks "$f" 'text shows a'; done
+  for f in "$DRIVE" "$STATUS"; do lacks "$f" 'text shows a'; done
 }
 
 test_qa_follows_the_qa_stage() {
@@ -31,18 +28,11 @@ test_qa_follows_the_qa_stage() {
   contains "$RULES" 'when `QA stage` is `surfaces` and its `Surface` line says anything but `—`'
   contains "$RULES" 'a story with no `Surface` line goes only when it has a screen'
   local f
-  for f in "$DRIVE" "$ORCH" "$STATUS"; do
+  for f in "$DRIVE" "$STATUS"; do
     lacks "$f" '`QA stage` is `screens`'
     lacks "$f" '`QA stage: screens`'
     lacks "$f" 'screen story'
   done
-}
-
-test_flow_escalates_a_surface_with_qa() {
-  settings_read_by "$FLOW" | grep -qx 'QA stage' || fail "po-flow.md does not read QA stage"
-  local signals; signals=$(section_of "$FLOW" 'Escalation signals')
-  holds "$signals" 'A story that goes to QA (`AGENTS.md`, Law 1) escalates the same way' 'the escalation signals'
-  holds "$signals" '`/po-flow` runs no QA' 'the escalation signals'
 }
 
 test_review_requires_qa_for_a_surface() {
