@@ -5,10 +5,7 @@ SHIP="$METHOD/commands/po-ship.md"
 
 test_ship_opens_a_pr_and_fast_forwards() {
   require_file "$SHIP"
-  contains "$SHIP" 'git merge-tree --write-tree <base> story/<id>'
-  contains "$SHIP" 'git commit-tree <tree> -p <base> -m "<id>: <story title>"'
   contains "$SHIP" 'gh pr merge <url> --rebase --match-head-commit <sha>'
-  contains "$SHIP" 'git merge --ff-only <sha>'
   contains "$SHIP" 'Pull request ready: <url>. Land it with Rebase and merge'
   ! grep -qF -- '--squash' "$SHIP" || fail "po-ship.md still uses --squash"
 }
@@ -67,7 +64,6 @@ test_ship_gate_unchanged() {
     [[ "${line%%gh pr merge*}" == *'po-gate ship-allowed <id>'* ]] \
       || fail "Step 2 must run po-gate ship-allowed again before gh pr merge"
   fi
-  contains "$SHIP" '`story/<id>` is never rewritten'
   adr=$(ls "$ROOT"/docs/decisions/ADR-0015-*.md 2>/dev/null | head -n 1)
   [ -n "$adr" ] || fail "missing ADR-0015"
   frontmatter "$adr" | grep -qx 'status: superseded' || fail "ADR-0015 is not superseded"

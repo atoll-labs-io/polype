@@ -59,7 +59,6 @@ test_other_tree_lines_read_the_same_way() {
   git add -A && git commit -qm qa2
   ! passes qa-current s01-a || fail "a stacked QA report used the first tree"
 
-  contains "$METHOD/commands/po-ship.md" 'between that verdict and the verdict line before it'
   source <(sed -n '/^grade() {/,/^}/p' "$ROOT/bin/po-eval")
   printf 'Max severity: critical\nShip allowed: yes\n- Ship allowed: no\n' > "$SCRATCH/r.md"
   [ "$(grade "$SCRATCH/r.md")" = "critical/no" ] || fail "po-eval ignored a bulleted last verdict"

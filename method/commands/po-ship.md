@@ -1,5 +1,5 @@
 ---
-description: Takes a story with a passing review to Target branch — verdict gate, the one run of the expensive checks, one commit landed through a pull request, then cleanup once the merge is proven
+description: Lands a reviewed story on Target branch as one commit through a pull request, then cleans up once the merge is proven
 argument-hint: <story id or name>
 allowed-tools:
   - Read
@@ -8,18 +8,18 @@ allowed-tools:
 ---
 # /po-ship
 
-Reads settings: `Merge mode`, `Target branch`, `Ship confirmation`, `Worktree root`, `Full suite`, `E2E stage`, `E2E scope`, `E2E browsers`, `Build stage`, `Issue tracker`, `Forge checks`
+Reads settings: `Merge mode`, `Target branch`, `Ship confirmation`, `Worktree root`, `E2E stage`, `Build stage`, `Issue tracker`, `Forge checks`
 
 Story: $ARGUMENTS
 
-Match the id in `docs/stories.md`. The worktree `<Worktree root><id>` must exist on `story/<id>` (`git -C <path> rev-parse --abbrev-ref HEAD`); otherwise stop without touching any branch. Run commands with `cd <path> &&` or `git -C <path>` unless a step says to use the repository root.
+Match the id in `docs/stories.md`. The worktree `<Worktree root><id>` must be on `story/<id>`, or stop without touching any branch. Run commands with `cd <path> &&` or `git -C <path>` unless a step names the repository root.
 
-## Step 0 — The verdict, before anything else
-`po-gate ship-allowed <id>` from the worktree. Without the hook: the **last** line starting with `Ship allowed:` in `docs/reviews/<id>.md` (a leading `- ` or `* ` allowed) must read `Ship allowed: yes`, and the hash on the last `Reviewed tree:` line between that verdict and the verdict line before it (same leading `- ` or `* `; a full 40-hex hash alone, or followed by a blank and a remark) must pass `git diff --quiet <Reviewed tree> HEAD -- . ':(exclude)docs'` run from the worktree. The last `Review status:` line between that verdict and the previous one, and the last `Review status:` line of the file, must both read `Review status: complete`. No review, no usable `Reviewed tree:`, a diff that fails, or any other answer → stop with "Cannot ship <id>: the review is missing or blocks it. Run /po-review <id>."
+## Step 0 — The verdict first
+`po-gate ship-allowed <id>` from the worktree; a refusal or no hook → stop with "Cannot ship <id>: the review is missing or blocks it. Run /po-review <id>."
 
-Then read the settings above and the project commands from `AGENTS.local.md`; stop if the file or a setting is missing, except `Forge checks`: a missing line ships as before, and the finish names it.
+Then read the settings above; stop if one is missing, except `Forge checks`, whose absence the finish names.
 
-**Coming back after a pull request was merged by hand?** With `Merge mode: pr`, if `gh pr view story/<id> --json state --jq .state` already prints `MERGED`, go straight to cleanup.
+**After a hand merge**, with `Merge mode: pr`: if `gh pr view story/<id> --json state --jq .state` already prints `MERGED`, go straight to cleanup.
 
 ## The forge's review rule
 Read at every ship, after Step 0 and before any check runs. It settles this ship's **effective** `Ship confirmation`. It never opens, skips or replaces `po-gate ship-allowed <id>`.
@@ -30,39 +30,31 @@ From the worktree, run `"${CLAUDE_CONFIG_DIR:-$HOME/.claude}/polype/po" ship for
 
 **The ship does not wait for that draft**: Step 2 acts on the effective value.
 
-## Step 1 — The expensive checks, once
-Commit `docs/reviews/<id>.md` on `story/<id>` if it is not committed yet, so the story carries its review. Then, using the project commands verbatim:
-- **Unit suite** — with `Full suite: execute-end` the implementer already ran it, and a passing `po-gate verif-current <id>` is the proof; a failing proof means `<Test>` runs now. With `ship` or `both`, `<Test>` always runs now.
-- **End to end** — when `E2E stage` is `ship`, this is the single end-to-end run of the whole cycle: `<E2E>`, limited to `E2E scope`, across every browser the project configures.
-- **Build** — when `Build stage` is `ship`, `<Build>` runs. When it is `ship-if-route`, `<Build>` runs only for a diff that touches routing, a manifest or file-based routes; for any other diff, write that the build was skipped and why.
-- **`ci`** (only meaningful with `Merge mode: pr`) — do not run the check here; wait for `gh pr checks` to be green on the pull request.
+## Step 1 — Checks once, then the landing commit
+From the worktree, `"${CLAUDE_CONFIG_DIR:-$HOME/.claude}/polype/po" ship land <id>` runs the gate, the remote check, a conflict probe and the checks once, commits the review and record rows on `story/<id>`, and builds the landing commit beside it (ADR-0081).
+- **Routes** — under `Build stage: ship-if-route`: `--routes yes` when `git diff --name-only <Target branch>...story/<id>` touches routing, a manifest or file-based routes, else `--routes no`, and the finish says why.
+- **`--land`** — only under `Merge mode: local` with an effective `automatic`; `po` refuses it otherwise.
+- **`ci`** — under `Merge mode: pr`, a `ci` stage waits for `gh pr checks` on the pull request.
 
-A command set to `—` is reported as absent, never replaced. **One failure and the ship stops**: the story goes back to `/po-execute <id>` as a fix run.
+`checks`, `sha`, `tree`, `base` go to the finish; `already_landed` → Step 3. `gate-refused` → Step 0's line; `check-failed` → **One failure and the ship stops**, `/po-execute <id>` as a fix run; `conflict` → a human, with `paths`; `remote-check`, `root-not-clean` or any other refusal → stop, quoting its `message`.
 
-## Step 2 — Land as one commit, through a pull request
+## Step 2 — Land as one commit
 Message and title: `<id>: <story title>`.
 
-`po-gate ship-allowed <id>` is required before any merge, whatever the value of `Ship confirmation`; nothing in `## The forge's review rule` opens or skips it. Below, `Ship confirmation` is always the effective value that section settled.
+`po-gate ship-allowed <id>` is required before any merge, whatever the value of `Ship confirmation`. Below, `Ship confirmation` is always the effective value that section settled.
 
-**Remote check.** `Merge mode: pr` with no `origin` remote → stop: a repository without a remote uses `local`. `Merge mode: local` with a remote → stop with "`Merge mode: local` is only for a repository without a remote (ADR-0080); set it to `pr`."
+**Remote check** (Step 1): `pr` needs `origin`; `Merge mode: local` is only for a repository without a remote.
 
-**Base.** In pr mode, `git fetch origin`, then `<base>` is `origin/<Target branch>`. In local mode, `<base>` is `<Target branch>`.
-
-**Landing commit (ADR-0081)**, built beside the branch, from the worktree:
-- `git merge-tree --write-tree <base> story/<id>` prints `<tree>`. A non-zero exit means a conflict: stop the ship and hand it to a human, listing the conflicting paths.
-- `git commit-tree <tree> -p <base> -m "<id>: <story title>"` prints `<sha>`, one commit on top of `<base>`.
-- `story/<id>` is never rewritten: its tree stays the reviewed one, which `po-gate ship-allowed` and the resume of `/po-drive` keep reading.
-
-**`Merge mode: pr`**
-- Push the landing commit alone to the story branch on the remote: `git push --force-with-lease=story/<id> origin <sha>:refs/heads/story/<id>`. When `origin/story/<id>` does not exist yet, the push creates it. Skip the push when the head of `origin/story/<id>` has `<base>` as its only parent, `<tree>` as its tree and `<id>: <story title>` as its message (`git log -1 --format=%s origin/story/<id>`); a head differing on any of the three is replaced by the push. When the push is skipped, `<sha>` becomes that head: `git rev-parse origin/story/<id>`, its full SHA, never the commit printed on this run, whose committer date differs. The only other branch this command sends is `framing/ship-confirmation`.
-- A pull request for `story/<id>` already open → reuse it; none → open one to `Target branch`, titled `<id>: <story title>`, with what changed, why, how to test, and the review verdict (max severity, a findings summary without any finding Step 3 holds, and any `Security findings:` line as written).
-- `Ship confirmation: human`, the effective value → stop here. The pull request is the human's decision point: "Pull request ready: <url>. Land it with Rebase and merge — one commit, no merge commit — then run /po-ship <id> again for cleanup." When `Target branch` has moved before that, a later run rebuilds the landing commit on the new base and pushes it again; it never opens a second pull request.
-- `automatic`, the effective value → wait for the checks below, run `po-gate ship-allowed <id>` once more, then, `<sha>` being the pushed head when the push was skipped, `gh pr merge <url> --rebase --match-head-commit <sha>`, then cleanup.
-- **The checks**, under `automatic` only. `Forge checks: required` → every 30 seconds, for at most 30 minutes, read `gh pr view <url> --json headRefOid` and, once it equals `<sha>`, `gh pr checks <url> --json name,bucket,link`, deciding on the JSON, never the exit code. At least one check and every bucket `pass` or `skipping` → go on. A `fail` or `cancel` bucket, no complete set after 30 minutes, or a forge `gh` cannot read (not GitHub, `gh` missing or logged out) → stop: the pull request stays open, nothing is merged, no fix run starts, and the finish names to the person each failed check with its link, or says none arrived. `Forge checks: —` or no line → wait for `ci` to be green when the project declares it.
+**`Merge mode: pr`**, `<sha>`, `<tree>`, `<base>` from Step 1
+- Push the landing commit alone: `git push --force-with-lease=story/<id> origin <sha>:refs/heads/story/<id>`. When `origin/story/<id>` does not exist yet, the push creates it. Skip the push when the head of `origin/story/<id>` has `<base>` as its only parent, `<tree>` as its tree and `<id>: <story title>` as its message (`git log -1 --format=%s origin/story/<id>`). When the push is skipped, `<sha>` becomes that head: `git rev-parse origin/story/<id>`, never this run's commit. The only other branch this command sends is `framing/ship-confirmation`.
+- A pull request for `story/<id>` already open → reuse it; none → open one to `Target branch`, titled `<id>: <story title>`, with what changed, why, how to test, and the review verdict (max severity, a findings summary minus any finding Step 3 holds, any `Security findings:` line as written).
+- `Ship confirmation: human`, the effective value → stop here: "Pull request ready: <url>. Land it with Rebase and merge — one commit, no merge commit — then run /po-ship <id> again for cleanup." If `Target branch` moves meanwhile, a later run rebuilds and pushes the landing commit, never opening a second pull request.
+- `automatic`, the effective value → wait for the checks below, run `po-gate ship-allowed <id>` once more, then `gh pr merge <url> --rebase --match-head-commit <sha>`, then cleanup.
+- **The checks**, under `automatic` only. `Forge checks: required` → every 30 seconds, for at most 30 minutes, read `gh pr view <url> --json headRefOid` and, once it equals `<sha>`, `gh pr checks <url> --json name,bucket,link`, deciding on the JSON, never the exit code. At least one check and every bucket `pass` or `skipping` → go on. A `fail` or `cancel` bucket, no complete set after 30 minutes, or a forge `gh` cannot read (not GitHub, `gh` missing or logged out) → stop, merging nothing and starting no fix run; the finish names each failed check with its link, or says none arrived. `Forge checks: —` or no line → wait for `ci` to be green when the project declares it.
 
 **`Merge mode: local`**
-- `Ship confirmation: human`, the effective value → AskUserQuestion "Land <id> on <Target branch> as one commit?", answers Merge / Not now. Continue on Merge only.
-- In the repository root: it must be on `Target branch` with no staged or modified tracked file (`git status --porcelain --untracked-files=no` prints nothing); otherwise stop and describe what you found. `git merge --ff-only <sha>`. Nothing is pushed.
+- `Ship confirmation: human`, the effective value → Step 1 without `--land`, then AskUserQuestion "Land <id> on <Target branch> as one commit?", Merge / Not now. Merge → `po ship land <id> --sha <sha>`; `stale-landing` → Step 1 again, then ask.
+- `automatic`, the effective value → Step 1's `--land` fast-forwarded the root. Nothing is pushed.
 
 ## Step 3 — Cleanup, only after proof
 1. Proof. `pr`: `gh pr view story/<id> --json state --jq .state` prints exactly `MERGED` — open, closed or "merging" is not proof, and cleanup does not happen. `local`: the landing commit is an ancestor of `Target branch` (`git merge-base --is-ancestor <sha> <Target branch>`). Do not test the story branch's own commits: the landing commit is built beside them, so they are never ancestors.

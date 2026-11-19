@@ -34,7 +34,6 @@ test_ship_gate_needs_review_status() {
   ! ok || fail "a blocked status written after the verdict was ignored"
 
   contains "$METHOD/AGENTS.md" 'without `Review status: complete`'
-  contains "$METHOD/commands/po-ship.md" 'must both read `Review status: complete`'
 }
 
 test_session_flags_a_technical_choice() {
