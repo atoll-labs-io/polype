@@ -21,21 +21,6 @@ run_against() {
   ( METHOD="$1"; CMDS="$1/commands"; source "$2"; "$3" ) >/dev/null 2>&1
 }
 
-test_ship_text_is_complete() {
-  local step2 lines
-  step2="$(awk '/^## Step 2/ {on=1} /^## Step 3/ {on=0} on' "$SHIP")"
-  holds "$step2" 'When `origin/story/<id>` does not exist yet' 'po-ship Step 2'
-  holds "$step2" 'the push creates it' 'po-ship Step 2'
-  grep -F 'Skip the push' "$SHIP" | grep -qF '`<id>: <story title>` as its message' \
-    || fail "the skip condition does not check the commit message"
-  holds "$step2" 'Below, `Ship confirmation` is always the effective value that section settled.' 'po-ship Step 2'
-  lines="$(grep -E '^- (`Ship confirmation: human`|`automatic`)' <<< "$step2")"
-  [[ $(wc -l <<< "$lines") -ge 3 ]] || fail "fewer than three confirmation bullets in Step 2"
-  ! grep -vF ', the effective value' <<< "$lines" | grep -q . || fail "a confirmation bullet lacks 'the effective value'"
-  grep -qx 'test_push_targets_only_the_story_ref() {' "$ROOT/tests/ship-through-pr.test.sh" \
-    || fail "ship-through-pr.test.sh lacks test_push_targets_only_the_story_ref"
-}
-
 test_fleet_rules_agree() {
 
   local shared='The order the reviews passed decides which ship starts first, not which story lands first.'

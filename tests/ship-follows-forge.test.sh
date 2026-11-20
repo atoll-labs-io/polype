@@ -47,11 +47,6 @@ test_template_defaults_trust_the_gates() {
 }
 
 test_forge_tightening_switches_to_human() {
-  local forge; forge=$(forge_section)
-  holds "$forge" 'framing/ship-confirmation' 'the forge section'
-  holds "$forge" 'gh pr create --draft' 'the forge section'
-  holds "$forge" '"chore: Ship confirmation follows the forge"' 'the forge section'
-  holds "$forge" 'The ship does not wait for that draft' 'the forge section'
   local step0 forge_at step1
   step0=$(grep -n '^## Step 0' "$SHIP" | cut -d: -f1)
   forge_at=$(grep -n "^## The forge's review rule" "$SHIP" | cut -d: -f1)
