@@ -4,7 +4,6 @@
 PLAN="$METHOD/templates/plan.md"
 PLAN_FLOW="$METHOD/templates/plan-flow.md"
 PLANNER="$METHOD/agents/planner.md"
-PO_PLAN="$METHOD/commands/po-plan.md"
 ANTIHALLU="$METHOD/skills/review-antihallu/SKILL.md"
 
 FILLED='`## Reuse` section filled in'
@@ -51,15 +50,11 @@ test_never_cut_list_is_explicit() {
 }
 
 test_planner_requires_the_ladder() {
-  local bullet section f
+  local bullet f
   require_file "$PLANNER"
   for bullet in '- **Plan** —' '- **Short track** —'; do
     holds "$(grep -F -- "$bullet" "$PLANNER" | grep -- "^- ")" "$FILLED, $ONE_LINE" "planner.md $bullet"
   done
-  require_file "$PO_PLAN"
-  section="$(section_of "$PO_PLAN" 'Writing the plan')"
-  holds "$section" "$FILLED" 'po-plan.md ## Writing the plan'
-  holds "$section" "$ONE_LINE" 'po-plan.md ## Writing the plan'
   for f in "$PLAN" "$PLAN_FLOW"; do
     contains "$f" 'says so in one line instead of leaving this section out'
   done

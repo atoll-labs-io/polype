@@ -85,17 +85,17 @@ test_lint_checks_tool_permissions_match_the_contract() {
 
 test_lint_checks_fail_closed_rules_have_a_stop() {
   local m f
-  m=$(mutant); f="$m/commands/po-design.md"
-  sed -i 's|^\(.*`Design source` is `—`\) →.*|\1 → pick internal.|' "$f"
-  reports_one "$m" "commands/po-design.md:$(line_of "$f" '`Design source` is `—`')" \
+  m=$(mutant); f="$m/agents/designer.md"
+  sed -i 's|^\(.*`Design source` at `—`, or another setting you need missing\) →.*|\1 → pick internal.|' "$f"
+  reports_one "$m" "agents/designer.md:$(line_of "$f" '`Design source` at `—`')" \
     fail-closed "an absence triggers no stop:"
 
   # Negative controls: the rule is narrow, not a machine that flags every arrow.
   # A non-blocking branch on a trigger that names no absence stays green inside a gate
   # section, and an absence outside the gate sections is not this rule's business.
-  m=$(mutant); f="$m/commands/po-design.md"
-  sed -i 's|^6\. The story has no screen.*|&\n- `replace` or `adapt` → continue.|' "$f"
-  sed -i 's|^## Step 1 — Derived or new$|&\n- No mockup yet → continue.|' "$f"
+  m=$(mutant); f="$m/agents/designer.md"
+  sed -i 's|^- The story showing no screen.*|&\n- `replace` or `adapt` → continue.|' "$f"
+  sed -i "s|^## Drawing with the project's skill\$|&\n- No mockup yet → continue.|" "$f"
   grep -qF '`replace` or `adapt` → continue.' "$f" || fail "negative control not applied"
   grep -qF 'No mockup yet → continue.' "$f" || fail "negative control not applied"
   lint_on "$m"

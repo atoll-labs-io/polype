@@ -58,4 +58,4 @@ Check `git status --porcelain` first: an environment file listed there → stop.
 - With a complete review, `Stories ready: yes` → "Stories reviewed. Next: /po-research <first story id>"
 - With a complete review, `Stories ready: no` → list the story ids answered Fix or Set the story aside, then: "Run /po-stories <ids>, then /po-stories-review again." When every critical finding was answered Accept the risk, say that those risks stay open in the report.
 
-The verdict is a soft gate: `/po-research` warns when `docs/reviews/stories.md` is missing or says `Stories ready: no`, and carries on anyway.
+A soft gate: `po state` and the session's "Framing next:" line report the verdict missing or `Stories ready: no`; nothing blocks.

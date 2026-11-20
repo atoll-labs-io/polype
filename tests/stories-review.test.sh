@@ -5,7 +5,6 @@ COMMAND="$METHOD/commands/po-stories-review.md"
 AGENT="$METHOD/agents/stories-reviewer.md"
 SKILL="$METHOD/skills/stories-review/SKILL.md"
 TEMPLATE="$METHOD/templates/stories-review.md"
-RESEARCH="$METHOD/commands/po-research.md"
 
 # The body of one `## <heading>` section of a file, heading excluded.
 section_of() { awk -v h="## $2" '$0 == h {on=1; next} /^## / {on=0} on' "$1"; }
@@ -44,13 +43,8 @@ test_stories_review_template_ends_with_stories_ready() {
 }
 
 test_stories_review_is_a_soft_gate() {
-  local checks
   require_file "$COMMAND"
   contains "$COMMAND" 'writes `docs/reviews/stories.md` on `Target branch`'
-  checks=$(section_of "$RESEARCH" 'Checks first')
-  grep -qF 'docs/reviews/stories.md' <<< "$checks" || fail "po-research does not check the stories review"
-  grep -qF 'Stories ready:' <<< "$checks" || fail "po-research does not read the Stories ready verdict"
-  grep -qF 'this check never blocks' <<< "$checks" || fail "po-research does not keep the stories review soft"
 }
 
 # s23 — a brief's non-goals are the exclusion list, not scope to cover.

@@ -11,37 +11,25 @@ allowed-tools:
 ---
 # /po-plan
 
-Reads settings: `Target branch`, `Worktree root`, `Plan validation`, `Test budget`, `ADR directory`
+Reads settings: `Worktree root`, `Plan validation`, `Test budget`, `ADR directory`
 
 Story: $ARGUMENTS
 
 You produce `docs/plans/<id>.md` and its approval; source files are out of reach for this command.
 
-Run as a command, this plan is written in this context on the session's model, which no command can choose (ADR-0036); start the session on `Model strong`. `/po-drive` passes `Model strong` to the planner it dispatches instead.
+## By hand
+A subagent skips this paragraph. This plan is written on the session's model, which no command can choose (ADR-0036); start the session on `Model strong`. Run `"${CLAUDE_CONFIG_DIR:-$HOME/.claude}/polype/po" next` and read the story's entry as `/po-drive <id>` does; `po` missing or exiting 2 → stop, naming `polype install`; no `AGENTS.local.md` → stop, naming `/po-setup`. Go on only on `plan` with reason `research, no plan` or `plan-validated refuses`, on `validate-plan`, or on the `ask` whose reason is `Technical choice: waiting for a human`. Any other entry, or a warning naming the story, is reported, an `ask` as a question for the person, and ends the command. At the end, report a new `po next` entry likewise.
 
-## Checks first
-- No `AGENTS.local.md` → stop and point to `/po-setup`.
-- Match $ARGUMENTS to one id of `docs/stories.md`; none or several → list the ids and stop.
-- `<Worktree root><id>` must exist and `git -C <path> rev-parse --abbrev-ref HEAD` must print `story/<id>`. If not, stop and point to `/po-research <id>`. No branch creation or switching here.
-- `docs/research/<id>.md` holding `Root cause: not found` as a whole line (`grep -x`, ADR-0070) → stop: the diagnostic found no cause, so the story goes to a human and no plan is written.
-
-Everything below reads and writes inside the worktree.
+Everything below reads and writes inside `<Worktree root><id>`.
 
 **A plan file already present?** Skip to "Approval" with a summary of it. When it holds the line `Technical choice: waiting for a human`, that choice is the first thing "Approval" puts to the person.
 
 ## Inputs
 The story, `docs/research/<id>.md`, `docs/designs/<id>/design.md` when it exists, `AGENTS.md`, `docs/architecture.md` if present, and the accepted ADRs. The test strategy follows the `testing-doctrine` skill.
 
-Without a research file, warn that the plan would rest on documents that may no longer match the code, and continue only on the user's go-ahead.
-
 ## Writing the plan
-- Tasks in execution order, each one checkable on its own and grounded in the research: real files, real signatures, the traps it found.
-- For behaviour, business rules, data contracts and interactions, each task names **the test that would fail if the task were wrong**. A purely visual task names the visual check plus lint and type check instead; do not invent a component test to fill the column.
-- Stay within `Test budget`, or explain the excess in the test strategy. Access rules go in the policy's tests only; services test business rules; no pair-by-pair enum tests; each rule at one layer; adapters do not retest a 403.
-- **Acceptance tests**: the oracle, as `## Acceptance tests` of the template describes. Before the plan, write the oracle files it names and no other test file, each test going through the interface the tasks fix, never an internal detail; then record each file's sum as `cksum < <file>` prints it. An oracle file outside the story's `Owns` is not written: report it as a gap of the story, and say so in that criterion's row.
-- **Run interdicts**: what must stay untouched and what must not be done, each verifiable by the reviewer.
-- **The pivot**: the decision everything hinges on and how it could be wrong.
-- **Reuse**: a `## Reuse` section filled in — for each piece of new code, the first rung of the template's ladder that holds and why each rung above it fails; one line when the plan writes no new code, never a missing section.
+- Tasks in execution order, each one checkable on its own and grounded in the research: real files, real signatures, the traps it found. Each names the test that would fail if it were wrong; a purely visual task names its visual check instead.
+- **Acceptance tests**: before the plan, write the oracle files its `## Acceptance tests` names and no other test file, then record their sums. An oracle file outside the story's `Owns` is not written: report it as a gap of the story, in that criterion's row.
 - When `docs/designs/<id>/design.md` exists, the screen tasks build what it settles, cite it, and add nothing it leaves out.
 - More than about ten tasks, or a story rated 5 → recommend splitting the story instead of writing a long plan.
 - A choice that deserves an ADR (library, pattern, data model) is not settled here. Draft it as an ADR in `<ADR directory>` from `templates/adr.md` with `status: proposed`, its options ranked by the owner's criteria as `## Ranking the options` of the `capability-bricks` skill says; it stays on the story branch. Write the tasks for the top-ranked option, name the ADR in the plan, and put the line `Technical choice: waiting for a human` alone on its line in the plan body. Such a plan never validates itself, whatever `Plan validation` says (ADR-0077).
@@ -53,7 +41,3 @@ A plan holding the line `Technical choice: waiting for a human` is settled with 
 
 - `human`: AskUserQuestion "Approve the plan for <id>?" with the tasks, files and test strategy summarised; answers Approve / Change / Stop. Write `validated: yes` into the frontmatter on Approve and on nothing else.
 - `autonomous`: check the plan against each acceptance criterion yourself, write `validated: yes`, and state that no human reviewed it.
-
-`/po-execute` will not start on a plan whose frontmatter lacks `validated: yes`.
-
-Finish with: "Plan approved. Next: /po-execute <id>" — or "Plan written, not approved yet. Run /po-plan <id> again to approve it."

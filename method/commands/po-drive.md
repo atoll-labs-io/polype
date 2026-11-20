@@ -50,7 +50,7 @@ One rule stays yours, since `po` cannot see it: a failed ship sends its story ba
 You never leave the directory you were started in: no `cd`, at any stage of a wave. Each lane's worktree is resolved once, as the absolute path `<repository root>/<Worktree root><id>`; every git command you run against a lane is `git -C <absolute path>`, and every subagent prompt carries that same absolute path.
 
 ### Preparing the lanes
-You prepare each lane's worktree yourself, before any subagent starts, as `/po-research` does: fetch when there is a remote, then `git worktree add -b story/<id> <Worktree root><id> <start point>`, `<start point>` being `origin/<Target branch>` when that ref exists, copy in the ignored `.env*` files and run `Install`. `planner` may not run `git worktree add`, so a lane you did not prepare cannot exist.
+You prepare each lane's worktree yourself, before any subagent starts, by the steps of `## The worktree` in `/po-research`. `planner` may not run `git worktree add`, so a lane you did not prepare cannot exist.
 
 A worktree `po` reports in an `orphan-worktree` warning is named in the report with the path and the branch actually found, drops that lane from the wave, and waits for a human: you run no `git worktree add --force`, `worktree remove`, `worktree prune`, `switch`, `checkout` or `stash` to make it fit.
 

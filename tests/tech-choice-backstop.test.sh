@@ -1,13 +1,9 @@
 #!/usr/bin/env bash
-# s111 — a plan's checks stop on the marker, and the tests that guard the
-# marker and two stories-framing rules fail when those rules are deleted.
+# s111 — the tests that guard the technical-choice marker and two
+# stories-framing rules fail when those rules are deleted.
 
-MARKER='Technical choice: waiting for a human'
 MUTANTS="$(mktemp -d)"
 trap 'rm -rf "$MUTANTS"' EXIT
-
-section_of() { awk -v h="## $2" '$0 == h {on=1; next} /^## / {on=0} on' "$1"; }
-holds() { grep -qF -- "$2" <<< "$1" || fail "$3 lacks: $2"; }
 
 mutant() {
   local dir
@@ -19,10 +15,6 @@ mutant() {
 # Sources a test file against the given method tree and runs one test; status is the test's.
 run_against() {
   ( METHOD="$1"; CMDS="$1/commands"; source "$2"; "$3" ) >/dev/null 2>&1
-}
-
-test_plan_checks_stop_on_the_marker() {
-  holds "$(section_of "$METHOD/commands/po-plan.md" 'Checks first')" "$MARKER" 'po-plan Checks first'
 }
 
 test_approval_test_bites_in_its_section() {
