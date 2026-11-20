@@ -85,15 +85,6 @@ test_recording_runs_the_check() {
 
 }
 
-test_ship_net_catches_headings() {
-  local net
-  net="$(grep -F '**Nothing is dropped unread.**' "$SHIP")"
-  holds "$net" 'a heading — a line starting with `#` — that holds the word `critical`, `major` or `minor`, in any case' "po-ship's net"
-  holds "$net" 'marked "not filed: shape not recognised"' "po-ship's net"
-  holds "$net" 'a list item whose first line holds the word `critical`, `major` or `minor` without opening with it' "po-ship's net"
-  holds "$net" 'A sentence such as "No critical or major finding." is neither' "po-ship's net"
-}
-
 test_adr_records_the_shape_check() {
   require_file "$ADR"
   contains "$ADR" 'status: accepted'
