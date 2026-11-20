@@ -9,6 +9,8 @@ use std::process::{Command, Stdio};
 pub(super) struct Ran {
     pub code: i32,
     pub stdout: String,
+    /// The same bytes as `stdout`, before the lossy conversion.
+    pub bytes: Vec<u8>,
     pub stderr: String,
 }
 
@@ -53,8 +55,9 @@ fn run_with(dir: &Path, args: &[&str], input: Option<&[u8]>) -> Ran {
         Ok(output) => Ran {
             code: output.status.code().unwrap_or(-1),
             stdout: String::from_utf8_lossy(&output.stdout).into_owned(),
+            bytes: output.stdout,
             stderr: String::from_utf8_lossy(&output.stderr).into_owned(),
         },
-        Err(err) => Ran { code: -1, stdout: String::new(), stderr: format!("git cannot start: {err}") },
+        Err(err) => Ran { code: -1, stdout: String::new(), bytes: Vec::new(), stderr: format!("git cannot start: {err}") },
     }
 }

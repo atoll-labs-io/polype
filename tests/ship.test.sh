@@ -14,9 +14,6 @@ test_ship_gate_is_mechanical() {
 
 test_ship_cleans_up_only_on_proven_merge() {
   contains "$CMD" 'Cleanup, only after proof'
-  contains "$CMD" 'prints exactly `MERGED`'
-  contains "$CMD" '`--force` is not an option'
-  contains "$CMD" "Do not test the story branch's own commits"
 }
 
 test_ship_can_ask_before_merging() {
@@ -25,10 +22,6 @@ test_ship_can_ask_before_merging() {
 
 test_ship_runs_expensive_checks_once() {
   contains "$CMD" '**One failure and the ship stops**'
-}
-
-test_ship_goes_straight_to_cleanup_after_a_human_merge() {
-  contains "$CMD" 'already prints `MERGED`, go straight to cleanup'
 }
 
 # s47 — the verdict is bound to the tree it judged.

@@ -114,6 +114,6 @@ The plan column says who approved it. Under `Plan validation: autonomous`, the r
 
 The report states, per stage, the activity window of each lane — when its subagent started and when it answered — and whether those windows overlap. A stage whose windows do not overlap is reported as sequential. No line of the report claims that lanes ran at the same time unless their activity windows show it; the number of messages the dispatch took is not evidence of anything.
 
-With `$ARGUMENTS` set to `status`, run `"${CLAUDE_CONFIG_DIR:-$HOME/.claude}/polype/po" state`, report what it returns, and launch or write nothing. Per lane in flight: the story, its next action and reason, its worktree path; a merged lane waiting for cleanup — its pull request prints `MERGED` while its worktree still exists — is listed among them under that name, with its pull request URL. Then what each held story waits for: its reason, or a pull request waiting for a human merge, with its URL.
+With `$ARGUMENTS` set to `status`, run `"${CLAUDE_CONFIG_DIR:-$HOME/.claude}/polype/po" state`, report what it returns, and launch or write nothing. Per lane in flight: the story, its next action and reason, its worktree path; a lane whose reason is `landed` is listed among them as a merged lane waiting for cleanup, with its pull request URL. Then what each held story waits for: its reason, or a pull request waiting for a human merge, with its URL.
 
 Finish with the candidates of the next wave, or "Fleet idle: nothing is ready."

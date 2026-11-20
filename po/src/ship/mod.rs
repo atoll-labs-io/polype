@@ -1,8 +1,9 @@
 //! `po ship <step>`: the ship's steps (ADR-0130). `forge` reads the forge of `origin` and settles
 //! the effective `Ship confirmation`; it writes nothing. `land` builds the landing commit; `push`
 //! sends it, opens its pull request and, under an effective `automatic`, merges it. `file` files the
-//! open findings of the last review once the landing is proven.
+//! open findings of the last review once the landing is proven. `clean` removes the landed lane.
 
+mod clean;
 mod file;
 mod forge;
 mod git;
@@ -16,7 +17,7 @@ use crate::project::{Project, Setting};
 
 const USAGE: &str =
     "usage: po ship forge [--target <branch>] | po ship land <id> [--routes yes|no] [--land] | po ship land <id> --sha <sha> \
-     | po ship push <id> --sha <sha> --body-file <file> | po ship file <id> [--file] [--hold <line>]... [--fixed <line>]...";
+     | po ship push <id> --sha <sha> --body-file <file> | po ship file <id> [--file] [--hold <line>]... [--fixed <line>]... | po ship clean <id>";
 
 #[derive(Serialize)]
 struct ForgeReply {
@@ -86,6 +87,7 @@ pub fn main(args: &[String]) -> i32 {
         Some("land") => return land::main(&args[1..]),
         Some("push") => return push::main(&args[1..]),
         Some("file") => return file::main(&args[1..]),
+        Some("clean") => return clean::main(&args[1..]),
         _ => {}
     }
     let target = match parse(args) {

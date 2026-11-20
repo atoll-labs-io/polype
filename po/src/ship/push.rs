@@ -163,7 +163,7 @@ fn settings(project: &Project) -> Result<Settings, i32> {
 }
 
 /// The head `origin` holds for `reference` right now, never the tracking ref a fetch may have left.
-fn ls_remote(top: &Path, reference: &str) -> Result<Option<String>, git::Ran> {
+pub(super) fn ls_remote(top: &Path, reference: &str) -> Result<Option<String>, git::Ran> {
     let ran = git::run(top, &["ls-remote", "origin", reference]);
     if !ran.ok() {
         return Err(ran);
