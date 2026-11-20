@@ -448,6 +448,20 @@ pub(super) fn github_repo(project: &Project) -> Option<String> {
     (host == "github.com").then(|| owner_repo(&path)).flatten()
 }
 
+/// The Taskwarrior project of the repository: the last path segment of `origin` without `.git`, or,
+/// with no `origin`, the folder of the main checkout, never the worktree's.
+pub(super) fn tracker_project(project: &Project) -> String {
+    let Some(url) = origin_url(project) else { return project.name() };
+    let path = host_and_path(&url).map_or(url, |(_, path)| path);
+    let last = path.trim_end_matches('/').rsplit(['/', ':']).next().unwrap_or_default();
+    let last = last.strip_suffix(".git").unwrap_or(last);
+    if last.is_empty() {
+        project.name()
+    } else {
+        last.to_string()
+    }
+}
+
 pub fn read(project: &Project, target: &str) -> Reading {
     let mut reading = Reading { forge: None, signals: Signals::default(), failed: Vec::new() };
     let origin = "git remote get-url origin";

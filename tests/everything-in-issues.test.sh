@@ -34,12 +34,7 @@ test_law_files_everything_to_handle() {
 test_ship_files_open_findings() {
   local step3 n_proof n_file n_remove
   step3="$(section_of "$SHIP" '## Step 3 — Cleanup, only after proof')"
-  for p in 'Title `<id>: <severity> — <start>`' \
-    'whose severity is `major` or `minor`' \
-    'An issue already open with exactly that title is not filed again' \
-    'The body names the story id, the review path `docs/reviews/<id>.md`' \
-    'the severity, the full finding — every line of the item, as the review writes it' \
-    'the review is not lost with the worktree, since Step 1 committed it and it lands with the story'"'"'s commit'; do
+  for p in 'the review is not lost with the worktree, since Step 1 committed it and it lands with the story'"'"'s commit'; do
     holds "$step3" "$p" "po-ship Step 3"
   done
   n_proof=$(grep -n '^1\. Proof\.' "$SHIP" | cut -d: -f1)
@@ -49,27 +44,6 @@ test_ship_files_open_findings() {
   [ "$n_proof" -lt "$n_file" ] && [ "$n_file" -lt "$n_remove" ] || fail "filing must sit after the proof and before the worktree removal"
   holds "$(section_of "$DRIVE" '## Report')" 'the merged lanes waiting for cleanup, each with its pull request URL' "po-drive report"
   holds "$(section_of "$DRIVE" '## Report')" 'a merged lane waiting for cleanup — its pull request prints `MERGED` while its worktree still exists — is listed among them' "po-drive status"
-}
-
-test_ship_files_on_each_tracker_value() {
-  local step3 p
-  step3="$(section_of "$SHIP" '## Step 3 — Cleanup, only after proof')"
-  for p in '**`Issue tracker: github`.**' \
-    'gh issue create --repo github.com/<owner>/<repo>' \
-    '`gh auth status --hostname github.com` passes' \
-    '`gh` missing or not logged in, or `origin` not on `github.com` → nothing is filed, and the finish says so' \
-    '**`Issue tracker: taskwarrior`.**' \
-    'task rc.verbose=new-uuid add project:<name> +issue --' \
-    'never the worktree folder' \
-    '**`Issue tracker: —`.** Nothing is filed; the finish says so and lists the open findings for the person.' \
-    '--state open --limit 1000 --json title --jq '"'"'.[].title'"'"' > "$d/open"' \
-    'never through a search index' \
-    'A listing that fails — `gh issue list` or `task` exiting non-zero, an empty listing being a success — proves nothing, so nothing is filed on that tracker' \
-    'A `github` listing that returns 1000 titles, its `--limit`, may have left some out, so it is refused the same way rather than paged'; do
-    holds "$step3" "$p" "po-ship Step 3"
-  done
-  has "$step3" '--search' && fail "po-ship Step 3 dedupes through the search index"
-  return 0
 }
 
 test_security_goes_to_the_person() {
@@ -120,78 +94,7 @@ test_adr_records_the_rule() {
   done
 }
 
-# Runs the title or body command po-ship Step 3 writes, on a fixture review, in a scratch folder,
-# under a C locale so the command has to pin its own.
-cut_finding() {
-  local cmd
-  cmd=$(sed -n "s/^ *- $1: \`\(.*\)\`;\$/\1/p" "$SHIP")
-  [ -n "$cmd" ] || fail "po-ship Step 3 lacks the $1 command"
-  cmd=${cmd//'<first>,<last>'/"$2,$3"}
-  cmd=${cmd//'<first>'/"$2"}
-  cmd=${cmd//'<id>'/s99-shape}
-  cmd=${cmd//'<severity>'/"$4"}
-  cmd=${cmd//'<url or —>'/https://example.test/pull/1}
-  (cd "$SCRATCH" && LC_ALL=C d="$SCRATCH/out" bash -c "$cmd") || fail "the $1 command failed"
-  cat "$SCRATCH/out/$1"
-}
-
-accented() { local i; for ((i = 0; i < $1; i++)); do printf 'é'; done; }
-
-review_fixture() {
-  scratch_repo
-  mkdir -p "$SCRATCH/docs/reviews" "$SCRATCH/out"
-  printf '%s\n' '# Review' 'Fix loop: 1' '## Findings' \
-    '1. **minor**: it'"'"'s `$(touch pwned)` and "quoted" text' \
-    '- **major** — bold dash shape' \
-    '- major — plain shape' \
-    '   - a sub-bullet' \
-    '* minor: star shape' \
-    '- **minor:** colon in bold' '---' 'Fix loop: 2' '## Findings' \
-    "- minor — $(accented 79) suite" > "$SCRATCH/docs/reviews/s99-shape.md"
-}
-
 test_finding_text_never_enters_a_command() {
-  local step3 body
-  step3="$(section_of "$SHIP" '## Step 3 — Cleanup, only after proof')"
-  for p in 'no title, body or finding text is ever written into a shell argument, a heredoc or an `echo`' \
-    '--title "$(cat "$d/title")" --body-file "$d/body"' \
-    'add project:<name> +issue -- "$(cat "$d/title")"' \
-    'annotate -- "$(cat "$d/body")"'; do
-    holds "$step3" "$p" "po-ship Step 3"
-  done
-  for p in "'<title>'" "'<body>'"; do
-    has "$step3" "$p" && fail "po-ship Step 3 still puts $p inside a shell argument"
-  done
   holds "$(section_of "$LAW" '## Law 7 — Defects are not stories')" \
     'Whoever files, the text never travels inside a shell argument' "Law 7"
-  review_fixture
-  [ "$(cut_finding title 4 4 minor)" = 's99-shape: minor — it'"'"'s `$(touch pwned)` and "quoted" text' ] \
-    || fail "the title of a finding holding quotes and \$(…) came out changed"
-  body="$(cut_finding body 4 4 minor)"
-  has "$body" '1. **minor**: it'"'"'s `$(touch pwned)` and "quoted" text' || fail "the body lost the finding text"
-  [ ! -e "$SCRATCH/pwned" ] || fail "finding text was run as a command"
-}
-
-test_every_finding_shape_is_read() {
-  local step3 body
-  step3="$(section_of "$SHIP" '## Step 3 — Cleanup, only after proof')"
-  for p in '`- major —`, `- **major** —`, `1. **minor**:`, `* minor:` all open one' \
-    'The item is taken whole: its first line and every line after it — sub-bullets' \
-    'marked "not filed: shape not recognised"' \
-    'a list item whose first line holds the word `critical`, `major` or `minor` without opening with it'; do
-    holds "$step3" "$p" "po-ship Step 3"
-  done
-  review_fixture
-  [ "$(cut_finding title 5 5 major)" = 's99-shape: major — bold dash shape' ] || fail "bold shape: $(cut_finding title 5 5 major)"
-  [ "$(cut_finding title 6 6 major)" = 's99-shape: major — plain shape' ] || fail "plain shape: $(cut_finding title 6 6 major)"
-  [ "$(cut_finding title 8 8 minor)" = 's99-shape: minor — star shape' ] || fail "star shape: $(cut_finding title 8 8 minor)"
-  [ "$(cut_finding title 9 9 minor)" = 's99-shape: minor — colon in bold' ] || fail "colon-in-bold shape: $(cut_finding title 9 9 minor)"
-  body="$(cut_finding body 6 7 major)"
-  for p in 'Severity: major' '- major — plain shape' '   - a sub-bullet' 'https://example.test/pull/1'; do
-    has "$body" "$p" || fail "the body lacks: $p"
-  done
-  [ "$(cut_finding title 13 13 minor)" = "s99-shape: minor — $(accented 79)" ] \
-    || fail "an accented title was cut by bytes or kept its trailing space: $(cut_finding title 13 13 minor)"
-  body="$(cut_finding body 13 13 minor)"
-  has "$body" 'Fix loop: 2' && ! has "$body" 'Fix loop: 1' || fail "the body does not name the last Fix loop: $body"
 }

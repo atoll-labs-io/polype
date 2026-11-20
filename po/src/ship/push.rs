@@ -187,13 +187,13 @@ fn push(top: &Path, sha: &str, reference: &str, observed: Option<&str>) -> Resul
     }
 }
 
-enum Gh {
+pub(super) enum Gh {
     Ran { ok: bool, stdout: String },
     Unstartable,
 }
 
 /// `gh` with its own login: no token is ever passed to it, and its stderr reaches `po`'s stderr.
-fn gh(top: &Path, args: &[&str], stdin: Option<&str>) -> Gh {
+pub(super) fn gh(top: &Path, args: &[&str], stdin: Option<&str>) -> Gh {
     let mut command = Command::new(program("PO_GH", "gh"));
     command
         .args(args)
@@ -212,11 +212,11 @@ fn gh(top: &Path, args: &[&str], stdin: Option<&str>) -> Gh {
     }
 }
 
-fn json(stdout: &str) -> Option<Value> {
+pub(super) fn json(stdout: &str) -> Option<Value> {
     serde_json::from_str(stdout.trim()).ok()
 }
 
-fn text(value: &Value, key: &str) -> Option<String> {
+pub(super) fn text(value: &Value, key: &str) -> Option<String> {
     value.get(key).and_then(Value::as_str).map(str::to_string)
 }
 
