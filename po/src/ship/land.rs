@@ -256,6 +256,11 @@ pub(super) fn remote_check(top: &Path, mode: &str) -> Result<(), i32> {
 /// The title of the heading `## <id> — <title>` or `### <id> — <title>` of `docs/stories.md`.
 pub(super) fn title(top: &Path, id: &str) -> Result<String, i32> {
     let text = std::fs::read_to_string(top.join("docs/stories.md")).unwrap_or_default();
+    title_in(&text, id)
+}
+
+/// As `title`, from the text of `docs/stories.md` as some commit holds it.
+pub(super) fn title_in(text: &str, id: &str) -> Result<String, i32> {
     let found = text.lines().find_map(|line| {
         let heading = line.strip_prefix("### ").or_else(|| line.strip_prefix("## "))?;
         let title = heading.strip_prefix(id)?.strip_prefix(" — ")?.trim();
@@ -488,8 +493,17 @@ pub(super) fn read(top: &Path, args: &[&str]) -> Option<String> {
 /// The newest commit of `base` outside `story/<id>` whose subject is exactly `subject`. Ids are never
 /// reused, so it is this story's landing whatever the base did to its lines afterwards.
 pub(super) fn landing_by_subject(top: &Path, base: &str, id: &str, subject: &str) -> Option<String> {
-    let story = format!("^story/{id}");
-    read(top, &["log", "-F", &format!("--grep={subject}"), "--format=%H%x1f%s", base, &story])?
+    let branch = format!("refs/heads/story/{id}");
+    let mut args = vec!["log", "-F"];
+    let grep = format!("--grep={subject}");
+    args.extend([grep.as_str(), "--format=%H%x1f%s", base]);
+    // Once the branch is deleted (a rerun of `ship clean`) there is nothing to exclude, and a missing
+    // ref would make git fail. The full ref keeps a tag `story/<id>` from standing in for it.
+    let exclude = format!("^{branch}");
+    if read(top, &["rev-parse", "-q", "--verify", &branch]).is_some() {
+        args.push(&exclude);
+    }
+    read(top, &args)?
         .lines()
         .find_map(|line| line.split_once('\x1f').filter(|(_, found)| *found == subject).map(|(sha, _)| sha.to_string()))
 }

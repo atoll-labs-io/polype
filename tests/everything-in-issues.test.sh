@@ -32,18 +32,14 @@ test_law_files_everything_to_handle() {
 }
 
 test_ship_files_open_findings() {
-  local step3 n_proof n_file n_remove
-  step3="$(section_of "$SHIP" '## Step 3 — Cleanup, only after proof')"
-  for p in 'the review is not lost with the worktree, since Step 1 committed it and it lands with the story'"'"'s commit'; do
-    holds "$step3" "$p" "po-ship Step 3"
-  done
+  local n_proof n_file n_remove
   n_proof=$(grep -n '^1\. Proof\.' "$SHIP" | cut -d: -f1)
   n_file=$(grep -n '^2\. File the open findings' "$SHIP" | cut -d: -f1)
-  n_remove=$(grep -n 'git worktree remove <path>' "$SHIP" | cut -d: -f1)
+  n_remove=$(grep -n 'ship clean <id>' "$SHIP" | cut -d: -f1)
   [ -n "$n_proof" ] && [ -n "$n_file" ] && [ -n "$n_remove" ] || fail "po-ship Step 3 lacks the proof, filing or removal step"
   [ "$n_proof" -lt "$n_file" ] && [ "$n_file" -lt "$n_remove" ] || fail "filing must sit after the proof and before the worktree removal"
   holds "$(section_of "$DRIVE" '## Report')" 'the merged lanes waiting for cleanup, each with its pull request URL' "po-drive report"
-  holds "$(section_of "$DRIVE" '## Report')" 'a merged lane waiting for cleanup — its pull request prints `MERGED` while its worktree still exists — is listed among them' "po-drive status"
+  holds "$(section_of "$DRIVE" '## Report')" 'a lane whose reason is `landed` is listed among them as a merged lane waiting for cleanup' "po-drive status"
 }
 
 test_security_goes_to_the_person() {
