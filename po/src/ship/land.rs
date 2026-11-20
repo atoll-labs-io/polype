@@ -78,7 +78,7 @@ fn usage(message: impl Into<String>) -> i32 {
 }
 
 /// `s<number>-<slug>`, as `po-run` accepts it.
-fn is_id(text: &str) -> bool {
+pub(super) fn is_id(text: &str) -> bool {
     let Some((number, slug)) = text.strip_prefix('s').and_then(|rest| rest.split_once('-')) else {
         return false;
     };
@@ -88,7 +88,7 @@ fn is_id(text: &str) -> bool {
         && slug.bytes().all(|b| b.is_ascii_lowercase() || b.is_ascii_digit() || b == b'-')
 }
 
-fn is_sha(text: &str) -> bool {
+pub(super) fn is_sha(text: &str) -> bool {
     text.len() == 40 && text.bytes().all(|b| b.is_ascii_digit() || (b'a'..=b'f').contains(&b))
 }
 
@@ -131,7 +131,7 @@ fn parse(args: &[String]) -> Result<Request, i32> {
 }
 
 /// The project and the top of the worktree `po` runs in, once it is shown to be on `story/<id>`.
-fn worktree(id: &str) -> Result<(Project, PathBuf), i32> {
+pub(super) fn worktree(id: &str) -> Result<(Project, PathBuf), i32> {
     let cwd = std::env::current_dir().ok();
     let Some((project, cwd)) = cwd.as_deref().and_then(Project::find).zip(cwd.as_deref()) else {
         return Err(output::error(
@@ -150,7 +150,7 @@ fn worktree(id: &str) -> Result<(Project, PathBuf), i32> {
             output::UNREADABLE,
             "wrong-branch",
             format!(
-                "{} is on {}, not {want}: run po ship land in the story worktree",
+                "{} is on {}, not {want}: run po ship in the story worktree",
                 top.display(),
                 branch.as_deref().unwrap_or("no branch")
             ),
@@ -192,7 +192,7 @@ fn hook(top: &Path, script: &str, args: &[&str], pass_through: bool) -> Hook {
     }
 }
 
-fn gate(top: &Path, id: &str) -> Result<(), i32> {
+pub(super) fn gate(top: &Path, id: &str) -> Result<(), i32> {
     match hook(top, "po-gate.sh", &["ship-allowed", id], false) {
         Hook::Ran { code: 0, .. } => Ok(()),
         Hook::Ran { stderr, .. } => Err(output::error(output::REFUSED, "gate-refused", stderr.trim())),
@@ -205,7 +205,7 @@ fn gate(top: &Path, id: &str) -> Result<(), i32> {
     }
 }
 
-fn setting(project: &Project, name: &str, allowed: &[&str]) -> Result<String, i32> {
+pub(super) fn setting(project: &Project, name: &str, allowed: &[&str]) -> Result<String, i32> {
     let Setting::Value(value) = project.setting(name) else {
         return Err(output::error(output::UNREADABLE, "missing-setting", format!("no {name} in AGENTS.local.md")));
     };
@@ -236,7 +236,7 @@ fn settings(project: &Project) -> Result<Settings, i32> {
     })
 }
 
-fn remote_check(top: &Path, mode: &str) -> Result<(), i32> {
+pub(super) fn remote_check(top: &Path, mode: &str) -> Result<(), i32> {
     let origin = project::git(top, &["remote", "get-url", "origin"]).is_some();
     match (mode, origin) {
         ("pr", false) => Err(output::error(
@@ -254,7 +254,7 @@ fn remote_check(top: &Path, mode: &str) -> Result<(), i32> {
 }
 
 /// The title of the heading `## <id> — <title>` or `### <id> — <title>` of `docs/stories.md`.
-fn title(top: &Path, id: &str) -> Result<String, i32> {
+pub(super) fn title(top: &Path, id: &str) -> Result<String, i32> {
     let text = std::fs::read_to_string(top.join("docs/stories.md")).unwrap_or_default();
     let found = text.lines().find_map(|line| {
         let heading = line.strip_prefix("### ").or_else(|| line.strip_prefix("## "))?;
@@ -291,7 +291,7 @@ fn root_clean(project: &Project, target: &str) -> Result<(), i32> {
     }
 }
 
-fn git_failed(what: &str, ran: &git::Ran) -> i32 {
+pub(super) fn git_failed(what: &str, ran: &git::Ran) -> i32 {
     output::error(
         output::UNREADABLE,
         "git-failed",
@@ -299,15 +299,15 @@ fn git_failed(what: &str, ran: &git::Ran) -> i32 {
     )
 }
 
-fn base(top: &Path, settings: &Settings) -> Result<String, i32> {
-    let reference = if settings.mode == "pr" {
+pub(super) fn base(top: &Path, mode: &str, target: &str) -> Result<String, i32> {
+    let reference = if mode == "pr" {
         let ran = git::run(top, &["fetch", "-q", "origin"]);
         if !ran.ok() {
             return Err(git_failed("git fetch origin", &ran));
         }
-        format!("refs/remotes/origin/{}", settings.target)
+        format!("refs/remotes/origin/{target}")
     } else {
-        format!("refs/heads/{}", settings.target)
+        format!("refs/heads/{target}")
     };
     project::git(top, &["rev-parse", "--verify", "-q", &format!("{reference}^{{commit}}")])
         .map(|out| out.trim().to_string())
@@ -315,13 +315,13 @@ fn base(top: &Path, settings: &Settings) -> Result<String, i32> {
         .ok_or_else(|| output::error(output::UNREADABLE, "no-base", format!("{reference} does not exist")))
 }
 
-enum Probe {
+pub(super) enum Probe {
     Clean(String),
     Conflict(Vec<String>),
 }
 
 /// `git merge-tree` of the base and the story branch, which writes objects but no ref.
-fn probe(top: &Path, base: &str, id: &str) -> Result<Probe, i32> {
+pub(super) fn probe(top: &Path, base: &str, id: &str) -> Result<Probe, i32> {
     let branch = format!("story/{id}");
     let ran = git::run(top, &["merge-tree", "--write-tree", "--name-only", "--no-messages", "-z", base, &branch]);
     let mut fields = ran.stdout.split('\0').map(str::trim);
@@ -341,7 +341,7 @@ fn probe(top: &Path, base: &str, id: &str) -> Result<Probe, i32> {
     }
 }
 
-fn conflict(paths: Vec<String>, after: &str) -> i32 {
+pub(super) fn conflict(paths: Vec<String>, after: &str) -> i32 {
     output::reply(
         Conflict {
             error: "conflict",
@@ -457,7 +457,7 @@ fn fast_forward(project: &Project, settings: &Settings, sha: &str) -> Result<(),
 }
 
 /// The commit `sha` is still this story's landing on `base`: its only parent, its subject, its tree.
-fn still_the_landing(top: &Path, sha: &str, base: &str, subject: &str, tree: &str) -> bool {
+pub(super) fn still_the_landing(top: &Path, sha: &str, base: &str, subject: &str, tree: &str) -> bool {
     read(top, &["rev-list", "--parents", "-n", "1", sha]).as_deref() == Some(format!("{sha} {base}").as_str())
         && read(top, &["log", "-1", "--format=%s", sha]).as_deref() == Some(subject)
         && read(top, &["rev-parse", &format!("{sha}^{{tree}}")]).as_deref() == Some(tree)
@@ -481,13 +481,13 @@ fn confirmation_allows_landing(project: &Project) -> Result<(), i32> {
     }
 }
 
-fn read(top: &Path, args: &[&str]) -> Option<String> {
+pub(super) fn read(top: &Path, args: &[&str]) -> Option<String> {
     project::git(top, args).map(|out| out.trim_end_matches('\n').to_string())
 }
 
 /// The newest commit of `base` outside `story/<id>` whose subject is exactly `subject`. Ids are never
 /// reused, so it is this story's landing whatever the base did to its lines afterwards.
-fn landing_by_subject(top: &Path, base: &str, id: &str, subject: &str) -> Option<String> {
+pub(super) fn landing_by_subject(top: &Path, base: &str, id: &str, subject: &str) -> Option<String> {
     let story = format!("^story/{id}");
     read(top, &["log", "-F", &format!("--grep={subject}"), "--format=%H%x1f%s", base, &story])?
         .lines()
@@ -542,7 +542,7 @@ fn run(args: &[String]) -> Result<i32, i32> {
     if local {
         root_clean(&project, &settings.target)?;
     }
-    let base = base(&top, &settings)?;
+    let base = base(&top, &settings.mode, &settings.target)?;
     let subject = format!("{id}: {title}");
 
     if let Some(sha) = landing_by_subject(&top, &base, id, &subject) {

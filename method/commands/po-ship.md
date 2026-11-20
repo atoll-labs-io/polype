@@ -3,6 +3,7 @@ description: Lands a reviewed story on Target branch as one commit through a pul
 argument-hint: <story id or name>
 allowed-tools:
   - Read
+  - Write
   - Bash
   - AskUserQuestion
 ---
@@ -26,31 +27,23 @@ Read at every ship, after Step 0 and before any check runs. It settles this ship
 
 From the worktree, run `"${CLAUDE_CONFIG_DIR:-$HOME/.claude}/polype/po" ship forge`, which writes nothing. Its `effective` is that value; `verdict`, `signals` and `failed` go to the finish, which says when the forge overrides a `(chosen)` line. `po` missing or exit 2 → stop and name `polype install`.
 
-**Where the rewrite goes**, when `rewrite` is not null (ADR-0080), built beside any checkout as the landing commit is (ADR-0081): starting from `origin/<Target branch>`, write `AGENTS.local.md` with its line set to `rewrite` as a blob, stage it in a temporary index (`GIT_INDEX_FILE`), write the tree, then `git commit-tree <tree> -p origin/<Target branch> -m "chore: Ship confirmation follows the forge"`. Send that commit to the remote branch `framing/ship-confirmation` on `origin`, with a lease on that ref only — never to `Target branch`, never to a story branch — and skip sending it when that branch already holds the same line. Then open a **draft** pull request from it to `Target branch` with `gh pr create --draft`, or reuse the one already open from that branch. On a forge where `/po-ship` opens no pull request yet (ADR-0081: GitHub only), the branch is sent and the report asks a person to open the pull request. A refused push is never forced: the report gives the line to write by hand.
-
-**The ship does not wait for that draft**: Step 2 acts on the effective value.
+When `rewrite` is not null, `po ship push` (Step 2) builds the settings commit beside any checkout, as the landing commit is (ADR-0080, ADR-0081), and opens its draft; the ship never waits for it, and the finish quotes `rewrite` and asks a person for what its `next` names.
 
 ## Step 1 — Checks once, then the landing commit
 From the worktree, `"${CLAUDE_CONFIG_DIR:-$HOME/.claude}/polype/po" ship land <id>` runs the gate, the remote check, a conflict probe and the checks once, commits the review and record rows on `story/<id>`, and builds the landing commit beside it (ADR-0081).
 - **Routes** — under `Build stage: ship-if-route`: `--routes yes` when `git diff --name-only <Target branch>...story/<id>` touches routing, a manifest or file-based routes, else `--routes no`, and the finish says why.
 - **`--land`** — only under `Merge mode: local` with an effective `automatic`; `po` refuses it otherwise.
-- **`ci`** — under `Merge mode: pr`, a `ci` stage waits for `gh pr checks` on the pull request.
 
 `checks`, `sha`, `tree`, `base` go to the finish; `already_landed` → Step 3. `gate-refused` → Step 0's line; `check-failed` → **One failure and the ship stops**, `/po-execute <id>` as a fix run; `conflict` → a human, with `paths`; `remote-check`, `root-not-clean` or any other refusal → stop, quoting its `message`.
 
 ## Step 2 — Land as one commit
-Message and title: `<id>: <story title>`.
-
 `po-gate ship-allowed <id>` is required before any merge, whatever the value of `Ship confirmation`. Below, `Ship confirmation` is always the effective value that section settled.
 
 **Remote check** (Step 1): `pr` needs `origin`; `Merge mode: local` is only for a repository without a remote.
 
-**`Merge mode: pr`**, `<sha>`, `<tree>`, `<base>` from Step 1
-- Push the landing commit alone: `git push --force-with-lease=story/<id> origin <sha>:refs/heads/story/<id>`. When `origin/story/<id>` does not exist yet, the push creates it. Skip the push when the head of `origin/story/<id>` has `<base>` as its only parent, `<tree>` as its tree and `<id>: <story title>` as its message (`git log -1 --format=%s origin/story/<id>`). When the push is skipped, `<sha>` becomes that head: `git rev-parse origin/story/<id>`, never this run's commit. The only other branch this command sends is `framing/ship-confirmation`.
-- A pull request for `story/<id>` already open → reuse it; none → open one to `Target branch`, titled `<id>: <story title>`, with what changed, why, how to test, and the review verdict (max severity, a findings summary minus any finding Step 3 holds, any `Security findings:` line as written).
-- `Ship confirmation: human`, the effective value → stop here: "Pull request ready: <url>. Land it with Rebase and merge — one commit, no merge commit — then run /po-ship <id> again for cleanup." If `Target branch` moves meanwhile, a later run rebuilds and pushes the landing commit, never opening a second pull request.
-- `automatic`, the effective value → wait for the checks below, run `po-gate ship-allowed <id>` once more, then `gh pr merge <url> --rebase --match-head-commit <sha>`, then cleanup.
-- **The checks**, under `automatic` only. `Forge checks: required` → every 30 seconds, for at most 30 minutes, read `gh pr view <url> --json headRefOid` and, once it equals `<sha>`, `gh pr checks <url> --json name,bucket,link`, deciding on the JSON, never the exit code. At least one check and every bucket `pass` or `skipping` → go on. A `fail` or `cancel` bucket, no complete set after 30 minutes, or a forge `gh` cannot read (not GitHub, `gh` missing or logged out) → stop, merging nothing and starting no fix run; the finish names each failed check with its link, or says none arrived. `Forge checks: —` or no line → wait for `ci` to be green when the project declares it.
+**`Merge mode: pr`**, `<sha>` from Step 1. Write the pull request description with the file tool into a fresh `mktemp -d` folder outside the worktree: what changed, why, how to test, and the review verdict (max severity, a findings summary minus any finding Step 3 holds, any `Security findings:` line as written). Run `"${CLAUDE_CONFIG_DIR:-$HOME/.claude}/polype/po" ship push <id> --sha <sha> --body-file <file>` in the background, since its wait for the forge's checks may last 30 minutes; a cut call is simply run again, as it resumes. It alone decides the merge. Remove the folder once the last call has ended.
+- `state`: `merged` → Step 3; `waiting-for-human` → stop with "Pull request ready: <url>. Land it with Rebase and merge — one commit, no merge commit — then run /po-ship <id> again for cleanup."; `merging` or `no-pull-request` → stop, a person proves the merge or opens the pull request.
+- `checks-failed` → stop, merging nothing; the finish names each failed check with its link and `/po-execute <id>` as a fix run. `stale-landing` → Step 1 again. `pull-request-closed`, `checks-timeout`, `checks-unreadable`, `push-refused` or any other refusal → a human, quoting its `message`.
 
 **`Merge mode: local`**
 - `Ship confirmation: human`, the effective value → Step 1 without `--land`, then AskUserQuestion "Land <id> on <Target branch> as one commit?", Merge / Not now. Merge → `po ship land <id> --sha <sha>`; `stale-landing` → Step 1 again, then ask.

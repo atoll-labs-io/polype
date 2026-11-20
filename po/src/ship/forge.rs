@@ -436,10 +436,22 @@ fn codeowners(project: &Project, target: &str, own: Option<&str>, failed: &mut V
     Some(false)
 }
 
+/// The URL `origin` is configured with, before any `insteadOf` rewrite: the forge it names is the
+/// one a token may reach, whatever mirror git is told to fetch from (as `trust::forge::Forge::of`).
+fn origin_url(project: &Project) -> Option<String> {
+    project.git(&["config", "--get", "remote.origin.url"]).map(|url| url.trim().to_string())
+}
+
+/// `<owner>/<repo>` when `origin` is configured on github.com.
+pub(super) fn github_repo(project: &Project) -> Option<String> {
+    let (host, path) = host_and_path(&origin_url(project)?)?;
+    (host == "github.com").then(|| owner_repo(&path)).flatten()
+}
+
 pub fn read(project: &Project, target: &str) -> Reading {
     let mut reading = Reading { forge: None, signals: Signals::default(), failed: Vec::new() };
     let origin = "git remote get-url origin";
-    let Some(url) = project.git(&["remote", "get-url", "origin"]) else {
+    let Some(url) = origin_url(project) else {
         reading.failed.push(failure(None, origin, "no-origin"));
         return reading;
     };
