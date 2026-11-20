@@ -3196,7 +3196,7 @@ Régime des critères (porteur, 2026-11-13) : un critère qu'un script lit a son
 - **Owns** : `po/src/ship/`, `po/src/main.rs`, `po/Cargo.toml`, `po/Cargo.lock`, `bin/polype`, `docs/interface-agent.md`, `method/commands/po-ship.md`, `method/commands/po-drive.md`, `tests/ship-cleans-the-lane.oracle.test.sh`, `tests/ship-cleans-the-lane.test.sh`, `tests/ship-and-fleet-cleanup.test.sh`, `tests/ship-resumes-cleanly.test.sh`, `tests/ship-files-the-other-findings.oracle.test.sh`, `tests/ship.test.sh`, `tests/everything-in-issues.test.sh`, `tests/drive.test.sh`, `tests/ship-follows-forge.test.sh`
 
 **Critères d'acceptation**
-- [ ] `nothing_is_removed_before_the_proof` — sans preuve de l'atterrissage, la commande ne supprime ni worktree ni branche.
+- [ ] `nothing_is_removed_before_the_proof` — sans preuve de l'atterrissage, la commande ne supprime ni worktree ni branche ; cette preuve, la commande la lit elle-même, sur le dépôt d'`origin` et pour le commit d'atterrissage de la story, et `po-ship.md` ne la demande plus à la forge par le seul nom de la branche, ni à l'étape 0 ni au nettoyage (décision d-0047 du porteur).
 - [ ] `cleanup_is_not_forced` — le worktree est retiré sans forcer, puis la branche locale et la branche distante sont supprimées ; un worktree qui porte un travail non commité arrête la commande, qui le nomme.
 - [ ] `landed_lane_is_cleaned_alone` — pour une lane que `po next` rend `ship`, raison `landed`, la commande ne fait que le nettoyage, sans porte ni commit.
 - [ ] `cleanup_reruns_cleanly` — relancée après une interruption, la commande finit ce qui restait et ne rend pas d'erreur pour ce qui est déjà retiré.
