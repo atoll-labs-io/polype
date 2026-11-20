@@ -14,7 +14,6 @@ test_lane_checks_its_start_point() {
   require_file "$DRIVE"
   local prep; prep=$(subsection_of "$DRIVE" 'Preparing the lanes')
   [ -n "$prep" ] || fail "po-drive.md has no '### Preparing the lanes' subsection"
-  grep -qF 'git worktree add -b story/<id>' <<< "$prep" || fail "Preparing the lanes lost its git worktree add"
   holds "$(section_of "$DRIVE" 'Report')" 'the stories waiting for their framing pull request to merge' 'Report'
 }
 

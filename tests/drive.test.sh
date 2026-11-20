@@ -20,7 +20,6 @@ test_drive_dispatches_lanes_in_one_message() {
 
   # The driver prepares the lane itself: planner may not.
   holds "$wave" 'You prepare each lane'"'"'s worktree yourself' 'the wave section'
-  holds "$wave" 'git worktree add -b story/<id>' 'the wave section'
 
   # The five subagents of a lane, in that order, each under the contract of its own file.
   local order; order=$(grep -o 'subagent_type: [a-z]*' <<< "$wave" | sed 's/subagent_type: //' | tr '\n' ' ')

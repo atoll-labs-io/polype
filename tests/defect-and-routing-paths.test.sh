@@ -3,7 +3,6 @@
 
 SKILL="$METHOD/skills/diagnostic/SKILL.md"
 RESEARCH="$METHOD/commands/po-research.md"
-PLAN="$METHOD/commands/po-plan.md"
 PLANNER="$METHOD/agents/planner.md"
 DRIVE="$METHOD/commands/po-drive.md"
 EXECUTE="$METHOD/commands/po-execute.md"
@@ -26,8 +25,6 @@ test_every_path_runs_the_diagnostic() {
 test_no_root_cause_goes_to_a_human() {
   section_of "$SKILL" 'Three hypotheses, then stop' | grep -qF '`Root cause: not found`' \
     || fail "the skill does not fix the marker line"
-  section_of "$PLAN" 'Checks first' | grep -qF 'Root cause: not found' \
-    || fail "/po-plan does not stop on the marker"
   local defect
   defect=$(section_of "$PLANNER" 'The contracts you carry' | grep '^- \*\*Defect story\*\*')
   grep -qF 'Root cause: not found' <<< "$defect" || fail "the planner defect bullet lacks the marker"

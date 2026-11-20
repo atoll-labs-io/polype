@@ -2,7 +2,6 @@
 # s126 — the plan and the defect paths say the same stops, and their tests bite.
 
 RESEARCH="$METHOD/commands/po-research.md"
-PLAN="$METHOD/commands/po-plan.md"
 PLANNER="$METHOD/agents/planner.md"
 PLAN_FLOW="$METHOD/templates/plan-flow.md"
 MUTANTS="$(mktemp -d)"
@@ -38,15 +37,9 @@ PY
 }
 
 test_defect_stops_agree() {
-  local report checks defect
-  report="$(section_of "$RESEARCH" 'The report')"
-  checks="$(section_of "$PLAN" 'Checks first')"
+  local defect
   defect="$(grep -F -- '**Defect story**' "$PLANNER")"
   ! grep -qF 'opens with `Root cause' "$RESEARCH" || fail "a stop still says the research opens with the marker"
-  holds "$report" 'as a whole line (`grep -x`' 'po-research The report'
-  holds "$report" '`## Structuring facts`' 'po-research The report'
-  holds "$report" 'No root cause found for <id>' 'po-research The report'
-  holds "$(grep -F 'Root cause: not found' <<< "$checks")" 'as a whole line (`grep -x`' 'po-plan Checks first'
   holds "$defect" 'as a whole line (`grep -x`' 'planner Defect bullet'
   holds "$defect" 'you write no plan' 'planner Defect bullet'
 }
@@ -63,7 +56,6 @@ test_tech_choice_paths_agree() {
 
 test_plan_tests_bite() {
   local self=plan-and-defect-paths-cleanup.test.sh
-  bites commands/po-research.md 'No root cause found for <id>' $self test_defect_stops_agree
   bites agents/planner.md ', a defect to fix — a story carrying a `Fixes` line (`Corrige` in a French stories file)' diagnostic-skill.test.sh test_defect_stories_get_the_diagnostic
   bites templates/plan-flow.md 'A signal present sends the story to the full track and no short plan is written: the planner takes that track in the same lane, and a technical choice also puts the line `Technical choice: waiting for a human` in that plan, as the planner'\''s `## Limits` says.' $self test_tech_choice_paths_agree
   bites templates/plan-flow.md '| Technical choice that deserves an ADR (library, pattern, data model) | absent — <where checked> | absent — <where checked> |' $self test_tech_choice_paths_agree

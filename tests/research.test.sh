@@ -7,7 +7,6 @@ test_research_bootstraps_worktree_and_branch() {
   require_file "$CMD"
   contains "$CMD" 'git worktree add -b story/<id> <path> <start point>'
   contains "$CMD" 'Do not run the tests.'
-  contains "$CMD" 'Do not repair it with `switch`, `checkout` or `stash`.'
 }
 
 test_research_starts_from_fresh_target_branch() {

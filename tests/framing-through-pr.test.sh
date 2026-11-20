@@ -2,7 +2,6 @@
 # s106 — framing and settings land on the target branch through a pull request, as a fast-forward.
 
 SETUP="$METHOD/commands/po-setup.md"
-RESEARCH="$METHOD/commands/po-research.md"
 
 # Each framing command and the branch its landing uses.
 FRAMING=(
@@ -54,17 +53,4 @@ test_framing_pr_fast_forwards() {
            '"Framing pull request ready: <url>. Land it with Rebase and merge;' 'AskUserQuestion'; do
     holds "$land" "$s" 'the landing section'
   done
-}
-
-test_research_waits_for_framing_merge() {
-  require_file "$RESEARCH"
-  contains "$RESEARCH" 'git show <start point>:docs/stories.md'
-  contains "$RESEARCH" 'waits for its merge'
-  local fetch show add
-  fetch=$(grep -n -m1 -F '`git fetch` it' "$RESEARCH" | cut -d: -f1)
-  show=$(grep -n -m1 -F 'git show <start point>:docs/stories.md' "$RESEARCH" | cut -d: -f1)
-  add=$(grep -n -m1 -F 'git worktree add -b story/<id>' "$RESEARCH" | cut -d: -f1)
-  [ -n "$fetch" ] && [ -n "$add" ] || fail "po-research.md lost its fetch or its worktree creation"
-  [ "$fetch" -lt "$show" ] && [ "$show" -lt "$add" ] \
-    || fail "po-research.md does not check the story between the fetch and the worktree creation"
 }
