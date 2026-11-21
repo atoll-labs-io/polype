@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # The forge double of the replayed journey: a solo github.com repository acme/project whose pull
 # requests are JSON files under $JOURNEY_DIR/prs and whose git side is the bare origin.git. Every
-# call is logged; a call the journey does not expect is logged as unexpected and fails.
+# call is logged; a call the journey does not expect, or a `pr` or `issue` call aimed at another
+# repository, is logged as unexpected and fails.
 set -u
 J="$JOURNEY_DIR"
 printf '%s\n' "$*" >> "$J/calls/gh"
@@ -28,6 +29,9 @@ respond() {
   [ "$1" -lt 300 ]
 }
 mkdir -p "$J/prs"
+case "${1:-}" in
+  pr|issue) [ "$(opt --repo "$@")" = github.com/acme/project ] || unexpected "$@" ;;
+esac
 case "${1:-} ${2:-}" in
   "auth status") exit 0 ;;
   "issue list") echo '[]' ;;
@@ -45,19 +49,22 @@ case "${1:-} ${2:-}" in
       '{number: $n, url: "https://github.com/acme/project/pull/\($n)", state: "OPEN", isDraft: false, headRefName: $h, baseRefName: $b}' \
       > "$J/prs/$n.json"
     echo "https://github.com/acme/project/pull/$n" ;;
+  "pr close")
+    pr="$(find_pr "$(target "$@")")"; [ -n "$pr" ] || { echo "no pull requests found" >&2; exit 1; }
+    jq '.state = "CLOSED"' "$pr" > "$pr.new" && mv "$pr.new" "$pr" ;;
   "pr checks") echo '[{"name":"suite","bucket":"pass","link":"https://ci.example/1"}]' ;;
   "pr merge")
     pr="$(find_pr "$(target "$@")")"; [ -n "$pr" ] || { echo "no pull requests found" >&2; exit 1; }
     has --rebase "$@" || unexpected "$@"
-    sha="$(opt --match-head-commit "$@")" head="$(jq -r .headRefName "$pr")"
+    sha="$(opt --match-head-commit "$@")" head="$(jq -r .headRefName "$pr")" base="$(jq -r .baseRefName "$pr")"
     [ "$sha" = "$(git -C "$origin" rev-parse "refs/heads/$head")" ] || { echo "head moved" >&2; exit 1; }
-    # A rebase made by the forge: the same tree and message on top of origin's main.
+    # A rebase made by the forge: the same tree and message on top of the pull request's base.
     new="$(GIT_AUTHOR_NAME=forge GIT_AUTHOR_EMAIL=forge@example.com GIT_COMMITTER_NAME=forge GIT_COMMITTER_EMAIL=forge@example.com \
-      git -C "$origin" commit-tree "$sha^{tree}" -p refs/heads/main -m "$(git -C "$origin" log -1 --format=%B "$sha")")" || exit 1
-    git -C "$origin" update-ref refs/heads/main "$new" || exit 1
+      git -C "$origin" commit-tree "$sha^{tree}" -p "refs/heads/$base" -m "$(git -C "$origin" log -1 --format=%B "$sha")")" || exit 1
+    git -C "$origin" update-ref "refs/heads/$base" "$new" || exit 1
     jq '.state = "MERGED"' "$pr" > "$pr.new" && mv "$pr.new" "$pr" ;;
   "api "*)
-    path="" skip="" include="" method=GET
+    path="" query="" skip="" include="" method=GET
     for a in "${@:2}"; do
       if [ "$skip" = method ]; then method="$a"; skip=""; continue; fi
       if [ -n "$skip" ]; then skip=""; continue; fi
@@ -66,7 +73,7 @@ case "${1:-} ${2:-}" in
         -X|--method) skip=method ;;
         --hostname|-H|--header|--input|-q|--jq|-t|--template|-f|-F|--field|--raw-field|--cache) skip=1 ;;
         -*) ;;
-        *) path="${a%%\?*}"; path="${path#/}" ;;
+        *) path="${a%%\?*}"; path="${path#/}"; case "$a" in *\?*) query="${a#*\?}" ;; esac ;;
       esac
     done
     case "$method $path" in
@@ -74,6 +81,17 @@ case "${1:-} ${2:-}" in
       "GET repos/acme/project/collaborators") respond 200 '[{"login":"me","permissions":{"push":true}}]' "$include" ;;
       "GET repos/acme/project/branches/main/protection") respond 404 '{"message":"Branch not protected"}' "$include" ;;
       "GET repos/acme/project/rules/branches/main") respond 200 '[]' "$include" ;;
+      "GET repos/acme/project/pulls")
+        head=""
+        IFS='&' read -ra pairs <<< "$query"
+        for pair in "${pairs[@]}"; do case "$pair" in head=acme:*) head="${pair#head=acme:}" ;; esac; done
+        [ -n "$head" ] || unexpected "$@"
+        respond 200 "$(for pr in "$J"/prs/*.json; do
+            [ -f "$pr" ] || continue
+            jq -c --arg h "$head" 'select(.headRefName == $h) | {number,
+              state: (if .state == "OPEN" then "open" else "closed" end),
+              merged_at: (if .state == "MERGED" then "2026-01-01T00:00:00Z" else null end)}' "$pr"
+          done | jq -sc .)" "$include" ;;
       "POST repos/acme/project/issues")
         n=$(( $(grep -c 'repos/acme/project/issues' "$J/calls/gh") ))
         respond 201 "{\"html_url\":\"https://github.com/acme/project/issues/$n\",\"number\":$n}" "$include" ;;

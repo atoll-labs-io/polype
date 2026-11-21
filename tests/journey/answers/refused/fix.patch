@@ -1,0 +1,6 @@
+diff --git a/src/@ID@.fix@N@.txt b/src/@ID@.fix@N@.txt
+new file mode 100644
+--- /dev/null
++++ b/src/@ID@.fix@N@.txt
+@@ -0,0 +1 @@
++fix run @N@

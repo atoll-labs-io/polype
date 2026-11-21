@@ -1,0 +1,13 @@
+{
+  "motive": "technical-choice",
+  "question": "Where does @ID@ keep its text?",
+  "options": [
+    {"key": "file", "label": "A plain file", "consequence": "src/@ID@.txt holds the text, as the plan says."},
+    {"key": "store", "label": "A store", "consequence": "a new dependency, which the throwaway project does not have."}
+  ],
+  "recommended": "file",
+  "why": "A written answer of the replayed journey: the plain file is what the story already writes.",
+  "reversible": true,
+  "story": "@ID@",
+  "blocks": ["@ID@"]
+}
