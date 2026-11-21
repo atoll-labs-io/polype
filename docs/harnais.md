@@ -119,3 +119,15 @@ La ligne crontab équivalente, le `;` lançant `/po-intake` que le contrôle pas
 ```
 
 L'exemple GitHub Actions s'en passe : le runner n'a pas d'identifiants Claude.
+
+## Le parcours rejoué
+
+`tests/journey/journey.sh` fait traverser à des stories jetables tout leur cycle, de l'action `plan` de `po next` jusqu'au commit `<id>: <titre>` sur `Target branch`, sans aucun modèle : à chaque vague il lit `po next` et applique, pour chaque action, une réponse écrite d'avance (`tests/journey/answers/plain/`). Il tourne dans `tests/run.sh`, par `tests/journey-runs-to-a-landed-commit.oracle.test.sh` et `tests/journey-runs-to-a-landed-commit.test.sh`.
+
+**Ce qu'il prouve.** `po next` est suivi pas à pas, dans l'ordre et avec les raisons qu'il donne ; les portes `plan-validated`, `verif-current` et `ship-allowed` sont franchies pour de vrai ; le pre-commit est actif (un commit de code avant validation du plan doit être refusé) ; `po-run` et `po record review` écrivent leurs lignes ; `po ship forge`, `land`, `push`, `file` et `clean` mènent la story jusqu'au commit atterri, en local comme par pull request ; deux lanes atterrissent dans l'ordre où leurs revues ont été enregistrées, pas dans l'ordre du fichier des stories ; rien ne sort de la machine (une forge `gh` doublée, une origine en dépôt nu local, `GIT_ALLOW_PROTOCOL=file`, aucun jeton dans l'environnement, et tout appel imprévu à `gh`, `curl`, `glab`, `tea`, `task`, `claude` ou `cargo` fait échouer le parcours).
+
+**Le pivot.** Retirer une étape veut dire ne pas la lancer : son fichier manque ou reste incomplet, `po next` redonne la même action, et le parcours s'arrête à cette porte. Une étape remplacée par un fichier écrit à la main, elle, passerait : les portes lisent des fichiers, pas qui les a écrits (une revue sans `po record`, des lignes de `## Runs` tapées à la main). Le parcours ne prouve le tampon de `po record` que par `trust.method_version` de `po state`.
+
+**Ce qu'il ne prouve pas.** Qu'un modèle suive la prose des commandes (s206) ; le design, la QA et les arrêts qui vont à la personne (s200) ; qu'une étape falsifiée serait refusée ; que la forge doublée se comporte comme GitHub.
+
+**Le lancer.** `bash tests/run.sh journey-runs-to-a-landed-commit.oracle.test.sh journey-runs-to-a-landed-commit.test.sh`. Chaque parcours vit dans un seul dossier `polype-journey.XXXXXX` sous `$TMPDIR` (ou `/tmp`), retiré à toute sortie, interruption comprise ; seul un SIGKILL le laisse, et `find "${TMPDIR:-/tmp}" -maxdepth 1 -name 'polype-journey.*'` le retrouve.

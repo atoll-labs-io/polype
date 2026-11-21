@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+# The installer's `cargo build` meets this double: the journey builds nothing. journey_project
+# takes the installer's calls away; any call left is reported by journey_audit.
+printf '%s\n' "$*" >> "$JOURNEY_DIR/calls/cargo"
+echo "cargo double: the journey builds nothing" >&2
+exit 1

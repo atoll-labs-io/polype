@@ -1,0 +1,83 @@
+#!/usr/bin/env bash
+# The forge double of the replayed journey: a solo github.com repository acme/project whose pull
+# requests are JSON files under $JOURNEY_DIR/prs and whose git side is the bare origin.git. Every
+# call is logged; a call the journey does not expect is logged as unexpected and fails.
+set -u
+J="$JOURNEY_DIR"
+printf '%s\n' "$*" >> "$J/calls/gh"
+origin="$J/origin.git"
+unexpected() { printf 'gh: %s\n' "$*" >> "$J/calls/unexpected"; echo "gh double: unexpected call: $*" >&2; exit 1; }
+opt() { local want="$1"; shift; while [ $# -gt 0 ]; do [ "$1" = "$want" ] && { echo "${2:-}"; return; }; shift; done; }
+has() { local want="$1" a; shift; for a in "$@"; do [ "$a" = "$want" ] && return 0; done; return 1; }
+target() { local a; for a in "${@:3}"; do case "$a" in -*) ;; *) echo "$a"; return ;; esac; done; }
+with_head() {
+  jq --arg oid "$(git -C "$origin" rev-parse -q --verify "refs/heads/$(jq -r .headRefName "$1")")" \
+    '{isCrossRepository: false, headRepositoryOwner: {login: "acme"}, headRefOid: $oid} + .' "$1"
+}
+find_pr() {
+  local pr
+  for pr in "$J"/prs/*.json; do
+    [ -f "$pr" ] || continue
+    jq -e --arg k "$1" '(.url == $k) or ((.number | tostring) == $k)' "$pr" >/dev/null && { echo "$pr"; return; }
+  done
+}
+# respond <status> <body> <include headers>
+respond() {
+  [ -z "$3" ] || printf 'HTTP/2.0 %s X\nContent-Type: application/json\r\n\r\n' "$1"
+  printf '%s\n' "$2"
+  [ "$1" -lt 300 ]
+}
+mkdir -p "$J/prs"
+case "${1:-} ${2:-}" in
+  "auth status") exit 0 ;;
+  "issue list") echo '[]' ;;
+  "pr list")
+    head="$(opt --head "$@")"
+    for pr in "$J"/prs/*.json; do
+      [ -f "$pr" ] && [ "$(jq -r .headRefName "$pr")" = "$head" ] && with_head "$pr"
+    done | jq -s . ;;
+  "pr view")
+    pr="$(find_pr "$(target "$@")")"; [ -n "$pr" ] || { echo "no pull requests found" >&2; exit 1; }
+    with_head "$pr" ;;
+  "pr create")
+    n=$(( $(find "$J/prs" -name '*.json' | wc -l) + 1 ))
+    jq -n --argjson n "$n" --arg h "$(opt --head "$@")" --arg b "$(opt --base "$@")" \
+      '{number: $n, url: "https://github.com/acme/project/pull/\($n)", state: "OPEN", isDraft: false, headRefName: $h, baseRefName: $b}' \
+      > "$J/prs/$n.json"
+    echo "https://github.com/acme/project/pull/$n" ;;
+  "pr checks") echo '[{"name":"suite","bucket":"pass","link":"https://ci.example/1"}]' ;;
+  "pr merge")
+    pr="$(find_pr "$(target "$@")")"; [ -n "$pr" ] || { echo "no pull requests found" >&2; exit 1; }
+    has --rebase "$@" || unexpected "$@"
+    sha="$(opt --match-head-commit "$@")" head="$(jq -r .headRefName "$pr")"
+    [ "$sha" = "$(git -C "$origin" rev-parse "refs/heads/$head")" ] || { echo "head moved" >&2; exit 1; }
+    # A rebase made by the forge: the same tree and message on top of origin's main.
+    new="$(GIT_AUTHOR_NAME=forge GIT_AUTHOR_EMAIL=forge@example.com GIT_COMMITTER_NAME=forge GIT_COMMITTER_EMAIL=forge@example.com \
+      git -C "$origin" commit-tree "$sha^{tree}" -p refs/heads/main -m "$(git -C "$origin" log -1 --format=%B "$sha")")" || exit 1
+    git -C "$origin" update-ref refs/heads/main "$new" || exit 1
+    jq '.state = "MERGED"' "$pr" > "$pr.new" && mv "$pr.new" "$pr" ;;
+  "api "*)
+    path="" skip="" include="" method=GET
+    for a in "${@:2}"; do
+      if [ "$skip" = method ]; then method="$a"; skip=""; continue; fi
+      if [ -n "$skip" ]; then skip=""; continue; fi
+      case "$a" in
+        -i|--include) include=1 ;;
+        -X|--method) skip=method ;;
+        --hostname|-H|--header|--input|-q|--jq|-t|--template|-f|-F|--field|--raw-field|--cache) skip=1 ;;
+        -*) ;;
+        *) path="${a%%\?*}"; path="${path#/}" ;;
+      esac
+    done
+    case "$method $path" in
+      "GET user") respond 200 '{"login":"me"}' "$include" ;;
+      "GET repos/acme/project/collaborators") respond 200 '[{"login":"me","permissions":{"push":true}}]' "$include" ;;
+      "GET repos/acme/project/branches/main/protection") respond 404 '{"message":"Branch not protected"}' "$include" ;;
+      "GET repos/acme/project/rules/branches/main") respond 200 '[]' "$include" ;;
+      "POST repos/acme/project/issues")
+        n=$(( $(grep -c 'repos/acme/project/issues' "$J/calls/gh") ))
+        respond 201 "{\"html_url\":\"https://github.com/acme/project/issues/$n\",\"number\":$n}" "$include" ;;
+      *) unexpected "$@" ;;
+    esac ;;
+  *) unexpected "$@" ;;
+esac

@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+# Copied as curl, glab, tea, task and claude: the journey expects no call to any of them.
+printf '%s: %s\n' "${0##*/}" "$*" >> "$JOURNEY_DIR/calls/unexpected"
+echo "${0##*/} double: unexpected call: $*" >&2
+exit 1
