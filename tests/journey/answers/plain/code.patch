@@ -1,0 +1,12 @@
+diff --git a/src/@ID@.txt b/src/@ID@.txt
+new file mode 100644
+--- /dev/null
++++ b/src/@ID@.txt
+@@ -0,0 +1 @@
++@TITLE@
+diff --git a/checks/@ID@.check b/checks/@ID@.check
+new file mode 100644
+--- /dev/null
++++ b/checks/@ID@.check
+@@ -0,0 +1 @@
++grep -qx '@TITLE@' src/@ID@.txt
