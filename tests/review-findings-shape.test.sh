@@ -81,7 +81,6 @@ test_recording_runs_the_check() {
   holds "$rec" 'This re-ask spends no fix loop.' "po-review ## Recording"
   holds "$rec" '`Next action: a person settles the findings shape — po-gate findings-shape <id> refused the reviewer twice`' "po-review ## Recording"
   holds "$rec" 'never checked' "po-review ## Recording"
-  holds "$(section_of "$REVIEW_CMD" Outcome)" "a \`Next action:\` naming \`po-gate findings-shape\` → \"Review of <id> stopped" "po-review ## Outcome"
 
 }
 
@@ -121,7 +120,6 @@ test_other_gate_failures_stop() {
   holds "$s" 'Any other exit' "po-review Recording"
   holds "$s" 'is not a malformed review: the reviewer is not dispatched again' "po-review Recording"
   holds "$s" '`Next action: a person runs po-gate findings-shape <id> — the check could not run (exit <n>)`' "po-review Recording"
-  holds "$(section_of "$REVIEW_CMD" Outcome)" 'or the check could not run (exit <n>)' "po-review Outcome"
 }
 
 test_adr_narrows_the_shape() {

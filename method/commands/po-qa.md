@@ -1,5 +1,5 @@
 ---
-description: Hands one story's surface to the qa subagent, which checks it with the driver of that surface and returns its report; this command records that report through po record, then commits the evidence alone. This command cannot edit files; its shell serves the record and the evidence commit.
+description: Hands one story's surface to the qa subagent, records its report and commits the evidence alone
 argument-hint: <story id or name>
 allowed-tools:
   - Read
@@ -14,27 +14,19 @@ Reads settings: `Worktree root`, `Dev`, `Model strong`
 
 Story: $ARGUMENTS
 
-This command has no Write or Edit tool. Bash serves exactly two uses, the record and the evidence commit below; any other shell command is out of bounds. The `qa` subagent checks the story's surface with its driver and returns its report; it fixes nothing, and neither does this command. Never describe a walk the subagent did not report.
+Bash serves exactly three uses, `po next` by hand, the record and the evidence commit below; any other shell command is out of bounds. Never describe a walk the subagent did not report.
 
-No Agent tool available → say so and stop.
-
-## Preconditions, checked by reading files
-1. `AGENTS.local.md` exists; if not, point to `/po-setup` and stop.
-2. $ARGUMENTS matches exactly one id of `docs/stories.md`; otherwise list the ids and stop.
-3. The worktree is registered, checked as `/po-execute` checks it: `<shared>/worktrees/<id>/gitdir` contains `<repository root>/<Worktree root><id>/.git`, and `<shared>/worktrees/<id>/HEAD` contains `ref: refs/heads/story/<id>`, `<shared>` being `<repository root>/.git` or, when that is a file, the `<common>` its `gitdir:` line names. Any difference → point to `/po-research <id>` and stop.
-4. `docs/verif/<id>.md` missing in the worktree → there is no built code to walk yet: point to `/po-execute <id>` and stop.
-5. The story's surface is `screen` and `Dev` is `—` → stop: the project has no command to start it; ask for `Dev` in `AGENTS.local.md`.
-6. The story's surface is `—`, or it has no `Surface` line and its text shows no screen → stop and say so: there is nothing to check.
-7. `Model strong` missing → stop and name it.
+## By hand
+`/po-drive` skips this section. Run `po next` and route as `## By hand` of `/po-execute` says, going on only on `qa`, or on the `ask` `QA status: blocked` once the person has settled what blocked the walk. The story's surface is `screen` and `Dev` is `—` → stop: the project has no command to start it; ask for `Dev` in `AGENTS.local.md`.
 
 ## Delegation
+Reason `QA evidence not committed` → no walk: go straight to `## The evidence commit`.
+
 Call the Agent tool with `subagent_type: qa`, `model:` set to `Model strong` whatever the story's complexity, description "QA <id>", and this prompt, filled in:
 
 > Story <id>. Worktree: <absolute path>. How to work is settled by your agent file. Start every shell command with `cd <absolute path> &&` or use `git -C <absolute path>`. Settings and project commands are in AGENTS.local.md; run `Dev` exactly as written.
 
-Wait for the subagent to finish.
-
-`Model strong` at `—` passes no `model` at all: the qa subagent runs on the session's model. If the Agent tool rejects the model name, stop and report the setting and its value: no `docs/qa/<id>/report.md`, no evidence commit, and never a retry with another model or with none, because the setting is at fault, not the story.
+`Model strong` at `—` passes no `model` at all. If the Agent tool rejects the model name, stop and report the setting and its value: no `docs/qa/<id>/report.md`, no evidence commit, and never a retry with another model or with none, because the setting is at fault, not the story.
 
 ## The evidence commit
 The review finds the walk only on the story branch, so the report and its captures are committed there, alone. A blocked walk is evidence too: `complete` or `blocked` alike.

@@ -20,8 +20,6 @@ test_implementer_expects_the_design_folder() {
 }
 
 test_execute_mentions_the_design_when_present() {
-  contains "$EXECUTE" 'Glob `docs/designs/<id>/*` in the worktree: any match means the story **has a design**'
-  contains "$EXECUTE" 'When the story has a design, append:'
   contains "$EXECUTE" '> This story has a design: docs/designs/<id>/ is expected uncommitted work, like the research and the plan. Read design.md before the screen tasks, build the screen it settles, and commit the folder with the story.'
   local tool
   for tool in Bash Write Edit; do lacks_tool "$EXECUTE" "$tool"; done

@@ -10,13 +10,6 @@ dispatches_on_strong() {
     || fail "${1#"$ROOT"/} does not dispatch $2 on \`Model strong\` on the same line"
 }
 
-# Fails unless one line naming the implementer dispatch gives light up to the threshold, strong above.
-implementer_adapts_in() {
-  grep -E -- '`subagent_type: implementer`|Delegate to `implementer`' "$1" \
-    | grep -qF '`Model light` up to `Light up to`, `Model strong` above' \
-    || fail "${1#"$ROOT"/} does not give the implementer \`Model light\` up to \`Light up to\`, \`Model strong\` above"
-}
-
 section_of() { awk -v h="## $2" '$0 == h {on=1; next} /^## / {on=0} on' "$1"; }
 
 test_settings_declare_the_model_routing() {
@@ -43,11 +36,8 @@ test_deciders_always_run_on_the_strong_model() {
   dispatches_on_strong "$CMDS/po-qa.md" qa
   dispatches_on_strong "$CMDS/po-stories-review.md" stories-reviewer
   local role
-  for role in planner designer qa reviewer; do dispatches_on_strong "$CMDS/po-drive.md" "$role"; done
-  local f
-  for f in po-review po-qa po-stories-review; do
-    contains "$CMDS/$f.md" '`Model strong` missing → stop and name it.'
-  done
+  for role in planner designer; do dispatches_on_strong "$CMDS/po-drive.md" "$role"; done
+  contains "$CMDS/po-stories-review.md" '`Model strong` missing → stop and name it.'
 }
 
 test_only_the_implementer_adapts() {
@@ -55,7 +45,6 @@ test_only_the_implementer_adapts() {
   contains "$exec" 'The implementer gets `Model light` when the story'"'"'s complexity is at most `Light up to`, `Model strong` above it.'
   contains "$exec" 'the first line of `## Complexity` in `docs/research/<id>.md`'
   contains "$exec" 'No research file → the `Complexité`/`Complexity` of the story in `docs/stories.md`'
-  contains "$exec" 'A fix run follows the same rule as the first run of the same story.'
   contains "$exec" 'A model setting at `—` passes no `model` at all'
   contains "$exec" 'Never retry with another model or with none'
   contains "$exec" '`subagent_type: implementer`, `model` as `## Model` settles'
@@ -99,7 +88,4 @@ test_model_refusal_stops_everywhere() {
       || fail "$f ## Delegation does not stop on a refused model name"
   done
   contains "$CMDS/po-drive.md" 'If the Agent tool rejects a model name, that lane stops, named in the report with the setting and its value'
-  implementer_adapts_in "$CMDS/po-drive.md"
-  grep -F 'fix-run sentence' "$CMDS/po-drive.md" \
-    | grep -qF '`Model light` up to `Light up to`, `Model strong` above' || fail "drive fix runs drop the model rule"
 }

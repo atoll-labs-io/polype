@@ -35,17 +35,15 @@ ROWS
 }
 
 test_qa_runs_without_a_screen() {
-  local checks pre line
+  local checks line
   checks="$(gate_section "$QA_AGENT" Checks)"
-  pre="$(gate_section "$PO_QA" Preconditions)"
   grep -F '`Dev`' <<< "$checks" | grep -qF 'surface is `screen`' || fail "qa.md has no Dev check scoped to screen"
   grep -F 'open a page and capture it' <<< "$checks" | grep -qF 'surface is `screen`' \
     || fail "qa.md browser check is not scoped to screen"
-  grep -F '`Dev`' <<< "$pre" | grep -qF 'surface is `screen`' || fail "po-qa.md has no Dev precondition scoped to screen"
   while IFS= read -r line; do
     [ -n "$line" ] || continue
     grep -qF 'surface is `screen`' <<< "$line" || fail "a gate line stops on Dev or a browser for every surface: $line"
-  done < <(printf '%s\n%s\n' "$checks" "$pre" | grep -F '→' | grep -E '`Dev`|open a page' || true)
+  done < <(printf '%s\n' "$checks" | grep -F '→' | grep -E '`Dev`|open a page' || true)
   ! grep -qF 'The story shows no screen' "$PO_QA" || fail "po-qa.md still stops on 'The story shows no screen'"
   contains "$QA_AGENT" 'observe through the surface'
   contains "$QA_AGENT" 'status --porcelain` again'

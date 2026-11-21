@@ -44,10 +44,6 @@ test_drive_never_writes_code_or_verdicts() {
   holds "$verdict" 'recorded **verbatim** into `docs/reviews/<id>.md`' 'the verdict section'
   holds "$verdict" 'You transcribe it, you do not author it' 'the verdict section'
   holds "$verdict" 'no severity is yours to choose, no finding yours to soften or drop' 'the verdict section'
-
-  # The one exception, the blocked fallback /po-review mandates.
-  holds "$verdict" 'answers without both verdict lines is recorded as `Review status: blocked`' 'the verdict section'
-  holds "$verdict" '`Max severity: critical` and `Ship allowed: no`' 'the verdict section'
 }
 
 test_drive_ships_serially_after_each_review() {

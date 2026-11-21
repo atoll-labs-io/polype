@@ -34,9 +34,9 @@ Run `"${CLAUDE_CONFIG_DIR:-$HOME/.claude}/polype/po" next --remote`. It prints `
 | `plan` | the planner, step 1; reason `ready` → prepare the worktree first |
 | `validate-plan` | `## Validating a wave's plans` |
 | `design` | the designer, step 2 |
-| `execute`, `fix` | the implementer, step 3; for `fix`, its prompt plus the fix-run sentence of `/po-execute`, same model rule: `Model light` up to `Light up to`, `Model strong` above |
-| `qa` | the qa subagent, step 4; reason `QA evidence not committed` → no walk: `po record qa <id>` on the report on disk, then the `<id>: QA evidence` commit |
-| `review` | the reviewer, step 5, at the `Fix loop:` that `/po-review` computes |
+| `execute`, `fix` | the implementer, step 3 |
+| `qa` | the qa subagent, step 4 |
+| `review` | the reviewer, step 5 |
 | `ship` | `/po-ship <id>`; reason `landed` → its cleanup only, taking no slot and no place in the serial order |
 | `wait` | nothing; reported |
 | `ask` | `po inbox add` first, options and recommendation included, then the person at once, with the reason |
@@ -61,9 +61,9 @@ The lanes of a wave must **overlap in time**: every subagent of a stage is start
 
 1. `subagent_type: planner`, `model:` set to `Model strong` — the story id, the absolute worktree path and the action's `track`, under its own contract. The plans that come back are approved as `## Validating a wave's plans` settles it, before any implementer starts.
 2. **The design stage**, for a story with a screen (`AGENTS.md`, Law 1): `subagent_type: designer`, `model:` set to `Model strong` — the story id and the absolute worktree path, under its own contract (`method/agents/designer.md`). Like the others, every designer of a wave leaves before any of them is waited on.
-3. `subagent_type: implementer`, its model following `/po-execute`'s `## Model`: `Model light` up to `Light up to`, `Model strong` above — the prompt `/po-execute` fixes (`method/commands/po-execute.md`), word for word, for each lane whose `docs/plans/<id>.md` holds `validated: yes`. A plan without that line never reaches an implementer.
-4. **The QA stage**: `subagent_type: qa`, `model:` set to `Model strong` — the prompt `/po-qa` fixes (`method/commands/po-qa.md`), word for word. An answer with a `QA status:` line goes through `/po-qa`'s `## The evidence commit`: `po record qa <id>`, then the `<id>: QA evidence` commit `-- docs/qa/<id>/` (ADR-0102); with no `QA status:` line, the lane stops with the reason the subagent gave. Like the others, every qa of a wave leaves before any of them is waited on.
-5. `subagent_type: reviewer`, `model:` set to `Model strong` — the prompt `/po-review` fixes (`method/commands/po-review.md`), word for word, with this lane's `Fix loop: <n>`.
+3. `subagent_type: implementer` — the prompt `/po-execute` fixes (`method/commands/po-execute.md`), its appended sentences and model included, word for word, for each lane whose `docs/plans/<id>.md` holds `validated: yes`. A plan without that line never reaches an implementer.
+4. **The QA stage**: `subagent_type: qa` — the model and the prompt `/po-qa` fixes (`method/commands/po-qa.md`), word for word, from its `## Delegation` through `## The evidence commit` (ADR-0102). Like the others, every qa of a wave leaves before any of them is waited on.
+5. `subagent_type: reviewer` — the model and the prompt `/po-review` fixes (`method/commands/po-review.md`), word for word, at the `Fix loop:` its `## Fix loop` computes.
 
 A lane that stops stays stopped and is reported. A lane that goes to a human goes to the person at once, in a message of its own naming the story, the reason and what the person must decide; it is not asked through AskUserQuestion, which would hold every other lane until the answer came. Meanwhile the other lanes carry on.
 
@@ -87,9 +87,7 @@ Under `human`, the whole wave goes into **one AskUserQuestion**, never one per s
 A plan left unapproved keeps `validated: no`. No implementer is dispatched for it, its lane waits for the next wave, where the plan is offered again; the gate refusing it is the same `po-gate plan-validated <id>` as everywhere else, never your memory of the answer. On `Stop`, the plans stay on disk as the planners wrote them, and the next run resumes at the plan with nothing to redo.
 
 ## The verdict, and the fix runs
-A reviewer's answer is recorded **verbatim** into `docs/reviews/<id>.md` in the lane's worktree, through `po record review <id>` as `## Recording` of `/po-review` says, its shape check, re-ask and stops included. You transcribe it, you do not author it: no severity is yours to choose, no finding yours to soften or drop.
-
-Besides the shape stops, the one report you compose yourself is the failure `/po-review` mandates: a subagent that fails, times out, returns nothing, or answers without both verdict lines is recorded as `Review status: blocked` with the cause, what is missing and the loop number, then `Max severity: critical` and `Ship allowed: no`. A severity is never guessed.
+A reviewer's answer is recorded **verbatim** into `docs/reviews/<id>.md` in the lane's worktree, through `po record review <id>` as `## Recording` of `/po-review` says, its shape check, re-ask, stops and blocked report for a failed reviewer included. You transcribe it, you do not author it: no severity is yours to choose, no finding yours to soften or drop.
 
 What a recorded verdict leads to, the next `po next` says.
 
