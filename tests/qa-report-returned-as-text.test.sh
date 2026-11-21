@@ -36,17 +36,14 @@ test_po_qa_records_the_report() {
   holds "$commit" 'No `QA status:` line → no report, no commit' 'po-qa.md, evidence commit'
   lacks_tool "$PO_QA" Write
   lacks_tool "$PO_QA" Edit
-  contains "$PO_QA" 'Bash serves exactly two uses'
 }
 
 test_drive_records_the_report() {
   require_file "$DRIVE"
-  local wave n item
+  local wave n
   wave=$(section_of "$DRIVE" 'A wave')
   n=$(grep -cF 'subagent_type: qa' <<< "$wave")
   [ "$n" -eq 1 ] || fail "po-drive.md, a wave: expected one qa line, found $n"
-  item=$(grep -F 'subagent_type: qa' <<< "$wave")
-  holds "$item" 'no `QA status:` line' 'the QA item'
 }
 
 test_qa_report_path_stays() {

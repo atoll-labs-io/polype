@@ -160,8 +160,9 @@ check_tools() {
 }
 
 # --- rule: fail-closed --------------------------------------------------------
-# Inside the gate sections only, a rule whose trigger names an absence must say
-# stop, ask, carry on or never blocks. The scope is narrow on purpose: over a
+# Inside the gate sections only, `## By hand` among them, a rule whose trigger names
+# an absence must say stop, ask, carry on or never blocks before its clause ends, so
+# a stop further down the line cannot vouch for it. The scope is narrow on purpose: over a
 # whole file, 28 of 95 arrow lines are legitimate non-blocking branches, so the
 # same rule applied everywhere would be a false-positive machine.
 
@@ -172,12 +173,14 @@ check_fail_closed() {
     while IFS=$'\t' read -r line text; do
       report "$rel" "$line" fail-closed "an absence triggers no stop: $text"
     done < <(awk '
-      /^## / {gate = ($0 ~ /^## (Checks|Preconditions|Step 0)/)}
+      /^## / {gate = ($0 ~ /^## (Checks|Preconditions|Step 0|By hand)/)}
       gate {
         n = split($0, part, /→/)
         for (k = 2; k <= n; k++) {
           if (part[k-1] !~ /No |no |None|none|Missing|missing|not |`—`|Any other|Another/) continue
-          if (part[k] ~ /stop|ask|carry on|never blocks/) continue
+          outcome = part[k]
+          sub(/(;|\. ).*/, "", outcome)
+          if (outcome ~ /stop|ask|carry on|never blocks/) continue
           printf "%d\t%s\n", NR, $0
         }
       }

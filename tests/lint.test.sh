@@ -90,6 +90,22 @@ test_lint_checks_fail_closed_rules_have_a_stop() {
   reports_one "$m" "agents/designer.md:$(line_of "$f" '`Design source` at `—`')" \
     fail-closed "an absence triggers no stop:"
 
+  # A command's `## By hand` holds its stops too: one weakened to a bare pointer is a breach.
+  local cmd from to
+  while IFS='|' read -r cmd from to; do
+    m=$(mutant); f="$m/commands/$cmd.md"
+    grep -qF -- "$from" "$f" || fail "$cmd.md lost the stop this mutation weakens: $from"
+    sed -i "s|$from|$to|" "$f"
+    reports_one "$m" "commands/$cmd.md:$(line_of "$f" "$to")" \
+      fail-closed "an absence triggers no stop:"
+  done <<'EOF'
+po-execute|no `AGENTS.local.md` → stop, naming `/po-setup`|no `AGENTS.local.md` → name `/po-setup`
+po-research|no `AGENTS.local.md` → stop, naming `/po-setup`|no `AGENTS.local.md` → name `/po-setup`
+po-plan|no `AGENTS.local.md` → stop, naming `/po-setup`|no `AGENTS.local.md` → name `/po-setup`
+po-design|no `AGENTS.local.md` → stop, naming `/po-setup`|no `AGENTS.local.md` → name `/po-setup`
+po-qa|`Dev` is `—` → stop: the project has no command to start it; ask for|`Dev` is `—` → the project has no command to start it; see
+EOF
+
   # Negative controls: the rule is narrow, not a machine that flags every arrow.
   # A non-blocking branch on a trigger that names no absence stays green inside a gate
   # section, and an absence outside the gate sections is not this rule's business.

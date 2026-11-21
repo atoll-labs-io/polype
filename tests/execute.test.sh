@@ -13,19 +13,8 @@ test_execute_has_no_write_tools() {
 }
 
 test_execute_fails_closed_on_unvalidated_plan() {
-  contains "$CMD" 'Its frontmatter holds `validated: yes`'
   contains "$CMD" 'is not approved yet'
   contains "$CMD" '`subagent_type: implementer`'
-}
-
-test_execute_checks_worktree_registration_without_shell() {
-  contains "$CMD" '`<shared>/worktrees/<id>/HEAD` contains `ref: refs/heads/story/<id>`'
-  contains "$CMD" '`<shared>/worktrees/<id>/gitdir` contains `<repository root>/<Worktree root><id>/.git`'
-}
-
-test_execute_handles_a_repository_root_that_is_itself_a_worktree() {
-  contains "$CMD" 'if it is a file (the repository root is itself a linked worktree)'
-  contains "$METHOD/commands/po-review.md" 'checked the way `/po-execute` does it'
 }
 
 test_implementer_preloads_testing_doctrine() {

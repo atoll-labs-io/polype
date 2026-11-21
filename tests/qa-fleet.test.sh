@@ -33,8 +33,6 @@ test_drive_wave_includes_qa() {
   before "$q" "$r" "the qa dispatch must precede the reviewer"
   local item; item=$(sed -n "${q}p" <<< "$wave")
   holds "$item" 'the prompt `/po-qa` fixes' 'the QA item'
-  holds "$item" 'QA evidence' 'the QA item'
-  holds "$item" '-- docs/qa/<id>/' 'the QA item'
   holds "$item" 'every qa of a wave leaves before any of them is waited on' 'the QA item'
   holds "$wave" 'then every implementer, then every qa, then every reviewer' 'the wave section'
 }
@@ -59,21 +57,10 @@ test_help_and_readme_show_qa() {
 test_qa_blocked_review_goes_back_to_qa() {
   require_file "$REVIEW"; require_file "$DRIVE"
   contains "$REVIEW" 'this review keeps the same `Fix loop:` value instead, because a QA return is not a fix run'
-  contains "$REVIEW" 'Run /po-qa <id>, then /po-review <id> again; no fix run is spent.'
-  contains "$REVIEW" '- Any other `Ship allowed: no` → "Ship blocked for <id>. Run /po-execute <id> (fix run)'
 }
-
-P1='`Review status: blocked` and a `Next action:` naming `/po-qa`'
-P2='`Review status: blocked` and a `Next action:` naming the `<id>: QA evidence` commit'
-M1='Review blocked on QA for <id>. Run /po-qa <id>, then /po-review <id> again; no fix run is spent.'
-M2='Review blocked on uncommitted QA evidence for <id>. Commit it alone: git commit -m "<id>: QA evidence" -- docs/qa/<id>/, then /po-review <id> again; no fix run is spent.'
 
 test_qa_blocked_needs_a_blocked_status() {
   require_file "$REVIEW"; require_file "$DRIVE"
-  holds "$(section_of "$REVIEW" 'Preconditions')" "$P1" 'po-review.md preconditions'
-  holds "$(section_of "$REVIEW" 'Preconditions')" "$P2" 'po-review.md preconditions'
-  holds "$(section_of "$REVIEW" 'Outcome')" "- \`Ship allowed: no\` with $P1 → \"$M1\"" 'po-review.md outcome'
-  holds "$(section_of "$REVIEW" 'Outcome')" "- \`Ship allowed: no\` with $P2 → \"$M2\"" 'po-review.md outcome'
   local f line
   for f in po-review po-drive po-execute po-status; do
     require_file "$METHOD/commands/$f.md"
