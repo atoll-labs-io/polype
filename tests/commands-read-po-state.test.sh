@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
-# s172 — task tests: a failing po state is reported, never replaced by a derivation; the two
-# commands that now read po state are shorter than the prose they replaced.
+# s172 — task tests: a failing po state is reported, never replaced by a derivation.
 
 HOOK="$METHOD/hooks/po-session.sh"
 
@@ -29,9 +28,4 @@ test_session_hook_reports_a_failing_po() {
   [ "$status" -eq 0 ] || fail "po-session exited $status: $out"
   grep -qF 'po state failed (exit 2)' <<< "$out" || fail "no line reports the failing po state: $out"
   if grep -qF 'Framing' <<< "$out"; then fail "po-session derived a framing line: $out"; fi
-}
-
-test_status_and_retro_shrink() {
-  [ "$(wc -w < "$METHOD/commands/po-status.md")" -lt 1101 ] || fail "po-status.md did not shrink below 1101 words"
-  [ "$(wc -w < "$METHOD/commands/po-retro.md")" -lt 977 ] || fail "po-retro.md did not shrink below 977 words"
 }

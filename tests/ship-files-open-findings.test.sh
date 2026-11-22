@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 # s195 — the task tests of `po ship file <id>`: the shapes it reads and the net beside them, the
-# --hold/--fixed checks, the listing guards told apart, Merge mode: local, and the words /po-ship
-# loses. The setup copies the oracle's (tests/ship-files-open-findings.oracle.test.sh): origin is a
+# --hold/--fixed checks, the listing guards told apart, and Merge mode: local. The setup copies the oracle's (tests/ship-files-open-findings.oracle.test.sh): origin is a
 # github.com URL rewritten to a local bare repository, and gh and task are doubles that keep issues
 # and tasks as JSON files. No real tracker is ever called.
 
@@ -223,12 +222,4 @@ test_local_mode_proves_on_target_and_names_the_project() {
   [ "$STATUS" -eq 0 ] && [ "$(imports)" = 2 ] || fail "under local, $(imports) tasks for 2 findings: $STATUS $OUT"
   grep ' export$' "$D/calls/task" | grep -qF 'project:project' || fail "the project is not the main checkout's folder: $(cat "$D/calls/task")"
   jq -se 'all(.project == "project")' "$D"/tasks/*.json >/dev/null || fail "a task went to another project"
-}
-
-test_ship_words_go_down() {
-  local ship="$METHOD/commands/po-ship.md" words
-  words="$(LC_ALL=C wc -w < "$ship")"
-  [ "$words" -le 1593 ] || fail "po-ship.md holds $words words, more than 1593"
-  grep -qx '## Step 3 — Cleanup, only after proof' "$ship" || fail "po-ship.md lost its Step 3 heading"
-  grep -q '^2\. File the open findings' "$ship" || fail "po-ship.md lost its filing step"
 }

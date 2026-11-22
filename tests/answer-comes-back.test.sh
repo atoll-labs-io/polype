@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# s166 — task tests beside the oracle: parallel answers, unknown fields kept, consume refusals, an
-# inbox git no longer ignores, and the word ceiling of the rules.
+# s166 — task tests beside the oracle: parallel answers, unknown fields kept, consume refusals, and an
+# inbox git no longer ignores.
 
 need_po() {
   command -v jq >/dev/null 2>&1 || fail "jq is required by this test"
@@ -125,10 +125,4 @@ test_answer_refuses_an_inbox_git_tracks() {
   po_in "$F" answer "$ID" a
   refused inbox-not-ignored 1 "po answer into an inbox git does not ignore"
   [ "$(cksum < "$I/$ID.json")" = "$before" ] || fail "the refused answer changed the decision"
-}
-
-test_rules_stay_under_the_story_ceiling() {
-  local words
-  words="$(LC_ALL=C wc -w < "$METHOD/AGENTS.md")"
-  [ "$words" -le 3741 ] || fail "method/AGENTS.md holds $words words, over 3741"
 }

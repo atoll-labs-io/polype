@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # s165 — task tests of `po inbox`: ids never reach the filesystem, parallel writers never share an
-# id, `po state` and `po inbox` agree, `—` is no inbox, and the rules stay under their word ceilings.
+# id, `po state` and `po inbox` agree, and `—` is no inbox.
 
 need_po() {
   command -v jq >/dev/null 2>&1 || fail "jq is required by this test"
@@ -94,14 +94,4 @@ test_a_dash_is_no_inbox() {
   STATUS=0; OUT="$(cd "$F" && decision | "$PO" inbox add 2>/dev/null)" || STATUS=$?
   expect no-inbox-setting 2 "po inbox add with Decision inbox: —"
   [ ! -e "$F/—" ] || fail "po inbox add took — for a folder"
-}
-
-test_rules_stay_under_their_word_ceilings() {
-  local words
-  words="$(awk '/^## / { on = ($0 == "## What goes to the person") } on' "$METHOD/AGENTS.md" | LC_ALL=C wc -w)"
-  [ "$words" -le 378 ] || fail "## What goes to the person holds $words words, over 378"
-  words="$(awk '/^## / { on = ($0 == "## Installed files") } on' "$METHOD/AGENTS.md" | LC_ALL=C wc -w)"
-  [ "$words" -le 516 ] || fail "## Installed files holds $words words, over 516"
-  words="$(LC_ALL=C wc -w < "$METHOD/AGENTS.md")"
-  [ "$words" -le 3743 ] || fail "method/AGENTS.md holds $words words, over 3743"
 }

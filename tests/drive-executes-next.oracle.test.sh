@@ -1,17 +1,10 @@
 #!/usr/bin/env bash
-# s173 — /po-drive executes what `po next` says. Oracle of the two criteria a script reads:
-# the word cap of po-drive.md, and the single shell /po-execute may run (ADR-0120), which
-# bin/po-lint holds. The other criteria speak to a model and are judged in review.
+# s173 — /po-drive executes what `po next` says. Oracle of the criterion a script reads:
+# the single shell /po-execute may run (ADR-0120), which bin/po-lint holds. The other
+# criteria speak to a model and are judged in review.
 
-DRIVE="$METHOD/commands/po-drive.md"
 EXECUTE="$METHOD/commands/po-execute.md"
 PO_NEXT_TOOL='Bash("${CLAUDE_CONFIG_DIR:-$HOME/.claude}/polype/po" next)'
-
-test_drive_holds_in_2500_words() {
-  require_file "$DRIVE"
-  local words; words="$(LC_ALL=C wc -w < "$DRIVE")"
-  [ "$words" -le 2500 ] || fail "po-drive.md holds $words words, past 2500"
-}
 
 MUTANTS="$(mktemp -d)"
 trap 'rm -rf "$MUTANTS"' EXIT
@@ -22,6 +15,8 @@ execute_mutant() {
   local dir f
   dir="$(mktemp -d "$MUTANTS/XXXXXX")"
   cp -r "$METHOD" "$dir/method"
+  # The word budget is not what these mutants test: their edits may add words.
+  sed -i -E 's/^([^#[:space:]]+[[:space:]]+)[0-9]+/\1999999/' "$dir/method/word-budget"
   f="$dir/method/commands/po-execute.md"
   awk -v tool="  - $2" -v old="  - $PO_NEXT_TOOL" "$1" "$f" > "$f.new" && mv "$f.new" "$f"
   echo "$dir/method"

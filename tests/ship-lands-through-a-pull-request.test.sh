@@ -229,9 +229,3 @@ test_pull_request_on_another_commit_is_not_reported_ready() {
   is '.rewrite.url == null and .rewrite.refused == true and .rewrite.next == "write-line"' \
     "a draft on another commit was reported as the rewrite"
 }
-
-test_ship_words_go_down() {
-  local words
-  words="$(LC_ALL=C wc -w < "$METHOD/commands/po-ship.md")"
-  [ "$words" -le 1998 ] || fail "po-ship.md holds $words words, more than 1998"
-}

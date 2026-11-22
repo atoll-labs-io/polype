@@ -12,6 +12,8 @@ mutant() {
   local dir
   dir="$(mktemp -d "$MUTANTS/XXXXXX")"
   cp -r "$METHOD" "$dir/method"
+  # The word budget is not what these mutants test: their edits may add words.
+  sed -i -E 's/^([^#[:space:]]+[[:space:]]+)[0-9]+/\1999999/' "$dir/method/word-budget"
   echo "$dir/method"
 }
 
@@ -43,9 +45,14 @@ reports_one() {
 }
 
 test_lint_is_part_of_the_suite() {
+  local target
   require_file "$ROOT/bin/po-lint"
   lint_on
   [ "$LINT_STATUS" -eq 0 ] || fail "po-lint reports breaches in method/: $LINT_OUT"
+  target="$(sed -n 's/^Target branch:[[:space:]]*\(.*[^[:space:]]\)[[:space:]]*$/\1/p' "$ROOT/AGENTS.local.md" | head -n 1)"
+  [ -n "$target" ] || fail "AGENTS.local.md has no Target branch"
+  lint_on --base "origin/$target"
+  [ "$LINT_STATUS" -eq 0 ] || fail "po-lint against origin/$target reports breaches: $LINT_OUT"
 }
 
 test_lint_checks_every_command_declares_its_settings() {
