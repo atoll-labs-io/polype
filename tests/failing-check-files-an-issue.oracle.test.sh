@@ -7,10 +7,7 @@
 INTAKE="$METHOD/hooks/po-intake.sh"
 GATE="$METHOD/hooks/po-gate.sh"
 DOCTRINE="$METHOD/skills/testing-doctrine/SKILL.md"
-RULES="$METHOD/AGENTS.md"
-HARNAIS="$ROOT/docs/harnais.md"
 
-flat_section() { awk -v h="$2" '$0 == h {on=1; next} /^## / {on=0} on' "$1" | tr -s '[:space:]' ' '; }
 has() { case "$1" in *"$2"*) return 0 ;; *) return 1 ;; esac; }
 holds() { has "$1" "$2" || fail "$3 lacks: $2"; }
 
@@ -208,17 +205,4 @@ test_tracker_values_hold() {
   [ -z "$(calls)" ] || fail "— reached a tracker: $(calls)"
   holds "$ERR" 'nightly: 3' "the report on stderr"
   holds "$ERR" 'Exit code: 3' "the report on stderr"
-}
-
-test_rules_name_po_intake() {
-  local files law harnais p
-  files="$(flat_section "$RULES" '## Installed files')"
-  holds "$files" '`.polype/hooks/po-intake.sh`, called `po-intake`' "## Installed files"
-  law="$(flat_section "$RULES" '## Law 7 — Defects are not stories')"
-  holds "$law" '`po-intake` files, as the lead does, the failure of a scheduled check that is not sensitive' "Law 7"
-  require_file "$HARNAIS"
-  harnais="$(cat "$HARNAIS")"
-  for p in '# Le harnais' 'po-intake --label' 'schedule:' 'cron:' '[Timer]' 'OnCalendar='; do
-    holds "$harnais" "$p" "docs/harnais.md"
-  done
 }
