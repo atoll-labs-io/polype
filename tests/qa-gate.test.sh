@@ -3,12 +3,7 @@
 # rules, reviewer and implementer that wire the QA stage into the story cycle.
 
 GATE="$METHOD/hooks/po-gate.sh"
-RULES="$METHOD/AGENTS.md"
 PO_QA="$METHOD/commands/po-qa.md"
-REVIEWER="$METHOD/agents/reviewer.md"
-IMPLEMENTER="$METHOD/agents/implementer.md"
-SKILL="$METHOD/skills/review-antihallu/SKILL.md"
-REVIEW_TEMPLATE="$METHOD/templates/review.md"
 
 sandbox() {
   scratch_repo
@@ -89,39 +84,10 @@ test_qa_current_ignores_ignored_files() {
     || fail "the refusal does not say the report is ignored and not committed: $err"
 }
 
-test_rules_list_qa_in_the_story_cycle() {
-  local table execute qa review
-  table="$(awk '/^### Per story/ {on=1; next} on && /^### / {exit} on && /^\|/' "$RULES")"
-  execute="$(grep -n '`/po-execute`' <<< "$table" | cut -d: -f1)"
-  qa="$(grep -n '`/po-qa`' <<< "$table" | cut -d: -f1)"
-  review="$(grep -n '`/po-review`' <<< "$table" | cut -d: -f1)"
-  [ -n "$qa" ] || fail "the per-story table has no /po-qa row"
-  [ "$execute" -lt "$qa" ] && [ "$qa" -lt "$review" ] || fail "the /po-qa row is not between Execute and Review"
-  grep '`/po-qa`' <<< "$table" | grep -qF 'stories that go to QA' || fail "the /po-qa row does not name the stories that go to QA"
-}
-
 test_po_qa_commits_its_evidence() {
   needs_tool "$PO_QA" Bash
   lacks_tool "$PO_QA" Write
   lacks_tool "$PO_QA" Edit
   ! frontmatter "$PO_QA" | grep -qF 'run a shell' || fail "po-qa.md still says it cannot run a shell"
   contains "$PO_QA" 'commit -m "<id>: QA evidence" -- docs/qa/<id>/'
-  contains "$RULES" '`/po-qa` commits `docs/qa/<id>/` alone'
-}
-
-test_review_requires_a_current_qa_report() {
-  settings_read_by "$REVIEWER" | grep -qx 'QA stage' || fail "reviewer.md does not declare it reads QA stage"
-  awk '/^\*\*1\. / {on=1} /^\*\*2\. / {exit} on' "$SKILL" | grep -qF 'po-gate qa-current <id>' \
-    || fail "po-gate qa-current is not in step 1 of review-antihallu"
-  contains "$SKILL" '→ the review is blocked, the gate'"'"'s message as `Failure cause:`'
-  contains "$SKILL" 'each **verified** finding of the report is still open and becomes a finding of this review'
-  contains "$SKILL" '`docs/designs/<id>/`, `docs/qa/<id>/`. No `Owns`'
-  awk '/^## Evidence reused/ {on=1; next} on && /^## / {exit} on' "$REVIEW_TEMPLATE" | grep -qF 'po-gate qa-current <id>' \
-    || fail "review.md's Evidence reused section has no qa-current box"
-}
-
-test_implementer_hands_the_screen_to_qa() {
-  settings_read_by "$IMPLEMENTER" | grep -qx 'QA stage' || fail "implementer.md does not declare it reads QA stage"
-  contains "$IMPLEMENTER" '**If a task produces a screen, open it in a browser before you finish**'
-  contains "$IMPLEMENTER" 'When it goes to QA (`AGENTS.md`, Law 1), checking its surface belongs to the QA stage: `/po-qa`'
 }

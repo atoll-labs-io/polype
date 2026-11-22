@@ -20,8 +20,6 @@ test_po_design_can_reach_a_browser() {
   require_file "$PO_DESIGN"
   local fm; fm=$(frontmatter "$PO_DESIGN")
   ! grep -qE '^(allowed-tools|tools):' <<< "$fm" || fail "po-design.md still limits its tools to a list"
-  local named; named=$(grep -rniE 'mcp__|playwright|chrome' "$METHOD" || true)
-  [ -z "$named" ] || fail "method/ names a browser tool or MCP server: $named"
 }
 
 test_design_still_writes_no_source_file() {

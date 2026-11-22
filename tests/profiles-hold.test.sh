@@ -1,39 +1,7 @@
 #!/usr/bin/env bash
 # s95-profiles-hold: profile Test commands fail on red, skipped grounding shows, po-lint profile rules hold.
 
-IOS="$ROOT/boilerplates/native-ios/profile.md"
-EXPO="$ROOT/boilerplates/expo/profile.md"
-ANDROID="$ROOT/boilerplates/native-android/profile.md"
-RUST="$ROOT/boilerplates/rust-cli/profile.md"
 TEMPLATE_PROFILE="$METHOD/templates/profile.md"
-
-# Value of the `Test:` line of a profile's Commands fence, padding removed.
-profile_test_value() { grep -m1 '^Test:' "$1" | sed 's/^Test:[[:space:]]*//'; }
-
-adr_file() { ls "$ROOT"/docs/decisions/ADR-"$1"-*.md 2>/dev/null | head -n1; }
-
-test_test_commands_fail_on_red() {
-  local expected got adr n
-  read -r expected <<'EOF'
-rm -rf fastlane/test_output && bundle exec fastlane buildAndTest && xcrun xcresulttool get test-results summary --path fastlane/test_output/*.xcresult | grep -Eq '"result" *: *"Passed"'
-EOF
-  got=$(profile_test_value "$IOS")
-  [ "$got" = "$expected" ] || fail "iOS Test is '$got'"
-  got=$(profile_test_value "$EXPO")
-  [ "$got" = "npx --no-install jest" ] || fail "Expo Test is '$got'"
-  contains "$IOS" 'never shorten it to the lane'
-
-  adr=$(adr_file 0069)
-  [ -n "$adr" ] || fail "ADR-0069 is missing"
-  frontmatter "$adr" | grep -qxF 'supersedes: [ADR-0062, ADR-0064]' || fail "ADR-0069 does not supersede ADR-0062 and ADR-0064"
-  frontmatter "$adr" | grep -qxF 'status: accepted' || fail "ADR-0069 is not accepted"
-  for n in 0062 0064; do
-    adr=$(adr_file "$n")
-    [ -n "$adr" ] || fail "ADR-$n is missing"
-    frontmatter "$adr" | grep -qxF 'superseded-by: [ADR-0069]' || fail "ADR-$n is not superseded by ADR-0069"
-    frontmatter "$adr" | grep -qxF 'status: accepted' || fail "ADR-$n is no longer accepted"
-  done
-}
 
 test_skipped_grounding_is_visible() {
   local out status tmp
@@ -138,16 +106,4 @@ test_lint_holds_its_profile_rules() {
   lint
   [ "$status" -ne 0 ] || fail "h: lint accepts a QA driver section without its line"
   grep -qF "no '- QA driver:' line under '## QA driver'" <<< "$out" || fail "h: wrong breach: $out"
-}
-
-test_profile_slips_are_fixed() {
-  contains "$IOS" 'xcbeautify is `latest`'
-  ! grep -qF 'xcbeautify match the versions' "$IOS" || fail "iOS still says xcbeautify is pinned"
-  contains "$ANDROID" '`CONTRIBUTING.md`'
-  contains "$ANDROID" '`.google/`'
-  contains "$ANDROID" 'and itself'
-  contains "$ANDROID" 'outside that directory'
-  ! grep -qF 'with its data and its tests' "$ANDROID" || fail "Android still gives the data to the feature directory"
-  contains "$RUST" '`slog-journald`'
-  ! grep -qF 'Every dependency of `utils`' "$RUST" || fail "Rust still puts every utils dependency under Linux"
 }

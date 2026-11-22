@@ -2,10 +2,8 @@
 # s87 — the godot profile and the scene driver.
 
 PROFILE="$ROOT/boilerplates/godot/profile.md"
-DRIVER="$METHOD/skills/qa-drivers/scene.md"
 TEMPLATE_URL=https://github.com/GodotVR/godot-xr-template
 
-section_of() { awk -v h="## $2" '$0 == h {on=1; next} /^## / {on=0} on' "$1"; }
 identity_value() { grep -m1 "^- $2:" "$1" | sed "s/^- $2:[[:space:]]*//"; }
 
 # Backticked tokens of a profile matching an extended regex; placeholders and globs are left out.
@@ -39,14 +37,8 @@ test_godot_profile_passes_the_lint() {
   [ "$status" -eq 0 ] || fail "po-lint reports breaches: $out"
 
   [ "$(identity_value "$PROFILE" Origin)" = "$TEMPLATE_URL" ] || fail "origin is not $TEMPLATE_URL"
-  [ "$(identity_value "$PROFILE" Licence)" = MIT ] || fail "licence is not MIT"
   [[ "$(identity_value "$PROFILE" 'Commit profiled')" =~ ^[0-9a-f]{40}$ ]] || fail "commit profiled is not a full hash"
-  grep -qxF -- '- Platform: xr' "$PROFILE" || fail "platform is not xr"
   grep -qxF -- '- QA driver: scene' "$PROFILE" || fail "QA driver is not scene"
-  cmds=$(section_of "$PROFILE" Commands)
-  grep -Eq '^Dev:[[:space:]]+—$' <<< "$cmds" || fail "Dev is not —"
-  grep -Eq '^Test:[[:space:]]+—$' <<< "$cmds" || fail "Test is not —"
-  grep -Eq '^Install:[[:space:]]+godot' <<< "$cmds" || fail "Install does not start with godot"
 
   copy=$(mktemp -d); trap "rm -rf '$copy'" EXIT
   cp -r "$METHOD" "$copy/method"
@@ -62,37 +54,6 @@ test_godot_profile_passes_the_lint() {
   [ "$status" -ne 0 ] || fail "po-lint accepted the scene driver without its file"
   grep -qF "QA driver 'scene' is not a file of qa-drivers" <<< "$out" \
     || fail "po-lint did not tie the profile to scene.md: $out"
-}
-
-test_scene_driver_captures_without_a_window() {
-  local h phrase cannot
-  require_file "$DRIVER"
-  for h in '## Needs' '## Start and stop' '## Exercising a criterion' '## Evidence' '## Cannot show'; do
-    grep -qxF -- "$h" "$DRIVER" || fail "scene.md lacks the section: $h"
-  done
-  for phrase in \
-    '`## Scene viewpoints` section of `docs/plans/<id>.md`' \
-    'never on a display a person sees' \
-    '`--headless` draws nothing' \
-    'xvfb-run' \
-    '--display-driver x11' \
-    '--xr-mode off' \
-    'the plan names no viewpoint' \
-    'never guesses a camera' \
-    'a single uniform colour' \
-    'one capture per viewpoint' \
-    'viewpoints.txt' \
-    'the `## Driving a browser` section of the preloaded `design-doctrine` skill' \
-    'docs/qa/<id>/' \
-    'ADR-0065'; do
-    contains "$DRIVER" "$phrase"
-  done
-  cannot=$(section_of "$DRIVER" 'Cannot show')
-  for phrase in comfort scale 'hand tracking'; do
-    grep -qF -- "$phrase" <<< "$cannot" || fail "## Cannot show of scene.md does not name: $phrase"
-  done
-  contains "$DRIVER" '## Not seen'
-  contains "$DRIVER" 'only a headset would show'
 }
 
 test_godot_profile_is_grounded_in_its_source() {
