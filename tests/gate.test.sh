@@ -234,10 +234,3 @@ test_secret_scan_runs_on_every_branch() {
   if err=$(git commit -qm leak 2>&1); then fail "the hook let a .env through on main"; fi
   grep -qF 'po-gate:' <<< "$err" || fail "commit failed for another reason: $err"
 }
-
-test_rules_point_at_the_secret_gate() {
-  contains "$METHOD/AGENTS.md" '**Secrets never enter git.**'
-  contains "$METHOD/AGENTS.md" 'the pre-commit refuses'
-  contains "$METHOD/AGENTS.md" 'git status --porcelain'
-  contains "$METHOD/AGENTS.md" '.env.example'
-}

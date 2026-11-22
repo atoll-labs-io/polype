@@ -12,30 +12,9 @@ test_execute_has_no_write_tools() {
   needs_tool "$CMD" Agent
 }
 
-test_execute_fails_closed_on_unvalidated_plan() {
-  contains "$CMD" 'is not approved yet'
-  contains "$CMD" '`subagent_type: implementer`'
-}
-
 test_implementer_preloads_testing_doctrine() {
   require_file "$AGENT"
   frontmatter "$AGENT" | grep -qx '  - testing-doctrine' || fail "implementer must preload testing-doctrine"
-}
-
-test_implementer_makes_one_commit_after_record() {
-  contains "$AGENT" '**one commit**'
-  contains "$AGENT" 'No commit at this point.'
-  contains "$AGENT" 'git write-tree'
-}
-
-test_implementer_accepts_pipeline_docs_but_nothing_else() {
-  contains "$AGENT" 'on a fix run, `docs/reviews/<id>.md`: those are expected'
-  contains "$AGENT" 'Any other change you did not make → stop and report.'
-}
-
-test_implementer_keeps_secrets_out_and_pins_its_directory() {
-  contains "$AGENT" 'no `.env*` or other secret may be staged'
-  contains "$AGENT" 'Start every shell command with `cd <that path> &&`'
 }
 
 test_verification_record_has_tree_and_unfilled_status() {

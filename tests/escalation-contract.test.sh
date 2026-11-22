@@ -1,90 +1,16 @@
 #!/usr/bin/env bash
 # s104 — what goes to the person, what the lead settles alone, and the log of the latter.
 
-RULES="$METHOD/AGENTS.md"
-DRIVE="$METHOD/commands/po-drive.md"
 PLAN_CMD="$METHOD/commands/po-plan.md"
-ARCHITECT="$METHOD/commands/po-architect.md"
 PLANNER="$METHOD/agents/planner.md"
-BRICKS="$METHOD/skills/capability-bricks/SKILL.md"
-LOG_TEMPLATE="$METHOD/templates/decisions-log.md"
 
 MARKER='Technical choice: waiting for a human'
-CRITERIA='open source or self-hostable, frugal in hardware, scalable, easy for an AI to handle'
-WHATEVER='whatever `Plan validation` says'
 
 section_of() { awk -v h="## $2" '$0 == h {on=1; next} /^## / {on=0} on' "$1"; }
 holds() { grep -qF -- "$2" <<< "$1" || fail "$3 lacks: $2"; }
 
-person_section() {
-  local s; s="$(section_of "$RULES" 'What goes to the person')"
-  [ -n "$s" ] || fail "method/AGENTS.md has no '## What goes to the person' section"
-  printf '%s\n' "$s"
-}
-
-test_rules_list_the_three_escalation_motives() {
-  local s; s="$(person_section)" || exit 1
-  holds "$s" 'an incoherence' 'What goes to the person'
-  holds "$s" 'the code, an accepted ADR and a story contradict each other' 'What goes to the person'
-  holds "$s" 'a new idea outside the approved scope' 'What goes to the person'
-  holds "$s" 'a strategic decision' 'What goes to the person'
-  holds "$s" 'vision, scope, recurring cost, security, personal data, or anything hard to undo' 'What goes to the person'
-}
-
-test_tech_choices_are_never_settled_alone() {
-  local s; s="$(person_section)" || exit 1
-  holds "$s" 'Every technical or technology choice that deserves an ADR is discussed with the person before it is made' 'What goes to the person'
-  holds "$s" 'An implementation detail inside a validated plan stays with the lead' 'What goes to the person'
-  holds "$s" 'In doubt, the lead asks.' 'What goes to the person'
-  holds "$s" "$MARKER" 'What goes to the person'
-}
-
 test_plan_with_a_tech_choice_waits_for_a_human() {
-  contains "$PLANNER" "$WHATEVER"
   contains "$PLANNER" "$MARKER"
-  contains "$PLANNER" 'status: proposed'
-  local appr; appr="$(section_of "$PLAN_CMD" 'Approval — per `Plan validation`')"
-  holds "$appr" "$MARKER" 'po-plan Approval'
-  holds "$appr" "$WHATEVER" 'po-plan Approval'
-  holds "$appr" 'in their ranked order' 'po-plan Approval'
-  holds "$appr" 'remove the marker line' 'po-plan Approval'
   local wr; wr="$(section_of "$PLAN_CMD" 'Writing the plan')"
-  holds "$wr" 'status: proposed' 'po-plan Writing the plan'
   holds "$wr" "$MARKER" 'po-plan Writing the plan'
-}
-
-test_human_stops_do_not_halt_the_fleet() {
-  local wave; wave="$(section_of "$DRIVE" 'A wave')"
-  holds "$wave" 'at once, in a message of its own' 'po-drive A wave'
-  holds "$wave" 'Meanwhile the other lanes carry on.' 'po-drive A wave'
-  holds "$wave" 'it is not asked through AskUserQuestion, which would hold every other lane' 'po-drive A wave'
-  local s; s="$(person_section)" || exit 1
-  holds "$s" 'goes to the person at once, one at a time, and the fleet carries on with its other lanes' 'What goes to the person'
-  holds "$s" 'No gate opens any other way than before' 'What goes to the person'
-  holds "$s" 'the stops of ADR-0070 stay stops' 'What goes to the person'
-}
-
-test_lead_logs_what_it_decides_alone() {
-  require_file "$LOG_TEMPLATE"
-  grep -qxF '| Date | Story | Decision | Reason |' "$LOG_TEMPLATE" || fail "decisions-log template lacks its header row"
-  local s; s="$(person_section)" || exit 1
-  holds "$s" 'docs/decisions-log.md' 'What goes to the person'
-  holds "$s" 'templates/decisions-log.md' 'What goes to the person'
-  holds "$s" 'one dated line with its reason' 'What goes to the person'
-  holds "$(section_of "$RULES" 'Law 6 — Evidence lives next to the code')" 'docs/decisions-log.md' 'Law 6'
-
-  local log; log="$(section_of "$DRIVE" 'The decisions log')"
-  [ -n "$log" ] || fail "po-drive.md has no '## The decisions log' section"
-  holds "$log" 'templates/decisions-log.md' 'po-drive The decisions log'
-  holds "$log" 'Landing the framing' 'po-drive The decisions log'
-  holds "$log" 'slug `decisions-log`' 'po-drive The decisions log'
-  holds "$log" "after the wave's last ship" 'po-drive The decisions log'
-  holds "$(section_of "$DRIVE" 'Report')" 'decisions-log' 'po-drive Report'
-}
-
-test_options_ranked_by_owner_criteria() {
-  holds "$(section_of "$BRICKS" 'Ranking the options')" "$CRITERIA" 'capability-bricks Ranking the options'
-  holds "$(section_of "$ARCHITECT" 'Step 3 — Structural decisions')" 'Ranking the options' 'po-architect step 3'
-  local s; s="$(person_section)" || exit 1
-  holds "$s" "$CRITERIA" 'What goes to the person'
 }

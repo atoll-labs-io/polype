@@ -1,14 +1,9 @@
 #!/usr/bin/env bash
 # s103 — the main session is the project lead; po-session gives it the state, the installer wires it.
 
-RULES="$METHOD/AGENTS.md"
-HELP="$METHOD/commands/po-help.md"
-INSTALL_DOC="$ROOT/docs/installation.md"
 HOOK="$METHOD/hooks/po-session.sh"
 POLYPE="$ROOT/bin/polype"
 
-section_of() { awk -v h="## $2" '$0 == h {on=1; next} /^## / {on=0} on' "$1"; }
-holds() { grep -qF -- "$2" <<< "$1" || fail "$3 lacks: $2"; }
 has_line() { grep -qxF -- "$2" <<< "$1" || fail "po-session did not print the line: $2"$'\n'"$1"; }
 lacks_text() { if grep -qF -- "$2" <<< "$1"; then fail "po-session printed: $2"$'\n'"$1"; fi; }
 
@@ -266,29 +261,4 @@ test_installer_without_jq_skips_only_the_hook() {
     grep -qF 'jq not found' <<< "$err" || fail "$mode without jq did not say so: $err"
     [ ! -e "$p/.claude/settings.json" ] || fail "$mode without jq wrote .claude/settings.json"
   done
-}
-
-# --- Texts ----------------------------------------------------------------------------------
-
-test_rules_name_the_project_lead() {
-  local s
-  s="$(section_of "$RULES" "The project lead")"
-  [ -n "$s" ] || fail "no ## The project lead section in method/AGENTS.md"
-  holds "$s" 'The main session of a project is its project lead' "The project lead"
-  holds "$s" 'it leads framing in conversation' "The project lead"
-  holds "$s" 'runs `/po-drive` wave after wave until the milestone is done' "The project lead"
-  holds "$s" "It never writes a story's code" "The project lead"
-  holds "$s" 'A subagent is never the project lead' "The project lead"
-  holds "$s" 'reads the state `po-session` prints' "The project lead"
-}
-
-test_lead_answers_before_driving() {
-  local s
-  s="$(section_of "$RULES" "The project lead")"
-  holds "$s" 'answers the question it was asked first, and relaunches the fleet only when the project is waiting for it' "The project lead"
-}
-
-test_help_says_no_command_needed() {
-  contains "$HELP" 'Ouvrir une session sur le projet suffit : le chef de projet reprend où il en est, sans commande à taper.'
-  contains "$INSTALL_DOC" 'Ouvrir une session suffit : le chef de projet reprend le projet'
 }

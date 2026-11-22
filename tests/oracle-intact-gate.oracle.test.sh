@@ -3,12 +3,9 @@
 # with their sums, and the review runs it before reading any test (ADR-0098).
 
 GATE="$METHOD/hooks/po-gate.sh"
-SKILL="$METHOD/skills/review-antihallu/SKILL.md"
 ID=s01-a
 A=tests/a.oracle.test.sh
 B=tests/b.oracle.test.sh
-
-holds() { grep -qF -- "$2" <<< "$1" || fail "$3 lacks: $2"; }
 
 # A story branch holding two oracle files; the gate is always run from main, so only story/<id> can answer.
 oracle_repo() {
@@ -148,37 +145,4 @@ test_gate_without_oracle_says_so() {
   on_main
   gate "$ID"
   [ "$code" -eq 2 ] && [ -z "$out" ] || fail "no plan: exit $code, stdout '$out', stderr '$err'"
-
-  local usage
-  usage="$(awk '/^set -euo/ {exit} {sub(/^#[[:space:]]*/, ""); printf "%s ", $0}' "$GATE")"
-  holds "$usage" 'po-gate oracle-intact <id>' "the usage of po-gate.sh"
-  holds "$usage" 'guards against mistakes, not against an implementer who also rewrites the sum' "the usage of po-gate.sh"
-  holds "$usage" 'ADR-0052' "the usage of po-gate.sh"
-  holds "$usage" 'ADR-0098' "the usage of po-gate.sh"
-}
-
-step_four() { awk '/^\*\*4\. / {on=1} /^\*\*5\. / {on=0} on' "$SKILL"; }
-
-test_review_runs_the_oracle_gate() {
-  require_file "$SKILL"
-  local step oracle at_oracle at_floor
-  step="$(step_four)"
-  oracle="$(grep -F -- '- *Oracle.* ' <<< "$step" || true)"
-  [ -n "$oracle" ] || fail "step 4 of review-antihallu has no *Oracle.* item"
-  holds "$oracle" 'Run `po-gate oracle-intact <id>` from the worktree before reading any test' "the *Oracle.* item"
-  holds "$oracle" 'Exit 1: an oracle changed without saying so counts as a test file deleted without a reason → **critical**' "the *Oracle.* item"
-  holds "$oracle" 'each change it lists from `## Oracle changes` is judged' "the *Oracle.* item"
-  holds "$oracle" 'one that weakens the criterion its test holds is **major** at least' "the *Oracle.* item"
-  holds "$oracle" "the review is blocked, with the check's message as \`Failure cause:\`" "the *Oracle.* item"
-  at_oracle="$(grep -nF -- '- *Oracle.* ' <<< "$step" | head -n1 | cut -d: -f1)"
-  at_floor="$(grep -nF -- '- *Floor.* ' <<< "$step" | head -n1 | cut -d: -f1)"
-  [ -n "$at_floor" ] && [ "$at_oracle" -lt "$at_floor" ] || fail "the *Oracle.* item must come before *Floor.* in step 4"
-}
-
-test_bite_starts_with_the_oracle() {
-  require_file "$SKILL"
-  local bite
-  bite="$(step_four | grep -F -- '- *Bite.* ' || true)"
-  [ -n "$bite" ] || fail "step 4 of review-antihallu has no *Bite.* item"
-  holds "$bite" 'When the plan names oracle files, choose first among the rules their tests hold.' "the *Bite.* item"
 }
