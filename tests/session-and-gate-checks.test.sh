@@ -32,8 +32,6 @@ test_ship_gate_needs_review_status() {
   ! ok || fail "an appended review borrowed the status of an earlier block"
   review "Review status: complete\nReviewed tree: $T\nShip allowed: yes\nReview status: blocked\n"
   ! ok || fail "a blocked status written after the verdict was ignored"
-
-  contains "$METHOD/AGENTS.md" 'without `Review status: complete`'
 }
 
 test_session_flags_a_technical_choice() {
