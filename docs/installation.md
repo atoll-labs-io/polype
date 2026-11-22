@@ -53,6 +53,8 @@ supplémentaire.
 | `bin/` | `~/.claude/polype/bin/` |
 | `method/` | `~/.claude/polype/method/` |
 
+`method/word-budget`, le budget de mots que lit `po-lint`, voyage dans la charge utile avec `method/` ; aucune pose dans un projet ne le dépose.
+
 `~/.claude/polype/` est la **charge utile** : le script et la méthode qu'il livre, côte à côte, si
 bien que `~/.claude/polype/bin/polype` retrouve sa méthode par `../method` sans chemin en dur. C'est
 cette copie-là qu'on lance au quotidien, indépendamment du dépôt cloné — elle n'est pas sur le

@@ -148,6 +148,7 @@ script_counts() {
 # <story id>`. It allows exactly that drop, and only while no commit of the base ref is titled `<story id>: …`,
 # the landing commit /po-ship writes: once the story has landed, the line allows nothing.
 LOWERED_COUNTS='
+po-gate.sh 136 135 s205-word-budget-is-linted
 '
 
 # story_landed <repository> <commit> <story id>: 0 when a commit reachable from <commit> has a subject starting
@@ -192,7 +193,6 @@ scripts_kept_their_tests() {
 # The test files of the family this story keeps, each with the contract tests it must still define.
 KEPT_CONTRACTS='
 drive.test.sh test_drive_never_writes_code_or_verdicts test_settings_template_declares_fleet_settings
-drive-executes-next.test.sh test_execute_does_not_grow
 pilot.test.sh test_status_derives_from_files test_help_is_user_invoked_only
 wiring.test.sh test_reviewer_checks_design_conformity_without_measuring
 model-routing.test.sh test_settings_declare_the_model_routing test_implementer_no_longer_pins_a_model test_setup_offers_the_defaults

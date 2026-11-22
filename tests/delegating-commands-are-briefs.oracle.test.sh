@@ -1,14 +1,9 @@
 #!/usr/bin/env bash
 # s198 — the oracle of the story: `/po-execute`, `/po-qa` and `/po-review` keep the brief of their
-# subagent and the recording of its answer. Only the lint and the word counts are read by a script;
-# `routing_is_said_once`, `drive_and_commands_share_one_text` and `nothing_is_lost` speak to a model
-# and are judged in review.
+# subagent and the recording of its answer. Only the lint is read by a script; `routing_is_said_once`,
+# `drive_and_commands_share_one_text` and `nothing_is_lost` speak to a model and are judged in review.
 
 PO_NEXT_TOOL='Bash("${CLAUDE_CONFIG_DIR:-$HOME/.claude}/polype/po" next)'
-
-# Word counts before s198 (LC_ALL=C wc -w), taken on bec755c.
-THREE_BEFORE=2704
-FILE_WORDS_BEFORE="po-execute:847 po-qa:712 po-review:1145 po-drive:2413 po-help:718"
 
 sorted_tools() { tools_of "$METHOD/commands/$1.md" | LC_ALL=C sort | tr '\n' '|'; }
 
@@ -28,18 +23,4 @@ test_commands_still_lint() {
     || fail "po-review tools are not its narrow set plus po next: $(sorted_tools po-review)"
   [ "$(sorted_tools po-qa)" = "Agent|Bash|Glob|Grep|Read|" ] \
     || fail "po-qa tools changed: $(sorted_tools po-qa)"
-}
-
-test_words_go_down() {
-  local total=0 f n entry name limit
-  for f in po-execute po-qa po-review; do
-    n="$(LC_ALL=C wc -w < "$METHOD/commands/$f.md")"; total=$((total + n))
-  done
-  [ "$total" -le $((THREE_BEFORE - 650)) ] \
-    || fail "the three commands hold $total words, not 650 fewer than the $THREE_BEFORE they held before s198"
-  for entry in $FILE_WORDS_BEFORE; do
-    name="${entry%:*}"; limit="${entry##*:}"
-    n="$(LC_ALL=C wc -w < "$METHOD/commands/$name.md")"
-    [ "$n" -le "$limit" ] || fail "$name.md holds $n words, more than the $limit it held before s198"
-  done
 }

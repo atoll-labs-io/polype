@@ -1,16 +1,9 @@
 #!/usr/bin/env bash
-# s191 — the oracle of the story: `/po-orchestrator` and `/po-flow` are gone from the method, an
-# update takes them out of a project, and the method loses words. `drive_takes_an_id` and
-# `nothing_only_they_said_is_lost` speak to a model and are judged in review.
+# s191 — the oracle of the story: `/po-orchestrator` and `/po-flow` are gone from the method, and an
+# update takes them out of a project. `drive_takes_an_id` and `nothing_only_they_said_is_lost`
+# speak to a model and are judged in review.
 
 GONE="po-orchestrator po-flow"
-
-# Word counts before s191 (LC_ALL=C wc -w), taken on fb21c56.
-METHOD_WORDS_BEFORE=72702
-FILE_WORDS_BEFORE="method/AGENTS.md:3739 method/commands/po-drive.md:2450 method/commands/po-help.md:758
-method/commands/po-status.md:395 method/commands/po-execute.md:850 method/commands/po-research.md:764
-method/agents/planner.md:1336 method/templates/plan-flow.md:735 method/skills/diagnostic/SKILL.md:452
-README.md:1611 docs/migration.md:1737 docs/parite-killer-saas.md:3816 docs/direction.md:1192"
 
 test_two_commands_are_gone() {
   local name named out
@@ -52,19 +45,4 @@ test_update_removes_them_from_a_project() {
     done
   done
   [ -z "$(find "$P" -path "$P/.git" -prune -o -name '*polype.kept*' -print)" ] || fail "update kept a copy aside"
-}
-
-test_words_go_down() {
-  local total=0 f n entry path limit
-  while IFS= read -r -d '' f; do
-    n="$(LC_ALL=C wc -w < "$f")"; total=$((total + n))
-  done < <(find "$METHOD" -type f -print0)
-  [ "$total" -le $((METHOD_WORDS_BEFORE - 3000)) ] \
-    || fail "method/ holds $total words, not 3000 fewer than the $METHOD_WORDS_BEFORE it held before s191"
-  for entry in $FILE_WORDS_BEFORE; do
-    path="${entry%:*}"; limit="${entry##*:}"
-    require_file "$ROOT/$path"
-    n="$(LC_ALL=C wc -w < "$ROOT/$path")"
-    [ "$n" -le "$limit" ] || fail "$path holds $n words, more than the $limit it held before s191"
-  done
 }

@@ -213,14 +213,6 @@ test_cleanup_reruns_cleanly() {
   done
 }
 
-test_ship_is_a_short_command() {
-  local ship drive
-  ship="$(LC_ALL=C wc -w < "$METHOD/commands/po-ship.md")"
-  drive="$(LC_ALL=C wc -w < "$METHOD/commands/po-drive.md")"
-  [ "$ship" -lt 1000 ] || fail "po-ship.md holds $ship words, not fewer than 1000"
-  [ "$drive" -le 2449 ] || fail "po-drive.md holds $drive words, more than the 2449 it held before s196"
-}
-
 test_version_goes_up() {
   local toml lock polype
   toml="$(sed -n 's/^version = "\(.*\)"$/\1/p' "$ROOT/po/Cargo.toml" | head -n 1)"

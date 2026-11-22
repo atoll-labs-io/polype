@@ -111,12 +111,3 @@ test_state_pattern_stays_at_the_top() {
       || fail "$f is not reported as a foreign file: $OUT"
   done
 }
-
-# Only the word count is a script's to check (owner's rule of 2026-11-13, case 1): what the section
-# and docs/installation.md say is judged by the reviewer, reading them.
-test_docs_describe_the_kept_copy_stops() {
-  local words
-  words="$(awk '/^## / { on = ($0 == "## Installed files") } on' "$METHOD/AGENTS.md" | wc -w)"
-  [ "$words" -gt 0 ] || fail "method/AGENTS.md has no ## Installed files section"
-  [ "$words" -le 516 ] || fail "## Installed files of method/AGENTS.md grew: $words words, 516 before s161"
-}

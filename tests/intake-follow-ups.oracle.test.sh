@@ -1,10 +1,9 @@
 #!/usr/bin/env bash
 # s177 — the oracle of the story: `po-gate redact` erases exactly what the pre-commit secret scan flags, each match
-# judged on the original line, and /po-intake does not grow. Witness strings are assembled at run time and mean
-# nothing; no literal one sits in this file.
+# judged on the original line. Witness strings are assembled at run time and mean nothing; no literal one sits
+# in this file.
 
 GATE="$METHOD/hooks/po-gate.sh"
-INTAKE_CMD="$METHOD/commands/po-intake.md"
 
 # The rules the pre-commit scan reports for one staged line, one per output line, sorted.
 scan_rules() {
@@ -39,10 +38,4 @@ aws-access-key" ] || fail "scan verdict changed on a match inside a longer one: 
   [ "$(sed -n 2p <<< "$out")" = "two [redacted] end" ] \
     || fail "redact left part of a value the scan flags whole: $(sed -n 2p <<< "$out")"
   cmp -s "$SCRATCH/in" "$SCRATCH/orig" || fail "redact changed the file"
-}
-
-test_intake_holds_in_its_words() {
-  require_file "$INTAKE_CMD"
-  local n; n="$(LC_ALL=C wc -w < "$INTAKE_CMD" | tr -d ' ')"
-  [ "$n" -le 1550 ] || fail "po-intake.md holds $n words, more than the 1550 it held before the story"
 }

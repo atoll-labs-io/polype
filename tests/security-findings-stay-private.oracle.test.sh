@@ -154,14 +154,3 @@ test_earlier_reviews_read_the_same() {
   [ "$STATUS" -eq 0 ] || fail "po record review exited $STATUS on the next loop: $OUT"
   head -c "$(wc -c < "$old")" "$file" | cmp -s - "$old" || fail "recording a later loop changed the earlier block"
 }
-
-# Word counts before s178 (LC_ALL=C wc -w); the ceilings of tests/record-writes-reports.test.sh hold too.
-test_words_hold() {
-  local f limit words
-  for f in templates/review.md:557 commands/po-review.md:1147 commands/po-execute.md:850 \
-    agents/reviewer.md:1120 agents/implementer.md:1144 skills/review-lenses/SKILL.md:824 \
-    skills/review-antihallu/SKILL.md:1605 templates/agents-local.md:1115 hooks/po-gate.sh:5843; do
-    limit="${f##*:}"; words="$(LC_ALL=C wc -w < "$METHOD/${f%:*}")"
-    [ "$words" -le "$limit" ] || fail "${f%:*} holds $words words, more than the $limit it held before s178"
-  done
-}

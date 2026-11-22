@@ -163,15 +163,15 @@ s201 à s204 ont retiré de `tests/` tout test qui cherchait dans `method/`, `do
 - ce que font les scripts sur des dépôts jetables (`po`, `po-gate`, `po-run`, `po-bounds`, `po-session`, `po-intake`, le pre-commit, `po-lint`, `po-link-artifacts`, `bin/polype`, `po-ci`, `po-eval`, `po-release`, `po-version-check`), surveillé par le compte des lancements ;
 - le parcours rejoué ;
 - les contrats qu'un script ou le harnais lit : les réglages du modèle, les outils et le frontmatter, les champs que lisent `po` et `po-gate` (`validated:`, `track:`, `Tree:`, `Ship allowed:`, `Stories ready:`, le `status:` d'un brief ou d'un PRD), les lignes de liens des modèles, les workflows de `.github/` ;
-- les plafonds de mots, jusqu'à s205 ; `tests/overlap.test.sh` (ADR-0006) ;
+- le budget de mots de `method/word-budget`, tenu par `po-lint` (s205, `## Le budget de mots`) ; `tests/overlap.test.sh` (ADR-0006) ;
 - quatre tests qui lisent le fichier même d'un script (`## The pivot` du plan de s204) ;
 - aucun fichier de `tests/` ne cherche plus une phrase qu'aucun script ne lit, hors l'exception de sécurité ci-dessous et ces quatre tests.
 
-**Exception du porteur (d-0052).** Les tests de phrase de sécurité restent jusqu'au vrai passage de s206, qui dira pour chacun si un script ou un cas le tient. Restent entiers `tests/bounds.test.sh`, `bounds-messages.test.sh`, `install-collisions.test.sh`, `no-claude-md.test.sh`, `payload-kept-outside.test.sh`, `payload-refuses-foreign-files.test.sh`, `security-findings-stay-private.test.sh`, `decision-inbox.test.sh` et `answer-comes-back.test.sh`. Les autres fonctions gardées sont nommées dans les plans de s202 à s204 et tenues par leurs oracles.
+**Exception du porteur (d-0052).** Les tests de phrase de sécurité restent jusqu'au vrai passage de s206, qui dira pour chacun si un script ou un cas le tient. Restent entiers `tests/bounds.test.sh`, `bounds-messages.test.sh`, `install-collisions.test.sh`, `no-claude-md.test.sh`, `payload-kept-outside.test.sh`, `payload-refuses-foreign-files.test.sh`, `security-findings-stay-private.test.sh`, `decision-inbox.test.sh` et `answer-comes-back.test.sh`, ces deux derniers hors leur plafond de mots, passé au budget par s205. Les autres fonctions gardées sont nommées dans les plans de s202 à s204 et tenues par leurs oracles.
 
 **Ce qu'elle ne prouve pas.**
 - Qu'un modèle suive la prose : les règles de point d'arrêt et d'arrêt retirées sont nommées dans les critères de s206, le reste est jugé en revue, candidat à un bras de `po-eval` (#208).
-- `README.md` et `docs/` ne sont plus lus par aucun test, hors ce que la sécurité garde ; leurs chemins et le registre des ADR attendent un contrôle (#442).
+- Aucun test ne lit plus la prose de `README.md` ni de `docs/`, hors ce que la sécurité garde ; seul `po-lint` compte les mots de quatre de ces documents (`## Le budget de mots`). Leurs chemins et le registre des ADR attendent un contrôle (#442).
 
 **Ce que seul un produit prouve (s203).** Aucun navigateur, simulateur, appareil ni casque ne tourne dans la suite, et le parcours utilise un rapport de QA écrit d'avance. Ces règles de QA et de design perdent leur test, et aucun parcours ne les prouve ; la revue reprend cette liste.
 - **Navigateur et mobile :**
@@ -203,3 +203,13 @@ s201 à s204 ont retiré de `tests/` tout test qui cherchait dans `method/`, `do
 - **Profils :** les commandes `Test` d'iOS et d'Expo échouent au rouge ; le `Dev` d'Expo et de Flutter sert le rendu web.
 
 **Ce que seul un vrai passage prouve (s204).** Aucun parcours ne joue le cadrage : seul le vrai passage de s206 éprouve l'entretien de `/po-brief` et de `/po-prd`, l'approbation un élément par question, la revue des stories soumise à la personne, et un atterrissage de cadrage par `framing/<slug>` et sa pull request (`## Landing the framing` de `/po-setup`).
+
+## Le budget de mots
+
+`method/word-budget` (s205) tient le plafond de mots de chaque fichier `.md` de `method/`, une ligne `<chemin> <plafond>`, et de leur somme, `total <plafond>`. Un mot est une suite de caractères entre espaces, tabulations et fins de ligne, compté par awk dans la locale C (`{n += NF}`) : `wc -w` ne donne pas le même nombre selon la version de coreutils (l'octet 0xA0 de « à » coupe un mot en deux pour certaines). Seuls les `.md` y sont : le compte de 57 589 mots du 15/11/2026 portait sur eux, et les hooks sont du code, dont la croissance se juge en revue.
+
+`bin/po-lint` refuse un fichier ou un total au-delà de son plafond, un `.md` de `method/` sans ligne, et une ligne malformée ou en double. Un `.md` qui est un lien symbolique est compté par le fichier qu'il désigne, comme les autres règles le lisent. **Relever un plafond** demande une décision du porteur, citée en troisième champ `d-NNNN`, autre que celle que la ligne portait déjà ; l'implémenteur n'écrit `method/word-budget` que si le `Owns` de la story le nomme. `po-lint --base <ref>` compare le fichier à celui de la base de fusion de `HEAD` et de `<ref>`, et refuse un relèvement sans décision nouvelle ; `tests/lint.test.sh` le lance contre `origin/<Target branch>` à chaque passage de la suite.
+
+Par la décision d-0055, le budget tient aussi quatre documents hors de `method/` : `../README.md`, `../docs/migration.md`, `../docs/parite-killer-saas.md` et `../docs/direction.md`. Ils ne comptent pas dans le total, et ne sont vérifiés que si `method/` est à la racine d'un dépôt git, ce qui écarte la charge utile et les copies des tests ; là, un document absent est une infraction.
+
+**Ce qu'il ne prouve pas.** Que la décision citée existe et dise ce que la ligne prétend : la revue le vérifie. Un plafond borne, il n'oblige pas à réduire. Les sections de `method/AGENTS.md`, les hooks et les autres fichiers de `docs/` n'ont pas de plafond.
