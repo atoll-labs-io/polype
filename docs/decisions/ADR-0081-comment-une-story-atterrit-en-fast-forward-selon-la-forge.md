@@ -5,7 +5,7 @@ status: accepted
 date: 2026-10-13
 scope: story s105-ship-through-pr
 supersedes: [ADR-0080]
-superseded-by: []
+superseded-by: [ADR-0131]
 ---
 
 # ADR-0081 — Comment une story atterrit en un commit linéaire selon la forge
