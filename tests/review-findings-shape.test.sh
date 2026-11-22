@@ -2,10 +2,7 @@
 # s141 — a review's findings are checked for the shape /po-ship reads as soon as they are recorded.
 
 GATE="$METHOD/hooks/po-gate.sh"
-SHIP="$METHOD/commands/po-ship.md"
 REVIEW_CMD="$METHOD/commands/po-review.md"
-DRIVE="$METHOD/commands/po-drive.md"
-ADR="$ROOT/docs/decisions/ADR-0094-la-forme-d-une-revue-se-controle-a-l-enregistrement.md"
 
 section_of() { awk -v h="## $2" '$0 == h {on=1; next} /^## / {on=0} on' "$1"; }
 holds() { grep -qF -- "$2" <<< "$1" || fail "$3 lacks: $2"; }
@@ -61,39 +58,18 @@ test_gate_checks_findings_shape() {
 }
 
 test_template_shows_the_line() {
-  local tpl="$METHOD/templates/review.md" agent="$METHOD/agents/reviewer.md" findings
+  local tpl="$METHOD/templates/review.md" findings
   findings="$(section_of "$tpl" Findings)"
   holds "$findings" '- <critical|major|minor> — <path>:<line> — <the problem>' "the template's ## Findings"
-  holds "$findings" 'never a heading' "the template's ## Findings"
-  holds "$findings" 'a finding never starts with `Ship allowed:`' "the template's ## Findings"
-  holds "$(section_of "$agent" 'Your answer')" 'in the shape `templates/review.md` shows, never a heading: `po-gate findings-shape` checks it' "reviewer ## Your answer"
-  holds "$(section_of "$agent" 'When you cannot finish')" 'Keep a `## Findings` section in that report too' "reviewer ## When you cannot finish"
 }
 
 test_recording_runs_the_check() {
   frontmatter "$REVIEW_CMD" | grep -qxF '  - Bash(.polype/hooks/po-gate.sh findings-shape:*)' || fail "po-review lacks the narrowed Bash permission"
   lacks_tool "$REVIEW_CMD" Bash
-  local rec drive verdict shape_row fix_row
+  local rec
   rec="$(section_of "$REVIEW_CMD" Recording)"
-  holds "$rec" '.polype/hooks/po-gate.sh findings-shape <id>' "po-review ## Recording"
-  holds "$rec" 'at the same `Fix loop: <n>`' "po-review ## Recording"
-  holds "$rec" 'appended after the malformed block, which stays byte for byte' "po-review ## Recording"
-  holds "$rec" 'This re-ask spends no fix loop.' "po-review ## Recording"
   holds "$rec" '`Next action: a person settles the findings shape — po-gate findings-shape <id> refused the reviewer twice`' "po-review ## Recording"
-  holds "$rec" 'never checked' "po-review ## Recording"
-
 }
-
-test_adr_records_the_shape_check() {
-  require_file "$ADR"
-  contains "$ADR" 'status: accepted'
-  contains "$ADR" "**A. À l'enregistrement, par \`po-gate findings-shape <id>\`.**"
-  contains "$ADR" '**B. Le gabarit seul.** Écartée'
-  contains "$ADR" '**C. Un refus au ship par `po-gate ship-allowed`.** Écartée'
-  contains "$ADR" 'option 1, une permission Bash réduite à `.polype/hooks/po-gate.sh findings-shape`'
-}
-
-ADR96="$ROOT/docs/decisions/ADR-0096-le-controle-de-forme-suit-ce-que-po-ship-lit.md"
 
 test_gate_accepts_only_ship_shapes() {
   scratch_repo
@@ -117,15 +93,5 @@ test_other_gate_failures_stop() {
   (cd "$SCRATCH" && bash "$GATE" findings-shape s01-a >/dev/null 2>&1) || rc=$?
   [ "$rc" -eq 2 ] || fail "a missing review exits $rc, not 2"
   s="$(section_of "$REVIEW_CMD" Recording)"
-  holds "$s" 'Any other exit' "po-review Recording"
-  holds "$s" 'is not a malformed review: the reviewer is not dispatched again' "po-review Recording"
   holds "$s" '`Next action: a person runs po-gate findings-shape <id> — the check could not run (exit <n>)`' "po-review Recording"
-}
-
-test_adr_narrows_the_shape() {
-  require_file "$ADR96"
-  grep -qx 'supersedes: \[ADR-0094\]' "$ADR96" || fail "ADR-0096 does not supersede ADR-0094"
-  grep -qx 'superseded-by: \[ADR-0096\]' "$ADR" || fail "ADR-0094 lacks superseded-by"
-  contains "$ADR" 'status: accepted'
-  contains "$ADR96" '**B. Garder « toute casse » et apprendre à `/po-ship` les autres formes.** Écartée'
 }

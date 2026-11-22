@@ -4,22 +4,9 @@
 SHIP="$METHOD/commands/po-ship.md"
 DRIVE="$METHOD/commands/po-drive.md"
 RULES="$METHOD/AGENTS.md"
-MUTANTS="$(mktemp -d)"
-trap 'rm -rf "$MUTANTS"' EXIT
 
 section_of() { awk -v h="## $2" '$0 == h {on=1; next} /^## / {on=0} on' "$1"; }
 holds() { grep -qF -- "$2" <<< "$1" || fail "${3:-text} lacks: $2"; }
-
-mutant() {
-  local dir
-  dir="$(mktemp -d "$MUTANTS/XXXXXX")"
-  cp -r "$METHOD" "$dir/method"
-  echo "$dir/method"
-}
-
-run_against() {
-  ( METHOD="$1"; CMDS="$1/commands"; source "$2"; "$3" ) >/dev/null 2>&1
-}
 
 test_fleet_rules_agree() {
 
@@ -27,24 +14,4 @@ test_fleet_rules_agree() {
   holds "$(section_of "$RULES" 'Law 1 — Nothing reaches the code except through a story')" "$shared" 'AGENTS.md Law 1'
   holds "$(section_of "$DRIVE" 'Ships, one at a time')" 'Proving a ship means seeing it land' 'po-drive ships'
   ! grep -qF 'the next one lands after it, in the order the reviews passed' "$RULES" || fail "AGENTS.md keeps the old order clause"
-}
-
-# Applies a removal to a mutant file, checks the phrase is gone, the real tree passes and the mutant fails.
-bites() {
-  local file="$1" phrase="$2" t="$ROOT/tests/$3" name="$4" m
-  run_against "$METHOD" "$t" "$name" || fail "$name fails on the real tree"
-  m="$(mutant)"
-  python3 -I - "$m/$file" "$phrase" <<'PY' || fail "mutation did not apply to $file"
-import sys
-p, a = sys.argv[1:]
-s = open(p).read()
-assert s.count(a) == 1
-open(p, "w").write(s.replace(a, ""))
-PY
-  ! grep -qF -- "$phrase" "$m/$file" || fail "mutant keeps its phrase in $file"
-  if run_against "$m" "$t" "$name"; then fail "$name still passes without the rule in $file"; fi
-}
-
-test_fleet_tests_bite() {
-  bites commands/po-drive.md ' Meanwhile the other lanes carry on.' escalation-contract.test.sh test_human_stops_do_not_halt_the_fleet
 }

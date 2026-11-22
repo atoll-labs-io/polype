@@ -185,15 +185,3 @@ test_floor_guard_flags_empty_catch_and_lowered_thresholds() {
   not_flagged 'src/app.ts:7'
   [ "$(grep -c . <<< "$out")" -eq 6 ] || fail "expected six flags, got: $out"
 }
-
-test_review_runs_the_floor_guard() {
-  local skill="$METHOD/skills/review-antihallu/SKILL.md" tpl="$METHOD/templates/review.md"
-  require_file "$skill"
-  contains "$skill" '*Floor.* Run `po-gate floor-guard <id> <Target branch>` from the worktree'
-  contains "$skill" 'each printed line is a flag: justified in the plan → **minor**, otherwise **major**'
-  contains "$skill" 'a deleted test file the plan does not justify → **critical**'
-  contains "$skill" 'the guard could not verify, which is never clean: the review is blocked'
-  contains "$skill" '`Failure cause:`'
-  require_file "$tpl"
-  contains "$tpl" '- [ ] Floor: `po-gate floor-guard <id> <Target branch>` → <0 nothing lowered | 1 each flag graded, listed under Findings | 2 review blocked>'
-}

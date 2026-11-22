@@ -20,6 +20,8 @@ Le tracker d'issues de Polype est ce fichier tant que le dépôt n'est pas sur G
 
 **Motif récurrent (n° 5, 7, 9, 10, 11)** : un test qui cherche une phrase dans un prompt prouve que la phrase existe, pas que l'agent l'applique. Les vraies preuves de comportement sont les passages de bout en bout (`docs/validation/`). Piste : des évaluations comportementales par commande, rejouées en headless.
 
+M22 retire ces tests de phrase famille par famille, en ne gardant que ce qu'un script lit (s201 : le routage, la flotte, le plan, l'exécution et la revue).
+
 ## Relevés par les revues de M3 (2026-09-21)
 
 | # | Source | Défaut | Statut |

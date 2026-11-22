@@ -161,28 +161,3 @@ test_kept_copy_becomes_the_persons() {
   cmp -s "$KEPT" "$P/$EDITED.before-polype" || fail "--set-aside did not move the kept copy aside"
   cmp -s "$ROOT/method/commands/po-architect.md" "$P/$EDITED" || fail "--set-aside did not lay the shipped file"
 }
-
-test_header_lists_the_mode_file() {
-  sed '/^set -euo pipefail/q' "$ROOT/bin/polype" | grep '^#' | grep -qF '.polype/mode' \
-    || fail "the header comment of bin/polype does not name .polype/mode"
-  grep -q '^recorded_mode() {' "$ROOT/bin/polype" || fail "recorded_mode is no longer defined"
-}
-
-test_adr_records_the_choice() {
-  local adrs=("$ROOT"/docs/decisions/ADR-0092-*.md) adr old
-  [ "${#adrs[@]}" -eq 1 ] && [ -f "${adrs[0]}" ] || fail "expected exactly one ADR-0092 file"
-  adr="${adrs[0]}"
-  frontmatter "$adr" | grep -qx 'status: accepted' || fail "ADR-0092 is not accepted"
-  frontmatter "$adr" | grep -qx 'supersedes: \[ADR-0088\]' || fail "ADR-0092 does not supersede ADR-0088"
-  contains "$adr" 'Écartée'
-  contains "$adr" 'nouveau suffixe'
-  contains "$adr" 'Arrêter la commande'
-  contains "$adr" 'Exempter `remove`'
-  contains "$adr" 'ADR-0087'
-  contains "$adr" '`~/.claude/polype/`'
-  old="$(ls "$ROOT"/docs/decisions/ADR-0088-*.md)"
-  frontmatter "$old" | grep -qx 'superseded-by: \[ADR-0092, ADR-0095, ADR-0128\]' || fail "ADR-0088 does not link to ADR-0092"
-  frontmatter "$old" | grep -qx 'status: accepted' || fail "ADR-0088 must stay accepted"
-  contains "$ROOT/docs/installation.md" 'modified, kept:'
-  contains "$ROOT/docs/installation.md" 'ADR-0092'
-}
