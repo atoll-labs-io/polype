@@ -38,12 +38,6 @@ test_setting_has_two_values() {
     || fail "the template's settings block lacks Project CLAUDE file: absorbed"
   grep '^| Project CLAUDE file |' "$tpl" | grep -F '`absorbed`' | grep -qF '`kept`' \
     || fail "the template's values table does not give absorbed and kept"
-  local step2; step2=$(awk '/^## Step 2/ {on=1; next} /^## / {on=0} on' "$METHOD/commands/po-setup.md")
-  grep -F 'AskUserQuestion call for `Project CLAUDE file`' <<< "$step2" | grep -F '`absorbed` (suggested)' | grep -qF '`kept`' \
-    || fail "po-setup Step 2 does not ask Project CLAUDE file with absorbed suggested and kept"
-  grep -qx 'Project CLAUDE file: absorbed' "$ROOT/AGENTS.local.md" || fail "Polype's AGENTS.local.md lacks the setting"
-  settings_read_by "$METHOD/commands/po-architect.md" | grep -qx 'Project CLAUDE file' \
-    || fail "po-architect does not declare it reads Project CLAUDE file"
 }
 
 test_kept_keeps_and_imports() {
@@ -118,18 +112,6 @@ test_missing_setting_changes_nothing() {
 }
 
 test_adr_records_the_choice() {
-  local dir="$ROOT/docs/decisions" files adr old
-  files=("$dir"/ADR-0089-*.md)
-  [ ${#files[@]} -eq 1 ] && [ -f "${files[0]}" ] || fail "expected exactly one ADR-0089"
-  adr="${files[0]}"
-  frontmatter "$adr" | grep -qx 'status: accepted' || fail "ADR-0089 is not accepted"
-  frontmatter "$adr" | grep '^supersedes:' | grep -qF 'ADR-0086' || fail "ADR-0089 does not supersede ADR-0086"
-  local w; for w in '`kept`' '`absorbed`' 'Écartée' 'déjà installé'; do contains "$adr" "$w"; done
-  old="$(ls "$dir"/ADR-0086-*.md)"
-  frontmatter "$old" | grep '^superseded-by:' | grep -qF 'ADR-0089' || fail "ADR-0086 does not point to ADR-0089"
-  frontmatter "$old" | grep -qx 'status: accepted' || fail "ADR-0086 changed status"
-  [ "$(awk 'NR==1&&$0=="---"{f=1;next} f&&$0=="---"{f=0;next} !f' "$old" | cksum)" = '1287032947 3025' ] \
-    || fail "the body of ADR-0086 changed"
   local sentence="Unless \`Project CLAUDE file\` is \`kept\`, the only \`CLAUDE.md\` is the user's global one"
   local f
   for f in "$METHOD/AGENTS.md" "$METHOD/commands/po-setup.md" "$METHOD/commands/po-architect.md"; do

@@ -156,3 +156,50 @@ Les parcours d'arrêt (`tests/journey/stops.sh`, une fonction `stop_*` par route
 Le test tourne dans la suite, donc sur chaque pull request, bien après M22. **Baisser un compte à bon droit** (retirer le test d'un script, déplacer un lancement là où le compte ne le voit plus) : la story met cet oracle dans son `Owns`, ajoute une ligne `<script> <compte sur la base> <compte après> <id>` à `LOWERED_COUNTS`, et le dit dans son plan et dans `## Oracle changes` de son registre. La ligne permet cette baisse exactement (le compte après doit être celui qu'elle écrit, deux entiers) et seulement tant qu'aucun commit de `origin/<Target branch>` n'a un titre qui commence par `<id>: `, celui du commit d'atterrissage que pose `/po-ship` : une fois la story livrée, elle ne permet plus rien, sans échouer, et peut rester. Pour déplacer un lancement dans un helper sans baisser le compte, sourcer le helper au début du fichier, jamais dans la fonction de test.
 
 **Ce qu'il ne prouve pas.** La lecture est statique et la même des deux côtés : le compte compare, il ne prouve pas que la ligne a tourné, ni que le test lancé vérifie quoi que ce soit. Lui échappent : un script lancé par un chemin construit à l'exécution (une variable remplie en cours de test, un `eval`), un helper sourcé à l'intérieur d'une fonction de test (`test_every_ask_reason_is_reached` et `stops.sh`), un lancement écrit dans un `bash -c '…'` entre guillemets simples. À l'inverse, il compte comme lancement un `python3 - <script>` qui ne fait que lire le fichier, et le texte que le lecteur reconstruit : le corps d'un heredoc, la valeur d'une variable développée dans un corps. Ainsi `test_no_script_lost_its_tests` compte `po-gate.sh` et `po-lint` par ses heredocs, et `pre-commit` par `$LAUNCH_READER`, qui contient `hooksPath` ; tout test qui appelle ces helpers compte `pre-commit` de même. Le compte n'en est que gonflé, mais retoucher ces textes fait apparaître un lancement « perdu ».
+
+## Ce que la suite prouve depuis #207
+
+s201 à s204 ont retiré de `tests/` tout test qui cherchait dans `method/`, `docs/` ou `README.md` une phrase qu'aucun script ne lit. Ce qui reste prouve :
+- ce que font les scripts sur des dépôts jetables (`po`, `po-gate`, `po-run`, `po-bounds`, `po-session`, `po-intake`, le pre-commit, `po-lint`, `po-link-artifacts`, `bin/polype`, `po-ci`, `po-eval`, `po-release`, `po-version-check`), surveillé par le compte des lancements ;
+- le parcours rejoué ;
+- les contrats qu'un script ou le harnais lit : les réglages du modèle, les outils et le frontmatter, les champs que lisent `po` et `po-gate` (`validated:`, `track:`, `Tree:`, `Ship allowed:`, `Stories ready:`, le `status:` d'un brief ou d'un PRD), les lignes de liens des modèles, les workflows de `.github/` ;
+- les plafonds de mots, jusqu'à s205 ; `tests/overlap.test.sh` (ADR-0006) ;
+- quatre tests qui lisent le fichier même d'un script (`## The pivot` du plan de s204) ;
+- aucun fichier de `tests/` ne cherche plus une phrase qu'aucun script ne lit, hors l'exception de sécurité ci-dessous et ces quatre tests.
+
+**Exception du porteur (d-0052).** Les tests de phrase de sécurité restent jusqu'au vrai passage de s206, qui dira pour chacun si un script ou un cas le tient. Restent entiers `tests/bounds.test.sh`, `bounds-messages.test.sh`, `install-collisions.test.sh`, `no-claude-md.test.sh`, `payload-kept-outside.test.sh`, `payload-refuses-foreign-files.test.sh`, `security-findings-stay-private.test.sh`, `decision-inbox.test.sh` et `answer-comes-back.test.sh`. Les autres fonctions gardées sont nommées dans les plans de s202 à s204 et tenues par leurs oracles.
+
+**Ce qu'elle ne prouve pas.**
+- Qu'un modèle suive la prose : les règles de point d'arrêt et d'arrêt retirées sont nommées dans les critères de s206, le reste est jugé en revue, candidat à un bras de `po-eval` (#208).
+- `README.md` et `docs/` ne sont plus lus par aucun test, hors ce que la sécurité garde ; leurs chemins et le registre des ADR attendent un contrôle (#442).
+
+**Ce que seul un produit prouve (s203).** Aucun navigateur, simulateur, appareil ni casque ne tourne dans la suite, et le parcours utilise un rapport de QA écrit d'avance. Ces règles de QA et de design perdent leur test, et aucun parcours ne les prouve ; la revue reprend cette liste.
+- **Navigateur et mobile :**
+  - la fenêtre du téléphone à 360 et 412 px CSS, jamais par le zoom ;
+  - une capture par état et par largeur ;
+  - les règles mobiles : cibles de 44×44, zones sûres, clavier, pas de survol ;
+  - les invites natives, notifications, caméra et gestes jamais déclarés vus.
+- **Accessibilité :** focus visible, contrôles nommés, alternatives textuelles, pas par la seule couleur, le parcours au clavier seul.
+- **Scène :**
+  - la capture sans écran sous `xvfb-run` avec `--xr-mode off` ;
+  - une capture par point de vue, le contrôle de couleur uniforme ;
+  - `## Not seen` pour le confort, l'échelle et le suivi des mains ;
+  - les processus arrêtés.
+- **Simulation :**
+  - les variables d'isolement de ROS et Gazebo, `/clock` qui avance ;
+  - l'enregistrement et l'extraction du bag, `ros2 daemon stop`, aucun nœud restant ;
+  - `## Not seen` pour le bruit, le frottement et l'arrêt d'urgence.
+- **Scénarios :**
+  - une entrée invalide par critère, la transcription de l'erreur, une transcription par scénario ;
+  - le service lancé sur un port libre dans son propre groupe de processus, puis vérifié muet après l'arrêt.
+- **Pilotes de QA :**
+  - la première QA met de côté `?? docs/qa/` quand son parent ne contient rien d'autre ;
+  - la correspondance surface×plateforme vers pilote elle-même (H3 ne couvre que l'arrêt).
+- **Design :**
+  - la maquette rendue en HTTP local en clair et en sombre, bureau et mobile, rien de mesuré ;
+  - le contraste mesuré une fois sur chaque paire texte/surface ;
+  - des écarts seulement pour un écran dérivé, un artefact pour un écran nouveau.
+- **Rapport de QA :** étapes, capture, gravité et `verified`/`probable`/`unverified` ; les lignes `Driver:` et `Evidence:`.
+- **Profils :** les commandes `Test` d'iOS et d'Expo échouent au rouge ; le `Dev` d'Expo et de Flutter sert le rendu web.
+
+**Ce que seul un vrai passage prouve (s204).** Aucun parcours ne joue le cadrage : seul le vrai passage de s206 éprouve l'entretien de `/po-brief` et de `/po-prd`, l'approbation un élément par question, la revue des stories soumise à la personne, et un atterrissage de cadrage par `framing/<slug>` et sa pull request (`## Landing the framing` de `/po-setup`).

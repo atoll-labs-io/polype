@@ -31,7 +31,6 @@ test_templates_carry_links() {
   done
   [ "$(head -n 1 "$TPL/plan.md")" = '---' ] || fail "plan.md lost its frontmatter on line 1"
   [ "$(head -n 1 "$TPL/plan-flow.md")" = '---' ] || fail "plan-flow.md lost its frontmatter on line 1"
-  contains "$TPL/verification-record.md" 'The link line under the title is part of this template: it is copied with it, never edited after the copy, and is not one of the implementer'"'"'s lines.'
 }
 
 # Inserts the template's link line, for story s01-a, under the title of a file.

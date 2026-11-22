@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# s106 — framing and settings land on the target branch through a pull request, as a fast-forward.
+# s106 — a framing command commits only on its framing branch and pushes nothing else.
 
 SETUP="$METHOD/commands/po-setup.md"
 
@@ -41,16 +41,5 @@ test_framing_commits_on_a_branch() {
       || fail "$cmd.md still commits on the target branch: $(grep -inE 'commit[^.]* on (`Target branch`|the target branch)' "$file" | head -1)"
     ! grep -qF 'Commit from the repository root, on `Target branch`' "$file" \
       || fail "$cmd.md still commits from the root on the target branch"
-  done
-}
-
-test_framing_pr_fast_forwards() {
-  local land; land=$(landing)
-  local s
-  for s in 'gh pr merge <url> --rebase --match-head-commit <sha>' '`MERGED`' \
-           'git merge --ff-only origin/<Target branch>' 'git merge --ff-only framing/<slug>' \
-           "## The forge's review rule" \
-           '"Framing pull request ready: <url>. Land it with Rebase and merge;' 'AskUserQuestion'; do
-    holds "$land" "$s" 'the landing section'
   done
 }

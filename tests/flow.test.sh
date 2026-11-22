@@ -7,8 +7,4 @@ test_plan_flow_template_carries_verified_facts() {
   require_file "$TEMPLATE"
   frontmatter "$TEMPLATE" | grep -qx 'track: flow' || fail "plan-flow frontmatter lacks track: flow"
   frontmatter "$TEMPLATE" | grep -qx 'validated: no' || fail "plan-flow frontmatter lacks validated: no"
-  grep -qxF '## Verified facts' "$TEMPLATE" || fail "plan-flow template lacks ## Verified facts"
-  grep -qxF '## Escalation signals' "$TEMPLATE" || fail "plan-flow template lacks ## Escalation signals"
-  contains "$TEMPLATE" 'path:line'
-  contains "$TEMPLATE" '150 lines'
 }

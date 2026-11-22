@@ -150,12 +150,3 @@ test_committed_copies_refreshed_by_a_pr_stay_intact() {
   if grep -qF 'modified, left as it is' <<< "$err"; then fail "a copy refreshed by the pull read as modified: $err"; fi
   bash "$NEW" check "$P" >/dev/null 2>&1 || fail "check reports drift after the update"
 }
-
-test_installation_doc_names_the_local_sums() {
-  local section phrase
-  section="$(awk "/^## Les fichiers d'état\$/ {on=1; next} /^## / {on=0} on" "$ROOT/docs/installation.md")"
-  [ -n "$section" ] || fail "docs/installation.md has no ## Les fichiers d'état section"
-  for phrase in '.claude/.polype-checksums' 'ADR-0087' 'ignoré par git'; do
-    grep -qF -- "$phrase" <<< "$section" || fail "the state-files section does not say: $phrase"
-  done
-}

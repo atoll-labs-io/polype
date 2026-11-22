@@ -152,9 +152,7 @@ test_fix_run_keeps_the_runs() {
 
 # s67 — the command po-run is given and the one the gate suggests are single-quoted, so they copy verbatim.
 test_suggested_command_is_single_quoted() {
-  local agent="$METHOD/agents/implementer.md" err rest
-  contains "$agent" "-- '<Test>'"
-  ! grep -qF -- '-- "<Test>"' "$agent" || fail "the implementer still double-quotes the command"
+  local err rest
   story_sandbox
   fresh_record "test \"\$(echo 'a b')\" = 'a b'"
   seal
