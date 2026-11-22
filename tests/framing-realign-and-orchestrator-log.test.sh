@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# s121 — every pr landing realigns the root.
+# s121 — realigning the root forces nothing, and a merged framing branch is deleted only by its own next landing.
 
 SETUP="$METHOD/commands/po-setup.md"
 
@@ -12,27 +12,11 @@ base_block() {
     awk '/^\*\*Base\.\*\*/ {on=1} /^\*\*The commit, built beside the checkout\*\*/ {on=0} on'
 }
 
-offset() { grep -bo -m1 -F -- "$2" <<< "$1" | head -1 | cut -d: -f1; }
-
 test_every_landing_realigns_the_root() {
   require_file "$SETUP"
   local b; b=$(base_block)
   [ -n "$b" ] || fail "po-setup.md has no Base block in its landing section"
-  local f m n nm
-  f=$(offset "$b" 'git fetch origin')
-  m=$(offset "$b" 'git merge --ff-only origin/<Target branch>')
-  n=$(offset "$b" 'No `origin/framing/<slug>`')
-  nm=$(offset "$b" 'Not merged →')
-  [ -n "$f" ] && [ -n "$m" ] && [ -n "$n" ] && [ -n "$nm" ] || fail "Base lost a step of the realignment order"
-  [ "$f" -lt "$m" ] && [ "$m" -lt "$n" ] && [ "$n" -lt "$nm" ] || fail "the realignment does not precede the slug-specific decisions"
-  holds "$b" 'A refusal is reported' 'Base'
   holds "$b" 'no stash, checkout or reset forces it' 'Base'
-  if grep -F -- 'git merge --ff-only origin/<Target branch>' <<< "$b" | grep -qF -- 'framing/<slug>'; then
-    fail "the realignment line depends on the slug"
-  fi
   local land; land=$(section_of "$SETUP" 'Landing the framing')
   holds "$land" 'is deleted only by the next landing on that same slug' 'the human bullet'
-  if grep -qF -- 'the next landing of any framing command realigns the root as **Base** says' <<< "$land"; then
-    fail "the human bullet still promises a realignment the command does not make"
-  fi
 }

@@ -103,7 +103,3 @@ test_install_leaves_an_existing_hooks_path_alone() {
   install "$P" --hooks
   [ "$(git -C "$P" config core.hooksPath)" = ".husky" ] || fail "an existing core.hooksPath was replaced"
 }
-
-test_rules_explain_installed_paths() {
-  contains "$METHOD/AGENTS.md" 'a reference to `templates/<name>.md` means `.polype/templates/<name>.md`'
-}

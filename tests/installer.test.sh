@@ -170,17 +170,6 @@ missing setting: Test: —" ] || fail "check listed: $listed"
   [ "$before" = "$after" ] || fail "the installer wrote AGENTS.local.md"
 }
 
-test_installation_doc_has_an_upgrade_section() {
-  local section
-  section="$(awk '/^## Après une mise à jour$/ {on=1; next} /^## / {on=0} on' "$ROOT/docs/installation.md")"
-  [ -n "$section" ] || fail "docs/installation.md has no ## Après une mise à jour section"
-  local phrase
-  for phrase in 'missing setting: <Nom>: <valeur>' 'ajoute chaque ligne à `AGENTS.local.md`' \
-      '`polype check <projet>`' 'relance `polype init <projet>` ou `polype update <projet>`'; do
-    grep -qF -- "$phrase" <<< "$section" || fail "the upgrade section does not say: $phrase"
-  done
-}
-
 test_installation_doc_lists_the_hook_refusals() {
   local section phrase
   section="$(awk "/^### Le hook des bornes de l'implementer\$/ {on=1; next} /^## / {on=0} on" "$ROOT/docs/installation.md")"

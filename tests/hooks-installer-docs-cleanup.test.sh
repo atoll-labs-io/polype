@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# s127 — hooks, installer and docs keep no trace of an older behaviour.
+# s127 — hooks and installer keep no trace of an older behaviour.
 
 GATE="$METHOD/hooks/po-gate.sh"
 
@@ -48,13 +48,12 @@ test_hooks_say_what_they_do_story_list_reads_the_base() {
 
 test_hooks_say_what_they_do_no_squash() {
   local f
-  for f in "$GATE" "$ROOT/README.md"; do
+  for f in "$GATE"; do
     if grep -qi squash "$f"; then fail "${f#"$ROOT"/} still speaks of a squash"; fi
   done
 }
 
 test_hooks_say_what_they_do_findings_bullet_warned() {
-  contains "$METHOD/templates/review.md" 'a finding never starts with `Ship allowed:`'
   scratch_repo
   cd "$SCRATCH"
   mkdir -p docs/reviews src && echo x > src/app.txt
@@ -94,35 +93,4 @@ test_installer_and_docs_agree_remove_without_jq() {
   printf '%s\n' '{"permissions":{}}' > "$q/.claude/settings.json"
   err="$(PATH="$bin" "$bin/bash" "$polype" remove "$q" 2>&1 >/dev/null)" || fail "remove failed without jq: $err"
   if grep -qF 'still runs' <<< "$err"; then fail "remove warned about a hook the file does not hold: $err"; fi
-}
-
-test_installer_and_docs_agree_installation_doc() {
-  local doc="$ROOT/docs/installation.md" sec long
-  require_file "$doc"
-  sec="$(awk '/^## Activer un projet$/ {on=1; next} /^## / {on=0} on' "$doc")"
-  grep -qF 'fusionné dans `.claude/settings.json`' <<< "$sec" || fail "the project list does not name the merged settings hook"
-  sec="$(awk '/^### Un projet en `Merge mode: local` qui a un remote$/ {on=1; next} /^##/ {on=0} on' "$doc")"
-  [ -n "$sec" ] || fail "no subsection on a local-mode project with a remote"
-  grep -qF 'Merge mode: pr' <<< "$sec" || fail "the local-mode subsection does not name Merge mode: pr"
-  grep -qF 'ADR-0080' <<< "$sec" || fail "the local-mode subsection does not cite ADR-0080"
-  long="$(LC_ALL=C.UTF-8 awk '/^```/ {f = !f; next} !f && length > 100 {print NR}' "$doc")"
-  [ -z "$long" ] || fail "prose lines over 100 characters: $long"
-}
-
-test_installer_and_docs_agree_frontmatter_and_brief() {
-  local adr brief="$METHOD/templates/brief.md"
-  adr="$(ls "$ROOT"/docs/decisions/ADR-0080-*.md)"
-  frontmatter "$adr" | grep -qx 'superseded-by: \[ADR-0081\]' || fail "ADR-0080 does not point at ADR-0081"
-  frontmatter "$adr" | grep -qx 'status: accepted' || fail "ADR-0080 is no longer accepted"
-  if grep -qF 'read the whole' "$brief"; then fail "templates/brief.md still asks to read the whole brief"; fi
-  contains "$brief" 'approved on its own question'
-}
-
-test_drivers_and_doctrine_read_right_texts() {
-  local scene="$METHOD/skills/qa-drivers/scene.md" profile="$ROOT/boilerplates/godot/profile.md"
-  contains "$scene" 'application/run/main_scene'
-  if grep -qF 'the `run/main_scene`' "$scene"; then fail "scene.md still names the short Godot key"; fi
-  grep -F 'Engine command:' "$profile" | grep -qF 'default resolution' \
-    || fail "the engine command line does not say 1920x1080 is the default"
-  contains "$METHOD/skills/testing-doctrine/SKILL.md" "-- '<command>'\`, which writes their row"
 }

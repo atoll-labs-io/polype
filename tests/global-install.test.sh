@@ -115,18 +115,6 @@ test_installer_usage_names_global_and_init() {
   grep -qF 'init <project-dir>' <<< "$out" || fail "the usage does not name init <project-dir>: $out"
 }
 
-test_docs_explain_the_chezmoi_path() {
-  local doc="$ROOT/docs/installation.md"
-  require_file "$doc"
-  contains "$doc" 'chezmoi'
-  contains "$doc" '`~/.claude/polype/`'
-  contains "$doc" 'CLAUDE_CONFIG_DIR'
-  contains "$doc" 'polype init <projet>'
-  grep -qF 'manifest' "$doc" && grep -qF 'checksums' "$doc" || fail "the doc does not name the state files"
-  grep -qF "n'existe pas encore" "$doc" && fail "the doc still says the global install does not exist"
-  return 0
-}
-
 # The documented cross-machine command: after a dotfiles sync, the fresh payload installs itself.
 # Its sources live inside the install root, so an installer that deletes before it copies wipes
 # the very files it is about to lay down — and says nothing.

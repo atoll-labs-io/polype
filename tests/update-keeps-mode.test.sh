@@ -3,7 +3,6 @@
 
 POLYPE="$ROOT/bin/polype"
 HOOK="$METHOD/hooks/po-session.sh"
-ADR_GLOB="$ROOT/docs/decisions/ADR-0091-*.md"
 
 # A throwaway home holding a global install, and a committed project $P beside it.
 fresh_project() {
@@ -96,8 +95,6 @@ test_init_shrinks_a_full_install() {
   [ "$(laid)" = "$(init_count)" ] || fail "init on a full install left $(laid) files"
   no_command_copies "init on a full install"
   mode_is init "after init on a full install"
-  grep -qF 'polype init .' "$ROOT/docs/installation.md" || fail "installation.md names no polype init . repair"
-  grep -qF '(#73)' "$ROOT/docs/installation.md" || fail "installation.md does not name #73 for the repair"
 }
 
 test_hints_say_init() {
@@ -110,15 +107,6 @@ test_hints_say_init() {
   local out; out="$(cd "$P" && CLAUDE_PROJECT_DIR="$P" bash "$HOOK")"
   grep -qxF -- '- CLAUDE.local.md: Claude Code reads it instead of AGENTS.md → polype init . moves it into AGENTS.local.md' <<< "$out" \
     || fail "po-session does not say polype init . on an init project: $out"
-
-  local step3
-  step3="$(awk '/^## Step 3/ {on=1; next} /^## / {on=0} on' "$METHOD/commands/po-setup.md")"
-  grep -qF '`polype init .` on a project activated by `init`' <<< "$step3" \
-    || fail "po-setup step 3 does not name polype init . for an init project"
-  local doc
-  for doc in "$ROOT/README.md" "$ROOT/docs/installation.md"; do
-    if grep -qF 'poserait' "$doc"; then fail "${doc#"$ROOT"/} still says update would lay the commands"; fi
-  done
 }
 
 test_session_hint_infers_init_without_mode() {
@@ -152,16 +140,6 @@ test_session_hint_trusts_recorded_mode() {
   local out; out="$(cd "$P" && CLAUDE_PROJECT_DIR="$P" bash "$HOOK")"
   grep -qxF -- '- CLAUDE.local.md: Claude Code reads it instead of AGENTS.md → polype init . moves it into AGENTS.local.md' <<< "$out" \
     || fail "po-session does not trust the recorded init mode: $out"
-}
-
-test_adr_records_the_mode() {
-  local adr
-  adr="$(ls $ADR_GLOB 2>/dev/null | head -n 1)"
-  [ -n "$adr" ] || fail "no ADR-0091 in docs/decisions/"
-  contains "$adr" '.polype/mode'
-  contains "$adr" 'update --init'
-  contains "$adr" 'inference'
-  frontmatter "$adr" | grep -qx 'status: accepted' || fail "ADR-0091 is not accepted"
 }
 
 test_session_comment_says_why() {

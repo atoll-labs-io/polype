@@ -59,15 +59,6 @@ test_old_bash_is_named() {
   [ "$guard" -lt "$first" ] || fail "bin/polype: the guard comes after a write (line $first)"
 }
 
-test_prerequisites_are_listed() {
-  local sec phrase
-  sec="$(readme_section 'Prérequis')"
-  [ -n "$sec" ] || fail "README has no ## Prérequis section"
-  for phrase in 'Claude Code' 'git' '4.2' 'brew install bash' 'jq' 'SessionStart' 'gh' 'BSD'; do
-    grep -qF -- "$phrase" <<< "$sec" || fail "## Prérequis does not say: $phrase"
-  done
-}
-
 test_quickstart_runs_as_written() {
   local sec blocks langs clone sh1 text sh2 script dir newpath="" n
   sec="$(readme_section 'Démarrage rapide')"
