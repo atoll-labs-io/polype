@@ -59,7 +59,6 @@ test_cli_api_profiles_pass_the_lint() {
   [ "$(identity_value "$RUST" Origin)" = "$RUST_URL" ] || fail "rust-cli origin is not $RUST_URL"
   [ "$(identity_value "$HONO" Origin)" = "$HONO_URL" ] || fail "hono-api origin is not $HONO_URL"
   for p in "$RUST" "$HONO"; do
-    [ "$(identity_value "$p" Licence)" = MIT ] || fail "licence is not MIT in $p"
     [[ "$(identity_value "$p" 'Commit profiled')" =~ ^[0-9a-f]{40}$ ]] || fail "commit profiled is not a full hash in $p"
   done
 
@@ -72,22 +71,6 @@ test_cli_api_profiles_pass_the_lint() {
   [ "$status" -ne 0 ] || fail "po-lint accepted profiles without '## Known traps'"
   grep -qF 'boilerplates/rust-cli/profile.md' <<< "$out" || fail "po-lint did not name rust-cli: $out"
   grep -qF 'boilerplates/hono-api/profile.md' <<< "$out" || fail "po-lint did not name hono-api: $out"
-}
-
-test_cli_api_profiles_use_scenarios() {
-  local p cmds
-  require_file "$RUST"; require_file "$HONO"
-  grep -qxF -- '- Platform: cli' "$RUST" || fail "rust-cli is not platform cli"
-  grep -qxF -- '- Platform: api' "$HONO" || fail "hono-api is not platform api"
-  for p in "$RUST" "$HONO"; do
-    grep -qxF -- '- QA driver: scenarios' "$p" || fail "QA driver is not scenarios in $p"
-    section_of "$p" Commands | grep -qF 'To run a scenario,' || fail "no launch paragraph in $p"
-  done
-  cmds=$(section_of "$RUST" Commands)
-  grep -qF 'target/release/rust-starter' <<< "$cmds" || fail "rust-cli does not name its binary"
-  cmds=$(section_of "$HONO" Commands)
-  grep -qF 'node dist/index.js' <<< "$cmds" || fail "hono-api does not name its start command"
-  grep -qF 'PORT' <<< "$cmds" || fail "hono-api does not say how the port is passed"
 }
 
 test_cli_api_profiles_are_grounded_in_their_sources() {

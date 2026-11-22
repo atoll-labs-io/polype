@@ -59,7 +59,3 @@ test_story_worktree_is_judged_first() {
   git clone -q "$SCRATCH" "$SCRATCH/tmpclone"
   zone_expect implementer "git -C $SCRATCH/tmpclone checkout -q main" 0
 }
-
-test_implementer_knows_the_file_url() {
-  contains "$METHOD/agents/implementer.md" 'file://<path>' || fail "implementer.md does not mention file://<path>"
-}

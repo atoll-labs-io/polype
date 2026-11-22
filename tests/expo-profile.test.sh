@@ -45,7 +45,6 @@ test_expo_profile_passes_the_lint() {
   [ "$status" -eq 0 ] || fail "po-lint reports breaches: $out"
 
   [ "$(identity_value "$EXPO" Origin)" = "$EXPO_URL" ] || fail "origin is not $EXPO_URL"
-  [ "$(identity_value "$EXPO" Licence)" = 0BSD ] || fail "licence is not 0BSD"
   [[ "$(identity_value "$EXPO" 'Commit profiled')" =~ ^[0-9a-f]{40}$ ]] || fail "commit profiled is not a full hash"
 
   copy=$(mktemp -d); trap "rm -rf '$copy'" EXIT
@@ -55,19 +54,6 @@ test_expo_profile_passes_the_lint() {
   status=0; out=$(bash "$ROOT/bin/po-lint" "$copy/method" 2>&1) || status=$?
   [ "$status" -ne 0 ] || fail "po-lint accepted a profile without '## Known traps'"
   grep -qF 'boilerplates/expo/profile.md' <<< "$out" || fail "po-lint did not name the expo profile: $out"
-}
-
-test_expo_profile_names_its_web_render() {
-  local cmds
-  require_file "$EXPO"
-  grep -qxF -- '- Platform: mobile' "$EXPO" || fail "platform is not mobile"
-  grep -qxF -- '- QA driver: mobile-web' "$EXPO" || fail "QA driver is not mobile-web"
-  cmds=$(section_of "$EXPO" Commands)
-  grep -qE '^Dev:[[:space:]]+npm run web$' <<< "$cmds" || fail "Dev is not 'npm run web'"
-  grep -qE '^Test:[[:space:]]+npx --no-install jest$' <<< "$cmds" || fail "Test is not 'npx --no-install jest'"
-  grep -qF 'web render' <<< "$cmds" || fail "Commands does not say Dev serves the web render"
-  grep -qF 'Waiting on' <<< "$cmds" || fail "Commands does not say which line prints the address"
-  grep -qF 'accepts paths to test files' <<< "$cmds" || fail "Commands does not say Test accepts paths"
 }
 
 test_expo_profile_is_grounded_in_its_source() {

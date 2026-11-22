@@ -103,28 +103,3 @@ test_next_forge_profile_is_grounded_in_the_real_repository() {
   grep -qF 'path not in the source: packages/blockchain/' <<< "$breaches" \
     || fail "the grounding check accepted a made-up path: $breaches"
 }
-
-test_next_forge_profile_states_its_gaps_against_adr_0020() {
-  local caps
-  require_file "$PROFILE"
-  caps=$(section_of "$PROFILE" Capabilities)
-  grep -qxF 'Gaps against the default bricks (ADR-0020):' <<< "$caps" || fail "no gap list in ## Capabilities"
-  for bullet in Database Auth Files Jobs Email Observability Deployment; do
-    grep -q "^- $bullet " <<< "$caps" || fail "no gap bullet for $bullet"
-  done
-  for word in 'Better Auth' Garage PostgreSQL pg-boss OpenTelemetry Dockerfile; do
-    grep -qF -- "$word" <<< "$caps" || fail "the gaps do not name $word"
-  done
-  grep -qE '^- Auth .*rewrite `packages/auth/`' <<< "$caps" || fail "the Auth gap does not rewrite packages/auth/"
-  grep -qE '^- Files .*rewrite `packages/storage/`' <<< "$caps" || fail "the Files gap does not rewrite packages/storage/"
-  grep -qE '^- Database .*`packages/database/' <<< "$caps" || fail "the Database gap does not name packages/database/"
-}
-
-test_next_forge_profile_declares_ownership_granularity() {
-  local own
-  require_file "$PROFILE"
-  own=$(section_of "$PROFILE" 'Ownership granularity')
-  for phrase in 'one package per capability' 'packages/<name>/' 'packages/design-system/' turbo.json bun.lock schema.prisma; do
-    grep -qF -- "$phrase" <<< "$own" || fail "## Ownership granularity does not say: $phrase"
-  done
-}

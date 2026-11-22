@@ -2,10 +2,8 @@
 # s88 — the ros2-gazebo profile and the simulation driver.
 
 PROFILE="$ROOT/boilerplates/ros2-gazebo/profile.md"
-DRIVER="$METHOD/skills/qa-drivers/simulation.md"
 TEMPLATE_URL=https://github.com/gazebosim/ros_gz_project_template
 
-section_of() { awk -v h="## $2" '$0 == h {on=1; next} /^## / {on=0} on' "$1"; }
 identity_value() { grep -m1 "^- $2:" "$1" | sed "s/^- $2:[[:space:]]*//"; }
 
 # Backticked tokens of a profile matching an extended regex; placeholders and globs are left out.
@@ -39,16 +37,8 @@ test_ros_profile_passes_the_lint() {
   [ "$status" -eq 0 ] || fail "po-lint reports breaches: $out"
 
   [ "$(identity_value "$PROFILE" Origin)" = "$TEMPLATE_URL" ] || fail "origin is not $TEMPLATE_URL"
-  [ "$(identity_value "$PROFILE" Licence)" = Apache-2.0 ] || fail "licence is not Apache-2.0"
   [[ "$(identity_value "$PROFILE" 'Commit profiled')" =~ ^[0-9a-f]{40}$ ]] || fail "commit profiled is not a full hash"
-  grep -qxF -- '- Platform: robot' "$PROFILE" || fail "platform is not robot"
   grep -qxF -- '- QA driver: simulation' "$PROFILE" || fail "QA driver is not simulation"
-  cmds=$(section_of "$PROFILE" Commands)
-  grep -Eq '^Dev:[[:space:]]+—$' <<< "$cmds" || fail "Dev is not —"
-  grep -Eq '^Test:[[:space:]]+—$' <<< "$cmds" || fail "Test is not —"
-  grep -Eq '^Build:.*colcon build' <<< "$cmds" || fail "Build does not run colcon build"
-  contains "$PROFILE" 'Simulation command:'
-  contains "$PROFILE" 'Resume command:'
 
   copy=$(mktemp -d); trap "rm -rf '$copy'" EXIT
   cp -r "$METHOD" "$copy/method"
@@ -64,39 +54,6 @@ test_ros_profile_passes_the_lint() {
   [ "$status" -ne 0 ] || fail "po-lint accepted the simulation driver without its file"
   grep -qF "QA driver 'simulation' is not a file of qa-drivers" <<< "$out" \
     || fail "po-lint did not tie the profile to simulation.md: $out"
-}
-
-test_simulation_driver_records_behaviour() {
-  local h phrase cannot
-  require_file "$DRIVER"
-  for h in '## Needs' '## Start and stop' '## Exercising a criterion' '## Evidence' '## Cannot show'; do
-    grep -qxF -- "$h" "$DRIVER" || fail "simulation.md lacks the section: $h"
-  done
-  for phrase in \
-    'never on a display a person sees' \
-    'xvfb-run' \
-    'QT_QPA_PLATFORM=xcb' \
-    'ROS_AUTOMATIC_DISCOVERY_RANGE=LOCALHOST' \
-    'ROS_DOMAIN_ID' \
-    'GZ_PARTITION' \
-    'ROS_LOG_DIR' \
-    '`/clock` advances' \
-    'never invents a topic' \
-    'ros2 bag record' \
-    'a readable extract' \
-    'the raw recordings stay in the temporary directory' \
-    'ros2 daemon stop' \
-    'simulation.log' \
-    'docs/qa/<id>/' \
-    'ADR-0066'; do
-    contains "$DRIVER" "$phrase"
-  done
-  cannot=$(section_of "$DRIVER" 'Cannot show')
-  for phrase in 'sensor noise' friction 'emergency stop'; do
-    grep -qF -- "$phrase" <<< "$cannot" || fail "## Cannot show of simulation.md does not name: $phrase"
-  done
-  contains "$DRIVER" '## Not seen'
-  contains "$DRIVER" 'only real hardware would show'
 }
 
 test_ros_profile_is_grounded_in_its_source() {

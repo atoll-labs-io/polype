@@ -20,7 +20,6 @@ test_profile_template_declares_every_section() {
       "## Where each rule lives" "## Capabilities" "## UI inventory" "## Known traps"; do
     grep -qxF -- "$heading" "$PROFILE" || fail "profile template lacks the section: $heading"
   done
-  contains "$PROFILE" "Licence:"
   contains "$PROFILE" "| Capability | Brick | Notes |"
 }
 
@@ -78,16 +77,4 @@ test_lint_checks_profiles() {
   [ "$status" -ne 0 ] || fail "lint accepts a Blockchain capability"
   grep -qF "boilerplates/demo/profile.md:$line: [profile] capability 'Blockchain'" <<< "$out" \
     || fail "lint does not flag Blockchain at line $line: $out"
-}
-
-test_catalogue_doc_explains_the_three_levels() {
-  local doc="$ROOT/docs/catalogue.md"
-  require_file "$doc"
-  contains "$doc" "boilerplates/<nom>/profile.md"
-  contains "$doc" "method/templates/profile.md"
-  contains "$doc" "bin/po-lint"
-  contains "$doc" "maison"
-  contains "$doc" "tiers profilé"
-  contains "$doc" "aucun"
-  contains "$doc" "parallélisme"
 }

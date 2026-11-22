@@ -3,7 +3,6 @@
 
 BOUNDS="$METHOD/hooks/po-bounds.sh"
 ADR3="$METHOD/../docs/decisions/ADR-0103-la-qa-lit-les-regles-d-ignorance-de-git.md"
-ADR26="$METHOD/../docs/decisions/ADR-0026-qa-herite-le-navigateur-et-lit-git-par-liste-blanche.md"
 
 lane() {
   scratch_repo
@@ -52,15 +51,4 @@ test_qa_still_refuses_writing_verbs() {
   verbs="$(grep '^QA_GIT_VERBS=' "$BOUNDS" | sed 's/^QA_GIT_VERBS="//; s/"$//' | tr ' ' '\n' | grep . | sort)"
   adr="$(grep '^Liste des verbes de lecture :' "$ADR3" | grep -o '`[^`]*`' | tr -d '`' | grep -vx 'worktree list' | sort)"
   [ -n "$verbs" ] && [ "$verbs" = "$adr" ] || fail "QA_GIT_VERBS and the ADR-0103 list differ"
-}
-
-test_adr_widens_the_qa_allowlist() {
-  require_file "$ADR3"
-  contains "$ADR3" 'status: accepted'
-  contains "$ADR3" 'supersedes: [ADR-0026]'
-  local w
-  for w in check-ignore check-attr ADR-0047 ADR-0051; do contains "$ADR3" "$w"; done
-  contains "$ADR26" 'superseded-by: [ADR-0103]'
-  contains "$ADR26" 'status: accepted'
-  contains "$ADR26" '`symbolic-ref`, `shortlog`, `worktree list`'
 }

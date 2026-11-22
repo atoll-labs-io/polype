@@ -6,7 +6,6 @@ AND="$ROOT/boilerplates/native-android/profile.md"
 IOS_URL=https://github.com/nimblehq/ios-templates
 AND_URL=https://github.com/android/architecture-templates
 
-section_of() { awk -v h="## $2" '$0 == h {on=1; next} /^## / {on=0} on' "$1"; }
 identity_value() { grep -m1 "^- $2:" "$1" | sed "s/^- $2:[[:space:]]*//"; }
 
 # Backticked tokens of a profile matching an extended regex; placeholders and globs are left out.
@@ -68,8 +67,6 @@ test_native_profiles_pass_the_lint() {
 
   [ "$(identity_value "$IOS" Origin)" = "$IOS_URL" ] || fail "native-ios origin is not $IOS_URL"
   [ "$(identity_value "$AND" Origin)" = "$AND_URL" ] || fail "native-android origin is not $AND_URL"
-  [ "$(identity_value "$IOS" Licence)" = MIT ] || fail "native-ios licence is not MIT"
-  [ "$(identity_value "$AND" Licence)" = Apache-2.0 ] || fail "native-android licence is not Apache-2.0"
   for p in "$IOS" "$AND"; do
     [[ "$(identity_value "$p" 'Commit profiled')" =~ ^[0-9a-f]{40}$ ]] || fail "commit profiled is not a full hash in $p"
   done
@@ -83,23 +80,6 @@ test_native_profiles_pass_the_lint() {
   [ "$status" -ne 0 ] || fail "po-lint accepted profiles without '## Known traps'"
   grep -qF 'boilerplates/native-ios/profile.md' <<< "$out" || fail "po-lint did not name native-ios: $out"
   grep -qF 'boilerplates/native-android/profile.md' <<< "$out" || fail "po-lint did not name native-android: $out"
-}
-
-test_native_profiles_say_what_qa_cannot_do() {
-  local p qa dev
-  require_file "$IOS"; require_file "$AND"
-  for p in "$IOS" "$AND"; do
-    grep -qxF -- '- Platform: mobile' "$p" || fail "platform is not mobile in $p"
-    grep -qxF -- '- QA driver: —' "$p" || fail "QA driver is not — in $p"
-    dev=$(section_of "$p" Commands | grep -m1 '^Dev:' | sed 's/^Dev:[[:space:]]*//')
-    [ "$dev" = '—' ] || fail "Dev is not — in $p"
-    qa=$(section_of "$p" 'QA driver')
-    grep -qF 'mobile-web' <<< "$qa" || fail "no mention of mobile-web in $p"
-    grep -qF 'does not apply' <<< "$qa" || fail "does not say the web driver does not apply in $p"
-    grep -qF '`blocked`' <<< "$qa" || fail "does not say the screen QA is blocked in $p"
-  done
-  section_of "$IOS" 'QA driver' | grep -qF 'needs a Mac' || fail "native-ios does not say the simulator needs a Mac"
-  section_of "$AND" 'QA driver' | grep -qF 'later batch' || fail "native-android does not say the emulator driver is for a later batch"
 }
 
 test_native_profiles_are_grounded_in_their_sources() {

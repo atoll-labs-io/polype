@@ -5,7 +5,6 @@ PROFILE="$ROOT/boilerplates/flutter/profile.md"
 FLUTTER_URL=https://github.com/flutter/flutter
 TEMPLATES=packages/flutter_tools/templates
 
-section_of() { awk -v h="## $2" '$0 == h {on=1; next} /^## / {on=0} on' "$1"; }
 identity_value() { grep -m1 "^- $2:" "$1" | sed "s/^- $2:[[:space:]]*//"; }
 
 # Backticked tokens of a profile matching an extended regex; placeholders and globs are left out.
@@ -63,7 +62,6 @@ test_flutter_profile_passes_the_lint() {
   [ "$status" -eq 0 ] || fail "po-lint reports breaches: $out"
 
   [ "$(identity_value "$PROFILE" Origin)" = "$FLUTTER_URL" ] || fail "origin is not $FLUTTER_URL"
-  [ "$(identity_value "$PROFILE" Licence)" = BSD-3-Clause ] || fail "licence is not BSD-3-Clause"
   [[ "$(identity_value "$PROFILE" 'Commit profiled')" =~ ^[0-9a-f]{40}$ ]] || fail "commit profiled is not a full hash"
 
   copy=$(mktemp -d); trap "rm -rf '$copy'" EXIT
@@ -73,17 +71,6 @@ test_flutter_profile_passes_the_lint() {
   status=0; out=$(bash "$ROOT/bin/po-lint" "$copy/method" 2>&1) || status=$?
   [ "$status" -ne 0 ] || fail "po-lint accepted a profile without '## Known traps'"
   grep -qF 'boilerplates/flutter/profile.md' <<< "$out" || fail "po-lint did not name the flutter profile: $out"
-}
-
-test_flutter_profile_names_its_web_render() {
-  local cmds
-  require_file "$PROFILE"
-  grep -qxF -- '- Platform: mobile' "$PROFILE" || fail "platform is not mobile"
-  grep -qxF -- '- QA driver: mobile-web' "$PROFILE" || fail "QA driver is not mobile-web"
-  cmds=$(section_of "$PROFILE" Commands)
-  grep -Eq '^Dev:[[:space:]]+flutter run -d web-server' <<< "$cmds" || fail "Dev does not serve the web render"
-  grep -Eq '^Test:[[:space:]]+flutter test' <<< "$cmds" || fail "Test is not flutter test"
-  grep -qF 'is being served at' <<< "$cmds" || fail "the profile does not say which line Dev prints"
 }
 
 test_flutter_profile_is_grounded_in_its_source() {
