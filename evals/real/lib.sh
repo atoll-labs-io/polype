@@ -100,7 +100,7 @@ real_path_after() {
   printf '%s' "$out"
 }
 
-# The C1 settings of ADR-0134, `gh` added by ADR-0135: an allowlist, file tools held to the run
+# The C1 settings of ADR-0134, `gh` added by ADR-0135, `cd` and the reading commands by ADR-0136: an allowlist, file tools held to the run
 # folder, web tools, curl and claude denied. Whatever is not allowed prompts, and
 # --permission-prompts none denies every prompt. What governs a session lies inside the run folder
 # the file tools reach: real_governing lets the launch see a session that changed it, and that run
@@ -110,7 +110,9 @@ real_permissions() {
   jq -n --arg run "$1" --arg po "$1/config/polype/po" '{autoMemoryEnabled: false, permissions: {
     allow: ["Bash(git:*)", "Bash(gh:*)", "Bash(bash:*)", "Bash(sh:*)", "Bash(jq:*)", "Bash(\($po):*)",
             "Bash(.polype/hooks/*)", "Bash(\($run)/project/.polype/hooks/*)",
-            "Read(/\($run)/**)", "Edit(/\($run)/**)", "Agent"],
+            "Read(/\($run)/**)", "Edit(/\($run)/**)", "Agent",
+            "Bash(cd:*)", "Bash(cat:*)", "Bash(ls:*)", "Bash(wc:*)", "Bash(cksum:*)", "Bash(sed -n:*)",
+            "Bash(grep:*)", "Bash(head:*)", "Bash(tail:*)", "Bash(diff:*)", "Bash(mktemp:*)"],
     deny: ["WebFetch", "WebSearch", "Bash(curl:*)", "Bash(claude:*)"]}}'
 }
 
@@ -188,7 +190,7 @@ real_governing() {
   real_sigs config "$J/config" -mindepth 1 \( -path ./projects -o -path ./todos -o -path ./statsig \
     -o -path ./shell-snapshots -o -path ./session-env -o -path ./file-history -o -path ./debug -o -path ./ide \
     -o -path ./plans -o -path ./telemetry -o -path ./paste-cache -o -path ./cache -o -path ./logs \
-    -o -path ./backups -o -path ./downloads -o -path ./history.jsonl -o -path ./stats-cache.json \
+    -o -path ./backups -o -path ./downloads -o -path ./history.jsonl -o -path ./stats-cache.json -o -path ./.last-cleanup \
     -o -path ./.credentials.json -o -path './.claude.json*' \) -prune -o \( -type f -o -type l \)
   real_sigs config/projects "$J/config/projects" -mindepth 1 \( -path '*/memory' -o -path '*/memory/*' \) \( -type f -o -type l \)
   real_claude_json config/.claude.json "$J/config/.claude.json"
@@ -652,15 +654,32 @@ real_finish() {
 # The tree of these paths differs from HEAD, untracked files included.
 real_dirty() { [ -n "$(git -C "$POLYPE_ROOT" status --porcelain -- bin method po evals 2>/dev/null)" ]; }
 
+# real_spent <results folder>: what the sessions cost. A result event carries its session's running
+# totals, so each session counts once, by its last result; a session with none adds nothing.
+real_spent() {
+  local f n=0 cost=0 in=0 out=0 row
+  for f in "$1"/*.session[0-9]*.jsonl; do
+    [ -e "$f" ] || continue
+    n=$((n + 1))
+    row="$(jq -nrR '[inputs | fromjson? | select(type == "object" and .type == "result")] | last // {}
+      | [(.total_cost_usd // 0),
+         (if .modelUsage then ([.modelUsage[]?.inputTokens // 0] | add // 0) else (.usage.input_tokens // 0) end),
+         (if .modelUsage then ([.modelUsage[]?.outputTokens // 0] | add // 0) else (.usage.output_tokens // 0) end)]
+      | @tsv' < "$f" 2>/dev/null)" || { echo "cost: unreadable"; return 0; }
+    [ -n "$row" ] || { echo "cost: unreadable"; return 0; }
+    read -r c i o <<< "$row"
+    cost="$(awk -v a="$cost" -v b="$c" 'BEGIN { printf "%.10f", a + b }')"
+    in=$((in + ${i%.*})) out=$((out + ${o%.*}))
+  done
+  awk -v c="$cost" -v n="$n" -v i="$in" -v o="$out" 'BEGIN { printf "cost: %.2f USD over %d sessions; tokens in %d, out %d\n", c, n, i, o }'
+}
+
 real_record() {
   local version commit file usage
   version="$(sed -n 's/^POLYPE_VERSION="\(.*\)"$/\1/p' "$POLYPE_ROOT/bin/polype" | head -n 1)"
   commit="$(git -C "$POLYPE_ROOT" rev-parse --short HEAD)"
   file="$POLYPE_ROOT/docs/evals/real-$(date +%Y-%m-%d)-v$version.md"
-  usage="$(cat "$REAL_RESULTS"/*.jsonl 2>/dev/null | jq -nR '[inputs | fromjson? | select(type == "object" and .type == "result")]
-    | {cost: (map(.total_cost_usd // 0) | add // 0), input: (map(.usage.input_tokens // 0) | add // 0),
-       output: (map(.usage.output_tokens // 0) | add // 0), sessions: length}
-    | "cost: \(.cost) USD over \(.sessions) sessions; tokens in \(.input), out \(.output)"')" || usage="cost: unreadable"
+  usage="$(real_spent "$REAL_RESULTS")"
   mkdir -p "$POLYPE_ROOT/docs/evals"
   {
     echo "# Passage réel — $(date +%Y-%m-%d), Polype $version"
