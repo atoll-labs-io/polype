@@ -1,0 +1,6 @@
+[
+  {"number": 1, "title": "checks: the greeting check passes on an empty file", "author": {"login": "me"},
+   "body": "Command: `sh checks/run.sh`\n\nOutput: `ok` while `src/s01-greeting.txt` is empty.\n\nPath: `checks/s01-greeting.check`"},
+  {"number": 2, "title": "checks: the farewell check is slow", "author": {"login": "someone-else"},
+   "body": "Command: `sh checks/run.sh`\n\nOutput: takes a while.\n\nPath: `checks/s02-farewell.check`"}
+]

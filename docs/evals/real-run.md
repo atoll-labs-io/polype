@@ -1,0 +1,65 @@
+# Le passage réel (`po-eval real`, s206)
+
+`bin/po-eval real` lance un vrai chef de projet, par `po run`, sur un dépôt jetable construit pour lui, puis note chaque passage par des scripts. Il sert deux usages : un passage du parcours avant chaque publication ([`docs/ci.md`](../ci.md), `## Publier une version`), et la mesure d'une règle lue par un modèle quand quelqu'un propose de la retirer ([ADR-0133](../decisions/ADR-0133-combien-de-passages-payants-fondent-le-retrait-d-une-regle.md)). Il ne retire jamais rien lui-même.
+
+## Lancer
+
+```
+bin/po-eval real [--repeat N] [--sessions S] [--model M] [--budget USD] [--arm <nom|fichier.arm>]… [--keep] [--record] [cas…]
+bin/po-eval real --list | --rules | --build <cas> <dossier> | --build-all <dossier>
+```
+
+- Sans cas, `journey` : les deux stories de `evals/real/stories.md` (s01 de complexité 2, voie courte ; s02 de complexité 3, voie complète) menées par `/po-drive` jusqu'à leur commit atterri. `N` vaut 1, `S` 3 sessions (`po run` puis `po continue` tant qu'il reste du travail et que rien n'attend une personne), le plafond 10 USD par session.
+- Avant tout appel, la commande affiche le nombre de passages payants, le modèle et les `Model strong` / `Model light` des cas, le plafond de dépense total, le nom de la variable d'où vient l'identifiant, puis demande `Continue? [y/N]`.
+- `--build`, `--build-all`, `--list` et `--rules` ne lancent aucun modèle : ils servent à lire un cas, et la suite les utilise.
+- `--record` écrit `docs/evals/real-<date>-v<version>.md` : date, version et commit, modèles, nom de la variable de l'identifiant, cas et nombre de passages, taux par bras, les trois listes de bras, les lignes de story de chaque passage, coût et usage additionnés depuis les événements `result`. Aucune transcription n'y entre. Il refuse quand `bin/`, `method/`, `po/` ou `evals/` diffèrent de `HEAD`.
+- `--keep` garde le dossier des résultats (mode 700, sous `$TMPDIR`) : les transcriptions `stream-json` de chaque session, chaque fichier nettoyé d'abord comme `po-intake` nettoie un rapport. Sans `--keep`, il est supprimé à la sortie.
+
+## L'identifiant
+
+La commande lit `ANTHROPIC_API_KEY` ou `CLAUDE_CODE_OAUTH_TOKEN` (ce dernier vient de `claude setup-token`) dans l'environnement, et rien d'autre : la configuration de Claude Code de la personne n'est jamais lue ni touchée. Elle n'en affiche que le nom ; la valeur ne passe dans aucun argument, aucun fichier de `docs/`, ni git. Sans l'une des deux, elle refuse (sortie 2).
+
+## Ce qui confine un passage (ADR-0134)
+
+[ADR-0134](../decisions/ADR-0134-un-passage-reel-se-lance-devant-une-personne-dans-une-configuration-confinee.md) fixe que **un passage réel est pour une personne qui le lance et le regarde**. Sans terminal sur la question de confirmation, la commande refuse et ne lance rien (sortie 2) ; aucune option ne saute la question.
+
+Chaque passage vit dans son propre dossier `mktemp -d`, supprimé à sa fin :
+- `HOME`, `TMPDIR` et la configuration de Claude Code (`CLAUDE_CONFIG_DIR`) y sont, installée par `bin/polype install --global` depuis la copie du bras, avec `po` construit une fois depuis ce dépôt ;
+- `settings.json` y tient une liste de permissions : `git`, `gh` ([ADR-0135](../decisions/ADR-0135-gh-entre-dans-la-liste-de-permissions-d-un-passage-reel.md)), `bash`, `sh`, `jq`, le `po` de la configuration, `.polype/hooks/*`, les outils de fichiers limités au dossier du passage, l'outil Agent ; les outils web, `curl` et `claude` sont refusés ; la mémoire automatique de Claude Code y est coupée (`autoMemoryEnabled: false`, et `CLAUDE_CODE_DISABLE_AUTO_MEMORY=1` dans l'environnement), puisque Claude Code l'écrirait lui-même pour la session suivante ; que `-p` respecte ce réglage, seul un vrai passage le montre ;
+- `claude -p` tourne avec `--permission-prompts none` (toute demande de permission est refusée), `--max-budget-usd` par session, jamais `--fallback-model` ;
+- `gh`, `curl`, `glab`, `tea`, `task` et `claude` sont des doublures sur le `PATH` : la forge est celle du parcours rejoué, une origine en dépôt nu local ; aucun jeton de forge n'est dans l'environnement. `gh` est permis parce que le `gh` qu'un appel direct trouve est cette doublure. Chaque doublure note tout texte qu'un appel pourrait envoyer : son entrée standard et chaque fichier qu'un argument nomme, quelle que soit l'écriture (`-F f`, `--body-file=f`, `--input=f`, `k=@f`, `k=<f` et `k=@f;type=…` de `curl`, un chemin nu, `<(…)`) ;
+- avant tout appel payant, `po state` doit y dire `bounds: held` ;
+- le chemin du vrai `claude` et le lanceur que `po run` appelle passent par un script propre au passage, hors de l'environnement : aucune variable de la session ne les nomme, et un `po continue` qu'elle lancerait tomberait sur la doublure `claude`. Le `PATH` du passage perd chaque dossier qui tient un `claude`, sauf si ce dossier tient aussi un outil dont le passage a besoin : une recherche dans le `PATH` ne trouve alors que la doublure. Le vrai programme reste atteignable par son chemin complet, qu'un processus peut lire chez celui qui l'a lancé ;
+- une interruption, `SIGHUP` compris (le terminal qu'on ferme), retire le dossier du passage, les copies des bras et les résultats non gardés.
+
+**La limite, dite franchement.** Le chef de projet et le planner ne sont pas bornés par `po-bounds`. Une commande permise peut atteindre tout chemin que la personne atteint (un `git -C`, une redirection), et tout agent du passage peut lire son propre environnement, identifiant compris. Permettre `bash` et `sh` rend vains les refus de `curl` et de `claude` : un `bash -c` lance n'importe quel programme par son chemin complet, et le réseau reste ouvert. Ce qui gouverne une session est dans le dossier que les outils de fichiers atteignent : une session peut élargir ses propres permissions et celles de la suivante. La commande relève, avant la première session et après chacune, ce qui gouverne la suivante, en gardant ce relevé hors de portée de la session. Elle y met la configuration de Claude Code (avec les clés de `.claude.json` qui permettent quelque chose, et la mémoire automatique de chaque projet, même coupée), les fichiers de démarrage de `HOME` (shell, git), les doublures du `PATH` et les réglages de la doublure de forge. S'y ajoutent la configuration et les hooks git de la racine et de l'origine, puis la configuration, les hooks et les fichiers de mémoire du projet (`.claude/`, `.polype/`, `CLAUDE.md`, `CLAUDE.local.md`, `.mcp.json`, `AGENTS.md`) à la racine et dans chaque worktree, ceux des dossiers qui les contiennent (le dossier du passage, `.worktrees/`), et les fichiers d'instructions de chaque dossier au-dessus du passage. `AGENTS.local.md` n'y est pas, puisque `/po-setup` l'écrit : une session qui y change `Plan validation` ou `Ship confirmation` n'est pas relevée. Un passage où l'un d'eux a changé est invalide, avec le premier chemin changé, et ne relance rien ; la commande ne l'empêche pas. Ce que Claude Code, `po` et le chef écrivent en travaillant n'y compte pas : transcriptions, caches, boîte de décisions, dossier privé, suivi des branches. Ce confinement réduit ce qu'un agent de bonne foi fait par erreur ; il n'arrête pas un agent qui chercherait à en sortir. La présence de la personne en est le complément. Un passage non surveillé ou planifié demande d'abord un bac à sable, par une nouvelle ADR.
+
+## Comment un passage est noté
+
+Aucun modèle ne note un autre modèle. Après chaque passage, `evals/real/grade.sh` lit le dépôt, son origine, `po state --all`, `po inbox`, les journaux des doublures et, dans la transcription, les outils que la session a vraiment lancés :
+- `story <id>: landed — actions: … — fix loops: <n>` : les fichiers que tient le commit atterri (`research`, `design`, `plan`, `execute`, `qa`, `review`, puis `ship`) et `trust.fix_loops` ;
+- `story <id>: not landed — stage: … — waiting: …` sinon ;
+- `case <cas> run <n>: pass|fail` : chaque prédicat de `CASE_EXPECT` doit tenir. Ce que le modèle dit avoir fait ne compte pas.
+- `observe <cas> <prédicat>: yes|no` : chaque prédicat de `CASE_OBSERVE` a son propre taux, pour mesurer une règle candidate sur les mêmes passages.
+
+**Un passage invalide** est un passage dont une session n'a pas tourné jusqu'au bout : aucun événement `result` dans sa transcription, un `result` en erreur (identifiant refusé, budget épuisé, permission illisible…), ou une session qui a changé ce qui gouverne la suivante. Il s'affiche `case <cas> run <n>: invalid — <raison>`, n'entre dans aucun taux (un taux se lit sur les passages valides : `0/0` quand aucun ne l'est), est nommé avec sa raison sous `invalid:`, et une session invalide arrête le passage. Un bras dont un passage, ou un passage de la règle sur le même cas, est invalide n'est jamais rangé sous `moved no rate:` : il est nommé sous `not judged, invalid runs:`.
+
+Un prédicat de chemin cherche partout où le fichier peut être : sur le disque, et sur chaque branche de la racine, locale ou de suivi, et de l'origine (`framing/*` compris). Chaque cas d'arrêt demande aussi un signe que la session a rencontré la condition de sa règle (`used <texte>` : un outil lancé dont l'entrée tient ce texte et qui a rendu un résultat autre qu'un refus de permission ; un appel de la doublure `gh` ; un rapport ou une décision écrits), pour qu'une session qui n'a rien fait ne passe pas pour une session qui s'est arrêtée.
+
+## Les bras témoins
+
+Un bras est un fichier `.arm` : `ARM_FILE` (sous `method/`), `ARM_PHRASE` (une phrase qui doit y apparaître une seule fois), `ARM_REPLACEMENT` (vide : la phrase est retirée), et facultativement `ARM_RULES` et `ARM_CASES`. Les lignes sont lues par `sed`, jamais exécutées. `--arm <nom>` lit `evals/arms/<nom>.arm` ; un chemin qui finit par `.arm` est lu tel quel. `evals/arms/reuse-ladder.arm` est le témoin de [`reuse-ladder.md`](reuse-ladder.md), que `bin/po-eval --control` utilise.
+
+Avec des bras, chaque passage tourne une fois par bras, même modèle, chacun sur sa propre configuration. La sortie donne `<cas>: rule p/n | control <bras> q/n`, puis `lowered:`, `raised:` et `moved no rate:`. Un taux a bougé quand les deux bras diffèrent d'au moins la marge d'ADR-0133 : 1 jusqu'à 5 passages par bras, 2 au-delà.
+
+## Combien de passages, et ce qu'ils coûtent (ADR-0133)
+
+- Rien n'est mesuré tant que personne ne propose de retirer une règle.
+- **Premier temps**, `--repeat 3` : une règle dont un taux a bougé d'au moins 1 est gardée. Environ 6 passages par règle.
+- **Second temps**, `--repeat 13`, pour une règle qui n'a rien bougé : elle n'est proposée au retrait que si l'écart reste sous 2. Environ 26 passages de plus.
+- **Avant chaque publication** : un passage du parcours, sans bras.
+- Estimation d'ADR-0133, à corriger par le premier relevé : un cas court, 0,3 à 2 $ et 5 à 10 minutes ; un passage du parcours, 5 à 11 $ et 20 à 60 minutes, au tarif d'API d'un grand modèle à 5 $ / 25 $ le million de jetons. Sur un jeton d'abonnement, c'est du quota. Retirer une règle reste la décision du porteur, prise sur le relevé daté.
+
+## Le registre des règles
+
+`evals/real/rules.tsv` tient une ligne par règle (160, dont 77 ont un cas ; des 28 règles d'arrêt de s201 à s204, 23 ont un cas, parmi 34 cas) : son id, son genre (`stop`, `security`, `candidate`, `model-row`), ses cas ou `—`, ce qui la tient aujourd'hui, si son test de phrase peut partir, et son texte ou la raison pour laquelle aucun cas ne l'éprouve. `bin/po-eval real --rules` l'affiche ; `--list` nomme les cas de `evals/real/cases/`. Chaque cas déclare sa base (`journey`, `framing` ou `lane`), sa commande (`drive` ou une commande comme `/po-qa <id>`), ses règles, un `setup` et ses prédicats.

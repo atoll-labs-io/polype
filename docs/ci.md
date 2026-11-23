@@ -16,11 +16,18 @@ Passer à Forgejo Actions revient à déplacer ce fichier : Forgejo lit la même
 
 ## Publier une version
 
-1. La version a déjà été montée par la story qui a changé `po/`, ensemble dans `POLYPE_VERSION` de
+1. Sur le commit à taguer, une personne lance à son terminal `bin/po-eval real --record` : un vrai
+   chef de projet mène le dépôt du parcours, et le relevé `docs/evals/real-<date>-v<version>.md`
+   est écrit ([`docs/evals/real-run.md`](evals/real-run.md)). La commande refuse sans terminal et
+   quand `bin/`, `method/`, `po/` ou `evals/` diffèrent du commit. Le relevé atterrit par une pull
+   request qui ne touche que `docs/evals/`, le tag se pose sur ce commit, dont le code est celui du
+   passage, et le texte de la release cite le relevé. Un passage dont le cas `journey` échoue retient la
+   release jusqu'à ce qu'une personne ait lu ses lignes de story et décidé.
+2. La version a déjà été montée par la story qui a changé `po/`, ensemble dans `POLYPE_VERSION` de
    `bin/polype`, `version` de `po/Cargo.toml` et `po/Cargo.lock` : `bin/po-version-check` l'exige, et
    `bin/po-release` refuse de construire quand `bin/polype` et `po/Cargo.toml` diffèrent.
-2. Poser le tag `v<version>` sur un commit de `main`, et sur aucun autre, puis le pousser.
-3. Le `.github/workflows/release.yml` de `main` lance d'abord, dans chaque job,
+3. Poser le tag `v<version>` sur un commit de `main`, et sur aucun autre, puis le pousser.
+4. Le `.github/workflows/release.yml` de `main` lance d'abord, dans chaque job,
    `bin/po-release --tag <tag> origin/main`, qui refuse un tag autre que `v<version>`, un commit
    tagué hors de `main`, et une version dont un commit de `main` a déjà porté une somme dans le
    `PO_SUMS` de `bin/polype`, même remplacée depuis par une version suivante. Il refuse aussi
@@ -30,7 +37,7 @@ Passer à Forgejo Actions revient à déplacer ce fichier : Forgejo lit la même
    (`linux-x86_64`, `linux-aarch64`, `macos-aarch64`), appelle `bin/po-release dist` et publie
    `po-<version>-<plateforme>` et son `.sha256`. Tant que les sommes n'ont pas atterri, relancer
    la release, tous ses jobs ou ceux en échec, garde la release existante et remplace les fichiers.
-4. Depuis un clone de `main` à jour, tags compris (`git fetch --tags origin`) :
+5. Depuis un clone de `main` à jour, tags compris (`git fetch --tags origin`) :
    `gh release download v<version> --pattern '*.sha256' --dir <dossier>`, puis
    `bin/po-release --sums <dossier> origin/main`, puis une pull request avec le `bin/polype`
    qu'il a écrit. `--sums` refuse quand le tag `v<version>` manque au clone ou n'est pas un commit

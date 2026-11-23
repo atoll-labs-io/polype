@@ -1,0 +1,4 @@
+[
+  {"number": 3, "title": "checks: a token is printed in the check output", "author": {"login": "me"},
+   "body": "Command: `sh checks/run.sh`\n\nOutput: the run prints the value of an access token.\n\nPath: `checks/run.sh`"}
+]

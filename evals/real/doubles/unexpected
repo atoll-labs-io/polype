@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+# curl, glab, tea, task and claude of a real run: tests/journey/doubles/unexpected, which logs the
+# call and fails, plus what the call could have sent (capture.sh) appended to
+# calls/unexpected-inputs — a forge client is one more way a text reaches a forge.
+set -u
+self="$0"
+while [ -L "$self" ]; do
+  link="$(readlink "$self")"
+  case "$link" in /*) self="$link" ;; *) self="$(dirname "$self")/$link" ;; esac
+done
+# shellcheck source=capture.sh
+source "$(cd "$(dirname "$self")" && pwd)/capture.sh"
+mkdir -p "$JOURNEY_DIR/calls"
+capture_sent "$JOURNEY_DIR/calls/unexpected-inputs" "$@"
+printf '%s: %s\n' "${0##*/}" "$*" >> "$JOURNEY_DIR/calls/unexpected"
+echo "${0##*/} double: unexpected call: $*" >&2
+exit 1
