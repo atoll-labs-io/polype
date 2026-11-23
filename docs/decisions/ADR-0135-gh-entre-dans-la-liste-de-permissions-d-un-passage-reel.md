@@ -5,7 +5,7 @@ status: accepted
 date: 2026-11-23
 scope: story s206-real-run-before-a-release
 supersedes: [ADR-0134]
-superseded-by: []
+superseded-by: [ADR-0136]
 ---
 
 # ADR-0135 — gh entre dans la liste de permissions d'un passage réel
