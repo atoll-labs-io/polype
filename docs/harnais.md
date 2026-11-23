@@ -167,7 +167,7 @@ s201 à s204 ont retiré de `tests/` tout test qui cherchait dans `method/`, `do
 - quatre tests qui lisent le fichier même d'un script (`## The pivot` du plan de s204) ;
 - aucun fichier de `tests/` ne cherche plus une phrase qu'aucun script ne lit, hors l'exception de sécurité ci-dessous et ces quatre tests.
 
-**Exception du porteur (d-0052).** Les tests de phrase de sécurité restent jusqu'au vrai passage de s206, qui dira pour chacun si un script ou un cas le tient. Restent entiers `tests/bounds.test.sh`, `bounds-messages.test.sh`, `install-collisions.test.sh`, `no-claude-md.test.sh`, `payload-kept-outside.test.sh`, `payload-refuses-foreign-files.test.sh`, `security-findings-stay-private.test.sh`, `decision-inbox.test.sh` et `answer-comes-back.test.sh`, ces deux derniers hors leur plafond de mots, passé au budget par s205. Les autres fonctions gardées sont nommées dans les plans de s202 à s204 et tenues par leurs oracles.
+**Exception du porteur (d-0052).** Les tests de phrase de sécurité restent jusqu'au vrai passage de s206, qui dira pour chacun si un script ou un cas le tient. Restent entiers `tests/bounds.test.sh`, `bounds-messages.test.sh`, `install-collisions.test.sh`, `no-claude-md.test.sh`, `payload-kept-outside.test.sh`, `payload-refuses-foreign-files.test.sh`, `security-findings-stay-private.test.sh`, `decision-inbox.test.sh` et `answer-comes-back.test.sh`, ces deux derniers hors leur plafond de mots, passé au budget par s205. Les autres fonctions gardées sont nommées dans les plans de s202 à s204 et tenues par leurs oracles. Pour chacune, `bin/po-eval real --rules` dit quel cas du passage réel l'éprouve, ou pourquoi aucun (`## Le passage réel`).
 
 **Ce qu'elle ne prouve pas.**
 - Qu'un modèle suive la prose : les règles de point d'arrêt et d'arrêt retirées sont nommées dans les critères de s206, le reste est jugé en revue, candidat à un bras de `po-eval` (#208).
@@ -202,7 +202,15 @@ s201 à s204 ont retiré de `tests/` tout test qui cherchait dans `method/`, `do
 - **Rapport de QA :** étapes, capture, gravité et `verified`/`probable`/`unverified` ; les lignes `Driver:` et `Evidence:`.
 - **Profils :** les commandes `Test` d'iOS et d'Expo échouent au rouge ; le `Dev` d'Expo et de Flutter sert le rendu web.
 
-**Ce que seul un vrai passage prouve (s204).** Aucun parcours ne joue le cadrage : seul le vrai passage de s206 éprouve l'entretien de `/po-brief` et de `/po-prd`, l'approbation un élément par question, la revue des stories soumise à la personne, et un atterrissage de cadrage par `framing/<slug>` et sa pull request (`## Landing the framing` de `/po-setup`).
+**Ce que seul un vrai passage prouve (s204).** Aucun parcours ne joue le cadrage : seul le vrai passage de s206 éprouve l'entretien de `/po-brief` et de `/po-prd`, l'approbation un élément par question, la revue des stories soumise à la personne, et un atterrissage de cadrage par `framing/<slug>` et sa pull request (`## Landing the framing` de `/po-setup`). `bin/po-eval real --rules` nomme le cas de chacune de ces règles.
+
+## Le passage réel
+
+`bin/po-eval real` (s206) lance un vrai chef de projet par `po run` sur un dépôt jetable et note chaque passage par des scripts ; son mode d'emploi, l'identifiant, le confinement d'ADR-0134 (`gh` permis par ADR-0135) et sa limite sont dans [`docs/evals/real-run.md`](evals/real-run.md). Il ne tourne jamais dans la suite : chaque test qui le lance pose sa propre doublure `claude`, et `test_suite_never_pays` le vérifie pour tout fichier de `tests/`.
+
+**Ce qu'il prouve.** Qu'un modèle, lancé comme une personne lance le chef, mène les stories du parcours jusqu'à leur commit atterri, ou s'arrête là où une règle l'arrête : chaque cas de `evals/real/cases/` pose un dépôt (base `journey`, `framing` ou `lane`), lance `/po-drive` ou une commande, et ses prédicats lisent le dépôt et chacune de ses branches, son origine, `po state`, `po inbox`, les journaux des doublures et les outils que la transcription montre lancés. Un passage dont une session n'a pas fini sans erreur, ou a changé ce qui gouverne la suivante, est invalide et n'entre dans aucun taux. Avec des bras témoins, il mesure ce que retirer une phrase change (ADR-0133) et nomme les bras qui n'ont bougé aucun taux, sans rien retirer.
+
+**Ce qu'il ne prouve pas.** Les lignes `no case` de `bin/po-eval real --rules` : une règle dont l'effet ne laisse aucune trace qu'un script lise (le modèle sur lequel un subagent a tourné, qui a approuvé un design, le texte d'un rapport), ou qui demande un navigateur. Pour ces règles, seule la revue juge. Un passage réel ne prouve rien tant qu'il n'a pas tourné : la suite n'éprouve que la commande, contre une doublure.
 
 ## Le budget de mots
 

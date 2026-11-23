@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+# PO_CLAUDE of a real run: `po run` and `po continue` launch `<this> --bg <flag> <uuid> <command>` and
+# wait for it, so the lead runs here as `claude -p` in the foreground, its stream kept under the
+# results folder. Never --fallback-model: a refused model must stop the run, not be swapped.
+# REAL_CLAUDE, REAL_OUT, REAL_BUDGET and REAL_MODEL come from the run's launcher, never from the
+# run's environment, and none of them nor PO_CLAUDE reaches the lead. Its PATH leads to the claude
+# double only, unless the real one shares its folder with a tool the run needs (real_path_without_claude,
+# which then keeps that folder). The real binary stays reachable by its full path, which a
+# process can read from what started it: ADR-0134 accepts that reach, the person watching is its bound.
+set -u
+case "${1:-}" in
+  agents) echo '[]'; exit 0 ;;
+  --bg) [ $# -eq 4 ] || { echo "claude-print: --bg takes <flag> <uuid> <command>" >&2; exit 2; } ;;
+  *) echo "claude-print: unexpected call: $*" >&2; exit 2 ;;
+esac
+[ -n "${REAL_CLAUDE:-}" ] && [ -n "${REAL_OUT:-}" ] && [ -n "${REAL_BUDGET:-}" ] \
+  || { echo "claude-print: launched outside a real run's launcher" >&2; exit 2; }
+flag="$2" uuid="$3" command="$4"
+case "$flag" in --session-id|--resume) ;; *) echo "claude-print: unknown flag $flag" >&2; exit 2 ;; esac
+count="$REAL_OUT.sessions"
+n=$(( $(cat "$count" 2>/dev/null || echo 0) + 1 ))
+echo "$n" > "$count"
+args=(-p "$command" "$flag" "$uuid" --output-format stream-json --verbose --max-budget-usd "$REAL_BUDGET" --permission-prompts none)
+[ -z "${REAL_MODEL:-}" ] || args+=(--model "$REAL_MODEL")
+claude="$REAL_CLAUDE" out="$REAL_OUT.session$n"
+exec env -u PO_CLAUDE -u REAL_CLAUDE -u REAL_OUT -u REAL_BUDGET -u REAL_MODEL \
+  "$claude" "${args[@]}" < /dev/null > "$out.jsonl" 2> "$out.err"

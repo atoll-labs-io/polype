@@ -1,0 +1,165 @@
+id	kind	case	held by	test may go	text or reason
+# The registry of po-eval real (s206): one row per rule a real run is meant to measure. Columns are
+# tab-separated: id, kind (stop, security, candidate, model-row), the cases that exercise it (space-
+# separated) or —, what holds it today, whether its phrase test may go, and its text or, with no
+# case, the reason none exercises it. Read by `po-eval real --rules`; never sourced.
+s201-H1	stop	human-validation	model only	gone (s201)	`validated: yes` only on the person's agreement; the report says no human reviewed — unproven: the report's wording under `autonomous`
+s201-H2	stop	—	model only	gone (s201)	the decision's options are worded by the lead; no script can pick "approve s01 only" (under `human`, only approved plans validate)
+s201-H3	stop	refused-model	model only	gone (s201)	a refused model name stops the lane, no retry — unproven: a retry that left no file
+s201-H4	stop	—	model only	gone (s201)	the model a subagent ran on is in no file `po state`, `po-gate` or git reads (judges run on `Model strong`)
+s201-H5	stop	stop-and-carry-on	po inbox, po-session	gone (s201)	a stop goes to the person at once, one at a time, and the fleet carries on — unproven: "at once", "one at a time"
+s202-H1	stop	journey no-tracker	model only	gone (s202)	only a person makes a finding a story; under `Issue tracker: —` the items go to the person — unproven: each finding reached the person
+s202-H4	stop	intake-root-behind intake-no-tracker intake-listing-fails	model only	gone (s202)	`/po-intake` stops when the root is behind, with no tracker, or when listing fails
+s202-H6	stop	—	model only	gone (s202)	no setup forces the intake review to refuse: an issue it would surely refuse (no path) gets no story and never reaches the review, any other refusal is the stories-reviewer's judgement (a refused intake review returns the issues to the person)
+s202-H7	stop	intake-human-merge	model only	gone (s202)	the effective `Ship confirmation` binds the intake landing
+s203-H1	stop	qa-no-dev	model only	gone (s203)	a screen story with `Dev: —` → the QA stops and writes nothing — unproven: `/po-qa` asking for `Dev`
+s203-H2	stop	qa-no-browser	model only	gone (s203)	no capture tool → no QA report
+s203-H3	stop	qa-no-platform	model only	gone (s203)	no driver, no row, `Platform` `—` → the QA is `blocked` — unproven: a missing driver file, a missing row
+s203-H4	stop	qa-service-silent	model only	gone (s203)	a silent service is stopped at 60 s and the QA is `blocked`
+s203-H5	stop	—	model only	gone (s203)	no browser runs in the harness (`docs/harnais.md`, "Ce que seul un produit prouve") (no page size → mobile QA `blocked`)
+s203-H6	stop	qa-scene-no-viewpoint	model only	gone (s203)	a scene without a viewpoint → `blocked`, no camera guessed
+s203-H7	stop	design-system-no-source	model only	gone (s203)	with no direction, `/po-design-system` asks and writes nothing — unproven: the question itself
+s203-H8	stop	design-no-skill	model only	gone (s203)	`Design skill: —` → stop before drawing
+s203-H9	stop	—	model only	gone (s203)	who approved a design is in the lead's report text only (a lane design has no human approval; the report names it)
+s203-H10	stop	stray-change	model only	gone (s203)	a foreign uncommitted change stops the implementer
+s204-H1	stop	brief-in-replace prd-in-new stories-without-mode	model only	gone (s204)	`Entry mode` stops the framing command that does not match it — unproven: naming the other command
+s204-H2	stop	stories-from-interviewing-brief	model only	gone (s204)	`/po-stories` refuses an `interviewing` source
+s204-H3	stop	brief-headless	po reads `status:`	gone (s204)	`approved` only on the exit criteria and the person's agreement
+s204-H4	stop	prd-headless	po reads `status:`	gone (s204)	one item per question; `/po-prd` writes nothing unvalidated — unproven: one item per question
+s204-H5	stop	stories-review-critical	model only	gone (s204)	critical findings of the stories review are put to the person — unproven: accepted stays open; majors not asked
+s204-H6	stop	stories-started-sent-back	model only	gone (s204)	a started story sent back stops `/po-stories`
+s204-H7	stop	setup-headless	model only	gone (s204)	`/po-setup` never fills `Design source`
+s204-H8	stop	framing-landing-no-gh	model only	gone (s204)	framing merged only on `MERGED`; no `gh` → stop — unproven: the `MERGED` reading
+s204-H9	stop	framing-landing-human framing-landing-local	model only	gone (s204)	under `human`, stop at the open pull request; `local` asks first
+s202-S-H2	security	security-at-ship	the Step 3 half: `po ship file` never files `[security]`	Step 3 line: yes now; Law 7 line: after the case is measured	`everything-in-issues:test_security_goes_to_the_person`
+s202-S-H3	security	security-at-ship	`po ship file`, `po-intake`	after the case	`everything-in-issues:test_finding_text_never_enters_a_command`: the finding text is absent from the `gh` arguments
+s202-S-H5	security	intake-security-issue	no	after the case	`intake-issue-becomes-a-story.oracle:test_security_issue_goes_to_the_person`
+s202-S-H8	security	—	`po-intake --sensitive`, in the same function	no	marking a campaign sensitive is a planning judgement no case reaches (`failing-check-files-an-issue.oracle:105-108`, doctrine row)
+s203-S1	security	—	no	no	no browser runs in a real run (the browser contract)
+s203-S2	security	qa-no-platform qa-service-silent qa-scene-no-viewpoint	the Write half: `po-bounds` qa (`method/hooks/po-bounds.sh:280-287`)	after the cases	the QA writes nothing outside `docs/qa/<id>/`
+s203-S3	security	—	no	no	no scenario walk runs to a transcript (no secret in a transcript)
+s203-S4	security	qa-service-silent	no	after the case	S4, S9: a service the QA did not start is never touched; it starts its own
+s203-S5	security	design-no-skill design-system-no-source	no (the designer is not bounded)	no	S5, S6, S7: the designer, `/po-design` and `/po-design-system` write no source; stop paths only
+s203-S8	security	—	`po record qa` writes it	no	only a finished walk returns a report (S8: the QA returns its report as text)
+s204-brief	security	brief-headless	no	after the case	`brief:test_brief_checks_before_writing_approved`
+s204-stories-review-tools	security	—	yes: frontmatter tools, `po-lint`	yes: a tools check, not a phrase	a tools check, read by `po-lint` (`stories-review:test_stories_reviewer_is_read_only_without_shell`)
+s204-conversational-framing	security	stories-review-critical	no	after the case	`conversational-framing` `:60,64`
+s204-framing-landing	security	framing-landing-human framing-landing-no-gh	no	after the cases	`framing-commands-cleanup` (2), `framing-realign…` `:29,34`, `framing-through-pr:test_framing_commits_on_a_branch`
+s204-architect	security	—	no	no	no case runs `/po-architect` (`architect`, 3 tests)
+s204-docs	security	—	no: documents for a person; doc against hook could become a lint (#442 kind)	no, until such a lint	documents for a person (`distribution-wiring` (2), `hooks-installer-docs…scan…`, `installer` docs (2), `claude-md-setting` `:133-140`, `readme-onboarding` (2))
+s204-run-ledger	security	journey	the effect: `po-gate verif-current` wants a passing `po-run` row	after the journey case; pinned by s204's oracle (`:42,257-261`), outside `Owns`	`run-ledger` (2), measured by the journey observation `runs-recorded`
+s204-bounds-files	security	—	yes, but `bounds:67,228-230`, `bounds-messages:80-81`, `install-collisions:233`	those lines: no; the rest are script tests	script tests already (`bounds`, `bounds-messages`, `install-collisions`)
+s204-script-files	security	—	yes, entirely	nothing to retire: no prose line in them	script tests entirely (`no-claude-md`, `payload-kept-outside`, `payload-refuses-foreign-files`, `security-findings-stay-private`, `decision-inbox`, `answer-comes-back`)
+s177-only_the_hook_account_is_taken_in	candidate	intake-human-merge	model only	—	only the issue of the hook account is taken in (observation `no-story-cites 2`)
+s177-pending_intake_does_not_block	candidate	intake-human-merge	model only	—	a pending `framing/intake-old` does not block the intake (observation `pr-open 'framing/intake-old'`)
+s177-numbering_sees_pending_branches	candidate	intake-human-merge	model only	—	story numbering sees the ids of pending intake branches
+s179-other_findings_are_filed_again	candidate	security-at-ship	model only	—	the plain findings of a shipped review are filed
+s179-nothing_private_in_what_ship_writes	candidate	security-at-ship	`po ship file`	—	nothing private reaches what ship writes
+s190-planner_follows_the_track_it_is_given	candidate	journey	model only	—	the planner follows the track `po next` gives (observation `track`)
+s191-drive_takes_an_id	candidate	drive-one-story	model only	—	`/po-drive <id>` drives that story alone
+s192-ship_command_reads_the_value	candidate	journey	model only	—	`/po-ship` reads the effective `Ship confirmation`
+s193-ship_command_calls_it	candidate	journey	model only	—	`/po-ship` calls `po ship`
+s197-routing_is_said_once	candidate	research-held-story	model only	—	a story whose dependency has not landed is not researched
+s197-subagents_keep_their_procedure	candidate	journey	model only	—	the subagents keep their procedure
+s198-routing_is_said_once	candidate	qa-on-execute-entry	model only	—	`/po-qa` on a lane at `execute` writes no QA evidence
+s185-drive_no_longer_decides_it	candidate	—	model only	—	once lanes are cleaned, nothing on disk says in which order the reviews passed; the replayed journey holds the order in code
+s178-fix_run_still_reads_them	candidate	—	model only	—	a script cannot tell what a fix run read; a reviewer case graded on `Security findings:` is possible later
+s178-reviewer_marking	candidate	—	model only	—	a script cannot tell how the reviewer marked a finding; a reviewer case graded on `Security findings:` is possible later
+s179-retro_counts_what_it_cannot_read	candidate	—	model only	—	the retro's text output is read by a person only
+s186-contract_says_held_until_consumed	candidate	—	model only	—	read by an outside agent, not by a run
+s191-nothing_only_they_said_is_lost	candidate	—	model only	—	tables checked in review
+s198-drive_and_commands_share_one_text	candidate	—	model only	—	tables checked in review
+s198-nothing_is_lost	candidate	—	model only	—	tables checked in review
+s194-pr_description	candidate	—	model only	—	a pull request description is model text nothing grades
+s195-unmarked_security_finding	candidate	—	model only	—	an unmarked security finding is model text nothing grades
+s201-s204-meta	candidate	—	—	—	the meta criteria of s201 to s204 are a classification done once, not a rule followed during a run
+s201-M1	model-row	journey	model only	gone (s201)	`drive`: Wave order, overlap, absolute paths, ADR numbers, report windows → **M**; order of subagents → J `screen`, D. "A plan without that line never reaches an impleme
+s201-M2	model-row	journey	model only	gone (s201)	`drive-guards`: Whole file: framing-PR waiters and lone decisions logged → **M**
+s201-M3	model-row	—	model only	gone (s201)	/po-status does not run in a journey run (`pilot`: The `po-status` phrase → **M**. `test_every_command_listed_in_help` → **P**, #442. The ADR template → **P**)
+s201-M4	model-row	journey	model only	gone (s201)	`wiring`: Law 1 table order → `po state` framing (`state-as-json.test.sh:test_framing_next_follows_the_stage`). `track: flow` → J `flow`. Design files reach the implement
+s201-M5	model-row	journey	model only	gone (s201)	`model-routing`: Model per role and lane, refusal stop, session model → **M** (`po` reads no model setting). Template rows, `po-setup` phrases → **P**/**M**
+s201-M6	model-row	—	model only	gone (s201)	/po-qa does not run in a journey run (`surface-routing`: Screen and QA routing → `po` (`stories.rs` Surface), J `screen`, `resuming.cases:92-140` (`surfaces`). Review needs QA → `po next` `qa-current` (J `screen`). Sc)
+s201-M7	model-row	journey	model only	gone (s201)	`escalation-contract`: Three motives, ranking, log, fleet carries on → **M**; **H** "goes to the person at once" → `po inbox` (J `inbox`), `po-session` waiting list (`project-lead`). 
+s201-M8	model-row	—	model only	gone (s201)	/po-research on a story with a Fixes line does not run in a journey run (`defect-and-routing-paths`: `/po-research` names the diagnostic → **M**; defect track → `next-names-the-track.oracle`. "write no plan" → **M**. ADR-0068/0070 links → **P**. Checkout only i)
+s201-M9	model-row	journey	model only	gone (s201)	`plan-and-defect-paths-cleanup`: Stops agree, tech-choice paths, bites → **M**, or mutations of phrase tests
+s201-M10	model-row	journey	model only	gone (s201)	`planner`: Contract phrases, line caps, track report → **M**
+s201-M11	model-row	journey	model only	gone (s201)	`planner-writes-the-oracle`: Section order, budget and `—` wording, planner and implementer limits, doctrine, ADR-0098 → **M**/**P**
+s201-M12	model-row	journey	model only	gone (s201)	`plan`: Interdicts and pivot headings, doctrine → **M**. **H** "`validated: yes` … on Approve and on nothing else" → **M**: the gate reads the line, not who wrote it
+s201-M13	model-row	journey	model only	gone (s201)	`research`: Worktree steps, fresh base, `.env` copy, premise, cap, template headings, skill → **M**; the lane path → `lanes.rs:216-226` (J `follow`)
+s201-M14	model-row	journey	model only	gone (s201)	`execute`: Unapproved-plan message → `po next` `validate-plan` (D); one commit, write-tree, expected docs, `cd` → **M**, with J `gates` for the record; secrets → `gate.tes
+s201-M15	model-row	journey	model only	gone (s201)	`review`: Six steps, critical-only, `rev-parse` wording, `subagent_type` → **M**
+s201-M16	model-row	journey	model only	gone (s201)	`review-lenses`: Lens triggers and contents, `Lenses run:`, section order → **M**
+s201-M17	model-row	journey	model only	gone (s201)	`review-findings-shape`: Template wording, reviewer sections, recording phrases, ADR-0094/0096 → **M**/**P**; re-ask and blocked report → J `ask` (`findings-shape refused`), D `test_blo
+s201-M18	model-row	journey	model only	gone (s201)	`review-header-recorded.oracle` (s158, shipped): Reviewer answer wording, note order, ADR-0104 → **M**/**P**
+s201-M19	model-row	journey	model only	gone (s201)	`reuse-ladder`: Reuse section, planner bullets, step 3 → **M**
+s201-M20	model-row	journey	model only	gone (s201)	`grouped-validation`: **H** grouped approval under `Plan validation: human` → **M**; ADR-0014/0017 → **P**
+s201-M21	model-row	journey	model only	gone (s201)	`ownership`: Scope check, ordering, Ownership box, ADR scope, manual record → **M**; implementer writes stay in `Owns` → `po-bounds` (`bounds.test.sh:85-92`)
+s201-M22	model-row	journey	model only	gone (s201)	`owns-overlap`: Rule wording, examples → **M**; overlap → `po` `overlap.rs` (`ready-set.cases`, `held-says-what-collides.oracle`)
+s201-M23	model-row	—	model only	gone (s201)	/po-research on a story with a Fixes line does not run in a journey run (`diagnostic-skill`: Skill sections, three hypotheses, the `Fixes` wording elsewhere → **M**)
+s201-M24	model-row	journey	model only	gone (s201)	`tests-beyond-examples`: Doctrine → **M**
+s201-M25	model-row	journey	model only	gone (s201)	`oracle-intact-gate.oracle` (s150, shipped): Usage header comment of `po-gate` (never printed) → **P**; review step 4 → **M**
+s201-M26	model-row	journey	model only	gone (s201)	`floor-guard`: `test_review_runs_the_floor_guard` → **M**
+s201-M27	model-row	journey	model only	gone (s201)	`project-lead`: The three text tests → **M**/**P**
+s201-M28	model-row	—	model only	gone (s201)	/po-retro does not run in a journey run (`commands-and-texts`: Retro, setup, help, matrix, stories, accessibility meta → **M**/**P**)
+s201-M29	model-row	journey	model only	gone (s201)	`structure`: Setup and Law phrases, tool output, hook list → **M** (secrets → `gate.test.sh`)
+s201-M30	model-row	—	model only	gone (s201)	a document for a person does not run in a journey run (`post-m7-texts`: `docs/installation.md`, Law 6, overlap, ADR registry (#442); the loop-variable lint of this one file falls with it → **P**/**M**)
+s201-M31	model-row	journey	model only	gone (s201)	`final-leftovers`: Reviewer hook note, ADR link rule, overlap wording → **M**/**P**
+s201-M32	model-row	—	model only	gone (s201)	a document for a person does not run in a journey run (`docs-and-eval-cleanup`: `installation.md`, eval case text, Law 3 row and `po-gate` comments → **P**/**M**)
+s201-M33	model-row	—	model only	gone (s201)	/po-architect does not run in a journey run (`strict-checks-by-default`: Template sentence, `/po-architect` steps, architecture template, ADR-0097, values and the count of nine (#164) → **M**/**P**)
+s202-M1	model-row	journey	model only	gone (s202)	`ship`: one failure stops
+s202-M2	model-row	—	model only	gone (s202)	/po-setup does not run in a journey run (`ship-follows-forge`: setup asks the follow-up)
+s202-M3	model-row	—	model only	gone (s202)	/po-setup does not run in a journey run (`everything-in-issues`: setup proposes `github`; template text; this repository's value)
+s202-M4	model-row	—	model only	gone (s202)	/po-intake does not run in a journey run (`intake-issue-becomes-a-story`: copy put back; pending branches cite)
+s202-M5	model-row	—	model only	gone (s202)	/po-intake does not run in a journey run (`intake-issue-becomes-a-story.oracle` (s152, shipped): story shape)
+s202-M6	model-row	journey	model only	gone (s202)	`failing-check-files-an-issue.oracle` (s151, shipped): `## Installed files`, Law 7, harnais phrases
+s202-M7	model-row	—	model only	gone (s202)	/po-retro does not run in a journey run (`po-retro`: what the retro reads)
+s202-M8	model-row	—	model only	gone (s202)	/po-retro does not run in a journey run (`po-retro`: wording)
+s202-M9	model-row	—	model only	gone (s202)	/po-setup does not run in a journey run (`framing-second-landing`: framing merge proof, stacking, realignment)
+s203-M1	model-row	—	model only	gone (s203)	/po-qa does not run in a journey run (`qa`: QA scope; help)
+s203-M2	model-row	—	model only	gone (s203)	/po-qa does not run in a journey run (`qa`: report fields, verdict words)
+s203-M3	model-row	—	model only	gone (s203)	/po-setup does not run in a journey run (`qa`: QA stage values; setup step 2)
+s203-M4	model-row	—	model only	gone (s203)	/po-qa does not run in a journey run (`qa-gate`: review blocked without current QA; verified QA findings become review findings; the `qa-current` box of `templates/review.md`)
+s203-M5	model-row	—	model only	gone (s203)	/po-qa does not run in a journey run (`qa-gate`: implementer leaves the screen to QA)
+s203-M6	model-row	—	model only	gone (s203)	/po-qa does not run in a journey run (`qa-drivers`: surface×platform table; missing driver → blocked)
+s203-M7	model-row	—	model only	gone (s203)	/po-qa does not run in a journey run (`qa-drivers`: Dev/browser checks scoped to screen)
+s203-M8	model-row	—	model only	gone (s203)	/po-qa does not run in a journey run (`qa-drivers`: `Driver:`, `Evidence:`, `## Not seen`)
+s203-M9	model-row	—	model only	gone (s203)	/po-qa does not run in a journey run (`qa-drivers`: next-forge's driver and `Dev` value)
+s203-M10	model-row	—	model only	gone (s203)	/po-qa does not run in a journey run (`qa-fleet`: dispatch order; status column)
+s203-M11	model-row	—	model only	gone (s203)	/po-qa does not run in a journey run (`qa-contract-holds`: evidence set aside; lib through Bash; 60 s wait)
+s203-M12	model-row	—	model only	gone (s203)	/po-qa does not run in a journey run (`qa-contract-holds`: declared settings; plan in scope; bad input is a finding)
+s203-M13	model-row	—	model only	gone (s203)	/po-qa does not run in a journey run (`qa-evidence-set-aside`: first QA sets `?? docs/qa/` aside; waits; process groups)
+s203-M14	model-row	—	model only	gone (s203)	/po-qa does not run in a journey run (`qa-report-returned-as-text`: one qa line per wave; ADR-0102; `complete or blocked alike`)
+s203-M15	model-row	—	model only	gone (s203)	/po-design does not run in a journey run (`design`: new vs derived; render and look; design in the worktree)
+s203-M16	model-row	—	model only	gone (s203)	/po-design-system does not run in a journey run (`design-system`: contrast once; doctrine; template)
+s203-M17	model-row	—	model only	gone (s203)	/po-design does not run in a journey run (`design-handoff`: expected uncommitted files; stop on others; design committed)
+s203-M18	model-row	—	model only	gone (s203)	/po-design does not run in a journey run (`design-handoff`: handoff wording)
+s203-M19	model-row	—	model only	gone (s203)	/po-design does not run in a journey run (`fleet-design`: designer contract; skill read from disk)
+s203-M20	model-row	—	model only	gone (s203)	/po-qa does not run in a journey run (`scenario-driver`: transcripts, failure paths, start/stop, `ADR-0059`)
+s203-M21	model-row	—	model only	gone (s203)	/po-qa does not run in a journey run (`godot-scene-driver`: scene driver; `Licence`, `Platform`, commands)
+s203-M22	model-row	—	model only	gone (s203)	/po-qa does not run in a journey run (`ros-simulation-driver`: simulation driver; profile values)
+s203-M23	model-row	—	model only	gone (s203)	/po-qa does not run in a journey run (`scene-and-simulation-drivers`: viewpoint lines; capture; process groups)
+s203-M24	model-row	—	model only	gone (s203)	/po-setup does not run in a journey run (`platform-setting`: QA stage row text; next-forge `web`; Surface admission and severities; setup)
+s203-M25	model-row	—	model only	gone (s203)	/po-qa does not run in a journey run (`cli-api`, `expo`, `flutter`, `native` profiles: platform, driver, commands; licence)
+s203-M26	model-row	—	model only	gone (s203)	/po-architect does not run in a journey run (`next-forge-profile`: gaps; ownership)
+s203-M27	model-row	—	model only	gone (s203)	/po-qa does not run in a journey run (`throwaway-zone-holds`: `file://<path>` hint)
+s203-M28	model-row	—	model only	gone (s203)	/po-architect does not run in a journey run (`capability-bricks`: default bricks, contract tests, architect, no payment brick)
+s203-M29	model-row	—	model only	gone (s203)	/po-setup does not run in a journey run (`catalogue-wiring`: setup offer, Law 1 text, help, parity matrix)
+s204-M1	model-row	—	model only	gone (s204)	/po-architect does not run in a journey run (`architect`: base options; read code first; one ADR per choice; never propose a rewrite)
+s204-M2	model-row	—	model only	gone (s204)	/po-brief does not run in a journey run (`brief`: `Reads settings`; mode stops)
+s204-M3	model-row	—	model only	gone (s204)	/po-brief does not run in a journey run (`brief`: interview skill; one commit; resume)
+s204-M4	model-row	—	model only	gone (s204)	/po-prd does not run in a journey run (`prd`: mode stops; validation; template; probes; graveyard)
+s204-M5	model-row	—	model only	gone (s204)	/po-stories does not run in a journey run (`stories`: source by mode; approved source; slices; Owns; splits; Owns syntax)
+s204-M6	model-row	—	model only	gone (s204)	/po-stories-review does not run in a journey run (`stories-review`: coverage; check 8; soft gate; non-goals; template)
+s204-M7	model-row	—	model only	gone (s204)	/po-stories-review does not run in a journey run (`conversational-framing`: one item per question; criticals asked; started story)
+s204-M8	model-row	—	model only	gone (s204)	/po-setup does not run in a journey run (`setup-modes`: five questions; `Design source` not filled)
+s204-M9	model-row	—	model only	gone (s204)	/po-stories does not run in a journey run (`framing-commands-cleanup`: next lines; setup wording; ancestry stop)
+s204-M10	model-row	—	model only	gone (s204)	/po-stories does not run in a journey run (`framing-realign…`: realignment order)
+s204-M11	model-row	—	model only	gone (s204)	/po-setup does not run in a journey run (`framing-through-pr`: rebase merge; `MERGED`; human merge)
+s204-M12	model-row	journey	model only	gone (s204)	`adr-directory`: `Reads settings` of ten files; no fixed path; table text
+s204-M13	model-row	journey	model only	gone (s204)	`distribution-wiring`: install story; matrix; README paths
+s204-M14	model-row	—	model only	gone (s204)	a document for a person does not run in a journey run (`hooks-installer-docs-cleanup`: template line; installation doc; ADR-0080; profile and doctrine)
+s204-M15	model-row	—	model only	gone (s204)	/po-setup does not run in a journey run (`claude-md-setting`: setup asks; this repo's value; `Reads settings`; ADR-0089/0086)
+s204-M16	model-row	—	model only	gone (s204)	/po-setup does not run in a journey run (`update-keeps-mode`: doc repair; setup step 3; wording; ADR-0091)
+s204-M17	model-row	journey	model only	gone (s204)	`artifact-link-templates`: record link line never edited
+s204-M18	model-row	journey	model only	gone (s204)	`run-ledger`: `-- '<Test>'` in the implementer
+s204-M19	model-row	journey	model only	gone (s204)	`flow`: headings `## Verified facts`, `## Escalation signals`; words `path:line`, `150 lines`

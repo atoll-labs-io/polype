@@ -1,0 +1,7 @@
+# The reuse sentence of review-antihallu step 3, replaced by YAGNI alone: the control arm of
+# docs/evals/reuse-ladder.md. Read line by line by po-eval, never sourced.
+ARM_FILE=method/skills/review-antihallu/SKILL.md
+ARM_PHRASE=New code that an existing helper you can cite by `path:line`, or the standard library, already provided is a **major** finding, and a gap between the plan's `## Reuse` section and the diff is judged as a gap against a task.
+ARM_REPLACEMENT=Follow YAGNI.
+ARM_RULES=
+ARM_CASES=rebuilt-helper

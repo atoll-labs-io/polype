@@ -7,13 +7,14 @@
 #                                                               (--control needs --model)
 #        po-eval --list                            one case name per line
 #        po-eval --build <case> <dir>              builds that case's repository in <dir>, prints its worktree
+#        po-eval real …                            a real lead on a throwaway repository: see evals/real/lib.sh
 #
 # A run passes when the report's last `Max severity:` and `Ship allowed:` lines equal the case's
 # expectations, read as strictly as po-gate reads them. A report whose `Review status:` is
 # `blocked` is graded `blocked` and never passes. No model grades another model here.
 #
-# --control runs every case a second time on a copy of this checkout whose review-antihallu step-3
-# reuse sentence is replaced by `Follow YAGNI.` alone, and prints both rates side by side. Each arm
+# --control runs every case a second time on a copy of this checkout changed by the arm
+# evals/arms/reuse-ladder.arm (review-antihallu's step-3 reuse sentence replaced by `Follow YAGNI.` alone), and prints both rates side by side. Each arm
 # runs on its own temporary config dir, installed globally from its own method and removed at exit,
 # with the same --model, so the sentence is the only difference. Those config dirs hold no login:
 # both arms need ANTHROPIC_API_KEY or CLAUDE_CODE_OAUTH_TOKEN in the environment.
@@ -25,7 +26,7 @@ CASES="$POLYPE_ROOT/evals/cases"
 # shellcheck source=../evals/lib.sh
 source "$POLYPE_ROOT/evals/lib.sh"
 
-CONTROL_PREFIX='New code that an existing helper you can cite by'
+ARMS="$POLYPE_ROOT/evals/arms"
 
 usage() {
   cat >&2 <<'USAGE'
@@ -116,20 +117,58 @@ grade() {
   if [ -n "$sev" ] && [ -n "$ship" ]; then echo "$sev/$ship"; else echo "no verdict"; fi
 }
 
-# control_setup <dir>: a copy of this checkout in <dir>/polype, its reuse sentence swapped, installed into <dir>/config.
+# arm_read <name|path.arm>: sets ARM_NAME, ARM_PATH, ARM_FILE, ARM_PHRASE, ARM_REPLACEMENT, ARM_RULES and
+# ARM_CASES from a declaration read line by line, never sourced; 2 when the arm is unknown or its
+# phrase does not occur exactly once in this checkout.
+arm_read() {
+  local spec="$1" found
+  case "$spec" in
+    *.arm) ARM_PATH="$spec"; ARM_NAME="$(basename "$spec" .arm)" ;;
+    *) [[ "$spec" =~ ^[A-Za-z0-9][A-Za-z0-9._-]*$ ]] || { echo "po-eval: unknown arm: $spec" >&2; return 2; }
+       ARM_PATH="$ARMS/$spec.arm"; ARM_NAME="$spec" ;;
+  esac
+  [ -f "$ARM_PATH" ] || { echo "po-eval: unknown arm: $spec (no $ARM_PATH)" >&2; return 2; }
+  arm_value() { sed -n "s/^$1=//p" "$ARM_PATH" | head -n 1; }
+  ARM_FILE="$(arm_value ARM_FILE)" ARM_PHRASE="$(arm_value ARM_PHRASE)" ARM_REPLACEMENT="$(arm_value ARM_REPLACEMENT)"
+  ARM_RULES="$(arm_value ARM_RULES)" ARM_CASES="$(arm_value ARM_CASES)"
+  case "$ARM_FILE" in
+    method/*) [[ "$ARM_FILE" != *..* ]] || ARM_FILE="" ;;
+    *) ARM_FILE="" ;;
+  esac
+  [ -n "$ARM_FILE" ] && [ -f "$POLYPE_ROOT/$ARM_FILE" ] \
+    || { echo "po-eval: arm $ARM_NAME: ARM_FILE must name a file under method/" >&2; return 2; }
+  [ -n "$ARM_PHRASE" ] || { echo "po-eval: arm $ARM_NAME declares no ARM_PHRASE" >&2; return 2; }
+  found="$(arm_count "$POLYPE_ROOT/$ARM_FILE")"
+  [ "$found" -eq 1 ] \
+    || { echo "po-eval: arm $ARM_NAME: its phrase occurs $found times in $ARM_FILE, not once; the phrase moved" >&2; return 2; }
+}
+
+# The phrase travels through the environment: awk -v would read backslashes in it as escapes.
+arm_count() {
+  ARM_PHRASE="$ARM_PHRASE" awk 'BEGIN {p = ENVIRON["ARM_PHRASE"]}
+    {rest = $0; while ((i = index(rest, p)) > 0) {n++; rest = substr(rest, i + length(p))}} END {print n + 0}' "$1"
+}
+
+arm_apply() {
+  ARM_PHRASE="$ARM_PHRASE" ARM_REPLACEMENT="$ARM_REPLACEMENT" awk 'BEGIN {p = ENVIRON["ARM_PHRASE"]; r = ENVIRON["ARM_REPLACEMENT"]}
+    !done && (i = index($0, p)) > 0 {$0 = substr($0, 1, i - 1) r substr($0, i + length(p)); done = 1} {print}' "$1" > "$1.tmp"
+  mv "$1.tmp" "$1"
+}
+
+# arm_copy <dir> [arm]: a copy of this checkout's bin, method, evals and tests/journey in <dir>/polype,
+# changed by the arm last read when one is named.
+arm_copy() {
+  mkdir -p "$1/polype/tests"
+  cp -R "$POLYPE_ROOT/bin" "$POLYPE_ROOT/method" "$POLYPE_ROOT/evals" "$1/polype/"
+  cp -R "$POLYPE_ROOT/tests/journey" "$1/polype/tests/"
+  [ -z "${2:-}" ] || arm_apply "$1/polype/$ARM_FILE"
+}
+
+# control_setup <dir> <arm>: the arm's copy of this checkout in <dir>/polype, installed into <dir>/config.
 control_setup() {
-  local dir="$1" skill found
-  mkdir -p "$dir/polype"
-  cp -R "$POLYPE_ROOT/bin" "$POLYPE_ROOT/method" "$POLYPE_ROOT/evals" "$dir/polype/"
-  skill="$dir/polype/method/skills/review-antihallu/SKILL.md"
-  found="$(awk -v p="$CONTROL_PREFIX" 'index($0, p) == 1 {n++} END {print n + 0}' "$skill")"
-  [ "$found" -eq 1 ] || {
-    echo "po-eval: method/skills/review-antihallu/SKILL.md has $found lines starting with '$CONTROL_PREFIX', not one; the sentence moved" >&2
-    exit 2
-  }
-  awk -v p="$CONTROL_PREFIX" 'index($0, p) == 1 {print "Follow YAGNI."; next} {print}' "$skill" > "$skill.tmp"
-  mv "$skill.tmp" "$skill"
-  CLAUDE_CONFIG_DIR="$dir/config" bash "$dir/polype/bin/polype" install --global >/dev/null
+  arm_read "$2" || exit 2
+  arm_copy "$1" "$2"
+  CLAUDE_CONFIG_DIR="$1/config" bash "$1/polype/bin/polype" install --global >/dev/null
 }
 
 # run_arm <po-eval> <config dir or empty> <out prefix>: builds the current case, reviews it once, prints the grade.
@@ -156,6 +195,14 @@ tally() {
   printf '%s\n' "$@" | awk '!($0 in c) {o[++k] = $0} {c[$0]++}
     END {for (i = 1; i <= k; i++) printf "%s%s ×%d", (i > 1 ? ", " : ""), o[i], c[o[i]]}'
 }
+
+if [ "${1:-}" = real ]; then
+  shift
+  # shellcheck source=../evals/real/lib.sh
+  source "$POLYPE_ROOT/evals/real/lib.sh"
+  real_main "$@"
+  exit 0
+fi
 
 repeat=3 model="" list=no build=no control=no
 selected=()
@@ -191,6 +238,7 @@ fi
 
 [ ${#selected[@]} -gt 0 ] || mapfile -t selected < <(all_cases)
 for name in "${selected[@]}"; do (load_case "$name") || exit 2; done
+[ "$control" != yes ] || (arm_read reuse-ladder) || exit 2
 drift_check
 
 if [ "$control" = yes ] && [ -z "${ANTHROPIC_API_KEY:-}" ] && [ -z "${CLAUDE_CODE_OAUTH_TOKEN:-}" ]; then
@@ -220,7 +268,7 @@ esac
 if [ "$control" = yes ]; then
   ctl="$(mktemp -d)"
   trap 'rm -rf "$ctl"' EXIT
-  control_setup "$ctl"
+  control_setup "$ctl" reuse-ladder
   CLAUDE_CONFIG_DIR="$ctl/rule-config" bash "$POLYPE_ROOT/bin/polype" install --global >/dev/null
 fi
 

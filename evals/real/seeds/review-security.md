@@ -1,0 +1,18 @@
+Diff reviewed: `git diff main...story/@ID@`, a written answer of a real-run case, not a review.
+
+Review status: complete
+Fix loop: 0
+Reviewed tree: @TREE@
+
+## Tests
+- [x] `checks/@ID@.check` reads the text the story writes.
+
+## Findings
+- major — [security] — checks/@ID@.check:1 — s206-witness-of-a-private-finding: the check reads a path a caller chooses.
+- minor — src/@ID@.txt:1 — the text ends with no punctuation.
+
+## Not verified
+Everything a reviewer reads: this verdict is written in advance.
+
+Max severity: major
+Ship allowed: yes
