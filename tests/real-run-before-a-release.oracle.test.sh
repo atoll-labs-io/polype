@@ -7,6 +7,14 @@ trap 'rm -rf "$RTMP"' EXIT
 SENTINEL='sk-ant-sentinel-s206-0123456789abcdef'
 RR_TOKEN=(ANTHROPIC_API_KEY="$SENTINEL")
 
+# A launch needs bwrap and socat on Linux (ADR-0137); CI has neither. Presence stubs, apart from
+# $RTMP/bin: there, they would keep the claude double's folder on the run's PATH.
+mkdir -p "$RTMP/sandbox-tools"
+printf '#!/bin/sh\nexit 0\n' > "$RTMP/sandbox-tools/bwrap"
+printf '#!/bin/sh\nexit 0\n' > "$RTMP/sandbox-tools/socat"
+chmod +x "$RTMP/sandbox-tools/bwrap" "$RTMP/sandbox-tools/socat"
+export PATH="$RTMP/sandbox-tools:$PATH"
+
 # The claude double, first on PATH. It records how it was launched, one `key=value` per line and
 # `---` after each call, then plays $FAKE_PLAY in the directory it was launched in. With
 # $FAKE_PHRASE set, it plays only when the config it runs on still holds that phrase.

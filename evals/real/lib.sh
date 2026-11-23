@@ -61,6 +61,10 @@ real_env() {
   # shellcheck disable=SC2086
   unset GH_TOKEN GITHUB_TOKEN $vars
   : > "$J/home/.gitconfig"
+  # The files Claude Code's sandbox mounts over a repository root (ADR-0137), out of every git status.
+  mkdir -p "$J/home/.config/git"
+  printf '%s\n' /.gitconfig /.gitmodules /.bashrc /.bash_profile /.zshrc /.zshenv /.zprofile /.profile \
+    /.ripgreprc /.mcp.json /.vscode/ /.idea/ > "$J/home/.config/git/ignore"
   export PATH="$J/bin:${REAL_RUN_PATH:-$PATH}" HOME="$J/home" TMPDIR="$J/tmp" CLAUDE_CONFIG_DIR="$J/config" JOURNEY_DIR="$J"
   export XDG_CONFIG_HOME="$J/home/.config" GIT_CONFIG_GLOBAL="$J/home/.gitconfig" GIT_CONFIG_NOSYSTEM=1
   export PO_GH="$J/bin/gh" PO_CURL="$J/bin/curl" PO_GLAB="$J/bin/glab" PO_TEA="$J/bin/tea"
@@ -85,7 +89,7 @@ real_path_without_claude() {
 real_path_spares() {
   local t without
   without="$2${2:+:}$(real_path_after "$1")"
-  for t in git bash sh env jq node cat sed awk grep find mktemp sort cksum tar; do
+  for t in git bash sh env jq node cat sed awk grep find mktemp sort cksum tar bwrap socat; do
     [ "$(PATH="$without"; hash -r; command -v "$t" || true)" = "$(hash -r; command -v "$t" || true)" ] || return 1
   done
 }
@@ -100,20 +104,18 @@ real_path_after() {
   printf '%s' "$out"
 }
 
-# The C1 settings of ADR-0134, `gh` added by ADR-0135, `cd` and the reading commands by ADR-0136: an allowlist, file tools held to the run
-# folder, web tools, curl and claude denied. Whatever is not allowed prompts, and
-# --permission-prompts none denies every prompt. What governs a session lies inside the run folder
-# the file tools reach: real_governing lets the launch see a session that changed it, and that run
-# counts for nothing. Auto memory is off, since Claude Code itself would write what the next session
-# reads; whether -p honours that is for a real run to show, and real_governing still watches it.
+# The run's settings (ADR-0137): Bash runs inside Claude Code's sandbox, auto-allowed, writes held
+# to the run folder and the network closed; a session with no sandbox stops rather than run bare.
+# File tools are held to the run folder, web tools, curl and claude denied; any prompt is denied by
+# --permission-prompts none. What governs a session lies inside the run folder: real_governing lets
+# the launch see a session that changed it, and that run counts for nothing. Auto memory is off,
+# since Claude Code itself would write what the next session reads; real_governing still watches it.
 real_permissions() {
-  jq -n --arg run "$1" --arg po "$1/config/polype/po" '{autoMemoryEnabled: false, permissions: {
-    allow: ["Bash(git:*)", "Bash(gh:*)", "Bash(bash:*)", "Bash(sh:*)", "Bash(jq:*)", "Bash(\($po):*)",
-            "Bash(.polype/hooks/*)", "Bash(\($run)/project/.polype/hooks/*)",
-            "Read(/\($run)/**)", "Edit(/\($run)/**)", "Agent",
-            "Bash(cd:*)", "Bash(cat:*)", "Bash(ls:*)", "Bash(wc:*)", "Bash(cksum:*)", "Bash(sed -n:*)",
-            "Bash(grep:*)", "Bash(head:*)", "Bash(tail:*)", "Bash(diff:*)", "Bash(mktemp:*)"],
-    deny: ["WebFetch", "WebSearch", "Bash(curl:*)", "Bash(claude:*)"]}}'
+  jq -n --arg run "$1" '{autoMemoryEnabled: false, permissions: {
+    allow: ["Read(/\($run)/**)", "Edit(/\($run)/**)", "Agent"],
+    deny: ["WebFetch", "WebSearch", "Bash(curl:*)", "Bash(claude:*)"]},
+    sandbox: {enabled: true, autoAllowBashIfSandboxed: true, failIfUnavailable: true,
+      filesystem: {allowWrite: [$run]}}}'
 }
 
 # real_config <copy>: the run's Claude Code config, installed from that copy of this checkout.
@@ -178,24 +180,28 @@ real_claude_json() {
     || echo "$1 unreadable"
 }
 
-# real_governing: one line per thing that changes what the next session runs under — the run's
-# Claude Code config and its .claude.json, HOME (shell and git startup files), the doubles on PATH and
-# the forge double's switches, git's config and hooks of the root and of the origin, and the
-# project's own config, hooks and memory files in the root and in every worktree. The state Claude
-# Code, po and the lead write as they work (transcripts, caches, the decision inbox, the private
-# folder, branch tracking) is left out; the auto memory, the instruction files of the run folder, of
-# .worktrees and of every folder above, are in. A worktree is held to the root's files.
+# real_governing: one line per thing that changes what the next session runs under, each listed by
+# name — in the run's Claude Code config, its settings, instructions, rules, commands, agents, skills,
+# hooks, output styles, po with the installed method and the installed plugins, plus the auto memory
+# and the keys of .claude.json that widen a session; in HOME, the shell and git startup files, git's
+# global ignore, .claude and the instruction files; the doubles on PATH and the forge double's
+# switches; git's config and hooks of the root and of the origin; the instruction files of the run
+# folder, of .worktrees and of every folder above; the project's own config, hooks and memory files
+# in the root and in every worktree, a worktree being held to the root's files.
 real_governing() {
   local wt root
-  real_sigs config "$J/config" -mindepth 1 \( -path ./projects -o -path ./todos -o -path ./statsig \
-    -o -path ./shell-snapshots -o -path ./session-env -o -path ./file-history -o -path ./debug -o -path ./ide \
-    -o -path ./plans -o -path ./telemetry -o -path ./paste-cache -o -path ./cache -o -path ./logs \
-    -o -path ./backups -o -path ./downloads -o -path ./history.jsonl -o -path ./stats-cache.json -o -path ./.last-cleanup \
-    -o -path ./.credentials.json -o -path './.claude.json*' \) -prune -o \( -type f -o -type l \)
+  real_sigs config "$J/config" -mindepth 1 \( -path ./settings.json -o -path ./settings.local.json \
+    -o -path ./CLAUDE.md -o -path ./CLAUDE.local.md -o -path ./AGENTS.md -o -path './rules/*' -o -path './commands/*' \
+    -o -path './agents/*' -o -path './skills/*' -o -path './hooks/*' -o -path './output-styles/*' -o -path './polype/*' \
+    -o -path './plugins/cache/*' -o -path './plugins/marketplaces/*' -o -path ./plugins/installed_plugins.json \
+    -o -path ./plugins/known_marketplaces.json \) \( -type f -o -type l \)
   real_sigs config/projects "$J/config/projects" -mindepth 1 \( -path '*/memory' -o -path '*/memory/*' \) \( -type f -o -type l \)
   real_claude_json config/.claude.json "$J/config/.claude.json"
-  real_sigs home "$J/home" -mindepth 1 \( -path ./.cache -o -path ./.local/state -o -path ./.local/share/claude \
-    -o -path ./.npm -o -path ./private -o -path './.claude.json*' \) -prune -o \( -type f -o -type l \)
+  real_sigs home "$J/home" -mindepth 1 \( -path ./.bashrc -o -path ./.bash_profile -o -path ./.bash_login \
+    -o -path ./.bash_logout -o -path ./.bash_aliases -o -path ./.profile -o -path ./.zshrc -o -path ./.zshenv \
+    -o -path ./.zprofile -o -path ./.zlogin -o -path ./.zlogout -o -path ./.envrc -o -path ./.inputrc \
+    -o -path ./.gitconfig -o -path ./.mcp.json -o -path ./CLAUDE.md -o -path ./AGENTS.md \
+    -o -path './.config/git/*' -o -path './.claude/*' \) \( -type f -o -type l \)
   real_claude_json home/.claude.json "$J/home/.claude.json"
   real_sigs bin "$J/bin" -mindepth 1 \( -type f -o -type l \)
   real_sigs gh "$J/gh" -mindepth 1 \( -type f -o -type l \)
@@ -674,14 +680,17 @@ real_spent() {
   awk -v c="$cost" -v n="$n" -v i="$in" -v o="$out" 'BEGIN { printf "cost: %.2f USD over %d sessions; tokens in %d, out %d\n", c, n, i, o }'
 }
 
+# real_record: the run's record under the first free name of its day and version, never over one.
 real_record() {
-  local version commit file usage
+  local version commit base file usage n=2
   version="$(sed -n 's/^POLYPE_VERSION="\(.*\)"$/\1/p' "$POLYPE_ROOT/bin/polype" | head -n 1)"
   commit="$(git -C "$POLYPE_ROOT" rev-parse --short HEAD)"
-  file="$POLYPE_ROOT/docs/evals/real-$(date +%Y-%m-%d)-v$version.md"
+  base="$POLYPE_ROOT/docs/evals/real-$(date +%Y-%m-%d)-v$version"
+  file="$base.md"
+  while [ -e "$file" ] || [ -L "$file" ]; do file="$base-$n.md"; n=$((n + 1)); done
   usage="$(real_spent "$REAL_RESULTS")"
   mkdir -p "$POLYPE_ROOT/docs/evals"
-  {
+  (set -C; {
     echo "# Passage réel — $(date +%Y-%m-%d), Polype $version"
     echo
     echo "- Date: $(date +%Y-%m-%dT%H:%M:%S%z)"
@@ -701,7 +710,7 @@ real_record() {
     grep -E '^(story |case |session: )' "$REAL_RESULTS/runs.txt" | sed 's/^/    /'
     echo
     echo "No transcript is kept in this file."
-  } > "$file"
+  } > "$file") || { echo "po-eval: the record $file could not be written without overwriting one" >&2; return 2; }
   echo "record: ${file#"$POLYPE_ROOT"/}"
 }
 
@@ -788,7 +797,7 @@ real_build_all() {
 }
 
 real_main() {
-  local list=no rules=no build="" build_all="" a n case answer total cost
+  local list=no rules=no build="" build_all="" a n case answer total cost tool missing
   REAL_REPEAT=1 REAL_SESSIONS=3 REAL_MODEL="" REAL_BUDGET=10 REAL_KEEP=no REAL_RECORD=no REAL_RUN_PATH=""
   REAL_SELECTED=() ARMS_NAME=(rule) ARMS_SUFFIX=("") ARMS_SPEC=("")
   local -a arm_specs=()
@@ -845,6 +854,16 @@ real_main() {
   REAL_CLAUDE="$(command -v claude || true)"
   case "$REAL_CLAUDE" in /*) ;; *) echo "po-eval: no claude program on PATH; nothing run" >&2; exit 2 ;; esac
   REAL_RUN_PATH="$(real_path_without_claude)"
+  if [ "$(uname -s)" = Linux ]; then
+    missing=""
+    for tool in bwrap socat; do
+      (PATH="$REAL_RUN_PATH"; command -v "$tool" > /dev/null) || missing+="${missing:+ and }$tool"
+    done
+    if [ -n "$missing" ]; then
+      echo "po-eval: a real run needs Claude Code's sandbox: $missing not found on PATH; nothing run" >&2
+      exit 2
+    fi
+  fi
 
   total=$(( ${#REAL_SELECTED[@]} * REAL_REPEAT * ${#ARMS_NAME[@]} ))
   if [ "${#ARMS_NAME[@]}" -gt 1 ]; then
@@ -856,7 +875,7 @@ real_main() {
   cost="$(awk -v b="$REAL_BUDGET" -v s="$REAL_SESSIONS" -v t="$total" 'BEGIN {printf "%g", b * s * t}')"
   echo "budget: $REAL_BUDGET USD per session, $cost USD at most"
   echo "login from $REAL_LOGIN"
-  echo "permissions: allowlist, prompts denied — for a person who watches this run"
+  echo "permissions: Claude Code sandbox, prompts denied — for a person who watches this run"
   printf 'Continue? [y/N] '
   if [ ! -t 0 ]; then
     echo
