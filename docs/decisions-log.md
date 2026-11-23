@@ -440,3 +440,9 @@ A decision the person took is not logged here: it is an ADR or a story.
 | 2026-11-22 | s205-word-budget-is-linted | Had the same fix run close the four minors of the review instead of filing them | A fix run works from every open finding |
 | 2026-11-23 | s205-word-budget-is-linted | Shipped at fix loop 1 with two minors open, filed as #467 and #468 | Max severity minor; the forge's `suite` passed on the new landing commit |
 | 2026-11-23 | s206-real-run-before-a-release | Launched on the full track, its planner told to hold the plan and prepare the owner's choice on the number of paid runs and their cost | The story says that choice is his; nothing paid is launched by the story or its tests |
+| 2026-11-23 | s206-real-run-before-a-release | Held its plan for the owner's two choices, decisions d-0057 and d-0056, and recorded his answers (option a each): ADR-0133 and ADR-0134 | The story said the number of paid runs and the confinement of the launched lead were his to settle |
+| 2026-11-23 | s206-real-run-before-a-release | Its plan was then approved without a human reading its tasks | `Plan validation: autonomous`; he settled the two choices only |
+| 2026-11-23 | s206-real-run-before-a-release | Started fix runs 1 and 2 on his answers "fix here" to decisions d-0058 and d-0059, and wrote ADR-0135 on his answer to d-0060 | Security findings at fix loops 0 and 1; `gh` was missing from the allowlist the method needs |
+| 2026-11-23 | s206-real-run-before-a-release | Started fix run 3, beyond `Max attempts: 2` | The owner's answer "fix here" to decision d-0061 authorized it |
+| 2026-11-23 | s206-real-run-before-a-release | Shipped at fix loop 3 with three minors filed and the static-scan minor left as the reviews accepted | Max severity minor; milestone M22 is done |
+| 2026-11-23 | — | Removed a stale, empty `.git/index.lock` of the root after the merge of #470 | No git process was running; `git pull` refused on it |
