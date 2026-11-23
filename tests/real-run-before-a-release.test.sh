@@ -402,15 +402,17 @@ test_framing_predicates_look_everywhere() {
 }
 
 # A lead that follows the method, as a claude double: it reads AGENTS.local.md, then calls the forge
-# with gh as /po-intake says, each tool allowed or refused by the run's settings as Claude Code's
-# prefix rules would — `Bash(<word>:*)` allows a command whose first word it is, unless denied.
+# with gh as /po-intake says, each tool allowed or refused by the run's settings as Claude Code
+# would — a sandbox with autoAllowBashIfSandboxed, or `Bash(<word>:*)`, allows a command whose first
+# word `Bash(<word>:*)` does not deny.
 lead_double() {
   cat > "$RTMP/bin/claude" <<'SH'
 #!/usr/bin/env bash
 { printf 'cfg=%s\n' "$CLAUDE_CONFIG_DIR"; echo ---; } >> "$FAKE_CALLS"
 allowed() {
-  jq -e --arg w "${1%% *}" '.permissions | ((.allow // []) | index("Bash(\($w):*)")) != null
-    and ((.deny // []) | index("Bash(\($w):*)")) == null' "$CLAUDE_CONFIG_DIR/settings.json" > /dev/null
+  jq -e --arg w "${1%% *}" '((.sandbox.enabled == true and .sandbox.autoAllowBashIfSandboxed == true)
+      or ((.permissions.allow // []) | index("Bash(\($w):*)")) != null)
+    and ((.permissions.deny // []) | index("Bash(\($w):*)")) == null' "$CLAUDE_CONFIG_DIR/settings.json" > /dev/null
 }
 tool() {
   printf '{"type":"assistant","message":{"content":[{"type":"tool_use","id":"%s","name":"%s","input":%s}]}}\n' "$1" "$2" "$3"
@@ -433,8 +435,8 @@ test_gh_is_allowed_for_a_lead_that_follows_the_method() {
   local dir="$RTMP/gh-allowed"
   real_setup
   real_build journey "$dir" > /dev/null || fail "po-eval real --build journey failed"
-  jq -e '(.permissions.allow | index("Bash(gh:*)")) != null and (.permissions.deny | index("Bash(gh:*)")) == null' \
-    "$dir/config/settings.json" > /dev/null || fail "the run's allowlist does not hold gh: $(cat "$dir/config/settings.json")"
+  jq -e '[.permissions.deny[]? | select(startswith("Bash(gh"))] == []' \
+    "$dir/config/settings.json" > /dev/null || fail "the run's settings deny gh: $(cat "$dir/config/settings.json")"
   lead_double
   real_run y --repeat 1 intake-listing-fails
   [ "$RR_STATUS" -eq 0 ] && [ "$(calls)" -eq 1 ] || fail "the intake run failed (exit $RR_STATUS): $RR_OUT"

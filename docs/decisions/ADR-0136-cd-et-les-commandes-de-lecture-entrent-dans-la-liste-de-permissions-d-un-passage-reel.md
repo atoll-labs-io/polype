@@ -1,11 +1,11 @@
 ---
 adr: 0136
 title: cd et les commandes de lecture entrent dans la liste de permissions d'un passage réel
-status: accepted
+status: superseded
 date: 2026-11-23
 scope: story s207-real-run-is-usable
 supersedes: [ADR-0135]
-superseded-by: []
+superseded-by: [ADR-0137]
 ---
 
 # ADR-0136 — cd et les commandes de lecture entrent dans la liste de permissions d'un passage réel

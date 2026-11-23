@@ -149,6 +149,7 @@ script_counts() {
 # the landing commit /po-ship writes: once the story has landed, the line allows nothing.
 LOWERED_COUNTS='
 po-gate.sh 136 135 s205-word-budget-is-linted
+po 184 183 s208-real-run-in-the-sandbox
 '
 
 # story_landed <repository> <commit> <story id>: 0 when a commit reachable from <commit> has a subject starting
