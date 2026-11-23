@@ -452,3 +452,9 @@ A decision the person took is not logged here: it is an ADR or a story.
 | 2026-11-23 | s207-real-run-is-usable | The planner raised the track from `flow` to `full` and wrote ADR-0136 as `accepted` | Widening the allowlist that accepted ADR-0135 writes out needs a superseding ADR; the owner chose option a in conversation |
 | 2026-11-23 | s207-real-run-is-usable | Its plan was approved without a human reading its tasks | `Plan validation: autonomous` |
 | 2026-11-23 | s207-real-run-is-usable | Shipped at fix loop 0 and filed its two minors (#481, #482) | Max severity minor; neither bears on security |
+| 2026-11-23 | — | Restored `docs/evals/real-2026-11-23-v0.12.0.md` with `git restore` after the second real run rewrote it | The first run's record is kept as written (s207, `first_record_is_kept`); the overwrite is filed as #486 |
+| 2026-11-23 | — | Ran a sandbox probe of a few cents (`claude -p`, haiku, throwaway folder) before framing s208 | The docs do not say whether subagents inherit Claude Code's sandbox; the owner agreed to the probe with his choice of the sandbox |
+| 2026-11-23 | s208-real-run-in-the-sandbox | Wrote the story by hand under "Après M22" and launched it alone | `Entry mode` is `—`; the owner approved it on its own question; the only ready story |
+| 2026-11-23 | s208-real-run-in-the-sandbox | The planner raised the track from `flow` to `full` and wrote ADR-0137 as `accepted` | It supersedes accepted ADR-0136; the owner chose the sandbox and the governing list in conversation |
+| 2026-11-23 | s208-real-run-in-the-sandbox | Its plan was approved without a human reading its tasks | `Plan validation: autonomous` |
+| 2026-11-24 | s208-real-run-in-the-sandbox | Shipped at fix loop 0 with one major and two minors filed (#490, #491, #492) | A major is logged and handled in a later cycle (Law 3); none bears on security |
