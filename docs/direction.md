@@ -22,9 +22,9 @@ Ce qu'un script peut décider ou écrire quitte la prose et le modèle. La méth
 
 | Jalon | Ce qu'il livre | État |
 | --- | --- | --- |
-| **M20 — Le ménage** | la suite sur chaque pull request, les défauts vus sur les produits et les restes de revue fermés | livré le 2026-11-13 (s159 à s163) ; deux constats majeurs de s163 restent ouverts (#233, #234) |
+| **M20 — Le ménage** | la suite sur chaque pull request, les défauts vus sur les produits et les restes de revue fermés | livré le 2026-11-13 (s159 à s163) |
 | **M21 — L'interface** | l'état en JSON, la boîte de décisions, la réponse, les rapports écrits par du code, la prochaine action calculée, le lancement, les signaux de confiance, le binaire `po` précompilé et vérifié | cadré le 2026-11-13 pour le binaire Rust `po` (s164 à s173 ; [ADR-0106](decisions/ADR-0106-le-pilote-devient-un-automate-en-code.md), [ADR-0115](decisions/ADR-0115-le-binaire-de-l-automate-est-precompile-et-verifie.md) à [ADR-0117](decisions/ADR-0117-un-binaire-po-par-machine.md)) ; livré le 2026-11-14, avec M21 bis (s174 à s180) |
-| **M22 — La preuve par le comportement** | les défauts de l'automate, la version de `po` tenue par un contrôle, une seule commande d'entrée, le ship en script, un parcours rejouable de bout en bout, le retrait des tests de phrase, le budget de mots, un passage réel et ses bras de contrôle | cadré le 2026-11-15 (s181 à s206) ; à construire |
+| **M22 — La preuve par le comportement** | les défauts de l'automate, la version de `po` tenue par un contrôle, une seule commande d'entrée, le ship en script, un parcours rejouable de bout en bout, le retrait des tests de phrase, le budget de mots, un passage réel et ses bras de contrôle | livré le 2026-11-23 (s181 à s206) ; le premier passage réel reste à faire |
 | **M23 — Le cadrage et la version des projets** | l'architecture avant le découpage, décidée avec la personne (ADR-0110) ; la discipline de version d'un projet construit avec Polype | à cadrer quand le prochain produit se cadre |
 
 Ensuite, Polype sert les projets qui l'utilisent et ne change que quand l'un d'eux bute sur lui.
@@ -63,8 +63,6 @@ Rien de ceci n'est remis en cause, et M20 à M22 le respectent :
 
 ## Par où reprendre
 
-D1 à D4, puis D11 et D12, ont été tranchées le 2026-11-13 : les ADR-0105 à ADR-0108, ADR-0115 à ADR-0117 sont `accepted`.
+Depuis M20 et M21, la suite tourne sur chaque pull request, `/po-ship` attend qu'elle passe, et le contrôle `suite` est obligatoire sur `main`.
 
-M20 est livré depuis le 2026-11-13 : la suite tourne sur chaque pull request, et `/po-ship` attend qu'elle passe. M21 et M21 bis sont livrés depuis le 2026-11-14, et le contrôle `suite` est obligatoire sur `main`.
-
-M22 est cadré depuis le 2026-11-15 : `/po-drive` sur s181 à s206, quand le porteur le demande.
+M22 est livré depuis le 2026-11-23. Dans l'ordre, chaque étape soumise au porteur : le premier passage réel, `bin/po-eval real`, lancé par lui dans un terminal ([ADR-0134](decisions/ADR-0134-un-passage-reel-se-lance-devant-une-personne-dans-une-configuration-confinee.md)) ; la première version publiée, qui le cite ; puis le cadrage de la documentation et du modèle par étape (#399, #398).
