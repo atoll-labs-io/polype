@@ -446,3 +446,9 @@ A decision the person took is not logged here: it is an ADR or a story.
 | 2026-11-23 | s206-real-run-before-a-release | Started fix run 3, beyond `Max attempts: 2` | The owner's answer "fix here" to decision d-0061 authorized it |
 | 2026-11-23 | s206-real-run-before-a-release | Shipped at fix loop 3 with three minors filed and the static-scan minor left as the reviews accepted | Max severity minor; milestone M22 is done |
 | 2026-11-23 | — | Removed a stale, empty `.git/index.lock` of the root after the merge of #470 | No git process was running; `git pull` refused on it |
+| 2026-11-23 | — | Removed the stale worktree `framing-m22` and its branch `fix/qa-deadline-wording` with `git branch -D` | The owner asked; `git cherry` showed its one commit already on `main` as a758e52 (#337 rebase-merged) |
+| 2026-11-23 | s207-real-run-is-usable | Wrote the story by hand under a new section "Après M22", not through `/po-stories` | `Entry mode` is `—` on this repository; the owner approved the story on its own question |
+| 2026-11-23 | s207-real-run-is-usable | Launched it alone | The only ready story; it fixes #476 and #477 before the next real run |
+| 2026-11-23 | s207-real-run-is-usable | The planner raised the track from `flow` to `full` and wrote ADR-0136 as `accepted` | Widening the allowlist that accepted ADR-0135 writes out needs a superseding ADR; the owner chose option a in conversation |
+| 2026-11-23 | s207-real-run-is-usable | Its plan was approved without a human reading its tasks | `Plan validation: autonomous` |
+| 2026-11-23 | s207-real-run-is-usable | Shipped at fix loop 0 and filed its two minors (#481, #482) | Max severity minor; neither bears on security |
