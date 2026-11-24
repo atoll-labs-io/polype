@@ -458,3 +458,13 @@ A decision the person took is not logged here: it is an ADR or a story.
 | 2026-11-23 | s208-real-run-in-the-sandbox | The planner raised the track from `flow` to `full` and wrote ADR-0137 as `accepted` | It supersedes accepted ADR-0136; the owner chose the sandbox and the governing list in conversation |
 | 2026-11-23 | s208-real-run-in-the-sandbox | Its plan was approved without a human reading its tasks | `Plan validation: autonomous` |
 | 2026-11-24 | s208-real-run-in-the-sandbox | Shipped at fix loop 0 with one major and two minors filed (#490, #491, #492) | A major is logged and handled in a later cycle (Law 3); none bears on security |
+| 2026-11-24 | s209-git-runs-outside-the-sandbox, s210-lanes-run-git-with-dash-c | Wrote both stories by hand under "Après M22" and launched them in one wave | `Entry mode` is `—`; the owner approved each on its own question; their `Owns` are disjoint |
+| 2026-11-24 | s209-git-runs-outside-the-sandbox | The planner raised the track from `flow` to `full` and wrote ADR-0138 as `accepted` | It supersedes ADR-0137 on git; the owner chose to take git alone out of the sandbox |
+| 2026-11-24 | s210-lanes-run-git-with-dash-c | Kept on the short track; ADR-0139, reserved, left unused | No escalation signal; the owner had chosen `git -C` in #487 |
+| 2026-11-24 | s209-git-runs-outside-the-sandbox, s210-lanes-run-git-with-dash-c | Their plans, and both amendments of s209's plan, were approved without a human reading their tasks | `Plan validation: autonomous` |
+| 2026-11-24 | s209-git-runs-outside-the-sandbox | Held its ship after a review that allowed it, amended its criterion on main (#500, #501) and ran two fix runs | The owner's answers on git's command-line config and to d-0062 |
+| 2026-11-24 | — | Ran two permission probes of a few cents (`claude -p`, haiku, throwaway folder) | To check case-sensitive matching of the git deny rules and the fourth rule before implementing |
+| 2026-11-24 | s209-git-runs-outside-the-sandbox | Recorded the owner's answers to d-0062 (`fix-here`) and d-0063 (`ship-later`) and consumed both | He answered in conversation |
+| 2026-11-24 | s209-git-runs-outside-the-sandbox | Removed the untracked copy of `docs/evals/real-2026-11-24-v0.12.0.md` from the root before landing | Byte-identical (`cmp`) to the one the story lands |
+| 2026-11-24 | s210-lanes-run-git-with-dash-c | Shipped at fix loop 0 and filed its two minors (#498, #499) | Max severity minor |
+| 2026-11-24 | s209-git-runs-outside-the-sandbox | Shipped at fix loop 2, filed its minor (#506); the security finding stays with d-0063, its follow-ups filed as #502 and #503 on the owner's word | Owner's answer `ship-later` |
