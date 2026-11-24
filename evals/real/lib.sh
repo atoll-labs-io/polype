@@ -106,16 +106,20 @@ real_path_after() {
 
 # The run's settings (ADR-0137): Bash runs inside Claude Code's sandbox, auto-allowed, writes held
 # to the run folder and the network closed; a session with no sandbox stops rather than run bare.
+# git alone runs outside it, allowed by Bash(git *), since it writes to the .git/ the sandbox
+# protects (ADR-0138); the four git deny rules refuse git's config given on its command line.
 # File tools are held to the run folder, web tools, curl and claude denied; any prompt is denied by
 # --permission-prompts none. What governs a session lies inside the run folder: real_governing lets
 # the launch see a session that changed it, and that run counts for nothing. Auto memory is off,
 # since Claude Code itself would write what the next session reads; real_governing still watches it.
 real_permissions() {
   jq -n --arg run "$1" '{autoMemoryEnabled: false, permissions: {
-    allow: ["Read(/\($run)/**)", "Edit(/\($run)/**)", "Agent"],
-    deny: ["WebFetch", "WebSearch", "Bash(curl:*)", "Bash(claude:*)"]},
+    allow: ["Read(/\($run)/**)", "Edit(/\($run)/**)", "Agent", "Bash(git *)"],
+    deny: ["WebFetch", "WebSearch", "Bash(curl:*)", "Bash(claude:*)",
+      "Bash(git -c *)", "Bash(git * -c *)", "Bash(git --config-env*)",
+      "Bash(git * --config-env*)"]},
     sandbox: {enabled: true, autoAllowBashIfSandboxed: true, failIfUnavailable: true,
-      filesystem: {allowWrite: [$run]}}}'
+      excludedCommands: ["git"], filesystem: {allowWrite: [$run]}}}'
 }
 
 # real_config <copy>: the run's Claude Code config, installed from that copy of this checkout.
@@ -183,8 +187,9 @@ real_claude_json() {
 # real_governing: one line per thing that changes what the next session runs under, each listed by
 # name — in the run's Claude Code config, its settings, instructions, rules, commands, agents, skills,
 # hooks, output styles, po with the installed method and the installed plugins, plus the auto memory
-# and the keys of .claude.json that widen a session; in HOME, the shell and git startup files, git's
-# global ignore, .claude and the instruction files; the doubles on PATH and the forge double's
+# and the keys of .claude.json that widen a session; in HOME, the shell and git startup files, the
+# rest of .config/git/ but its global ignore, which Claude Code appends to and which only hides files
+# from git status, .claude and the instruction files; the doubles on PATH and the forge double's
 # switches; git's config and hooks of the root and of the origin; the instruction files of the run
 # folder, of .worktrees and of every folder above; the project's own config, hooks and memory files
 # in the root and in every worktree, a worktree being held to the root's files.
@@ -201,7 +206,7 @@ real_governing() {
     -o -path ./.bash_logout -o -path ./.bash_aliases -o -path ./.profile -o -path ./.zshrc -o -path ./.zshenv \
     -o -path ./.zprofile -o -path ./.zlogin -o -path ./.zlogout -o -path ./.envrc -o -path ./.inputrc \
     -o -path ./.gitconfig -o -path ./.mcp.json -o -path ./CLAUDE.md -o -path ./AGENTS.md \
-    -o -path './.config/git/*' -o -path './.claude/*' \) \( -type f -o -type l \)
+    -o \( -path './.config/git/*' ! -path ./.config/git/ignore \) -o -path './.claude/*' \) \( -type f -o -type l \)
   real_claude_json home/.claude.json "$J/home/.claude.json"
   real_sigs bin "$J/bin" -mindepth 1 \( -type f -o -type l \)
   real_sigs gh "$J/gh" -mindepth 1 \( -type f -o -type l \)
@@ -220,6 +225,38 @@ real_governing() {
       | sed -n "s|^[<>] project/\([^ ]*\) .*|worktree/${wt#"$R"/}/\1 differs from the root|p"
   done < <({ git -C "$R" worktree list --porcelain 2>/dev/null | sed -n 's/^worktree //p'
              find "$R/.worktrees" -mindepth 1 -maxdepth 1 -type d 2>/dev/null; } | LC_ALL=C sort -u)
+}
+
+# real_governing_file <label path>: the file on disk a label of real_governing names.
+real_governing_file() {
+  case "$1" in
+    config/*|home/*|bin/*|gh/*) printf '%s\n' "$J/$1" ;;
+    run/*) printf '%s\n' "$J/${1#run/}" ;;
+    git-config) printf '%s\n' "$R/.git/config" ;;
+    git-hooks/*) printf '%s\n' "$R/.git/hooks/${1#git-hooks/}" ;;
+    origin-config) printf '%s\n' "$J/origin.git/config" ;;
+    origin-hooks/*) printf '%s\n' "$J/origin.git/hooks/${1#origin-hooks/}" ;;
+    worktrees/*) printf '%s\n' "$R/.worktrees/${1#worktrees/}" ;;
+    project/*) printf '%s\n' "$R/${1#project/}" ;;
+    worktree//*) printf '%s\n' "${1#worktree/}" ;;
+    worktree/*) printf '%s\n' "$R/${1#worktree/}" ;;
+    above:*) printf '%s\n' "${1#above:}" ;;
+  esac
+}
+
+# real_hold_governing <dir>: takes the signatures the launch compares with (REAL_GOVERNING) and
+# keeps a copy of each file they name under <dir>, which only explains an invalid run.
+real_hold_governing() {
+  local label f
+  REAL_GOVERNING="$(real_governing)"
+  REAL_GOVERNING_COPY="$1"
+  mkdir -p "$1"
+  while IFS= read -r label; do
+    f="$(real_governing_file "$label")"
+    [ -n "$f" ] && { [ -f "$f" ] || [ -L "$f" ]; } || continue
+    mkdir -p "$(dirname "$1/${label/#above:/above}")"
+    cp -P "$f" "$1/${label/#above:/above}"
+  done < <(awk '{print $1}' <<< "$REAL_GOVERNING" | LC_ALL=C sort -u)
 }
 
 real_settings_tsv() {
@@ -304,10 +341,19 @@ real_said() { jq -r 'if .session then "session: \(.session)" else "po \($verb): 
 # session as it was built (REAL_GOVERNING, held in the launcher's memory, out of the session's reach);
 # otherwise nothing more is launched, and such a change marks the run invalid, naming the first path.
 real_session_held() {
-  local n changed
+  local n changed before after
   n="$(cat "$REAL_OUT.sessions" 2>/dev/null || echo 0)"
   changed="$(diff <(printf '%s\n' "$REAL_GOVERNING") <(real_governing) | sed -n 's/^[<>] \([^ ]*\).*/\1/p' | head -n 1)"
   if [ -n "$changed" ]; then
+    if [ ! -e "$REAL_OUT.changed" ]; then
+      mkdir -p "$REAL_OUT.changed"
+      before="${REAL_GOVERNING_COPY:-}/${changed/#above:/above}"
+      if [ -n "${REAL_GOVERNING_COPY:-}" ] && { [ -f "$before" ] || [ -L "$before" ]; }; then
+        cp -P "$before" "$REAL_OUT.changed/before"
+      fi
+      after="$(real_governing_file "$changed")"
+      if [ -n "$after" ] && { [ -f "$after" ] || [ -L "$after" ]; }; then cp -P "$after" "$REAL_OUT.changed/after"; fi
+    fi
     echo "session $n changed what a session runs under ($changed)" > "$REAL_OUT.invalid"
     return 1
   fi
@@ -501,7 +547,7 @@ real_one() {
     set -e
     real_env "$REAL_RUN"
     real_build_case "$case" "${ARMS_COPY[a]}"
-    REAL_GOVERNING="$(real_governing)"
+    real_hold_governing "$REAL_WORK/governing.$case.$n${ARMS_SUFFIX[a]}"
     real_check_bounds "$case"
     real_launch
     real_grade "$case" "$label"
@@ -509,6 +555,7 @@ real_one() {
   status=$?
   set -e
   real_drop_run
+  rm -rf "$REAL_WORK/governing.$case.$n${ARMS_SUFFIX[a]}"
   REAL_RUN=""
   [ "$status" -eq 0 ] || { echo "po-eval: the run $label of $case could not be graded; nothing more is launched" >&2; exit 2; }
 }
@@ -875,7 +922,7 @@ real_main() {
   cost="$(awk -v b="$REAL_BUDGET" -v s="$REAL_SESSIONS" -v t="$total" 'BEGIN {printf "%g", b * s * t}')"
   echo "budget: $REAL_BUDGET USD per session, $cost USD at most"
   echo "login from $REAL_LOGIN"
-  echo "permissions: Claude Code sandbox, prompts denied — for a person who watches this run"
+  echo "permissions: Claude Code sandbox (git outside it), prompts denied — for a person who watches this run"
   printf 'Continue? [y/N] '
   if [ ! -t 0 ]; then
     echo
