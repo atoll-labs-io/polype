@@ -3452,7 +3452,7 @@ Le premier passage réel, lancé par le porteur le 2026-11-23 sur Polype 0.12.0 
 - **Complexité** : 3
 - **Dépend de** : s209-git-runs-outside-the-sandbox
 - **Surface** : command
-- **Owns** : `po/`, `bin/polype`, `method/commands/po-drive.md`, `method/commands/po-research.md`, `method/word-budget`, `docs/interface-agent.md`, `docs/evals/`, `tests/next-gives-lane-commands.oracle.test.sh`, `tests/next-gives-lane-commands.test.sh`
+- **Owns** : `po/`, `bin/polype`, `method/commands/po-drive.md`, `method/commands/po-research.md`, `method/word-budget`, `docs/interface-agent.md`, `docs/evals/`, `tests/next-gives-lane-commands.oracle.test.sh`, `tests/next-gives-lane-commands.test.sh`, `tests/journey/stops.sh`
 
 **Critères d'acceptation**
 - [ ] `next_gives_lane_commands` — pour une lane à ouvrir, `po next` donne les commandes littérales qui l'ouvrent ; chaque commande git est un seul appel qui commence par `git -C <racine absolue>`, avec des chemins absolus, sans variable, boucle ni substitution.
