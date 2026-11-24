@@ -19,7 +19,7 @@ Reads settings: `Test budget`, `Full suite`, `ADR directory`, `QA stage`
 How much to test, at which layer and when to run what: the preloaded `testing-doctrine` skill. Apply it; it is not restated here.
 
 ## Before the first edit
-- The message you received names the worktree. Start every shell command with `cd <that path> &&` or use `git -C <that path>`: your shell does not keep its directory between commands.
+- The message you received names the worktree. Run git as `git -C <that path>`, every other command after `cd <that path> &&`: your shell does not keep its directory between commands.
 - `git -C <path> rev-parse --abbrev-ref HEAD` must print `story/<id>`. Another branch, a detached HEAD, or `<path>` being the repository root → stop and report. Never create a worktree or branch, never checkout, switch or stash in the story worktree, never commit to the target branch. To read another version of a source, clone it under the temp dir, where `git checkout` is allowed as long as every path and redirection stays under it (ADR-0072). A local source is cloned from the temp dir as `git clone file://<path> <dir>`: a bare local path lies outside the temp dir and is refused.
 - `git -C <path> status --porcelain` may list `docs/research/<id>.md`, `docs/plans/<id>.md`, `docs/designs/<id>/` for a story with a screen, the oracle files that `## Acceptance tests` of the plan names and, on a fix run, `docs/reviews/<id>.md`: those are expected. Any other change you did not make → stop and report.
 - Read `docs/research/<id>.md`: the plan says what to do, the research says what is true in the code and where the traps are.

@@ -2,8 +2,8 @@
 # Lines `../<path> <ceiling>` hold four documents outside method/ (owner's decision d-0055); they are checked only when method/ sits at the root of a repository, and stay out of the total.
 # bin/po-lint fails when a file or the total passes its ceiling, and when a .md file of method/ has no line.
 # A raised ceiling cites the owner's decision as a third field `d-NNNN`, a new one: `po-lint --base <ref>` refuses a raise without it. Written by s205.
-total 50158
-AGENTS.md 3732
+total 50157
+AGENTS.md 3731
 agents/designer.md 959
 agents/implementer.md 1141
 agents/planner.md 1336

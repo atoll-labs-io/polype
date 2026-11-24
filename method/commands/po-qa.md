@@ -24,7 +24,7 @@ Reason `QA evidence not committed` → no walk: go straight to `## The evidence 
 
 Call the Agent tool with `subagent_type: qa`, `model:` set to `Model strong` whatever the story's complexity, description "QA <id>", and this prompt, filled in:
 
-> Story <id>. Worktree: <absolute path>. How to work is settled by your agent file. Start every shell command with `cd <absolute path> &&` or use `git -C <absolute path>`. Settings and project commands are in AGENTS.local.md; run `Dev` exactly as written.
+> Story <id>. Worktree: <absolute path>. How to work is settled by your agent file. Run git as `git -C <absolute path>`, every other command after `cd <absolute path> &&`. Settings and project commands are in AGENTS.local.md; run `Dev` exactly as written.
 
 `Model strong` at `—` passes no `model` at all. If the Agent tool rejects the model name, stop and report the setting and its value: no `docs/qa/<id>/report.md`, no evidence commit, and never a retry with another model or with none, because the setting is at fault, not the story.
 
