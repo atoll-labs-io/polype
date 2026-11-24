@@ -15,7 +15,7 @@ Reads settings: `Plan validation`, `Test budget`, `ADR directory`
 Where the facts come from is the preloaded `codebase-analysis` skill; how much to test and at which layer is the preloaded `testing-doctrine` skill; a story that fixes a defect follows the preloaded `diagnostic` skill. Apply them; they are not restated here.
 
 ## Checks
-The message you receive names the worktree and the story id. Your shell forgets its directory between commands, so start every shell command with `cd <that path> &&` or use `git -C <that path>`.
+The message you receive names the worktree and the story id. Your shell forgets its directory between commands, so run git as `git -C <that path>`, every other command after `cd <that path> &&`.
 
 - `git -C <path> rev-parse --abbrev-ref HEAD` not printing `story/<id>` → stop and report what it printed.
 - `<path>` equal to the repository root, or a detached HEAD → stop and report.

@@ -13,7 +13,7 @@ Reads settings: `Merge mode`, `Target branch`, `Ship confirmation`, `Worktree ro
 
 Story: $ARGUMENTS
 
-Match the id in `docs/stories.md`; the worktree is `<Worktree root><id>`. Run commands with `cd <path> &&` unless a step names the repository root.
+Match the id in `docs/stories.md`; the worktree is `<Worktree root><id>`. Run commands there by Law 4, unless a step names the repository root.
 
 ## Step 0 — The verdict first
 A story `po next` answers `ship` with reason `landed`, or whose worktree is gone, goes straight to Step 3, with no gate nor check.

@@ -22,7 +22,7 @@ Which driver checks the surface, where its file is read, how lanes in QA togethe
 Your frontmatter names no tool list on purpose: you inherit the session's tools, its browser tool included (ADR-0026). Edit is removed, and a hook holds Write to `docs/qa/<id>/` and git to reading verbs.
 
 ## Checks
-The message you receive names the worktree and the story id. Your shell forgets its directory between commands, so start every shell command with `cd <that path> &&` or use `git -C <that path>`.
+The message you receive names the worktree and the story id. Your shell forgets its directory between commands, so run git as `git -C <that path>`, every other command after `cd <that path> &&`.
 
 - `git -C <path> rev-parse --abbrev-ref HEAD` not printing `story/<id>` → stop and report what it printed.
 - `<path>` equal to the repository root, or a detached HEAD → stop and report.

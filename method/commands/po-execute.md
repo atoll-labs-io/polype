@@ -26,7 +26,7 @@ Story: $ARGUMENTS
 ## Delegation
 Call the Agent tool with `subagent_type: implementer`, `model` as `## Model` settles, description "Implement <id>", and this prompt, filled in:
 
-> Story <id>. Worktree: <absolute path>. Plan: docs/plans/<id>.md. How to work is settled by your agent file; below are the details of this story. Worktree and branch already exist — create no worktree or branch, never checkout or stash in the story worktree. Start every shell command with `cd <absolute path> &&` or use `git -C <absolute path>`. Settings and project commands are in AGENTS.local.md; run the commands exactly as written, and treat `—` as "this project has none".
+> Story <id>. Worktree: <absolute path>. Plan: docs/plans/<id>.md. How to work is settled by your agent file; below are the details of this story. Worktree and branch already exist — create no worktree or branch, never checkout or stash in the story worktree. Run git as `git -C <absolute path>`, every other command after `cd <absolute path> &&`. Settings and project commands are in AGENTS.local.md; run the commands exactly as written, and treat `—` as "this project has none".
 
 For a fix run — `po next` answered `fix`, or `execute` while the last `Ship allowed:` of `docs/reviews/<id>.md` is `no` — append:
 

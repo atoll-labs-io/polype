@@ -458,11 +458,23 @@ check_budget() {
   ' "$BUDGET")
 }
 
+# --- rule: cd-git
+check_cd_git() {
+  local f hit line
+  while IFS= read -r f; do
+    [ -n "$f" ] && [ -f "$METHOD/$f" ] || continue
+    while IFS=: read -r line hit; do
+      [ -n "$line" ] && report "$f" "$line" cd-git "a cd precedes git: run git as git -C <path>"
+    done < <(grep -nE '(^|[^[:alnum:]_.-])cd[[:space:]][^`]*(&&|;|\|\|)[[:space:]]*git([[:space:]]|`|$)' "$METHOD/$f" || true)
+  done < <(cd "$METHOD" && find . \( -type f -o -type l \) | sed 's|^\./||' | LC_ALL=C sort)
+}
+
 check_settings
 check_tools
 check_profiles
 check_fail_closed
 check_budget
+check_cd_git
 
 if [ "$breaches" -eq 0 ]; then
   echo "po-lint: no breach in $METHOD_FILE_COUNT file(s) of ${METHOD##*/}/"
