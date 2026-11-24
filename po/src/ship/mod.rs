@@ -15,7 +15,7 @@ use serde::Serialize;
 use crate::output;
 use crate::project::{Project, Setting};
 
-const USAGE: &str =
+pub(crate) const USAGE: &str =
     "usage: po ship forge [--target <branch>] | po ship land <id> [--routes yes|no] [--land] | po ship land <id> --sha <sha> \
      | po ship push <id> --sha <sha> --body-file <file> | po ship file <id> [--file] [--hold <line>]... [--fixed <line>]... | po ship clean <id>";
 

@@ -68,7 +68,7 @@ fn refuse(code: i32, error: &str, message: impl Into<String>, written: bool) -> 
     )
 }
 
-const USAGE: &str = "usage: po record review <id> [--composed] | po record qa <id>, the answer on stdin";
+pub(crate) const USAGE: &str = "usage: po record review <id> [--composed] | po record qa <id>, the answer on stdin";
 
 fn parse(args: &[String]) -> Result<Request, i32> {
     let kind = match args.first().map(String::as_str) {

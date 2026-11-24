@@ -2,6 +2,7 @@
 //! types follow docs/interface-agent.md and only this folder may reshape them.
 
 mod lane;
+mod open;
 mod overlap;
 mod wave;
 
@@ -53,11 +54,25 @@ struct Entry {
     reason: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     track: Option<Track>,
+    /// On a lane to open only; `null` inside when a setting the commands need cannot be read.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    commands: Option<Option<Vec<String>>>,
 }
 
 impl Entry {
     fn of(story: &str, next: NextAction) -> Entry {
-        Entry { story: story.to_string(), action: next.action, reason: next.reason, track: next.track }
+        Entry { story: story.to_string(), action: next.action, reason: next.reason, track: next.track, commands: None }
+    }
+
+    fn ready(context: &Context, id: &str) -> Entry {
+        let next = lane::plan(context, id, "ready");
+        if next.action != "plan" {
+            return Entry::of(id, next);
+        }
+        match open::open(context, id) {
+            open::Opening::EnvNotIgnored => Entry::of(id, lane::act("ask", "env file not ignored")),
+            open::Opening::Commands(commands) => Entry { commands: Some(commands), ..Entry::of(id, next) },
+        }
     }
 }
 
@@ -93,7 +108,7 @@ pub fn main(args: &[String]) -> i32 {
             .map(|lane| Entry::of(&lane.story, lane::next(&context, lane, &closed)))
             .collect();
         if let Some((ready, _)) = &wave {
-            actions.extend(ready.iter().map(|id| Entry::of(id, lane::plan(&context, id, "ready"))));
+            actions.extend(ready.iter().map(|id| Entry::ready(&context, id)));
         }
         actions
     });
