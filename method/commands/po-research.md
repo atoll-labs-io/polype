@@ -10,25 +10,19 @@ allowed-tools:
 ---
 # /po-research
 
-Reads settings: `Target branch`, `Worktree root`, `Install`
+Reads settings: `Worktree root`, `Install`
 
 Story: $ARGUMENTS
 
 Output of this command: a worktree and one file, `docs/research/<id>.md`. Nothing is planned here and no source file is touched.
 
 ## By hand
-A subagent skips this paragraph. This research runs on the session's model, which no command can choose (ADR-0036); start the session on `Model strong`. After step 1 of `## The worktree`, run `"${CLAUDE_CONFIG_DIR:-$HOME/.claude}/polype/po" next` and read the story's entry as `/po-drive <id>` does; `po` missing or exiting 2 → stop, naming `polype install`; no `AGENTS.local.md` → stop, naming `/po-setup`. Go on only on `plan` with reason `ready` or `no research`. Any other entry, or a warning naming the story, is reported, an `ask` as a question for the person, and ends the command. At the end, report a new `po next` entry likewise.
+A subagent skips this paragraph. This research runs on the session's model, which no command can choose (ADR-0036); start the session on `Model strong`. First run `"${CLAUDE_CONFIG_DIR:-$HOME/.claude}/polype/po" next` and read the story's entry as `/po-drive <id>` does; `po` missing or exiting 2 → stop, naming `polype install`; no `AGENTS.local.md` → stop, naming `/po-setup`. Go on only on `plan` with reason `ready` or `no research`. Any other entry, or a warning naming the story, is reported, an `ask` as a question for the person, and ends the command. At the end, report a new `po next` entry likewise.
 
 ## The worktree
 Path: `<repository root>/<Worktree root><id>`. Branch: `story/<id>`.
 
-`/po-drive` prepares each lane by these steps; reason `no research` means the worktree is already there.
-
-If it does not exist yet:
-1. When the repository has a remote, `git fetch` it, and start from `origin/<Target branch>` if that ref exists; otherwise start from the local `Target branch`.
-2. `git worktree add -b story/<id> <path> <start point>`.
-3. Copy into it the environment files git ignores: `git ls-files --others --ignored --exclude-standard -- '.env*'`. If an `.env*` file exists that git does **not** ignore, stop: it would be committed. Ask for it to be added to `.gitignore` first.
-4. Run `Install` inside the worktree; with `Install: —`, say so and skip it. Do not run the tests.
+On reason `ready`, the entry's `commands` open the lane (the fetch, `git worktree add`, the copy of the `.env*` files git ignores, `Install`): run them one by one, each exactly as given; `null` → stop, naming `Install`. On reason `no research` the worktree is already there. Do not run the tests.
 
 Report the absolute path, the branch, the start point and the names (never the contents) of the environment files copied. From here on, work only inside that path.
 

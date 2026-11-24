@@ -10,7 +10,7 @@ use super::{holding_decision, waiting_dependency, NextAction, Track};
 use crate::context::{goes_to_qa, BlockedBy, Context, Lane, Stage};
 use crate::project::{self, Setting};
 
-fn act(action: &str, reason: impl Into<String>) -> NextAction {
+pub(super) fn act(action: &str, reason: impl Into<String>) -> NextAction {
     NextAction { action: action.to_string(), reason: reason.into(), track: None }
 }
 

@@ -1,4 +1,5 @@
 mod context;
+mod help;
 mod inbox;
 mod next;
 mod output;
@@ -14,6 +15,9 @@ fn main() {
     let mut args = std::env::args().skip(1);
     let verb = args.next();
     let rest: Vec<String> = args.collect();
+    if let Some(code) = verb.as_deref().and_then(|verb| help::main(verb, &rest)) {
+        std::process::exit(code);
+    }
     let code = match verb.as_deref() {
         None => output::error(
             output::UNREADABLE,

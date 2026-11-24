@@ -15,7 +15,7 @@ Reads settings: `Target branch`, `Worktree root`, `Install`, `Plan validation`, 
 
 Argument: $ARGUMENTS — `status` reports the fleet and changes nothing; empty runs a wave; anything else names one story.
 
-You drive the fleet: `po next` says what each lane does next, and you do it. You have neither Write nor Edit, so you write no code and decide no verdict: each subagent works under its own file's contract (ADR-0016), and Bash only runs `po` and `gh pr view`, prepares worktrees, writes `validated: yes` and the decisions log, and records what a subagent handed you; it never edits a source file.
+You drive the fleet: `po next` says what each lane does next, and you do it. You have neither Write nor Edit, so you write no code and decide no verdict: each subagent works under its own file's contract (ADR-0016), and Bash only runs `po` and `gh pr view`, opens lanes, writes `validated: yes` and the decisions log, and records what a subagent handed you; it never edits a source file.
 
 ## Checks
 - No `AGENTS.local.md` → stop and point to `/po-setup`.
@@ -31,7 +31,7 @@ Run `"${CLAUDE_CONFIG_DIR:-$HOME/.claude}/polype/po" next --remote`. It prints `
 
 | Action | What you do |
 | --- | --- |
-| `plan` | the planner, step 1; reason `ready` → prepare the worktree first |
+| `plan` | the planner, step 1; reason `ready` → open the lane first |
 | `validate-plan` | `## Validating a wave's plans` |
 | `design` | the designer, step 2 |
 | `execute`, `fix` | the implementer, step 3 |
@@ -49,8 +49,8 @@ One rule stays yours, since `po` cannot see it: a failed ship sends its story ba
 
 You never leave the directory you were started in: no `cd`, at any stage of a wave. Each lane's worktree is resolved once, as the absolute path `<repository root>/<Worktree root><id>`; every git command you run against a lane is `git -C <absolute path>`, and every subagent prompt carries that same absolute path.
 
-### Preparing the lanes
-You prepare each lane's worktree yourself, before any subagent starts, by the steps of `## The worktree` in `/po-research`. `planner` may not run `git worktree add`, so a lane you did not prepare cannot exist.
+### Opening the lanes
+Before any subagent starts, you open each lane, running its `po next` entry's `commands` one by one, exactly as given: never joined, looped or rewritten. `planner` may not run `git worktree add`, so a lane you did not open cannot exist.
 
 A worktree `po` reports in an `orphan-worktree` warning is named in the report with the path and the branch actually found, drops that lane from the wave, and waits for a human: you run no `git worktree add --force`, `worktree remove`, `worktree prune`, `switch`, `checkout` or `stash` to make it fit.
 
@@ -60,9 +60,9 @@ ADR numbers are a shared resource no `Owns` line can divide, so you assign them 
 The lanes of a wave must **overlap in time**: every subagent of a stage is started before any of them is waited on. No dispatch shape is imposed: a subagent starts in the background and hands the call back at once, so counting messages proves nothing. Each lane's **activity window**, which `## Report` states, shows the overlap. Never two calls for the same story at once. This holds stage by stage: every planner, then every designer, then every implementer, then every qa, then every reviewer — a stage is started whole. A lane whose subagent leaves only once the previous lane has answered overlaps nothing, and `Parallel` buys nothing there.
 
 1. `subagent_type: planner`, `model:` set to `Model strong` — the story id, the absolute worktree path and the action's `track`, under its own contract. The plans that come back are approved as `## Validating a wave's plans` settles it, before any implementer starts.
-2. **The design stage**, for a story with a screen (`AGENTS.md`, Law 1): `subagent_type: designer`, `model:` set to `Model strong` — the story id and the absolute worktree path, under its own contract (`method/agents/designer.md`). Like the others, every designer of a wave leaves before any of them is waited on.
+2. **The design stage**, for a story with a screen (`AGENTS.md`, Law 1): `subagent_type: designer`, `model:` set to `Model strong` — the story id and the absolute worktree path, under its own contract (`method/agents/designer.md`). Every designer of a wave leaves before any is waited on.
 3. `subagent_type: implementer` — the prompt `/po-execute` fixes (`method/commands/po-execute.md`), its appended sentences and model included, word for word, for each lane whose `docs/plans/<id>.md` holds `validated: yes`. A plan without that line never reaches an implementer.
-4. **The QA stage**: `subagent_type: qa` — the model and the prompt `/po-qa` fixes (`method/commands/po-qa.md`), word for word, from its `## Delegation` through `## The evidence commit` (ADR-0102). Like the others, every qa of a wave leaves before any of them is waited on.
+4. **The QA stage**: `subagent_type: qa` — the model and the prompt `/po-qa` fixes (`method/commands/po-qa.md`), word for word, from its `## Delegation` through `## The evidence commit` (ADR-0102). Every qa of a wave leaves before any is waited on.
 5. `subagent_type: reviewer` — the model and the prompt `/po-review` fixes (`method/commands/po-review.md`), word for word, at the `Fix loop:` its `## Fix loop` computes.
 
 A lane that stops stays stopped and is reported. A lane that goes to a human goes to the person at once, in a message of its own naming the story, the reason and what the person must decide; it is not asked through AskUserQuestion, which would hold every other lane until the answer came. Meanwhile the other lanes carry on.

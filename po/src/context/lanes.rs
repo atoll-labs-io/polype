@@ -197,6 +197,11 @@ impl LaneSettings {
     }
 }
 
+/// The path every lane of `Worktree root` starts with; a lane is this prefix followed by its id.
+pub(crate) fn lane_prefix(project: &Project, root: &str) -> String {
+    if root.starts_with('/') { root.to_string() } else { format!("{}/{}", project.root.display(), root) }
+}
+
 pub fn lanes(
     project: &Project,
     root: String,
@@ -205,7 +210,7 @@ pub fn lanes(
     landed: &Landed,
     warnings: &mut Warnings,
 ) -> Vec<Lane> {
-    let prefix = if root.starts_with('/') { root } else { format!("{}/{}", project.root.display(), root) };
+    let prefix = lane_prefix(project, &root);
 
     let mut lanes = Vec::new();
     for worktree in worktrees(project) {

@@ -148,3 +148,14 @@ stop_pull_request_closed() {
   if journey_run; then return 1; fi
   journey_stopped_on_ask
 }
+
+stop_env_file_not_ignored() {
+  journey_kind local
+  journey_story s01-stop 'Un arrêt'
+  git -C "$R" config core.excludesFile /dev/null
+  # The installer ignores .env*: un-ignore one file, left uncommitted, so po next meets it.
+  printf '!.env\n' >> "$R/.gitignore"
+  printf 'KEY=one\n' > "$R/.env"
+  if journey_run; then return 1; fi
+  journey_stopped_on_ask
+}
