@@ -468,3 +468,8 @@ A decision the person took is not logged here: it is an ADR or a story.
 | 2026-11-24 | s209-git-runs-outside-the-sandbox | Removed the untracked copy of `docs/evals/real-2026-11-24-v0.12.0.md` from the root before landing | Byte-identical (`cmp`) to the one the story lands |
 | 2026-11-24 | s210-lanes-run-git-with-dash-c | Shipped at fix loop 0 and filed its two minors (#498, #499) | Max severity minor |
 | 2026-11-24 | s209-git-runs-outside-the-sandbox | Shipped at fix loop 2, filed its minor (#506); the security finding stays with d-0063, its follow-ups filed as #502 and #503 on the owner's word | Owner's answer `ship-later` |
+| 2026-11-24 | s211-next-gives-lane-commands | Wrote the story by hand under "Après M22" and launched it alone | `Entry mode` is `—`; the owner approved it on its own question; the only ready story |
+| 2026-11-24 | s211-next-gives-lane-commands | The planner raised the track from `flow` to `full`; ADR-0139, reserved, left unused | The story changes `po`'s versioned interface contract; the owner's choice is recorded in the story |
+| 2026-11-24 | s211-next-gives-lane-commands | Its plan, and its amendment, were approved without a human reading their tasks | `Plan validation: autonomous` |
+| 2026-11-24 | s211-next-gives-lane-commands | Added `tests/journey/stops.sh` to its `Owns` on main (#510), had the plan amended, and fast-forwarded the story branch onto that main commit | s206's oracle requires every `ask` of `po next` to be reached by a journey; po-bounds reads `Owns` at the branch's start point; the branch had no commit, and #510 touched only `docs/stories.md` |
+| 2026-11-24 | s211-next-gives-lane-commands | Shipped at fix loop 0 and filed its three minors (#512, #513, #514) | Max severity minor |
