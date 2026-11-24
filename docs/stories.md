@@ -3416,6 +3416,36 @@ Le premier passage réel, lancé par le porteur le 2026-11-23 sur Polype 0.12.0 
 
 **Notes pour l'agent** : essai du lead le 2026-11-23 (`claude -p`, Claude Code 2.1.330, `sandbox: {enabled, autoAllowBashIfSandboxed, failIfUnavailable}`, `--permission-prompts none`) : la session principale et un subagent `Agent` y passent `cd <sous-dossier> && git status && ls docs/* && mkdir -p x && printf … > x/f` ; une écriture hors du projet est refusée (système de fichiers en lecture seule), `curl` aussi (réseau). Dans le bac à sable, `git status` voit à la racine du projet des chemins absents du disque ; un fichier d'exclusion git posé dans le `HOME` temporaire du passage est une piste, pas une consigne. Doc : https://code.claude.com/docs/en/sandboxing et la section « sandbox » des réglages. Le passage du 2026-11-23 22:22 a été invalidé par `config/plugins/store/…json` (#485) et a réécrit le relevé du premier (#486, restauré par le lead). Ce que « plugins installés » recouvre dans le dossier de config est à établir dans la recherche. Choix du bac à sable et liste de ce qui gouverne : décisions du porteur, ne les rouvre pas. Ne touche ni `po/` (#478) ni `method/` (#487).
 
+### s209-git-runs-outside-the-sandbox — Le passage réel fait tourner git hors du bac à sable
+**En tant que** porteur **je veux** que git, seul, tourne hors du bac à sable du passage réel, que ce que Claude Code écrit dans l'exclusion git globale n'invalide plus un passage, et que les relevés des deux derniers passages soient gardés **afin que** le chef de projet puisse ouvrir ses lanes et que le prochain passage aille jusqu'au ship (#494, #495, décision du porteur du 2026-11-24).
+
+- **Complexité** : 2
+- **Dépend de** : s208-real-run-in-the-sandbox
+- **Surface** : command
+- **Owns** : `evals/real/`, `docs/evals/`, `tests/git-runs-outside-the-sandbox.oracle.test.sh`, `tests/git-runs-outside-the-sandbox.test.sh`, `tests/real-run-in-the-sandbox.oracle.test.sh`, `tests/real-run-is-usable.oracle.test.sh`, `tests/real-run-is-usable.test.sh`, `tests/real-run-before-a-release.oracle.test.sh`, `tests/real-run-before-a-release.test.sh`, `docs/decisions/`
+
+**Critères d'acceptation**
+- [ ] `git_runs_outside_the_sandbox` — la configuration d'un passage exclut `git`, et lui seul, du bac à sable, et l'autorise par une règle `Bash(git *)` ; le bac à sable reste actif pour tout le reste et la liste de refus ne change pas ; une nouvelle ADR remplace l'ADR-0137 sur ce point.
+- [ ] `mask_list_is_not_governing` — une entrée que Claude Code ajoute à l'exclusion git globale pendant une session n'invalide plus le passage, et les chemins masqués du bac à sable restent hors de `git status` ; un passage invalide garde dans ses résultats le fichier gouvernant qui a changé, avant et après, nettoyé comme `po-intake` nettoie une sortie.
+- [ ] `records_are_landed` — le relevé du 2026-11-24 et celui du second passage du 2026-11-23, sous un nom à lui, sont commités tels que les passages les ont écrits. Aucun script ne les lit : jugé en revue.
+
+**Notes pour l'agent** : troisième passage, 2026-11-24 00:08 (résultats gardés dans `/tmp/po-eval-results.Ia896K`) : dans le bac à sable, `.git/config.lock` est monté sur `/dev/null` et `.git/worktrees` est en lecture seule, donc `git worktree add -b` crée la branche sans worktree ; le chef s'est arrêté sans contourner. Le même passage a été invalidé par `home/.config/git/ignore`, que `real_env` écrit (`evals/real/lib.sh:64-67`) et que la liste de s208 compare ; qui l'a changé n'est pas prouvé, le dossier du passage étant effacé à la sortie. Doc : https://code.claude.com/docs/en/sandboxing (`excludedCommands` : ces commandes passent par le chemin normal des permissions). Le relevé du 2026-11-24 est à la racine de la copie de travail principale, non suivi ; celui du second passage du 2026-11-23 est chez le chef, qui te le donne. Le choix de sortir git, et lui seul, est celui du porteur : ne l'élargis pas. `cd <chemin> && git` est l'affaire de s210 ; ne touche ni `method/` ni `po/`.
+
+### s210-lanes-run-git-with-dash-c — Les lanes lancent git par `git -C`, jamais après un `cd`
+**En tant que** porteur **je veux** que la méthode fasse lancer git par `git -C <chemin absolu>`, jamais après un `cd` **afin que** Claude Code ne demande pas une approbation avant chaque commande git d'une lane, en passage réel comme en session interactive (#487, décision du porteur du 2026-11-24).
+
+- **Complexité** : 2
+- **Dépend de** : aucune
+- **Surface** : command
+- **Owns** : `method/AGENTS.md`, `method/agents/`, `method/commands/`, `method/skills/`, `method/word-budget`, `bin/po-lint`, `tests/lanes-run-git-with-dash-c.oracle.test.sh`, `tests/lanes-run-git-with-dash-c.test.sh`, `tests/lint.test.sh`
+
+**Critères d'acceptation**
+- [ ] `law4_names_git_dash_c` — la Law 4 donne `git -C <chemin absolu>` comme la forme de toute commande git dans un worktree ; `cd <chemin absolu> &&` reste la forme des autres commandes.
+- [ ] `no_cd_before_git_in_method` — aucun fichier de `method/` n'écrit `cd … && git` ni une commande où un `cd` précède `git`, et `po-lint` échoue sur un tel fichier en le nommant.
+- [ ] `method_does_not_grow` — aucun plafond de `method/word-budget` ne monte.
+
+**Notes pour l'agent** : Claude Code demande une approbation quand un `cd` vers un autre dossier précède `git`, quelles que soient les règles, parce que git pourrait y lancer des hooks (https://code.claude.com/docs/en/permissions, « Compound commands ») ; sans surface d'approbation, l'appel est refusé. Douze lignes de `method/` écrivent `cd <…> &&`, dans `AGENTS.md`, les cinq agents et `po-execute`, `po-qa`, `po-review`, `po-ship` ; celles qui ne précèdent pas `git` peuvent rester. Les copies installées (`.claude/`, `.polype/`) ne se touchent pas. Un test qui épingle une de ces phrases change avec elle : dis-le dans le plan, et ajoute son fichier à ton `Owns` s'il manque. Ne touche ni `po/` ni `evals/`.
+
 ## M23 — Le cadrage et la version des projets (à cadrer)
 
 Ce jalon n'est pas découpé : il se cadre avec le porteur quand le prochain produit se cadre, parce que ce qu'il porte ne se vérifie que sur un produit (décision d-0026). Ce qu'il doit porter : l'ordre du cadrage, périmètre, architecture, stories, revue des stories, design system (ADR-0110, #212), avec l'exigence du porteur sur `/po-architect` — l'architecture se décide avec la personne, chaque choix technique détaillé avec ses pour et ses contre ; la discipline de version d'un projet construit avec Polype, que l'ADR-0122 annonce (schéma de version, qui monte le numéro et quand, journal des changements, étiquettes de publication) ; le constat #230 (`/po-setup` ne dit plus comment changer un `Ship confirmation` choisi) ; et une story que le porteur y a placée le 2026-11-18 (décisions d-0038 et d-0039) : `po` se reconstruit à l'identique, pour que la personne qui fait atterrir les sommes d'une version les compare à une construction faite chez elle, ce qui lève le risque que l'ADR-0129 accepte en attendant. Après M22, un jalon de méthode ne s'ouvre que pour un défaut vu sur un produit ou par une décision stratégique écrite du porteur (ADR-0108) ; s153, s154 et s155 attendent ce titre-là.
