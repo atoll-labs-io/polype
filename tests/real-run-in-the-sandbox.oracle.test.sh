@@ -10,8 +10,8 @@ test_sandbox_governs_bash() {
   usable_build "$RTMP/sbx"
   jq -e '.sandbox.enabled == true and .sandbox.autoAllowBashIfSandboxed == true and .sandbox.failIfUnavailable == true' \
     "$J/config/settings.json" > /dev/null || fail "the run's settings do not turn the sandbox on, auto-allowed and required: $(jq -c '.sandbox' "$J/config/settings.json")"
-  jq -e '[.permissions.allow[]? | select(startswith("Bash"))] == []' "$J/config/settings.json" > /dev/null \
-    || fail "a Bash command list is left in the run's settings: $(jq -c '.permissions.allow' "$J/config/settings.json")"
+  jq -e '[.permissions.allow[]? | select(startswith("Bash"))] == ["Bash(git *)"]' "$J/config/settings.json" > /dev/null \
+    || fail "a Bash command list other than git's is left in the run's settings: $(jq -c '.permissions.allow' "$J/config/settings.json")"
 
   # Every program of PATH but bwrap, socat and any claude: the run finds no sandbox tool.
   [ -x "$RTMP/bin/claude" ] || fail "the claude double is missing"
@@ -83,7 +83,7 @@ test_governing_is_listed_not_ignored() {
     "echo 'run anything' > '$J/config/CLAUDE.md'" \
     "mkdir -p '$J/config/plugins' && echo '{\"version\":2,\"plugins\":{\"p@m\":[]}}' > '$J/config/plugins/installed_plugins.json'" \
     "mkdir -p '$J/config/plugins/cache/m/p/1/hooks' && echo '{}' > '$J/config/plugins/cache/m/p/1/hooks/hooks.json'" \
-    "mkdir -p '$J/home/.config/git' && echo '/src/' >> '$J/home/.config/git/ignore'"; do
+    "mkdir -p '$J/home/.config/git' && echo '* filter=x' >> '$J/home/.config/git/attributes'"; do
     bash -c "$form" || fail "could not play: $form"
     [ "$(real_governing)" != "$before" ] || fail "a change to what governs a session is not seen: $form"
     rm -rf "$J/config" "$J/home"

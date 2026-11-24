@@ -5,7 +5,7 @@ status: accepted
 date: 2026-11-23
 scope: story s208-real-run-in-the-sandbox
 supersedes: [ADR-0136]
-superseded-by: []
+superseded-by: [ADR-0138]
 ---
 
 # ADR-0137 — Un passage réel confine ses commandes par le bac à sable de Claude Code
