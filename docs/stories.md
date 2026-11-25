@@ -3462,6 +3462,20 @@ Le premier passage réel, lancé par le porteur le 2026-11-23 sur Polype 0.12.0 
 
 **Notes pour l'agent** : quatrième passage, 2026-11-24 15:35 (résultats dans `/tmp/po-eval-results.S0Td4j`) : premier passage valide, noté en échec. Le chef a préparé ses lanes par `R=$(pwd); for id in …; do git worktree add -b story/$id "$R/.worktrees/$id" origin/main; done` ; Claude Code ne sort du bac à sable qu'une commande qui commence par `git` (ADR-0138), celle-ci est restée dedans, où `.git` est protégé : branches créées, worktrees non. Il a ensuite écrit qu'il ne connaissait pas la forme JSON de `po inbox add`. Les étapes d'ouverture d'une lane sont aujourd'hui dans `## The worktree` de `/po-research` ; le fetch, la copie des `.env*` et `Install` en font partie. L'interface est un contrat versionné (`docs/interface-agent.md`) : un champ ajouté s'y écrit. Toute story qui touche `po/` monte sa version (ADR-0122). Le relevé est chez le chef, qui te le donne. Choix du porteur : `po` donne les commandes, plutôt qu'une règle de prose ; ne le rouvre pas.
 
+### s213-release-tests-survive-landed-sums — Les tests de release tiennent quand les sommes de la version sont sur `main`
+**En tant que** porteur **je veux** que les tests de release tiennent quand `main` porte déjà les sommes de la version courante **afin que** les sommes de chaque version publiée puissent atterrir (décision du porteur du 2026-11-25).
+
+- **Complexité** : 2
+- **Dépend de** : s211-next-gives-lane-commands
+- **Surface** : command
+- **Owns** : `tests/first-release-holds.oracle.test.sh`, `tests/release-tests-survive-landed-sums.oracle.test.sh`, `tests/release-tests-survive-landed-sums.test.sh`
+
+**Critères d'acceptation**
+- [ ] `release_tests_hold_with_landed_sums` — les tests de `tests/first-release-holds.oracle.test.sh` passent quand le `bin/polype` copié porte déjà, dans `PO_SUMS`, les sommes de la version qu'ils testent.
+- [ ] `release_still_refuses_a_summed_version` — la release refuse toujours de reconstruire une version dont les sommes ont atterri sur `main` : aucun garde-fou de `bin/po-release` n'est retiré ni affaibli.
+
+**Notes pour l'agent** : la PR #520, qui fait atterrir les sommes de `po` 0.13.0 publiées le 2026-11-25, a fait échouer six tests de `tests/first-release-holds.oracle.test.sh` (`release_reruns_cleanly`, `tag_must_match_the_version`, `release_only_from_a_commit_of_the_target_branch`, `rerun_refused_after_later_sums_replace_them`, `rerun_refused_once_sums_landed`, `tag_guard_fails_closed`) : `copy_of_polype` (`:15-40`) recopie le vrai `bin/polype`, et `po-release` refuse alors, à raison, une version déjà sommée. Corrige le test, pas `bin/po-release`. Vérifie la correction sur l'arbre de la PR #520 (branche `framing/po-0.13.0-sums`) autant que sur `main`. Ne touche ni `po/` ni `method/`.
+
 ## M23 — Le cadrage et la version des projets (à cadrer)
 
 Ce jalon n'est pas découpé : il se cadre avec le porteur quand le prochain produit se cadre, parce que ce qu'il porte ne se vérifie que sur un produit (décision d-0026). Ce qu'il doit porter : l'ordre du cadrage, périmètre, architecture, stories, revue des stories, design system (ADR-0110, #212), avec l'exigence du porteur sur `/po-architect` — l'architecture se décide avec la personne, chaque choix technique détaillé avec ses pour et ses contre ; la discipline de version d'un projet construit avec Polype, que l'ADR-0122 annonce (schéma de version, qui monte le numéro et quand, journal des changements, étiquettes de publication) ; le constat #230 (`/po-setup` ne dit plus comment changer un `Ship confirmation` choisi) ; et une story que le porteur y a placée le 2026-11-18 (décisions d-0038 et d-0039) : `po` se reconstruit à l'identique, pour que la personne qui fait atterrir les sommes d'une version les compare à une construction faite chez elle, ce qui lève le risque que l'ADR-0129 accepte en attendant. Après M22, un jalon de méthode ne s'ouvre que pour un défaut vu sur un produit ou par une décision stratégique écrite du porteur (ADR-0108) ; s153, s154 et s155 attendent ce titre-là.
