@@ -3468,13 +3468,13 @@ Le premier passage réel, lancé par le porteur le 2026-11-23 sur Polype 0.12.0 
 - **Complexité** : 2
 - **Dépend de** : s211-next-gives-lane-commands
 - **Surface** : command
-- **Owns** : `tests/first-release-holds.oracle.test.sh`, `tests/first-release-holds.test.sh`, `tests/release-tests-survive-landed-sums.oracle.test.sh`, `tests/release-tests-survive-landed-sums.test.sh`
+- **Owns** : `tests/first-release-holds.oracle.test.sh`, `tests/first-release-holds.test.sh`, `tests/po-prebuilt-and-verified.oracle.test.sh`, `tests/release-tests-survive-landed-sums.oracle.test.sh`, `tests/release-tests-survive-landed-sums.test.sh`
 
 **Critères d'acceptation**
-- [ ] `release_tests_hold_with_landed_sums` — les tests de `tests/first-release-holds.oracle.test.sh` et de `tests/first-release-holds.test.sh` passent quand le `bin/polype` copié porte déjà, dans `PO_SUMS`, les sommes de la version qu'ils testent.
+- [ ] `release_tests_hold_with_landed_sums` — les tests de `tests/first-release-holds.oracle.test.sh`, de `tests/first-release-holds.test.sh` et de `tests/po-prebuilt-and-verified.oracle.test.sh` passent quand le `bin/polype` copié porte déjà, dans `PO_SUMS`, les sommes de la version qu'ils testent.
 - [ ] `release_still_refuses_a_summed_version` — la release refuse toujours de reconstruire une version dont les sommes ont atterri sur `main` : aucun garde-fou de `bin/po-release` n'est retiré ni affaibli.
 
-**Notes pour l'agent** : la PR #520, qui fait atterrir les sommes de `po` 0.13.0 publiées le 2026-11-25, a fait échouer six tests : `release_reruns_cleanly` et `tag_must_match_the_version` dans `tests/first-release-holds.oracle.test.sh`, `release_only_from_a_commit_of_the_target_branch`, `rerun_refused_after_later_sums_replace_them`, `rerun_refused_once_sums_landed` et `tag_guard_fails_closed` dans `tests/first-release-holds.test.sh` (correction du planner) : les deux `copy_of_polype` recopient le vrai `bin/polype`, et `po-release` refuse alors, à raison, une version déjà sommée. Corrige le test, pas `bin/po-release`. Vérifie la correction sur l'arbre de la PR #520 (branche `framing/po-0.13.0-sums`) autant que sur `main`. Ne touche ni `po/` ni `method/`.
+**Notes pour l'agent** : la PR #520, qui fait atterrir les sommes de `po` 0.13.0 publiées le 2026-11-25, a fait échouer sept tests : `release_reruns_cleanly` et `tag_must_match_the_version` dans `tests/first-release-holds.oracle.test.sh`, `release_only_from_a_commit_of_the_target_branch`, `rerun_refused_after_later_sums_replace_them`, `rerun_refused_once_sums_landed` et `tag_guard_fails_closed` dans `tests/first-release-holds.test.sh`, et `installer_falls_back_to_sources` dans `tests/po-prebuilt-and-verified.oracle.test.sh`, l'oracle de s171 (corrections des planners) : les trois `copy_of_polype` recopient le vrai `bin/polype`, et `po-release` refuse alors, à raison, une version déjà sommée. Corrige le test, pas `bin/po-release`. Vérifie la correction sur l'arbre de la PR #520 (branche `framing/po-0.13.0-sums`) autant que sur `main`. Ne touche ni `po/` ni `method/`.
 
 ## M23 — Le cadrage et la version des projets (à cadrer)
 
