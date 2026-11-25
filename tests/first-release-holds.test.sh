@@ -11,6 +11,10 @@ copy_of_polype() {
   C="$SCRATCH/polype"
   mkdir -p "$C/po" "$SCRATCH/stubs"
   cp -R "$ROOT/bin" "$ROOT/.github" "$C/"
+  # The copy stands for a version not yet summed, whatever PO_SUMS of main holds.
+  sed -i "/^PO_SUMS='\$/,/^'\$/{/^PO_SUMS='\$/!{/^'\$/!d}}" "$C/bin/polype"
+  [ -z "$(awk "/^PO_SUMS='\$/ {inside=1; next} inside && /^'\$/ {exit} inside {print}" "$C/bin/polype")" ] \
+    || fail "the copy's PO_SUMS block is not empty"
   cp "$ROOT/po/Cargo.toml" "$C/po/"
   VERSION="$(sed -n 's/^POLYPE_VERSION="\(.*\)"$/\1/p' "$C/bin/polype")"
   [ -n "$VERSION" ] || fail "bin/polype carries no POLYPE_VERSION"
