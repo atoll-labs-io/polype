@@ -3476,6 +3476,21 @@ Le premier passage réel, lancé par le porteur le 2026-11-23 sur Polype 0.12.0 
 
 **Notes pour l'agent** : la PR #520, qui fait atterrir les sommes de `po` 0.13.0 publiées le 2026-11-25, a fait échouer sept tests : `release_reruns_cleanly` et `tag_must_match_the_version` dans `tests/first-release-holds.oracle.test.sh`, `release_only_from_a_commit_of_the_target_branch`, `rerun_refused_after_later_sums_replace_them`, `rerun_refused_once_sums_landed` et `tag_guard_fails_closed` dans `tests/first-release-holds.test.sh`, et `installer_falls_back_to_sources` dans `tests/po-prebuilt-and-verified.oracle.test.sh`, l'oracle de s171 (corrections des planners) : les trois `copy_of_polype` recopient le vrai `bin/polype`, et `po-release` refuse alors, à raison, une version déjà sommée. Corrige le test, pas `bin/po-release`. Vérifie la correction sur l'arbre de la PR #520 (branche `framing/po-0.13.0-sums`) autant que sur `main`. Ne touche ni `po/` ni `method/`.
 
+### s214-suite-holds-with-a-published-po — La suite tient quand un `po` précompilé est publié
+**En tant que** porteur **je veux** que toute la suite passe quand `main` porte les sommes de la version courante et que la CI peut télécharger le `po` précompilé **afin que** les sommes de chaque version publiée atterrissent sans surprise (décision du porteur du 2026-11-26).
+
+- **Complexité** : 2
+- **Dépend de** : s213-release-tests-survive-landed-sums
+- **Surface** : command
+- **Owns** : `tests/`
+
+**Critères d'acceptation**
+- [ ] `payload_run_keeps_its_po` — `test_po_is_a_state_file_of_the_payload` (`tests/state-as-json.test.sh:135`) passe quand le `bin/polype` copié porte les sommes de la version courante et qu'un téléchargement réussirait.
+- [ ] `no_test_reaches_the_network_for_po` — aucun test de la suite ne télécharge `po` : partout où l'installeur pourrait le faire, une doublure le tient, et un test le prouve.
+- [ ] `whole_suite_on_a_summed_tree` — la suite entière passe sur l'arbre de la PR #520 (`origin/framing/po-0.13.0-sums`) avec cette story appliquée, dans un environnement qui a le réseau. Le plan dit comment c'est vérifié.
+
+**Notes pour l'agent** : après s213, la PR #520 a échoué en CI sur ce seul test (run 45688818665, 707 réussis, 1 échec) : lancé depuis la charge utile installée, l'installeur a téléchargé le `po` 0.13.0 publié au lieu d'écrire « no po sources ». En local, il passait, sans doute faute de réseau ou de correspondance. Les tests de l'installeur ont déjà des doublures (`PO_CURL`, `gh`) : reprends-les. Cherche dans toute la suite les autres tests qui supposent des sommes vides ou un téléchargement impossible, pour qu'il n'y ait pas de neuvième échec. Ne touche ni `bin/`, ni `po/`, ni `method/`.
+
 ## M23 — Le cadrage et la version des projets (à cadrer)
 
 Ce jalon n'est pas découpé : il se cadre avec le porteur quand le prochain produit se cadre, parce que ce qu'il porte ne se vérifie que sur un produit (décision d-0026). Ce qu'il doit porter : l'ordre du cadrage, périmètre, architecture, stories, revue des stories, design system (ADR-0110, #212), avec l'exigence du porteur sur `/po-architect` — l'architecture se décide avec la personne, chaque choix technique détaillé avec ses pour et ses contre ; la discipline de version d'un projet construit avec Polype, que l'ADR-0122 annonce (schéma de version, qui monte le numéro et quand, journal des changements, étiquettes de publication) ; le constat #230 (`/po-setup` ne dit plus comment changer un `Ship confirmation` choisi) ; et une story que le porteur y a placée le 2026-11-18 (décisions d-0038 et d-0039) : `po` se reconstruit à l'identique, pour que la personne qui fait atterrir les sommes d'une version les compare à une construction faite chez elle, ce qui lève le risque que l'ADR-0129 accepte en attendant. Après M22, un jalon de méthode ne s'ouvre que pour un défaut vu sur un produit ou par une décision stratégique écrite du porteur (ADR-0108) ; s153, s154 et s155 attendent ce titre-là.
