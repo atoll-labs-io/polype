@@ -1,7 +1,7 @@
 ---
 adr: 0140
 title: Les retours d'usage remplacent le passage réel avant une publication
-status: proposed
+status: accepted
 date: 2026-11-25
 scope: framing
 supersedes: [ADR-0134]
