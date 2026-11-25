@@ -18,6 +18,10 @@ copy_of_polype() {
   C="$SCRATCH/polype"
   mkdir -p "$C/po" "$SCRATCH/stubs" "$SCRATCH/home/.claude"
   cp -R "$ROOT/bin" "$ROOT/method" "$ROOT/.github" "$C/"
+  # The copy stands for a version not yet summed, whatever PO_SUMS of main holds.
+  sed -i "/^PO_SUMS='\$/,/^'\$/{/^PO_SUMS='\$/!{/^'\$/!d}}" "$C/bin/polype"
+  [ -z "$(awk "/^PO_SUMS='\$/ {inside=1; next} inside && /^'\$/ {exit} inside {print}" "$C/bin/polype")" ] \
+    || fail "the copy's PO_SUMS block is not empty"
   cp "$ROOT/po/Cargo.toml" "$ROOT/po/Cargo.lock" "$C/po/"
   cp -R "$ROOT/po/src" "$C/po/"
   export HOME="$SCRATCH/home" CLAUDE_CONFIG_DIR="$SCRATCH/home/.claude" CARGO_TARGET_DIR="$SCRATCH/target"
