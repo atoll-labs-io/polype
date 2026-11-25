@@ -16,13 +16,9 @@ Passer à Forgejo Actions revient à déplacer ce fichier : Forgejo lit la même
 
 ## Publier une version
 
-1. Sur le commit à taguer, une personne lance à son terminal `bin/po-eval real --record` : un vrai
-   chef de projet mène le dépôt du parcours, et le relevé `docs/evals/real-<date>-v<version>.md`
-   est écrit ([`docs/evals/real-run.md`](evals/real-run.md)). La commande refuse sans terminal et
-   quand `bin/`, `method/`, `po/` ou `evals/` diffèrent du commit. Le relevé atterrit par une pull
-   request qui ne touche que `docs/evals/`, le tag se pose sur ce commit, dont le code est celui du
-   passage, et le texte de la release cite le relevé. Un passage dont le cas `journey` échoue retient la
-   release jusqu'à ce qu'une personne ait lu ses lignes de story et décidé.
+1. Aucun passage réel ne précède une publication ([ADR-0140](decisions/ADR-0140-les-retours-d-usage-remplacent-le-passage-reel-avant-une-publication.md)) :
+   les retours d'usage en tiennent lieu. `bin/po-eval real` reste utilisable à la main
+   ([`docs/evals/real-run.md`](evals/real-run.md)).
 2. La version a déjà été montée par la story qui a changé `po/`, ensemble dans `POLYPE_VERSION` de
    `bin/polype`, `version` de `po/Cargo.toml` et `po/Cargo.lock` : `bin/po-version-check` l'exige, et
    `bin/po-release` refuse de construire quand `bin/polype` et `po/Cargo.toml` diffèrent.

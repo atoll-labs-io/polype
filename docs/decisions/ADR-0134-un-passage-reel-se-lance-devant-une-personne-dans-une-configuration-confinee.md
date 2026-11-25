@@ -5,7 +5,7 @@ status: accepted
 date: 2026-11-23
 scope: story s206-real-run-before-a-release
 supersedes: []
-superseded-by: [ADR-0135]
+superseded-by: [ADR-0135, ADR-0140]
 ---
 
 # ADR-0134 — Un passage réel se lance devant une personne, dans une configuration confinée
