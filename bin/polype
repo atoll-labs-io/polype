@@ -32,6 +32,9 @@ PO_RELEASES="https://github.com/atoll-labs-io/polype/releases/download"
 # The sum travels in this reviewed file, never beside the download (ADR-0121). Empty: every install
 # builds from sources.
 PO_SUMS='
+a3b17da3b3695b08132aa2cc7c2331c8580dbf9ccaa4153a57e4f3cf68f2a1fd  po-0.13.0-linux-aarch64
+84914843348fdd6a673c2d633f76616900214b5df5b3e661d99fb9d01bd03342  po-0.13.0-linux-x86_64
+a6356927bcc755999da8e10956683e3f61ef3398bb791e80113d6ba08e8f94c4  po-0.13.0-macos-aarch64
 '
 
 # $0 is followed through symlinks: ~/.local/bin/polype points at the payload's own script, and
