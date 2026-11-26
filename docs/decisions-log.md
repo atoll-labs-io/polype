@@ -485,3 +485,5 @@ A decision the person took is not logged here: it is an ADR or a story.
 | 2026-11-26 | s215-suite-holds-under-load | Framed and launched it alone; its plan was approved without a human reading its tasks | The owner's "go"; `Plan validation: autonomous` |
 | 2026-11-26 | s215-suite-holds-under-load | Filed the same-class flaws its planner found (#532, #533) and kept the one on `pred_no_text_in_forge` out of the tracker, for the owner | That predicate checks a security case (ADR-0090); the real run is parked |
 | 2026-11-26 | s215-suite-holds-under-load | Shipped at fix loop 0 and filed its two minors (#535, #536) | Max severity minor |
+| 2026-11-26 | — | Triaged the 163 open issues: closed 66 (15 done, 51 stale or wording-only, each with its reason) and labelled 7 real-run bench issues `parked` | The owner asked to close as many as possible; the owner's rule closes wording-only findings without a story; ADR-0140 parks the bench |
+| 2026-11-26 | s216–s224 | Framed nine stories from the kept issues without a stories-review pass, as s207 to s215 were | The owner's decisions of the day; each story is small and quotes its issue's evidence |
