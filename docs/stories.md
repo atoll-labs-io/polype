@@ -3506,6 +3506,144 @@ Le premier passage réel, lancé par le porteur le 2026-11-23 sur Polype 0.12.0 
 
 **Notes pour l'agent** : `test_real_run_drives_the_journey_repository` a échoué deux fois pendant s209 (charge 24 à 33, « s02-farewell not landed ») et une fois en CI le 2026-11-25 sur la PR #526, qui ne changeait que de la documentation (run 45719106741, « each story is not reported landed with its actions and fix loops ») ; il passe seul. `test_state_reads_only_files_and_git` a échoué une fois (« po state took 1009 ms … not under a second »). Pour reproduire, charge la machine (par exemple `stress-ng` s'il est installé, ou plusieurs boucles de calcul en parallèle) le temps d'un essai, puis arrête-la. Ne touche ni `po/`, ni `method/`, ni `bin/`.
 
+## Après le tri du 2026-11-26 — Les issues que le porteur garde
+
+Le 2026-11-26, le porteur a fait trier les issues ouvertes : 66 fermées, 7 parquées avec le banc du passage réel, et ses décisions prises sur les questions qui l'attendaient. Les stories qui suivent livrent ce qui reste, en commençant par les défauts vus sur un produit (Lagon). Toute story qui touche `po/` monte sa version (ADR-0122) : celles-là s'enchaînent une à une.
+
+### s216-surface-read-as-written — `po` lit la ligne `Surface` telle qu'on l'écrit
+**En tant que** porteur **je veux** qu'une story dont la ligne `Surface` vaut `` `—` `` ne parte pas en QA, et qu'un dépôt sans écran ne se voie pas réclamer un design system **afin que** `po next` et `po state` suivent la règle de la Loi 1 sur Lagon comme sur Polype (#355, #348).
+
+- **Complexité** : 2
+- **Dépend de** : s215-suite-holds-under-load
+- **Surface** : command
+- **Owns** : `po/`, `tests/surface-read-as-written.oracle.test.sh`, `tests/surface-read-as-written.test.sh`, `tests/fixtures/driver-cases/`
+
+**Critères d'acceptation**
+- [ ] `backticked_dash_is_no_surface` — une story dont la ligne est `- **Surface** : `` `—` `` ` n'est routée ni en QA ni en design par `po next`, comme une ligne `—` sans backticks.
+- [ ] `no_screen_needs_no_design_system` — `po state` sur un dépôt dont aucune story n'a d'écran (`Surface` absente ou autre que `screen`, et `Platform` sans écran) ne dit pas `design-system: missing`.
+- [ ] `version_raised` — la version de `po` monte (ADR-0122).
+
+**Notes pour l'agent** : #355 : `po/src/context/stories.rs:150` garde les backticks (`value(line).trim().to_lowercase()`) et `po/src/context/lanes.rs:300` compare à un `—` nu ; `backticked()` le fait déjà pour `Owns`. #348 : `no_story_has_a_screen` exige une ligne `Surface` sur chaque story (`po/src/context/stories.rs:171-172`, lu à `po/src/context/framing.rs:89`) ; `po state` sur ce dépôt (`Platform: cli`) dit aujourd'hui `design-system: missing`. Ne touche pas au repli « le texte montre un écran » (#419), qui reste ouvert.
+
+### s217-plan-says-no-oracle — Un plan dit « pas d'oracle » sous une forme que `po-gate` accepte
+**En tant que** porteur **je veux** que la façon dont le planner écrit un critère sans oracle soit celle que `po-gate oracle-intact` accepte **afin qu'**une story ne paie plus une boucle de correction pour une ligne de plan (#484, vu sur Lagon).
+
+- **Complexité** : 2
+- **Dépend de** : —
+- **Surface** : command
+- **Owns** : `method/templates/plan.md`, `method/agents/planner.md`, `method/hooks/po-gate.sh`, `tests/plan-says-no-oracle.oracle.test.sh`, `tests/plan-says-no-oracle.test.sh`
+
+**Critères d'acceptation**
+- [ ] `no_oracle_row_passes_the_gate` — un plan dont un critère « parle au modèle » (cas 3 de la direction) est écrit comme le dit `method/agents/planner.md` passe `po-gate oracle-intact`.
+- [ ] `missing_oracle_still_refused` — un critère qu'un script lit, sans oracle ni raison, est toujours refusé.
+
+**Notes pour l'agent** : `method/templates/plan.md:20` n'autorise `—` que pour les stories visuelles ou d'exploration ; `method/agents/planner.md:55` dit « that criterion's row in the plan says so » ; `po-gate.sh:628` refuse la ligne. Aligne les trois sur une seule forme ; ajoute aussi peu de mots que tu en retires (`method/word-budget`).
+
+### s218-next-sees-a-human-merge — `po next` voit une fusion faite par une personne
+**En tant que** porteur **je veux** que `po next` lise l'état de la forge à jour et la valeur effective de `Ship confirmation` **afin qu'**une pull request fusionnée à la main ne reste pas « merge waiting » et qu'un dépôt collaboratif attende bien la personne (#420, #437, #389).
+
+- **Complexité** : 3
+- **Dépend de** : s216-surface-read-as-written
+- **Surface** : command
+- **Owns** : `po/`, `method/commands/po-drive.md`, `tests/next-sees-a-human-merge.oracle.test.sh`, `tests/next-sees-a-human-merge.test.sh`, `tests/fixtures/driver-cases/`
+
+**Critères d'acceptation**
+- [ ] `human_merge_is_seen` — après qu'une personne a fusionné la pull request d'une lane, `po next --remote` ne dit plus `merge waiting` pour elle, sans fetch lancé à la main.
+- [ ] `effective_confirmation_drives_merge_waiting` — `merge waiting` suit la valeur effective de `Ship confirmation` (celle de `po ship forge`), pas la ligne écrite.
+- [ ] `version_raised` — la version de `po` monte (ADR-0122).
+
+**Notes pour l'agent** : `po` ne fait jamais de fetch (`po/src/project.rs:18`) et lit l'atterrissage sur les refs locales (`po/src/next/lane.rs:212`) ; `/po-drive` lance `po next --remote` avant tout fetch (`method/commands/po-drive.md:30`), le seul fetch étant à l'ouverture d'une lane (`po/src/next/open.rs:41`). #389 : `po/src/context/lanes.rs:358-360` teste `== "human"` sur la ligne écrite. Que le fetch vive dans `po` ou dans `/po-drive` est au plan ; dis pourquoi.
+
+### s219-suite-bounds-and-cleans — La suite borne le temps sans tomber sous la charge, et ne laisse rien dans `/tmp`
+**En tant que** porteur **je veux** que les derniers tests bornés en temps réel tiennent sous la charge, qu'un blocage sans calcul reste attrapé, et que la suite ne laisse aucun dossier derrière elle **afin que** la CI dise un défaut et que `/tmp`, en mémoire, ne se remplisse pas (#532, #536, #397).
+
+- **Complexité** : 2
+- **Dépend de** : —
+- **Surface** : command
+- **Owns** : `tests/decision-inbox.oracle.test.sh`, `tests/driver-next-action.test.sh`, `tests/state-as-json.oracle.test.sh`, `tests/state-as-json.test.sh`, `tests/lib.sh`, `tests/suite-bounds-and-cleans.oracle.test.sh`, `tests/suite-bounds-and-cleans.test.sh`
+
+**Critères d'acceptation**
+- [ ] `bounds_hold_under_load` — `tests/decision-inbox.oracle.test.sh` et `tests/driver-next-action.test.sh` passent sous la charge simulée de s215 et gardent ce qu'ils prouvent.
+- [ ] `blocking_state_is_caught` — un `po state` qui bloque sans calculer (doublure qui dort) échoue au test de `tests/state-as-json.oracle.test.sh`, par un plafond lâche en temps réel (de l'ordre de 10 s, décision du porteur du 2026-11-26).
+- [ ] `suite_leaves_no_scratch` — après la suite, aucun dossier créé par `scratch_repo` ne reste, même quand un test en crée plusieurs.
+
+**Notes pour l'agent** : bornes en temps réel restantes : `tests/decision-inbox.oracle.test.sh:165-167,176` et `tests/driver-next-action.test.sh:82-84` ; reprends la méthode de s215 (a56a6d1). #397 : `project_at` (`tests/state-as-json.test.sh:12-14`) appelle `scratch_repo`, qui réarme `trap … EXIT` à chaque appel (`tests/lib.sh:48-49`) : le premier dossier reste. Ne touche ni `po/`, ni `method/`, ni `bin/`.
+
+### s220-po-dependencies-checked — Les dépendances de `po` sont vérifiées à chaque pull request
+**En tant que** porteur **je veux** qu'une crate signalée par RustSec, retirée, venue d'une autre source que crates.io ou sous une licence incompatible bloque la CI, et que la publication ne compile que le `Cargo.lock` relu **afin qu'**une mise à jour ne fasse pas tourner chez moi le build script d'une version piégée sans qu'on le voie (#250, décision du porteur du 2026-11-26 : cargo-deny et `--locked`, cargo-vet en réserve).
+
+- **Complexité** : 2
+- **Dépend de** : —
+- **Surface** : command
+- **Owns** : `deny.toml`, `.github/workflows/ci.yml`, `.github/workflows/release.yml`, `docs/ci.md`, `docs/decisions/`, `tests/po-dependencies-checked.oracle.test.sh`, `tests/po-dependencies-checked.test.sh`
+
+**Critères d'acceptation**
+- [ ] `ci_runs_cargo_deny` — la CI lance cargo-deny (advisories, sources, licences, bans) sur `po/` à chaque pull request, et un job rouge bloque la fusion.
+- [ ] `release_builds_locked` — chaque `cargo build` de publication porte `--locked`.
+- [ ] `adr_records_the_choice` — un ADR consigne le choix, les options écartées (cargo-vet, relecture unique, ne rien faire) et pourquoi.
+
+**Notes pour l'agent** : options et raisons du porteur : cargo-deny est libre, léger, automatique ; cargo-vet demande un audit par version à chaque mise à jour, lourd pour un projet tenu seul ; il reste en réserve si les dépendances de `po` grossissent. Épingle la version de l'action ou de l'outil. `docs/ci.md` dit ce que fait le job. Ne touche pas à `po/`.
+
+### s221-bricks-name-no-host — Les notes de briques ne décrivent plus un hébergement précis
+**En tant que** porteur **je veux** que `boilerplates/bricks/` et le skill `capability-bricks` parlent d'un hôte auto-hébergé quelconque, mustelinet n'étant qu'un exemple tenu à part **afin que** Polype reste une brique indépendante de tout setup (#456, #150, `docs/direction.md`).
+
+- **Complexité** : 2
+- **Dépend de** : —
+- **Surface** : —
+- **Owns** : `boilerplates/bricks/`, `method/skills/capability-bricks/SKILL.md`, `docs/references/mustelinet.md`, `tests/bricks-name-no-host.oracle.test.sh`
+
+**Critères d'acceptation**
+- [ ] `no_host_in_bricks` — aucune ligne de `boilerplates/bricks/*.md` ni de `method/skills/capability-bricks/SKILL.md` ne nomme mustelinet, sauf un renvoi à l'exemple.
+- [ ] `example_keeps_the_facts` — ce que les notes disaient de mustelinet se retrouve dans `docs/references/mustelinet.md`, présenté comme un exemple, à jour : les domaines personnalisés y sont documentés (#150).
+
+**Notes pour l'agent** : chaque note a « How it runs at mustelinet », « What mustelinet does not provide » et des contrôles « Mustelinet: » ; renomme en sections neutres (un hôte auto-hébergé). `boilerplates/bricks/deployment.md:15` et `docs/references/mustelinet.md:9` disent encore que les domaines personnalisés ne sont pas documentés : c'est périmé. Le skill compte dans `method/word-budget` : pas de mot en plus.
+
+### s222-next-names-a-dependency-cycle — `po next` signale deux lanes qui s'attendent
+**En tant que** porteur **je veux** que deux lanes qui dépendent l'une de l'autre arrêtent la flotte en le disant, et que le cas d'une lane en attente de fusion qui attend aussi une dépendance soit tenu par un cas **afin qu'**une flotte ne reste pas immobile sans raison affichée (#346).
+
+- **Complexité** : 2
+- **Dépend de** : s218-next-sees-a-human-merge
+- **Surface** : command
+- **Owns** : `po/`, `tests/fixtures/driver-cases/`, `tests/next-names-a-dependency-cycle.oracle.test.sh`
+
+**Critères d'acceptation**
+- [ ] `cycle_is_a_stop` — deux lanes ouvertes qui dépendent l'une de l'autre donnent un arrêt nommé, qui va à la personne, dans `po next` et `po state`.
+- [ ] `merge_waiting_with_dependency_pinned` — une lane `merge-waiting` dont une dépendance n'est pas livrée reçoit `wait dependency <id>`, comme s183 l'a voulu, et un cas de `tests/fixtures/driver-cases/` le tient.
+- [ ] `version_raised` — la version de `po` monte (ADR-0122).
+
+**Notes pour l'agent** : `waiting_dependency` passe avant le cas de fusion en attente (`po/src/next/lane.rs:59-60`) ; aucune détection de cycle dans `po/src/next/`. Le nom de l'arrêt entre dans `docs/interface-agent.md` seulement si son contrat liste les arrêts ; sinon dis-le au plan.
+
+### s223-ship-puts-issues-on-the-board — Une issue déposée au ship arrive sur le board du projet
+**En tant que** porteur **je veux** qu'une issue que `po ship file` dépose arrive sur le board du dépôt quand il en a un **afin que** le board ne se recale plus à la main après chaque ship (#104, décision du porteur du 2026-11-26 : le board d'abord, l'agent de suivi complet de #92 écarté pour l'instant).
+
+- **Complexité** : 3
+- **Dépend de** : s222-next-names-a-dependency-cycle
+- **Surface** : command
+- **Owns** : `po/`, `method/commands/po-ship.md`, `docs/interface-agent.md`, `tests/ship-puts-issues-on-the-board.oracle.test.sh`, `tests/ship-puts-issues-on-the-board.test.sh`
+
+**Critères d'acceptation**
+- [ ] `filed_issue_lands_on_board` — avec une doublure de `gh` qui expose un board lié au dépôt, chaque issue déposée y est ajoutée.
+- [ ] `no_board_no_error` — sans board, ou sans droit sur lui, le dépôt de l'issue réussit quand même et la réponse dit pourquoi elle n'est pas sur le board.
+- [ ] `version_raised` — la version de `po` monte (ADR-0122).
+
+**Notes pour l'agent** : `po/src/ship/file.rs:430-447` dépose par `gh api repos/.../issues` et ne touche jamais le board. Comment trouver le board (détection du projet lié, ou réglage) est un choix technique : si le plan en a besoin, il porte `Technical choice: waiting for a human`.
+
+### s224-roles-say-who-does-what — Les commandes disent qui fait quoi, et rien de plus
+**En tant que** porteur **je veux** que l'implementer sache qu'une preuve qui a besoin de commits passe par un test ou revient au reviewer, que `/po-review` n'ait plus l'outil `Write` qu'il n'emploie pas, et que ce dont un subagent a besoin ne soit plus rangé sous `## By hand` **afin qu'**aucun rôle ne bute sur une borne ou ne saute une consigne qui le concerne (#445, #266, #423, #425, décision du porteur du 2026-11-26 : la borne de `po-bounds` reste stricte).
+
+- **Complexité** : 2
+- **Dépend de** : —
+- **Surface** : command
+- **Owns** : `method/agents/implementer.md`, `method/commands/po-review.md`, `method/commands/po-plan.md`, `method/commands/po-design.md`, `tests/roles-say-who-does-what.oracle.test.sh`
+
+**Critères d'acceptation**
+- [ ] `review_has_no_write` — l'en-tête de `/po-review` ne donne pas `Write`.
+- [ ] `subagent_reads_its_lines` — les lignes de `po-plan.md` et `po-design.md` qu'un subagent suit ne sont plus sous un paragraphe qu'il saute.
+- [ ] `design_after_plan_redoes_the_plan` — `po-design.md` n'accepte plus de venir après un plan existant sans que ce plan soit refait.
+- [ ] `implementer_probe_rule` — `method/agents/implementer.md` dit qu'une preuve qui a besoin de commits passe par un test lancé par `Test` ou revient au reviewer.
+
+**Notes pour l'agent** : `method/commands/po-review.md:9` donne `Write`, `:34` dit « Write nothing by hand ». `po-plan.md:21-25` et `po-design.md:14-16` placent des paragraphes utiles au subagent sous `## By hand`, après « A subagent skips this paragraph ». `po-design.md:14` accepte `plan` avec la raison `plan-validated refuses`. `po-bounds.sh:803-805` reste tel quel. Le critère `implementer_probe_rule` parle au modèle : le reviewer le juge à la lecture. Retire autant de mots que tu en ajoutes.
+
 ## M23 — Le cadrage et la version des projets (à cadrer)
 
 Ce jalon n'est pas découpé : il se cadre avec le porteur quand le prochain produit se cadre, parce que ce qu'il porte ne se vérifie que sur un produit (décision d-0026). Ce qu'il doit porter : l'ordre du cadrage, périmètre, architecture, stories, revue des stories, design system (ADR-0110, #212), avec l'exigence du porteur sur `/po-architect` — l'architecture se décide avec la personne, chaque choix technique détaillé avec ses pour et ses contre ; la discipline de version d'un projet construit avec Polype, que l'ADR-0122 annonce (schéma de version, qui monte le numéro et quand, journal des changements, étiquettes de publication) ; le constat #230 (`/po-setup` ne dit plus comment changer un `Ship confirmation` choisi) ; et une story que le porteur y a placée le 2026-11-18 (décisions d-0038 et d-0039) : `po` se reconstruit à l'identique, pour que la personne qui fait atterrir les sommes d'une version les compare à une construction faite chez elle, ce qui lève le risque que l'ADR-0129 accepte en attendant. Après M22, un jalon de méthode ne s'ouvre que pour un défaut vu sur un produit ou par une décision stratégique écrite du porteur (ADR-0108) ; s153, s154 et s155 attendent ce titre-là.
