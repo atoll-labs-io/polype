@@ -475,3 +475,9 @@ A decision the person took is not logged here: it is an ADR or a story.
 | 2026-11-24 | s211-next-gives-lane-commands | Shipped at fix loop 0 and filed its three minors (#512, #513, #514) | Max severity minor |
 | 2026-11-25 | s212-real-run-in-an-outer-sandbox | Framed, planned, then parked on the owner's word; drafts kept on branch `parked/s212-real-run-in-an-outer-sandbox`; the plan's technical choice was never answered | The owner set the real run aside for daily use (ADR-0140) |
 | 2026-11-25 | — | Labelled the bench's issues (#502, #503, #504, #516, #517) `parked` and refreshed the global install to Polype 0.13.0 | The owner approved both with ADR-0140 |
+| 2026-11-25 | — | Tagged and pushed `v0.13.0` on `main` after `bin/po-release --tag` passed, then landed its sums (#520) once the release jobs ended | The owner's go; sums taken right after publication (ADR-0129) |
+| 2026-11-25 | s213-release-tests-survive-landed-sums | Widened its `Owns` twice on main (#523, #524) after two planners found failing tests outside it, and fast-forwarded the lane each time | po-bounds reads `Owns` at the branch's start point; the lane had no commit and the framing changes touched only `docs/stories.md` |
+| 2026-11-25 | s213-release-tests-survive-landed-sums | Plan approved without a human reading its tasks; shipped at fix loop 0, no finding | `Plan validation: autonomous` |
+| 2026-11-26 | — | Reran the failed `suite` job of framing PR #526 | Its only failure was the known load-sensitive test of #504 |
+| 2026-11-26 | s214-suite-holds-with-a-published-po | Plan approved without a human reading its tasks; shipped at fix loop 0, its minor filed (#528) | `Plan validation: autonomous`; max severity minor |
+| 2026-11-26 | — | Updated the global install after the sums landed | It now takes the prebuilt `po` 0.13.0, whose sum matches the published one |
