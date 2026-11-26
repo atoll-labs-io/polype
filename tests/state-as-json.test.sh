@@ -135,7 +135,8 @@ EOF
 test_po_is_a_state_file_of_the_payload() {
   command -v cargo >/dev/null 2>&1 || fail "cargo is required by this test"
   scratch_repo
-  export HOME="$SCRATCH/home" CLAUDE_CONFIG_DIR="$SCRATCH/home/.claude"
+  # A source build can equal the published po, which lay_po then keeps without a word.
+  export HOME="$SCRATCH/home" CLAUDE_CONFIG_DIR="$SCRATCH/home/.claude" POLYPE_PO_FROM_SOURCES=1
   local H="$CLAUDE_CONFIG_DIR" out sum
   mkdir -p "$H"
   out="$(bash "$POLYPE" install --global 2>&1)" || fail "install --global failed: $out"
