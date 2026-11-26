@@ -3491,6 +3491,21 @@ Le premier passage réel, lancé par le porteur le 2026-11-23 sur Polype 0.12.0 
 
 **Notes pour l'agent** : après s213, la PR #520 a échoué en CI sur ce seul test (run 45688818665, 707 réussis, 1 échec) : lancé depuis la charge utile installée, l'installeur a téléchargé le `po` 0.13.0 publié au lieu d'écrire « no po sources ». En local, il passait, sans doute faute de réseau ou de correspondance. Les tests de l'installeur ont déjà des doublures (`PO_CURL`, `gh`) : reprends-les. Cherche dans toute la suite les autres tests qui supposent des sommes vides ou un téléchargement impossible, pour qu'il n'y ait pas de neuvième échec. Ne touche ni `bin/`, ni `po/`, ni `method/`.
 
+### s215-suite-holds-under-load — Deux tests ne tombent plus quand la machine est chargée
+**En tant que** porteur **je veux** que la suite donne le même verdict sur une machine chargée que sur une machine au repos **afin qu'**un échec de CI veuille dire un défaut, et non une relance de quinze minutes (#504, décision du porteur du 2026-11-26).
+
+- **Complexité** : 2
+- **Dépend de** : s214-suite-holds-with-a-published-po
+- **Surface** : command
+- **Owns** : `tests/real-run-before-a-release.oracle.test.sh`, `tests/state-as-json.oracle.test.sh`, `tests/suite-holds-under-load.oracle.test.sh`, `tests/suite-holds-under-load.test.sh`, `evals/real/`
+
+**Critères d'acceptation**
+- [ ] `journey_run_holds_under_load` — `test_real_run_drives_the_journey_repository` passe sous une charge simulée qui le faisait échouer, et échoue toujours quand une story n'atterrit vraiment pas.
+- [ ] `state_time_bound_holds_under_load` — `test_state_reads_only_files_and_git` garde ce qu'il prouve (`po state` ne lance que des lectures de fichiers et de git) sans dépendre de la charge de la machine ; si une borne de temps reste, le plan dit pourquoi.
+- [ ] `cause_is_named` — le plan nomme la cause de chaque échec (délai, course, attente), lue dans le code et reproduite, et la correction porte sur elle, sans relance automatique d'un test qui a échoué.
+
+**Notes pour l'agent** : `test_real_run_drives_the_journey_repository` a échoué deux fois pendant s209 (charge 24 à 33, « s02-farewell not landed ») et une fois en CI le 2026-11-25 sur la PR #526, qui ne changeait que de la documentation (run 45719106741, « each story is not reported landed with its actions and fix loops ») ; il passe seul. `test_state_reads_only_files_and_git` a échoué une fois (« po state took 1009 ms … not under a second »). Pour reproduire, charge la machine (par exemple `stress-ng` s'il est installé, ou plusieurs boucles de calcul en parallèle) le temps d'un essai, puis arrête-la. Ne touche ni `po/`, ni `method/`, ni `bin/`.
+
 ## M23 — Le cadrage et la version des projets (à cadrer)
 
 Ce jalon n'est pas découpé : il se cadre avec le porteur quand le prochain produit se cadre, parce que ce qu'il porte ne se vérifie que sur un produit (décision d-0026). Ce qu'il doit porter : l'ordre du cadrage, périmètre, architecture, stories, revue des stories, design system (ADR-0110, #212), avec l'exigence du porteur sur `/po-architect` — l'architecture se décide avec la personne, chaque choix technique détaillé avec ses pour et ses contre ; la discipline de version d'un projet construit avec Polype, que l'ADR-0122 annonce (schéma de version, qui monte le numéro et quand, journal des changements, étiquettes de publication) ; le constat #230 (`/po-setup` ne dit plus comment changer un `Ship confirmation` choisi) ; et une story que le porteur y a placée le 2026-11-18 (décisions d-0038 et d-0039) : `po` se reconstruit à l'identique, pour que la personne qui fait atterrir les sommes d'une version les compare à une construction faite chez elle, ce qui lève le risque que l'ADR-0129 accepte en attendant. Après M22, un jalon de méthode ne s'ouvre que pour un défaut vu sur un produit ou par une décision stratégique écrite du porteur (ADR-0108) ; s153, s154 et s155 attendent ce titre-là.
