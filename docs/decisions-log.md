@@ -481,3 +481,7 @@ A decision the person took is not logged here: it is an ADR or a story.
 | 2026-11-26 | — | Reran the failed `suite` job of framing PR #526 | Its only failure was the known load-sensitive test of #504 |
 | 2026-11-26 | s214-suite-holds-with-a-published-po | Plan approved without a human reading its tasks; shipped at fix loop 0, its minor filed (#528) | `Plan validation: autonomous`; max severity minor |
 | 2026-11-26 | — | Updated the global install after the sums landed | It now takes the prebuilt `po` 0.13.0, whose sum matches the published one |
+| 2026-11-26 | — | Refreshed this repository's installed method to 0.13.0 (#530) and noted the first release in the Direction section | `po-session` warned of a method-version mismatch; the owner said "go" |
+| 2026-11-26 | s215-suite-holds-under-load | Framed and launched it alone; its plan was approved without a human reading its tasks | The owner's "go"; `Plan validation: autonomous` |
+| 2026-11-26 | s215-suite-holds-under-load | Filed the same-class flaws its planner found (#532, #533) and kept the one on `pred_no_text_in_forge` out of the tracker, for the owner | That predicate checks a security case (ADR-0090); the real run is parked |
+| 2026-11-26 | s215-suite-holds-under-load | Shipped at fix loop 0 and filed its two minors (#535, #536) | Max severity minor |
