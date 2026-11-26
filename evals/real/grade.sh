@@ -59,7 +59,7 @@ grade_landing() {
   title="$(grade_title "$1")"
   [ -n "$title" ] || return 1
   git -C "$R" log --format='%H%x09%s' refs/remotes/origin/main 2>/dev/null \
-    | awk -F'\t' -v s="$1: $title" '$2 == s {print $1; exit}'
+    | awk -F'\t' -v s="$1: $title" '!f && $2 == s {print $1; f = 1}'
 }
 
 grade_lane_dirs() {
