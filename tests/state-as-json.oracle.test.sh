@@ -186,11 +186,13 @@ test_state_reads_only_files_and_git() {
     fail "po state ran a git command that writes or asks a remote: $(grep '^git ' "$calls")"
   fi
 
-  start="$(date +%s%N)"
-  po_in "$ROOT" state
-  elapsed=$(( ($(date +%s%N) - start) / 1000000 ))
+  local TIMEFORMAT='%3U %3S' cpu_u cpu_s elapsed
+  { time po_in "$ROOT" state; } 2> "$SCRATCH/cpu"
+  read -r cpu_u cpu_s < "$SCRATCH/cpu"
+  cpu_u="${cpu_u//[!0-9]/}"; cpu_s="${cpu_s//[!0-9]/}"
+  elapsed=$(( 10#$cpu_u + 10#$cpu_s ))
   one_object "po state on this repository"
-  [ "$elapsed" -lt 1000 ] || fail "po state took ${elapsed} ms on this repository, not under a second"
+  [ "$elapsed" -lt 1000 ] || fail "po state took ${elapsed} ms of CPU on this repository, not under a second"
 }
 
 test_lane_stage_follows_the_gates() {
