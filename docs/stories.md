@@ -3531,7 +3531,7 @@ Le 2026-11-26, le porteur a fait trier les issues ouvertes : 66 fermées, 7 parq
 - **Complexité** : 2
 - **Dépend de** : —
 - **Surface** : command
-- **Owns** : `method/templates/plan.md`, `method/agents/planner.md`, `method/hooks/po-gate.sh`, `tests/plan-says-no-oracle.oracle.test.sh`, `tests/plan-says-no-oracle.test.sh`
+- **Owns** : `method/templates/plan.md`, `method/templates/plan-flow.md`, `method/agents/planner.md`, `method/hooks/po-gate.sh`, `tests/plan-says-no-oracle.oracle.test.sh`, `tests/plan-says-no-oracle.test.sh`
 
 **Critères d'acceptation**
 - [ ] `no_oracle_row_passes_the_gate` — un plan dont un critère « parle au modèle » (cas 3 de la direction) est écrit comme le dit `method/agents/planner.md` passe `po-gate oracle-intact`.
