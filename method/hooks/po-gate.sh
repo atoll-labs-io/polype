@@ -617,13 +617,18 @@ oracle_intact() {
   rows="$(table_rows - "Acceptance tests" "Oracle file" <<< "$plan")" \
     || oracle_unreadable "$id" "awk failed while reading ## Acceptance tests"
   if [ -z "$rows" ]; then
-    if awk '/^## / { t = $0; sub(/[[:space:]]+$/, "", t); on = (t == "## Acceptance tests"); next } on && /^—/ { f = 1 } END { exit !f }' <<< "$plan"; then
+    if awk '/^## / { t = $0; sub(/[[:space:]]+$/, "", t); on = (t == "## Acceptance tests"); next } on && /^—[[:space:]]*[^[:space:]]/ { f = 1 } END { exit !f }' <<< "$plan"; then
       echo "po-gate: $id has no oracle: its plan writes — under ## Acceptance tests"; exit 0
     fi
-    oracle_unreadable "$id" "## Acceptance tests of the plan names no oracle file and writes no —"
+    if awk '/^## / { t = $0; sub(/[[:space:]]+$/, "", t); on = (t == "## Acceptance tests"); next } on && /^—/ { f = 1 } END { exit !f }' <<< "$plan"; then
+      oracle_unreadable "$id" "## Acceptance tests of the plan writes — with no reason: write a — line with its reason in place of the oracle table"
+    fi
+    oracle_unreadable "$id" "## Acceptance tests of the plan names no oracle file and writes no —: write a — line with its reason in place of the oracle table"
   fi
   while IFS= read -r row; do
     IFS=$'\037' read -r path want _ <<< "$row"
+    [[ "$path" == —* ]] \
+      && oracle_unreadable "$id" "a row of the oracle table names no file: with no oracle file, write a — line with its reason in place of the oracle table"
     { [ -n "$path" ] && [[ "$want" =~ ^[0-9]+[[:space:]]+[0-9]+$ ]]; } \
       || oracle_unreadable "$id" "unreadable row in the oracle table of the plan: ${row//$'\037'/ | }"
     want="$(tr -s '[:space:]' ' ' <<< "$want" | sed 's/ $//')"
