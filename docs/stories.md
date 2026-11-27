@@ -3516,7 +3516,7 @@ Le 2026-11-26, le porteur a fait trier les issues ouvertes : 66 fermées, 7 parq
 - **Complexité** : 2
 - **Dépend de** : s215-suite-holds-under-load
 - **Surface** : command
-- **Owns** : `po/`, `tests/surface-read-as-written.oracle.test.sh`, `tests/surface-read-as-written.test.sh`, `tests/fixtures/driver-cases/`
+- **Owns** : `po/`, `bin/polype`, `tests/surface-read-as-written.oracle.test.sh`, `tests/surface-read-as-written.test.sh`, `tests/fixtures/driver-cases/`
 
 **Critères d'acceptation**
 - [ ] `backticked_dash_is_no_surface` — une story dont la ligne est `- **Surface** : `` `—` `` ` n'est routée ni en QA ni en design par `po next`, comme une ligne `—` sans backticks.
@@ -3545,7 +3545,7 @@ Le 2026-11-26, le porteur a fait trier les issues ouvertes : 66 fermées, 7 parq
 - **Complexité** : 3
 - **Dépend de** : s216-surface-read-as-written
 - **Surface** : command
-- **Owns** : `po/`, `method/commands/po-drive.md`, `tests/next-sees-a-human-merge.oracle.test.sh`, `tests/next-sees-a-human-merge.test.sh`, `tests/fixtures/driver-cases/`
+- **Owns** : `po/`, `bin/polype`, `method/commands/po-drive.md`, `tests/next-sees-a-human-merge.oracle.test.sh`, `tests/next-sees-a-human-merge.test.sh`, `tests/fixtures/driver-cases/`
 
 **Critères d'acceptation**
 - [ ] `human_merge_is_seen` — après qu'une personne a fusionné la pull request d'une lane, `po next --remote` ne dit plus `merge waiting` pour elle, sans fetch lancé à la main.
@@ -3604,7 +3604,7 @@ Le 2026-11-26, le porteur a fait trier les issues ouvertes : 66 fermées, 7 parq
 - **Complexité** : 2
 - **Dépend de** : s218-next-sees-a-human-merge
 - **Surface** : command
-- **Owns** : `po/`, `tests/fixtures/driver-cases/`, `tests/next-names-a-dependency-cycle.oracle.test.sh`
+- **Owns** : `po/`, `bin/polype`, `tests/fixtures/driver-cases/`, `tests/next-names-a-dependency-cycle.oracle.test.sh`
 
 **Critères d'acceptation**
 - [ ] `cycle_is_a_stop` — deux lanes ouvertes qui dépendent l'une de l'autre donnent un arrêt nommé, qui va à la personne, dans `po next` et `po state`.
@@ -3619,7 +3619,7 @@ Le 2026-11-26, le porteur a fait trier les issues ouvertes : 66 fermées, 7 parq
 - **Complexité** : 3
 - **Dépend de** : s222-next-names-a-dependency-cycle
 - **Surface** : command
-- **Owns** : `po/`, `method/commands/po-ship.md`, `docs/interface-agent.md`, `tests/ship-puts-issues-on-the-board.oracle.test.sh`, `tests/ship-puts-issues-on-the-board.test.sh`
+- **Owns** : `po/`, `bin/polype`, `method/commands/po-ship.md`, `docs/interface-agent.md`, `tests/ship-puts-issues-on-the-board.oracle.test.sh`, `tests/ship-puts-issues-on-the-board.test.sh`
 
 **Critères d'acceptation**
 - [ ] `filed_issue_lands_on_board` — avec une doublure de `gh` qui expose un board lié au dépôt, chaque issue déposée y est ajoutée.
