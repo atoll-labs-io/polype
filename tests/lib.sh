@@ -43,12 +43,31 @@ require_file() { [ -f "$1" ] || fail "missing file: ${1#"$ROOT"/}"; }
 
 contains() { grep -qF -- "$2" "$1" || fail "${1#"$ROOT"/} does not say: $2"; }
 
-# A git repository in a temporary directory, removed when the test process exits.
+# A git repository in a temporary directory, removed when the test process exits; every folder made
+# in the process is removed, not only the last one.
+[ -n "${SCRATCH_DIRS+set}" ] || SCRATCH_DIRS=()
 scratch_repo() {
   SCRATCH="$(mktemp -d)"
-  trap 'rm -rf "$SCRATCH"' EXIT
+  SCRATCH_DIRS+=("$SCRATCH")
+  trap 'rm -rf "${SCRATCH_DIRS[@]}"' EXIT
   git -C "$SCRATCH" init -q -b main
   git -C "$SCRATCH" config user.email test@example.com
   git -C "$SCRATCH" config user.name test
   git -C "$SCRATCH" config commit.gpgsign false
+}
+
+# po_bounded <what> <dir> <args...>: runs po in <dir>, sets OUT and STATUS as po_in does. Fails when po
+# does not answer within 10 s (a po that waits spends no CPU, so only a cap stops it) or spends a second
+# of CPU or more (CPU time, not wall time, which a loaded machine stretches). Any other status is the caller's.
+po_bounded() {
+  local what="$1" dir="$2" TIMEFORMAT='%3U %3S' cpu_f cpu_u cpu_s ms
+  shift 2
+  cpu_f="$(mktemp)"; STATUS=0
+  { time OUT="$(cd "$dir" && timeout 10 "$PO" "$@" 2>/dev/null)" || STATUS=$?; } 2> "$cpu_f"
+  read -r cpu_u cpu_s < "$cpu_f" || true
+  rm -f "$cpu_f"
+  [ "$STATUS" -ne 124 ] || fail "$what did not answer within 10 s"
+  cpu_u="${cpu_u//[!0-9]/}"; cpu_s="${cpu_s//[!0-9]/}"
+  ms=$(( 10#${cpu_u:-0} + 10#${cpu_s:-0} ))
+  [ "$ms" -lt 1000 ] || fail "$what took ${ms} ms of CPU, not under a second"
 }
