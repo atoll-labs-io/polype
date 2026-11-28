@@ -84,9 +84,12 @@ pub fn framing(
         Some(word.starts_with("yes"))
     });
     let architecture = exists("docs/architecture.md").is_some();
+    let screen_platform = settings.optional("Platform").map_or(true, |list| {
+        list.split(',').any(|entry| matches!(entry.trim().to_lowercase().as_str(), "web" | "mobile"))
+    });
     let design_system_state = if exists("docs/design-system.md").is_some() {
         "present"
-    } else if stories.present && stories.no_story_has_a_screen() {
+    } else if stories.present && stories.no_story_has_a_screen(screen_platform) {
         "not needed"
     } else {
         "missing"

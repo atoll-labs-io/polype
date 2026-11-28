@@ -147,7 +147,7 @@ impl Stories {
             }
             let Some(story) = list.last_mut() else { continue };
             if line.starts_with("- **Surface**") {
-                story.surface = Some(value(line).trim().to_lowercase());
+                story.surface = Some(value(line).trim().trim_matches('`').trim().to_lowercase());
             } else if line.starts_with("- **Depends on**") || line.starts_with("- **Dépend de**") {
                 story.depends_on.extend(story_ids(value(line)));
             } else if line.starts_with("- **Owns**") {
@@ -167,8 +167,10 @@ impl Stories {
         self.list.iter().find(|story| story.id == id)
     }
 
-    /// Stories exist, each has a Surface line and none says screen: the design system is not needed.
-    pub fn no_story_has_a_screen(&self) -> bool {
-        !self.list.is_empty() && self.list.iter().all(|story| story.surface.is_some() && !story.has_screen())
+    /// Stories exist and none says screen: the design system is not needed. A story with no Surface
+    /// line only counts as screenless when the project's platforms hold no screen (`screen_platform` false).
+    pub fn no_story_has_a_screen(&self, screen_platform: bool) -> bool {
+        !self.list.is_empty()
+            && self.list.iter().all(|story| !story.has_screen() && (story.surface.is_some() || !screen_platform))
     }
 }
