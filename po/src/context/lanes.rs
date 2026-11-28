@@ -68,6 +68,9 @@ pub struct Lane {
     /// The code of the first stop.
     pub blocked_by: Option<BlockedBy>,
     pub stops: Vec<Stop>,
+    /// Allowed to ship under `Merge mode: pr`, not landed, its branch on origin: the pull request
+    /// waits for a merge, by a person when the confirmation is `human`.
+    pub awaits_merge: bool,
 }
 
 /// The stories landed on the target branch (and its origin copy), by commit subject: `<id>:`, or
@@ -225,10 +228,18 @@ pub fn lanes(
             Some(id) => {
                 let id = id.to_string();
                 let stage = stage(&worktree.path, &id, stories, landed, lane_settings, warnings);
-                let stops = stops(project, &worktree.path, &id, landed, lane_settings);
+                let (stops, awaits_merge) = stops(project, &worktree.path, &id, landed, lane_settings);
                 let blocked_by = stops.first().map(Stop::code);
                 let shown_path = shown(project, &worktree.path);
-                lanes.push(Lane { story: id, path: worktree.path, shown_path, stage, blocked_by, stops });
+                lanes.push(Lane {
+                    story: id,
+                    path: worktree.path,
+                    shown_path,
+                    stage,
+                    blocked_by,
+                    stops,
+                    awaits_merge,
+                });
             }
             None => {
                 let under_root = path_text.starts_with(&prefix);
@@ -315,8 +326,15 @@ fn has_line(text: &Option<String>, line: &str) -> bool {
     text.as_deref().is_some_and(|text| text.lines().any(|l| l == line))
 }
 
-/// Every per-lane stop that goes to a person, in po-session's order.
-fn stops(project: &Project, lane: &Path, id: &str, landed: &Landed, settings: &LaneSettings) -> Vec<Stop> {
+/// Every per-lane stop that goes to a person, in po-session's order, and whether the lane awaits a
+/// merge whatever the confirmation.
+fn stops(
+    project: &Project,
+    lane: &Path,
+    id: &str,
+    landed: &Landed,
+    settings: &LaneSettings,
+) -> (Vec<Stop>, bool) {
     let read = |rel: String| std::fs::read_to_string(lane.join(rel)).ok();
     let research = read(format!("docs/research/{id}.md"));
     let plan = read(format!("docs/plans/{id}.md"));
@@ -355,15 +373,26 @@ fn stops(project: &Project, lane: &Path, id: &str, landed: &Landed, settings: &L
             }
         }
     }
-    if ship.as_deref() == Some("yes")
+    let awaits_merge = ship.as_deref() == Some("yes")
         && settings.merge_mode.as_deref() == Some("pr")
-        && settings.confirmation.as_deref() == Some("human")
         && !landed.contains(id)
         && project
             .git(&["rev-parse", "--verify", "-q", &format!("refs/remotes/origin/story/{id}")])
-            .is_some()
-    {
+            .is_some();
+    if awaits_merge && settings.confirmation.as_deref() == Some("human") {
         stops.push(Stop::MergeWaiting { branch: format!("story/{id}") });
     }
-    stops
+    (stops, awaits_merge)
+}
+
+/// Puts the `merge-waiting` stop of every lane that awaits a merge under the effective
+/// `Ship confirmation` rather than the written line; the stop stays last, as `stops` orders it.
+pub fn confirm_merges(lanes: &mut [Lane], effective: &str) {
+    for lane in lanes.iter_mut().filter(|lane| lane.awaits_merge) {
+        lane.stops.retain(|stop| stop.code() != BlockedBy::MergeWaiting);
+        if effective == "human" {
+            lane.stops.push(Stop::MergeWaiting { branch: format!("story/{}", lane.story) });
+        }
+        lane.blocked_by = lane.stops.first().map(Stop::code);
+    }
 }

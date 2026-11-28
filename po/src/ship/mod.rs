@@ -15,6 +15,8 @@ use serde::Serialize;
 use crate::output;
 use crate::project::{Project, Setting};
 
+pub(crate) use git::fetch_origin;
+
 pub(crate) const USAGE: &str =
     "usage: po ship forge [--target <branch>] | po ship land <id> [--routes yes|no] [--land] | po ship land <id> --sha <sha> \
      | po ship push <id> --sha <sha> --body-file <file> | po ship file <id> [--file] [--hold <line>]... [--fixed <line>]... | po ship clean <id>";
@@ -53,6 +55,12 @@ pub(super) fn effective(line: &str, verdict: &str) -> (String, Option<&'static s
         _ => None,
     };
     (effective.to_string(), rewrite)
+}
+
+/// The `Ship confirmation` that applies once the forge of `origin` is read, as `po ship forge`
+/// settles it from `line`.
+pub(crate) fn effective_confirmation(project: &Project, target: &str, line: &str) -> String {
+    effective(line, forge::read(project, target).verdict()).0
 }
 
 fn parse(args: &[String]) -> Result<Option<String>, i32> {
