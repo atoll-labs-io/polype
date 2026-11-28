@@ -76,12 +76,11 @@ test_ready_and_held_null_without_parallel() {
 
 test_next_on_this_repository_is_fast_and_writes_nothing() {
   oracle_helpers; need_po
-  local marker before start elapsed written target
-  marker="$(mktemp)"
+  local before written target
+  NEXT_MARKER="$(mktemp)"
+  trap 'rm -f "$NEXT_MARKER"' EXIT
   before="$(git -C "$ROOT" status --porcelain --untracked-files=all)"
-  start="$(date +%s%N)"
-  po_in "$ROOT" next
-  elapsed=$(( ($(date +%s%N) - start) / 1000000 ))
+  po_bounded "po next on this repository" "$ROOT" next
   target="$(sed -n 's/^Target branch: *\([^ ]*\).*/\1/p' "$ROOT/AGENTS.local.md" | head -n 1)"
   if git -C "$ROOT" rev-parse --verify -q "$target^{commit}" >/dev/null; then
     next_shape "po next on this repository"
@@ -91,10 +90,8 @@ test_next_on_this_repository_is_fast_and_writes_nothing() {
     jq -e '.contract == 1 and .actions == null and .ready == null and .held == null' <<< "$OUT" >/dev/null \
       || fail "po next without a readable $target: $OUT"
   fi
-  [ "$elapsed" -lt 1000 ] || fail "po next took ${elapsed} ms on this repository, not under a second"
   written="$(find "$ROOT" \( -path "$ROOT/po/target" -o -path "$ROOT/.worktrees" -o -name .git \) -prune \
-    -o -newer "$marker" -print)"
-  rm -f "$marker"
+    -o -newer "$NEXT_MARKER" -print)"
   [ -z "$written" ] || fail "po next wrote: $written"
   [ "$(git -C "$ROOT" status --porcelain --untracked-files=all)" = "$before" ] || fail "po next changed the repository's status"
 }

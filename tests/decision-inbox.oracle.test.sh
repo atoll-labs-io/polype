@@ -156,22 +156,19 @@ test_add_refuses_a_malformed_decision() {
 test_list_prints_pending_oldest_first() {
   need_po
   fixture
-  local inbox="$F/.polype/inbox" start elapsed dir
+  local inbox="$F/.polype/inbox" dir
   decision_file "$inbox" d-0010 pending
   decision_file "$inbox" d-0002 pending
   decision_file "$inbox" d-0001 answered
   decision_file "$inbox" d-0003 pending
   for dir in "$F" "$W"; do
-    start="$(date +%s%N)"
-    po_in "$dir" inbox
-    elapsed=$(( ($(date +%s%N) - start) / 1000000 ))
+    po_bounded "po inbox in $dir" "$dir" inbox
     [ "$STATUS" -eq 0 ] || fail "po inbox exited $STATUS in $dir: $OUT"
     one_object "po inbox in $dir"
     jq -e '(.pending | map(.id)) == ["d-0002", "d-0003", "d-0010"]' <<< "$OUT" >/dev/null \
       || fail "po inbox in $dir does not list the pending decisions oldest first: $OUT"
     jq -e 'all(.pending[]; .question == "Which runner runs the suite?" and (.options | length) == 2 and .status == "pending")' \
       <<< "$OUT" >/dev/null || fail "po inbox does not give whole decisions: $OUT"
-    [ "$elapsed" -lt 1000 ] || fail "po inbox took ${elapsed} ms, not under a second"
   done
 
   po_in "$F" inbox d-0001
