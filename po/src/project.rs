@@ -15,8 +15,9 @@ pub enum Setting {
     Value(String),
 }
 
-/// Runs a read-only git command in `dir`; its stdout when it succeeds. `po` never fetches, pulls,
-/// pushes nor writes, and GIT_OPTIONAL_LOCKS=0 keeps even `status`-like reads from taking a lock.
+/// Runs a read-only git command in `dir`; its stdout when it succeeds. It never fetches, pulls,
+/// pushes nor writes — the writes, and the fetch of `po next --remote`, go through
+/// `ship::git` — and GIT_OPTIONAL_LOCKS=0 keeps even `status`-like reads from taking a lock.
 pub fn git(dir: &Path, args: &[&str]) -> Option<String> {
     let output = Command::new("git")
         .args(args)

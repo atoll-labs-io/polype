@@ -1,5 +1,6 @@
 //! The only git launcher of `po` that writes — fetch, commit, commit-tree, fast-forward, push —
-//! reserved to `po/src/ship/` (ADR-0130). Every other module asks git through the read-only
+//! reserved to `po/src/ship/` (ADR-0130). Its one caller outside `po/src/ship/` is `po next
+//! --remote`, through `fetch_origin` (ADR-0141). Every other module asks git through the read-only
 //! `project::git`, which stays as it is.
 
 use std::io::Write;
@@ -25,6 +26,11 @@ impl Ran {
 /// `GIT_TERMINAL_PROMPT=0` makes a push that lacks credentials fail instead of waiting on a prompt.
 pub(super) fn run(dir: &Path, args: &[&str]) -> Ran {
     run_with(dir, args, None)
+}
+
+/// `git fetch -q origin` in `root`; whether it succeeded.
+pub(crate) fn fetch_origin(root: &Path) -> bool {
+    run(root, &["fetch", "-q", "origin"]).ok()
 }
 
 /// As `run`, with `input` written to git's stdin (`hash-object --stdin`, `mktree`).

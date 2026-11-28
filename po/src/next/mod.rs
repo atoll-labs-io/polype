@@ -10,7 +10,8 @@ use serde::Serialize;
 
 use crate::context::{self, Context, Warning};
 use crate::output;
-use crate::project::Project;
+use crate::project::{Project, Setting};
+use crate::ship;
 use crate::trust::forge::Forge;
 
 #[derive(Serialize, Clone, Copy, Debug, PartialEq)]
@@ -99,7 +100,13 @@ pub fn main(args: &[String]) -> i32 {
             "not inside a Polype project: no AGENTS.local.md nor .polype/version at the repository root",
         );
     };
-    let context = Context::read(project);
+    if remote {
+        fetch_origin(&project);
+    }
+    let mut context = Context::read(project);
+    if remote {
+        confirm_merges(&mut context);
+    }
     let closed = if remote { closed_pull_requests(&context) } else { Vec::new() };
     let wave = wave::ready_and_held(&context);
     let actions = context.lanes.as_ref().filter(|_| stories_read(&context)).map(|lanes| {
@@ -117,6 +124,30 @@ pub fn main(args: &[String]) -> i32 {
         None => (None, None),
     };
     output::reply(Next { actions, ready, held, warnings: context.warnings.list().to_vec() }, output::OK)
+}
+
+/// Under `Merge mode: pr`, refreshes origin's refs so a merge a person made on the forge reads as
+/// landed (ADR-0141). A fetch that fails leaves the local refs, read as before.
+fn fetch_origin(project: &Project) {
+    let pr = matches!(project.setting("Merge mode"), Setting::Value(value) if value == "pr");
+    if pr && project.git(&["remote", "get-url", "origin"]).is_some() {
+        ship::fetch_origin(&project.root);
+    }
+}
+
+/// Reads the forge only when some lane awaits a merge, and puts its `merge-waiting` stop under the
+/// effective `Ship confirmation`.
+fn confirm_merges(context: &mut Context) {
+    let awaits = context.lanes.as_ref().is_some_and(|lanes| lanes.iter().any(|lane| lane.awaits_merge));
+    let (true, Some(target), Setting::Value(line)) =
+        (awaits, context.target.as_deref(), context.project.setting("Ship confirmation"))
+    else {
+        return;
+    };
+    let effective = ship::effective_confirmation(&context.project, target, &line);
+    if let Some(lanes) = context.lanes.as_mut() {
+        context::confirm_merges(lanes, &effective);
+    }
 }
 
 fn stories_read(context: &Context) -> bool {
