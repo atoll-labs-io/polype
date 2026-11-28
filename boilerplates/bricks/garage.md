@@ -2,17 +2,18 @@
 
 - Capability: Files
 - Default brick (ADR-0020): the S3 API served by self-hosted Garage
+- Example host: [mustelinet](../../docs/references/mustelinet.md)
 - Status: documentation only — this note describes a deployment and its contracts; it ships no code.
 
 ## What it provides
 
 Object storage behind the S3 API: the application uploads, reads, lists and deletes objects by key in a bucket, and hands out signed links for downloads that must not go through the application. Any S3 client library works against it, so switching to a host's S3 later is a change of settings, not of code.
 
-## How it runs at mustelinet
+## How it runs at the host
 
-- On one or more VMs, each with a block volume holding Garage's data; or on the managed Kubernetes, whose documentation is not published yet (`not documented — ask the host`).
+- On one or more VMs, each with a block volume holding Garage's data; or on the host's managed Kubernetes when it offers one.
 - The application talks to Garage's S3 endpoint on the private network.
-- A public download through a signed link needs an HTTPS endpoint behind the edge: the edge routes by SNI, so the service (or a reverse proxy in front of it) presents its own certificate for `<vm_id>.<project_id>.apps.mustelinet.com`.
+- A public download through a signed link needs an HTTPS endpoint behind the edge: the edge routes by SNI, so the service (or a reverse proxy in front of it) presents its own certificate for the name the host generates.
 - Ports, replication factor and layout: follow the Garage documentation; this note fixes none.
 
 ## Settings
@@ -29,20 +30,19 @@ These are the brick's settings, read by the deployed application and by Garage; 
 - What: the buckets, plus `garage.toml` and the keys (the latter kept in the project's secret store, never in git).
 - How: replication across Garage nodes is not a backup — a deletion replicates too. Copy the buckets on a schedule to another volume or another site with any S3 client.
 - Restore: copy a bucket back into an empty Garage and read a known object byte for byte.
-- Volume snapshots and an off-site target outside mustelinet: `not documented — ask the host`.
+- Volume snapshots and an off-site target outside the host: ask the host.
 
-## What mustelinet does not provide
+## What the host may not provide
 
-- No managed database — so Garage keeps its metadata on its own volume, and nothing here depends on a host database.
-- No managed object storage — so we run Garage ourselves, and its availability and its backups are ours.
-- Publication over HTTP and HTTPS only — so the S3 endpoint is public only as HTTPS through the edge, with Garage or its proxy presenting its own certificate; everything else stays on the private network.
-- Custom domains — `not documented — ask the host`; signed links use the `apps.mustelinet.com` name until answered.
+- No managed database, when the host has none — so Garage keeps its metadata on its own volume, and nothing here depends on a host database.
+- No managed object storage, when the host has none — so we run Garage ourselves, and its availability and its backups are ours.
+- Publication over HTTP and HTTPS only, when the host's edge is limited to them — so the S3 endpoint is public only as HTTPS through the edge, with Garage or its proxy presenting its own certificate; everything else stays on the private network.
 
 ## Contract test checklist
 
-Every brick of this capability must pass these; the list adds mustelinet's constraints to the contract of the capability-bricks skill.
+Every brick of this capability must pass these; the list adds the host's constraints to the contract of the capability-bricks skill.
 
 - [ ] Nominal: an uploaded object is read back byte for byte.
 - [ ] Refusal: reading without the right, or through an expired signed link, is refused.
 - [ ] Data effect: the object is listed under its key and gone after deletion.
-- [ ] Mustelinet: a signed link works through `<vm_id>.<project_id>.apps.mustelinet.com` over HTTPS, with the certificate presented by the service.
+- [ ] Host: a signed link works through the host's edge over HTTPS, with the certificate presented by the service.

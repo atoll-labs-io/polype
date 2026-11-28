@@ -25,7 +25,7 @@ Whenever options are compared — the brick of a capability, a switch away from 
 | Cache and rate limiting | Postgres, or self-hosted Valkey once the load requires it | Upstash | The load outgrows Postgres and the host offers a managed store the project accepts. |
 | Observability | OpenTelemetry sent to a self-hosted collector | Sentry | The project accepts a managed error tracker instead of operating its own collector. |
 | i18n | The library of the profile's framework | — | Never: the rule stays in the application whatever the host. |
-| Deployment | A container image; mustelinet on managed Kubernetes or a VM | The platform of the chosen host | The product is hosted somewhere else than mustelinet. |
+| Deployment | A container image on the host's VMs or managed Kubernetes | The platform of the chosen host | The project accepts depending on that platform. |
 
 Switching to an alternative changes configuration behind the capability's interface; application code is never rewritten for it (ADR-0009). Every switch is recorded as a project ADR.
 
